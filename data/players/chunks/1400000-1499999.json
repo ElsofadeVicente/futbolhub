@@ -1,0 +1,306 @@
+{
+  "1404694": {
+    "n": "Bedirhan Selim Koç",
+    "p": "MID",
+    "nat": "Türkiye",
+    "b": "2007",
+    "club": "Beykoz Anadolu Spor U19",
+    "pf": "Midfield",
+    "teams": [
+      "Beykoz Anadolu Spor"
+    ],
+    "apps": 3
+  },
+  "1404882": {
+    "n": "Kevin Soro",
+    "p": "DEF",
+    "nat": "France",
+    "b": "2003",
+    "h": "188.0",
+    "club": "FC Stade Nyonnais",
+    "pf": "Defender",
+    "teams": [
+      "FC Stade Nyonnais",
+      "CD Numancia"
+    ],
+    "apps": 10
+  },
+  "1405120": {
+    "n": "İsmail Solmaz",
+    "p": "FWD",
+    "nat": "Türkiye",
+    "b": "2009",
+    "club": "Adanaspor",
+    "city": "Batman",
+    "pf": "Attack - Left Winger",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 5
+  },
+  "1405121": {
+    "n": "Samet Emlik",
+    "p": "DEF",
+    "nat": "Türkiye",
+    "b": "2006",
+    "club": "Adanaspor",
+    "pf": "Defender - Centre-Back",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 6
+  },
+  "1406387": {
+    "n": "Leon Konig",
+    "p": "FWD",
+    "nat": "Croatia",
+    "b": "2006",
+    "club": "NK Radnicki Dalj",
+    "city": "Vinkovci",
+    "pf": "Attack",
+    "teams": [
+      "NK Radnicki Dalj",
+      "HNK Vukovar 1991"
+    ],
+    "apps": 2
+  },
+  "1406799": {
+    "n": "Mirac Akay",
+    "p": "DEF",
+    "nat": "Türkiye",
+    "b": "2006",
+    "f": "Zurdo",
+    "h": "185.0",
+    "club": "Adanaspor",
+    "city": "Adana",
+    "pf": "Defender - Left-Back",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 5
+  },
+  "1406801": {
+    "n": "Onur Nazlı",
+    "p": "FWD",
+    "nat": "Türkiye",
+    "b": "2008",
+    "club": "Yeni Malatyaspor",
+    "city": "Malatya",
+    "pf": "Attack - Centre-Forward",
+    "teams": [
+      "Yeni Malatyaspor"
+    ],
+    "apps": 2
+  },
+  "1406923": {
+    "n": "Beytullah Gezer",
+    "p": "FWD",
+    "nat": "Türkiye",
+    "b": "2010",
+    "club": "Adana Demirspor Youth",
+    "city": "Adana",
+    "pf": "Attack - Centre-Forward",
+    "teams": [
+      "Adana Demirspor"
+    ],
+    "apps": 4
+  },
+  "1411351": {
+    "n": "Josito González",
+    "p": "MID",
+    "nat": "Venezuela",
+    "b": "2006",
+    "club": "Las Palmas Atlético",
+    "pf": "Midfield - Attacking Midfield",
+    "teams": [
+      "UD Las Palmas"
+    ],
+    "apps": 2
+  },
+  "1412729": {
+    "n": "Rayyan Koubini",
+    "p": "MID",
+    "nat": "Netherlands",
+    "b": "2005",
+    "club": "SC Telstar",
+    "city": "Amsterdam",
+    "pf": "Midfield",
+    "teams": [
+      "SC Telstar"
+    ],
+    "apps": 3
+  },
+  "1413211": {
+    "n": "Ekin Çiftçi",
+    "p": "DEF",
+    "nat": "Türkiye",
+    "b": "2008",
+    "f": "Zurdo",
+    "h": "172.0",
+    "club": "Alanyaspor U19",
+    "pf": "Defender - Left-Back",
+    "teams": [
+      "Alanyaspor"
+    ],
+    "apps": 4
+  },
+  "1415136": {
+    "n": "Pierce Holbrook",
+    "p": "GK",
+    "nat": "United States",
+    "b": "2003",
+    "h": "193.0",
+    "club": "Philadelphia Union II",
+    "city": "Littleton, Colorado",
+    "pf": "Goalkeeper",
+    "teams": [
+      "Philadelphia Union"
+    ],
+    "apps": 11
+  },
+  "1426094": {
+    "n": "Carlos Daniel",
+    "p": "FWD",
+    "nat": "Portugal",
+    "b": "1984",
+    "pf": "Attack - Right Winger",
+    "teams": [
+      "FC Arouca",
+      "CD Arrifanense"
+    ],
+    "apps": 4,
+    "goals": 4
+  },
+  "1448378": {
+    "n": "Talha Eğribayat",
+    "p": "GK",
+    "nat": "Türkiye",
+    "b": "2008",
+    "club": "Adanaspor",
+    "pf": "Goalkeeper",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 4
+  },
+  "1448255": {
+    "n": "Ahmet Barman",
+    "p": "FWD",
+    "nat": "Türkiye",
+    "b": "2009",
+    "club": "Yeni Malatyaspor",
+    "pf": "Attack",
+    "teams": [
+      "Yeni Malatyaspor"
+    ],
+    "apps": 4
+  },
+  "1449243": {
+    "n": "Emir Işık",
+    "p": "DEF",
+    "nat": "Türkiye",
+    "b": "2008",
+    "club": "Adanaspor",
+    "pf": "Defender - Right-Back",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 4
+  },
+  "1449246": {
+    "n": "Mücahit Beliren",
+    "p": "FWD",
+    "nat": "Türkiye",
+    "b": "2006",
+    "club": "Adanaspor",
+    "pf": "Attack - Right Winger",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 4
+  },
+  "1449245": {
+    "n": "Kürşad Duran Şaş",
+    "p": "FWD",
+    "nat": "Türkiye",
+    "b": "2007",
+    "club": "Adanaspor",
+    "pf": "Attack - Centre-Forward",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 3
+  },
+  "1449249": {
+    "n": "Devrim Deniz Özcan",
+    "p": "MID",
+    "nat": "Türkiye",
+    "b": "2009",
+    "club": "Adanaspor",
+    "pf": "Midfield - Central Midfield",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 3
+  },
+  "1449251": {
+    "n": "Semih İsmail Bakır",
+    "p": "DEF",
+    "nat": "Türkiye",
+    "b": "2008",
+    "club": "Adanaspor",
+    "pf": "Defender - Centre-Back",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 4
+  },
+  "1449325": {
+    "n": "Türker Kaplan",
+    "p": "MID",
+    "nat": "Türkiye",
+    "b": "2009",
+    "club": "Adanaspor",
+    "pf": "Midfield - Central Midfield",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 4
+  },
+  "1452155": {
+    "n": "Tuğra Gül",
+    "p": "DEF",
+    "nat": "Türkiye",
+    "b": "2008",
+    "club": "Adanaspor",
+    "pf": "Defender",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 2
+  },
+  "1452157": {
+    "n": "Bünyamin Oklu",
+    "p": "FWD",
+    "nat": "Türkiye",
+    "b": "2007",
+    "club": "Adanaspor",
+    "pf": "Attack",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 3
+  },
+  "1452156": {
+    "n": "Hasan Dağlı",
+    "p": "MID",
+    "nat": "Türkiye",
+    "b": "2007",
+    "club": "Adanaspor",
+    "pf": "Midfield",
+    "teams": [
+      "Adanaspor"
+    ],
+    "apps": 3
+  }
+}

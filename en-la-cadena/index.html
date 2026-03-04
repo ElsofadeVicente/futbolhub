@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>En La Cadena — Quién Coño Falta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="css/cadena.css" />
+</head>
+<body>
+
+<!-- ══════════════ PANTALLA 1: MENÚ PRINCIPAL ══════════════ -->
+<div id="screen-menu" class="screen active">
+  <a href="../index.html" class="back-btn">← Volver</a>
+  <div class="menu-center">
+    <div class="game-logo">
+      <div class="logo-icon">⛓️</div>
+      <h1 class="logo-title">EN LA CADENA</h1>
+      <p class="logo-sub">Jugador → Equipo → Jugador → Equipo…</p>
+    </div>
+    <div class="menu-buttons">
+      <button class="btn-primary" onclick="App.showCreateGame()">🏠 Crear Partida</button>
+      <button class="btn-secondary" onclick="App.showJoinGame()">🔗 Unirse con Código</button>
+    </div>
+    <div class="firebase-note" id="firebase-status">
+      <span id="fb-indicator">●</span> <span id="fb-text">Modo local — configura Firebase para jugar online</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PANTALLA 2: CREAR PARTIDA ══════════════ -->
+<div id="screen-create" class="screen">
+  <button class="back-btn" onclick="App.showMenu()">← Volver</button>
+  <div class="setup-container">
+    <h2 class="section-title">⚙️ Nueva Partida</h2>
+
+    <!-- Modo de juego -->
+    <div class="setup-block">
+      <label class="block-label">MODO DE VIDAS</label>
+      <div class="mode-cards">
+        <div class="mode-card selected" data-mode="1" onclick="App.selectMode(this)">
+          <div class="mode-icon">💀</div>
+          <div class="mode-name">SUPERVIVENCIA</div>
+          <div class="mode-desc">1 vida · Un error y estás fuera</div>
+        </div>
+        <div class="mode-card" data-mode="2" onclick="App.selectMode(this)">
+          <div class="mode-icon">⚽</div>
+          <div class="mode-name">NORMAL</div>
+          <div class="mode-desc">2 vidas · Tienes un margen</div>
+        </div>
+        <div class="mode-card" data-mode="3" onclick="App.selectMode(this)">
+          <div class="mode-icon">🏆</div>
+          <div class="mode-name">LARGO</div>
+          <div class="mode-desc">3 vidas · Para sesiones largas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jugadores -->
+    <div class="setup-block">
+      <label class="block-label">JUGADORES <span class="hint">(mín. 2, máx. 8)</span></label>
+      <div id="player-inputs">
+        <div class="player-input-row">
+          <span class="player-num">1</span>
+          <input class="player-name-input" type="text" placeholder="Nombre del jugador 1" maxlength="20" />
+          <button class="remove-player-btn" onclick="App.removePlayer(this)" style="visibility:hidden">✕</button>
+        </div>
+        <div class="player-input-row">
+          <span class="player-num">2</span>
+          <input class="player-name-input" type="text" placeholder="Nombre del jugador 2" maxlength="20" />
+          <button class="remove-player-btn" onclick="App.removePlayer(this)" style="visibility:hidden">✕</button>
+        </div>
+      </div>
+      <button class="btn-add-player" onclick="App.addPlayer()">+ Añadir jugador</button>
+    </div>
+
+    <!-- Tipo de partida -->
+    <div class="setup-block" id="online-block">
+      <label class="block-label">TIPO DE PARTIDA</label>
+      <div class="type-toggle">
+        <button class="type-btn active" id="btn-local" onclick="App.setType('local')">📱 Local (mismo dispositivo)</button>
+        <button class="type-btn" id="btn-online" onclick="App.setType('online')">🌐 Online (distintos dispositivos)</button>
+      </div>
+      <p class="type-note" id="type-note-local">Todos los jugadores se pasan el dispositivo por turnos.</p>
+      <p class="type-note hidden" id="type-note-online">Se generará un código de sala para que los demás se unan desde sus dispositivos.</p>
+    </div>
+
+    <button class="btn-primary btn-start" onclick="App.startGame()">EMPEZAR ▶</button>
+  </div>
+</div>
+
+<!-- ══════════════ PANTALLA 3: UNIRSE ══════════════ -->
+<div id="screen-join" class="screen">
+  <button class="back-btn" onclick="App.showMenu()">← Volver</button>
+  <div class="setup-container">
+    <h2 class="section-title">🔗 Unirse a Partida</h2>
+    <div class="setup-block">
+      <label class="block-label">TU NOMBRE</label>
+      <input id="join-name" class="player-name-input big" type="text" placeholder="Tu nombre de jugador" maxlength="20" />
+    </div>
+    <div class="setup-block">
+      <label class="block-label">CÓDIGO DE SALA</label>
+      <input id="join-code" class="code-input" type="text" placeholder="XXXXXX" maxlength="6"
+             oninput="this.value=this.value.toUpperCase()" />
+    </div>
+    <button class="btn-primary btn-start" onclick="App.joinRoom()">UNIRSE ▶</button>
+    <p class="error-msg hidden" id="join-error"></p>
+  </div>
+</div>
+
+<!-- ══════════════ PANTALLA 4: SALA DE ESPERA ══════════════ -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-container">
+    <h2 class="section-title">🕐 Sala de Espera</h2>
+    <div class="room-code-display">
+      <div class="room-label">CÓDIGO DE SALA</div>
+      <div class="room-code" id="room-code-display">------</div>
+      <button class="copy-btn" onclick="App.copyRoomCode()">📋 Copiar</button>
+    </div>
+    <div class="lobby-players" id="lobby-players-list">
+      <!-- jugadores conectados -->
+    </div>
+    <div class="lobby-mode" id="lobby-mode-display"></div>
+    <button class="btn-primary" id="btn-start-online" onclick="App.startOnlineGame()" style="display:none">
+      EMPEZAR PARTIDA ▶
+    </button>
+    <p class="lobby-hint">Comparte el código con tus amigos para que se unan</p>
+  </div>
+</div>
+
+<!-- ══════════════ PANTALLA 5: JUEGO ══════════════ -->
+<div id="screen-game" class="screen">
+
+  <!-- Cabecera: vidas de los jugadores -->
+  <div class="game-header">
+    <div class="players-lives" id="players-lives"></div>
+    <div class="turn-indicator" id="turn-indicator">Turno de <strong id="turn-name">—</strong></div>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-bar-wrap">
+    <div class="timer-bar" id="timer-bar"></div>
+    <div class="timer-text" id="timer-text">15</div>
+  </div>
+
+  <!-- Cadena actual -->
+  <div class="chain-display">
+    <div class="chain-label" id="chain-label">Di un JUGADOR de fútbol para empezar</div>
+    <div class="chain-entries" id="chain-entries">
+      <!-- última entrada visible -->
+    </div>
+  </div>
+
+  <!-- Zona de respuesta -->
+  <div class="answer-zone" id="answer-zone">
+    <div class="answer-type-badge" id="answer-type-badge">JUGADOR</div>
+    <div class="input-wrap">
+      <input
+        id="answer-input"
+        class="answer-input"
+        type="text"
+        placeholder="Escribe aquí…"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        oninput="CadenaData.onInput(this.value)"
+        onkeydown="CadenaData.onKeyDown(event)"
+      />
+      <button class="submit-btn" onclick="CadenaData.submitAnswer()">→</button>
+    </div>
+    <div class="suggestions" id="suggestions"></div>
+  </div>
+
+  <!-- Mensaje de espera (cuando no es tu turno en online) -->
+  <div class="waiting-msg hidden" id="waiting-msg">
+    <div class="waiting-icon">⏳</div>
+    <p>Esperando a <strong id="waiting-name">—</strong>…</p>
+  </div>
+
+</div>
+
+<!-- ══════════════ PANTALLA 6: ELIMINADO ══════════════ -->
+<div id="screen-eliminated" class="screen">
+  <div class="elim-container">
+    <div class="elim-icon">💀</div>
+    <h2 class="elim-title" id="elim-title">¡ELIMINADO!</h2>
+    <p class="elim-msg" id="elim-msg"></p>
+    <button class="btn-primary" onclick="App.continueAfterElim()">Continuar</button>
+  </div>
+</div>
+
+<!-- ══════════════ PANTALLA 7: FIN DE JUEGO ══════════════ -->
+<div id="screen-result" class="screen">
+  <div class="result-container">
+    <div class="result-trophy">🏆</div>
+    <h2 class="result-title">¡GANADOR!</h2>
+    <div class="winner-name" id="winner-name">—</div>
+    <div class="chain-stats" id="chain-stats"></div>
+    <div class="result-buttons">
+      <button class="btn-primary" onclick="App.playAgain()">🔄 Jugar de nuevo</button>
+      <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- ══════════════ SCRIPTS ══════════════ -->
+<!-- Firebase SDK (modular, CDN) -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, get, update, onValue, push, serverTimestamp, remove }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  // ══ CONFIGURACIÓN FIREBASE ═══════════════════════════════════════════════
+  // Crea un proyecto en https://console.firebase.google.com
+  // → Realtime Database → Crear base de datos → modo prueba
+  // → Configuración del proyecto → Añadir app web → copia el objeto firebaseConfig
+  const FIREBASE_CONFIG = {
+    apiKey:            "TU_API_KEY",
+    authDomain:        "TU_PROYECTO.firebaseapp.com",
+    databaseURL:       "https://TU_PROYECTO-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "TU_PROYECTO",
+    storageBucket:     "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId:             "TU_APP_ID"
+  };
+  // ═════════════════════════════════════════════════════════════════════════
+
+  // Detectar si Firebase está configurado
+  const FB_CONFIGURED = FIREBASE_CONFIG.apiKey !== "TU_API_KEY";
+
+  let firebaseApp = null;
+  let db = null;
+
+  if (FB_CONFIGURED) {
+    try {
+      firebaseApp = initializeApp(FIREBASE_CONFIG);
+      db = getDatabase(firebaseApp);
+      console.log('✅ Firebase conectado');
+    } catch (e) {
+      console.warn('⚠️ Error Firebase:', e);
+    }
+  }
+
+  // Exponer Firebase al resto del código
+  window._FB = {
+    configured: FB_CONFIGURED && !!db,
+    db, ref, set, get, update, onValue, push, serverTimestamp, remove
+  };
+
+  // Cargar el resto del juego
+  const s1 = document.createElement('script'); s1.src = 'js/cadena-data.js';  document.body.appendChild(s1);
+  s1.onload = () => {
+    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js'; document.body.appendChild(s2);
+  };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QUIÉN COÑO FALTA</title>
+<meta name="description" content="Juegos de fútbol diarios: En el Once, El Crucigrama y más. La Liga, Champions League y partidos históricos.">
+
+<!-- Fuentes -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Estilos -->
+<link rel="stylesheet" href="./css/global.css">
+<link rel="stylesheet" href="./css/hub.css">
+</head>
+<body>
+
+<!-- ========== BOTÓN SETTINGS ========== -->
+<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+
+<!-- ========== MODAL SETTINGS ========== -->
+<div id="settings-modal" class="settings-modal">
+  <div class="settings-content">
+    <h2 class="settings-title">CONFIGURACIÓN</h2>
+    
+    <div class="settings-option">
+      <span>Modo Alto Contraste</span>
+      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
+    </div>
+
+    <div class="stats-display">
+      <h3 style="margin-bottom:15px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">ESTADÍSTICAS</h3>
+      <div class="stat-row"><span>Partidos completados:</span><span id="stat-matches">0</span></div>
+      <div class="stat-row"><span>Jugadores adivinados:</span><span id="stat-players">0</span></div>
+      <div class="stat-row"><span>Tasa de acierto:</span><span id="stat-success">0%</span></div>
+      <div class="stat-row"><span>Racha actual:</span><span id="stat-streak">0</span></div>
+      <div class="stat-row"><span>Mejor racha:</span><span id="stat-best-streak">0</span></div>
+      <button class="reset-stats-btn" onclick="resetStats()">Resetear estadísticas</button>
+    </div>
+
+    <button class="next-btn" style="width:100%;margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- HUB PRINCIPAL                              -->
+<!-- ========================================== -->
+<div class="hub-screen">
+  <div class="hub-header">
+    <div class="hub-logo">⚽</div>
+    <h1 class="hub-title">QUIÉN COÑO FALTA</h1>
+    <p class="hub-subtitle">Elige tu juego</p>
+  </div>
+
+  <div class="hub-games">
+
+    <!-- JUEGO 1: EN EL ONCE -->
+    <a href="./en-el-once/" class="hub-game-card">
+      <div class="hub-game-icon">🟩</div>
+      <div class="hub-game-info">
+        <div class="hub-game-title">EN EL ONCE</div>
+        <div class="hub-game-desc">Adivina los 11 jugadores de una alineación real</div>
+        <div class="hub-game-tags">
+          <span class="hub-tag">Diario</span>
+          <span class="hub-tag">Liga</span>
+          <span class="hub-tag">Champions</span>
+        </div>
+      </div>
+      <div class="hub-game-arrow">→</div>
+    </a>
+
+    <!-- JUEGO 2: EL CRUCIGRAMA -->
+    <a href="./crucigrama/" class="hub-game-card">
+      <div class="hub-game-icon">📰</div>
+      <div class="hub-game-info">
+        <div class="hub-game-title">EL CRUCIGRAMA</div>
+        <div class="hub-game-desc">Crucigrama de fútbol. Un nuevo reto cada día</div>
+        <div class="hub-game-tags">
+          <span class="hub-tag">Diario</span>
+          <span class="hub-tag">Fútbol</span>
+          <span class="hub-tag">Partidos históricos</span>
+        </div>
+      </div>
+      <div class="hub-game-arrow">→</div>
+    </a>
+
+    <!-- JUEGO 3: EN LA CADENA -->
+    <a href="./en-la-cadena/" class="hub-game-card">
+      <div class="hub-game-icon">⛓️</div>
+      <div class="hub-game-info">
+        <div class="hub-game-title">EN LA CADENA</div>
+        <div class="hub-game-desc">Jugador → Equipo → Jugador… ¿Quién rompe la cadena?</div>
+        <div class="hub-game-tags">
+          <span class="hub-tag">Multijugador</span>
+          <span class="hub-tag">Online</span>
+          <span class="hub-tag">Local</span>
+        </div>
+      </div>
+      <div class="hub-game-arrow">→</div>
+    </a>
+
+    <!-- JUEGO 4: placeholder futuro -->
+    <div class="hub-game-card hub-game-card--soon hub-game-card--placeholder">
+      <div class="hub-game-icon">🎯</div>
+      <div class="hub-game-info">
+        <div class="hub-game-title">¿QUIÉN SOY?</div>
+        <div class="hub-game-desc">Adivina el jugador por sus estadísticas y pistas</div>
+        <div class="hub-game-tags">
+          <span class="hub-tag hub-tag--soon">Próximamente</span>
+        </div>
+      </div>
+      <div class="hub-game-arrow">→</div>
+    </div>
+
+  </div>
+
+  <div class="hub-footer">
+    <span>🏆 La Liga · Champions League · Partidos históricos</span>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="./js/shared.js"></script>
+</body>
+</html>

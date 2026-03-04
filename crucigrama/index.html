@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Crucigrama - Quién Coño Falta</title>
+<meta name="description" content="Crucigrama de fútbol diario. Resuelve pistas sobre jugadores, equipos y partidos históricos.">
+
+<!-- Fuentes -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Estilos -->
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="./css/crucigrama.css">
+</head>
+<body>
+
+<!-- ========== BOTÓN SETTINGS ========== -->
+<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+
+<!-- ========== MODAL SETTINGS ========== -->
+<div id="settings-modal" class="settings-modal">
+  <div class="settings-content">
+    <h2 class="settings-title">CONFIGURACIÓN</h2>
+    
+    <div class="settings-option">
+      <span>Modo Alto Contraste</span>
+      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
+    </div>
+
+    <div class="stats-display">
+      <h3 style="margin-bottom:15px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">ESTADÍSTICAS</h3>
+      <div class="stat-row"><span>Partidos completados:</span><span id="stat-matches">0</span></div>
+      <div class="stat-row"><span>Jugadores adivinados:</span><span id="stat-players">0</span></div>
+      <div class="stat-row"><span>Tasa de acierto:</span><span id="stat-success">0%</span></div>
+      <div class="stat-row"><span>Racha actual:</span><span id="stat-streak">0</span></div>
+      <div class="stat-row"><span>Mejor racha:</span><span id="stat-best-streak">0</span></div>
+      <button class="reset-stats-btn" onclick="resetStats()">Resetear estadísticas</button>
+    </div>
+
+    <button class="next-btn" style="width:100%;margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PANTALLA: CRUCIGRAMA                       -->
+<!-- ========================================== -->
+<div id="crucigrama-screen">
+  <!-- El contenido se genera dinámicamente por crucigrama-game.js -->
+</div>
+
+<!-- Scripts -->
+<script src="../js/shared.js"></script>
+<script src="./js/crucigrama-game.js"></script>
+</body>
+</html>

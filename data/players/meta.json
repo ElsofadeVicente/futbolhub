@@ -1,0 +1,101 @@
+{
+  "version": "1.0",
+  "totalPlayers": 52329,
+  "lastUpdated": "2025-03-04",
+  "chunkSize": 100000,
+  "ranges": [
+    {
+      "min": 0,
+      "max": 99999,
+      "file": "chunks/0-99999.json",
+      "count": 16807
+    },
+    {
+      "min": 100000,
+      "max": 199999,
+      "file": "chunks/100000-199999.json",
+      "count": 6838
+    },
+    {
+      "min": 1000000,
+      "max": 1099999,
+      "file": "chunks/1000000-1099999.json",
+      "count": 1336
+    },
+    {
+      "min": 1100000,
+      "max": 1199999,
+      "file": "chunks/1100000-1199999.json",
+      "count": 661
+    },
+    {
+      "min": 1200000,
+      "max": 1299999,
+      "file": "chunks/1200000-1299999.json",
+      "count": 312
+    },
+    {
+      "min": 1300000,
+      "max": 1399999,
+      "file": "chunks/1300000-1399999.json",
+      "count": 142
+    },
+    {
+      "min": 1400000,
+      "max": 1499999,
+      "file": "chunks/1400000-1499999.json",
+      "count": 24
+    },
+    {
+      "min": 200000,
+      "max": 299999,
+      "file": "chunks/200000-299999.json",
+      "count": 5502
+    },
+    {
+      "min": 300000,
+      "max": 399999,
+      "file": "chunks/300000-399999.json",
+      "count": 4715
+    },
+    {
+      "min": 400000,
+      "max": 499999,
+      "file": "chunks/400000-499999.json",
+      "count": 3491
+    },
+    {
+      "min": 500000,
+      "max": 599999,
+      "file": "chunks/500000-599999.json",
+      "count": 3506
+    },
+    {
+      "min": 600000,
+      "max": 699999,
+      "file": "chunks/600000-699999.json",
+      "count": 3283
+    },
+    {
+      "min": 700000,
+      "max": 799999,
+      "file": "chunks/700000-799999.json",
+      "count": 2006
+    },
+    {
+      "min": 800000,
+      "max": 899999,
+      "file": "chunks/800000-899999.json",
+      "count": 1942
+    },
+    {
+      "min": 900000,
+      "max": 999999,
+      "file": "chunks/900000-999999.json",
+      "count": 1764
+    }
+  ],
+  "usage": {
+    "example": "Para buscar jugador ID 100011, cargar chunks/100000-199999.json"
+  }
+}

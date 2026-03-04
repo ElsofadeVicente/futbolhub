@@ -1,0 +1,566 @@
+/* =============================================
+   HUB.CSS — Estilos del menú principal
+   de la plataforma QUIÉN COÑO FALTA
+   ============================================= */
+
+/* ── HUB SCREEN ── */
+.hub-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 4vh, 50px) 20px;
+  gap: clamp(20px, 3vh, 36px);
+  background:
+    linear-gradient(rgba(20,15,5,0.92), rgba(20,15,5,0.92)),
+    repeating-linear-gradient(
+      90deg, transparent, transparent 60px,
+      rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 62px
+    ),
+    repeating-linear-gradient(
+      0deg, transparent, transparent 60px,
+      rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 62px
+    );
+}
+
+/* ── HEADER ── */
+.hub-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.hub-logo {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  animation: hubBallSpin 6s linear infinite;
+  display: inline-block;
+}
+
+@keyframes hubBallSpin {
+  0%   { transform: rotate(0deg)   translateY(0);   }
+  25%  { transform: rotate(90deg)  translateY(-4px); }
+  50%  { transform: rotate(180deg) translateY(0);   }
+  75%  { transform: rotate(270deg) translateY(-4px); }
+  100% { transform: rotate(360deg) translateY(0);   }
+}
+
+.hub-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.6rem, 9vw, 5.5rem);
+  letter-spacing: 8px;
+  color: var(--neon-green);
+  text-shadow: 3px 3px 0 #000, 1px 1px 0 rgba(0,0,0,0.8);
+  line-height: 1;
+  margin: 0;
+}
+
+.hub-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: var(--text-light);
+  opacity: 0.7;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* ── GRID DE JUEGOS ── */
+.hub-games {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vh, 16px);
+  width: 100%;
+  max-width: 600px;
+}
+
+/* ── CARD DE JUEGO ── */
+.hub-game-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, var(--bg-purple), #3a2e1c);
+  border: 2px solid var(--neon-green);
+  border-radius: 14px;
+  padding: clamp(14px, 2.2vh, 22px) 20px;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  animation: hubCardIn 0.5s ease-out both;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.hub-game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 60%, rgba(200,168,75,0.07));
+  pointer-events: none;
+}
+
+.hub-game-card:nth-child(1) { animation-delay: 0.05s; }
+.hub-game-card:nth-child(2) { animation-delay: 0.15s; }
+.hub-game-card:nth-child(3) { animation-delay: 0.25s; }
+
+@keyframes hubCardIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hub-game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+  border-color: var(--neon-yellow);
+}
+
+.hub-game-card:active {
+  transform: translateY(-1px);
+}
+
+/* Cards desactivadas (próximamente) */
+.hub-game-card--soon {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: rgba(200,168,75,0.3);
+}
+
+.hub-game-card--soon:hover {
+  transform: none;
+  border-color: rgba(200,168,75,0.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+}
+
+.hub-game-card--placeholder {
+  border-style: dashed;
+}
+
+/* ── ICONO ── */
+.hub-game-icon {
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  flex-shrink: 0;
+  width: 52px;
+  text-align: center;
+}
+
+/* ── INFO ── */
+.hub-game-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hub-game-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  letter-spacing: 3px;
+  color: var(--neon-yellow);
+  line-height: 1.1;
+}
+
+.hub-game-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+  color: var(--text-light);
+  opacity: 0.8;
+  margin-top: 3px;
+  line-height: 1.3;
+}
+
+.hub-game-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.hub-tag {
+  background: rgba(200,168,75,0.18);
+  border: 1px solid rgba(200,168,75,0.4);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--neon-green);
+  text-transform: uppercase;
+}
+
+.hub-tag--soon {
+  background: rgba(255,100,50,0.15);
+  border-color: rgba(255,100,50,0.35);
+  color: #ff9060;
+}
+
+/* ── FLECHA ── */
+.hub-game-arrow {
+  font-size: 1.4rem;
+  color: var(--neon-green);
+  opacity: 0.5;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.hub-game-card:hover .hub-game-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+.hub-game-card--soon .hub-game-arrow {
+  opacity: 0.2;
+}
+
+/* ── FOOTER ── */
+.hub-footer {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  opacity: 0.35;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+/* =============================================
+   ONCE MENU SCREEN
+   ============================================= */
+.once-menu-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 2vh, 24px) 20px;
+  gap: clamp(6px, 1.5vh, 16px);
+  background:
+    linear-gradient(rgba(26,18,8,0.88), rgba(26,18,8,0.88)),
+    repeating-linear-gradient(
+      90deg, transparent, transparent 60px,
+      rgba(255,255,255,0.02) 60px, rgba(255,255,255,0.02) 62px
+    ),
+    repeating-linear-gradient(
+      0deg, transparent, transparent 60px,
+      rgba(255,255,255,0.02) 60px, rgba(255,255,255,0.02) 62px
+    );
+  position: relative;
+}
+
+.back-to-hub-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(200,168,75,0.12);
+  border: 2px solid var(--neon-green);
+  color: var(--neon-green);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.back-to-hub-btn:hover {
+  background: rgba(200,168,75,0.28);
+}
+
+/* Botón de modo diario destacado */
+.mode-btn--daily {
+  border-color: var(--neon-yellow) !important;
+  background: linear-gradient(135deg, #2e2a10, #3a3415) !important;
+  box-shadow: 0 0 20px rgba(232,201,109,0.15) !important;
+}
+
+.mode-btn--daily .mode-btn-title {
+  color: var(--neon-yellow) !important;
+}
+
+/* =============================================
+   COMING SOON (crucigrama placeholder)
+   ============================================= */
+#crucigrama-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  position: relative;
+  padding: 20px;
+}
+
+.coming-soon-wrapper {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.coming-soon-icon {
+  font-size: 5rem;
+  animation: pulse 2s infinite;
+}
+
+.coming-soon-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.8rem;
+  letter-spacing: 4px;
+  color: var(--neon-green);
+}
+
+.coming-soon-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-light);
+  opacity: 0.75;
+  line-height: 1.6;
+}
+
+.coming-soon-badge {
+  background: rgba(255,100,50,0.15);
+  border: 2px solid rgba(255,100,50,0.5);
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 4px;
+  color: #ff9060;
+}
+
+/* ── COUNTDOWN ONCE DIARIO ── */
+.comp-countdown {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 3px;
+  color: var(--neon-yellow);
+  background: rgba(232,201,109,0.08);
+  border: 1px solid rgba(232,201,109,0.25);
+  border-radius: 8px;
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* ── CABECERA ONCE DIARIO (número + navegación) ── */
+.daily-header {
+  padding: 6px 20px 0;
+}
+
+.daily-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(200,168,75,0.06);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
+.daily-edition {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.daily-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--neon-green);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.daily-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 2px;
+  color: var(--neon-yellow);
+  line-height: 1;
+}
+
+.daily-past-badge {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: rgba(255,100,50,0.2);
+  border: 1px solid rgba(255,100,50,0.4);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: #ff9060;
+  text-transform: uppercase;
+}
+
+.daily-nav-btn {
+  background: rgba(200,168,75,0.1);
+  border: 1px solid rgba(200,168,75,0.3);
+  color: var(--neon-green);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.daily-nav-btn:hover:not(.disabled) {
+  background: rgba(200,168,75,0.25);
+}
+
+.daily-nav-btn.disabled,
+.daily-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* =============================================
+   FIX MÓVIL — formación compacta
+   ============================================= */
+@media (max-width: 600px) {
+  /* Reducir tamaño de camisetas y campo */
+  .field-container {
+    padding: 14px 6px;
+    min-height: auto;
+  }
+
+  .formation {
+    gap: 10px;
+    min-height: auto;
+  }
+
+  .line {
+    gap: 4px;
+    flex-wrap: nowrap; /* CLAVE: nunca romper la fila */
+    justify-content: center;
+  }
+
+  .player-card {
+    width: auto;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .jersey {
+    width: 42px;
+    height: 50px;
+    font-size: 1.1rem;
+    border-radius: 5px 5px 8px 8px;
+  }
+
+  .jersey::before {
+    top: -5px;
+    height: 5px;
+  }
+
+  .player-name-container {
+    width: 46px;
+    min-width: 46px;
+    max-width: 46px;
+    padding: 3px 4px;
+  }
+
+  .name-slot {
+    width: 5px;
+    height: 2px;
+  }
+
+  .name-slot.space {
+    width: 3px;
+  }
+
+  .revealed-name {
+    font-size: 0.55rem;
+    letter-spacing: 0;
+  }
+
+  /* Reducir gap del header para ganar espacio */
+  .match-header {
+    padding: 12px 10px;
+  }
+
+  .team-name {
+    font-size: 0.9rem;
+  }
+
+  .score-display {
+    font-size: 2rem;
+    letter-spacing: 3px;
+  }
+
+  .competition-name {
+    font-size: 0.9rem;
+  }
+
+  .match-date {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .jersey {
+    width: 36px;
+    height: 44px;
+    font-size: 1rem;
+  }
+
+  .player-name-container {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+  }
+
+  .revealed-name {
+    font-size: 0.5rem;
+  }
+
+  .line {
+    gap: 2px;
+  }
+}
+
+/* =============================================
+   RESPONSIVE GENERAL
+   ============================================= */
+@media (max-width: 480px) {
+  .hub-title {
+    letter-spacing: 4px;
+  }
+
+  .hub-game-card {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .hub-game-icon {
+    font-size: 1.8rem;
+    width: 42px;
+  }
+
+  .hub-game-title {
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+  }
+
+  .back-to-hub-btn {
+    top: 12px;
+    left: 12px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+}

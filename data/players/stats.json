@@ -1,0 +1,44 @@
+{
+  "total_players": 52329,
+  "positions": {
+    "DEF": 16845,
+    "FWD": 14343,
+    "MID": 15670,
+    "GK": 5470,
+    "": 1
+  },
+  "nationalities": {
+    "Brazil": 4209,
+    "Spain": 4045,
+    "Italy": 3764,
+    "England": 3050,
+    "Türkiye": 2972,
+    "France": 2154,
+    "Argentina": 2105,
+    "Germany": 1624,
+    "Netherlands": 1350,
+    "Poland": 1326,
+    "Mexico": 1283,
+    "Portugal": 1208,
+    "Belgium": 1083,
+    "United States": 1038,
+    "Switzerland": 988,
+    "Ukraine": 982,
+    "Scotland": 918,
+    "Japan": 863,
+    "Denmark": 856,
+    "Sweden": 855
+  },
+  "birth_decades": {
+    "0": 79,
+    "1950": 3,
+    "1960": 452,
+    "1970": 4883,
+    "1980": 13130,
+    "1990": 20546,
+    "2000": 13233,
+    "2010": 3
+  },
+  "avg_apps": 274.4,
+  "avg_goals": 25.3
+}

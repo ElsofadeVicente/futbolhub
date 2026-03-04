@@ -1,0 +1,213 @@
+{
+  "date": "2026-03-03",
+  "title": "Crucigrama #1",
+  "grid_size": {
+    "rows": 11,
+    "cols": 9
+  },
+  "grid": [
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  ],
+  "words": [
+    {
+      "id": 1,
+      "number": 1,
+      "answer": "VALERO",
+      "row": 0,
+      "col": 1,
+      "direction": "down",
+      "length": 6,
+      "clue": "Segundo Nombre Estadio del Elche"
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "answer": "CARLOS",
+      "row": 1,
+      "col": 0,
+      "direction": "across",
+      "length": 6,
+      "clue": "Primer nombre de Casemiro"
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "answer": "BEST",
+      "row": 3,
+      "col": 0,
+      "direction": "across",
+      "length": 4,
+      "clue": "Ganador Balon de oro año 68, alcohol y mujeres."
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "answer": "PUSKAS",
+      "row": 3,
+      "col": 5,
+      "direction": "down",
+      "length": 6,
+      "clue": "Premio al mejor gol"
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "answer": "ROBINSON",
+      "row": 5,
+      "col": 0,
+      "direction": "across",
+      "length": 8,
+      "clue": "Delantero de Osasuna y mitico comentarista en Movistar"
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "answer": "VERDE",
+      "row": 6,
+      "col": 8,
+      "direction": "down",
+      "length": 5,
+      "clue": "Apellido de futbolista italiano de la 18-19 del Valladolid"
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "answer": "LEICESTER",
+      "row": 8,
+      "col": 0,
+      "direction": "across",
+      "length": 9,
+      "clue": "Campeon Premier League 2016"
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "answer": "AGUIRRE",
+      "row": 10,
+      "col": 2,
+      "direction": "across",
+      "length": 7,
+      "clue": "Entrenador Seleccion Mexicana"
+    }
+  ]
+}

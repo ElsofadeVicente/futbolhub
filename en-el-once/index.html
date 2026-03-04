@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>En el Once - Quién Coño Falta</title>
+<meta name="description" content="Adivina los 11 jugadores de una alineación real. Wordle de fútbol con partidos de La Liga, Champions y más.">
+
+<!-- Fuentes -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Estilos -->
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="./css/once.css">
+</head>
+<body>
+
+<!-- ========== BOTÓN SETTINGS ========== -->
+<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+
+<!-- ========== MODAL SETTINGS ========== -->
+<div id="settings-modal" class="settings-modal">
+  <div class="settings-content">
+    <h2 class="settings-title">CONFIGURACIÓN</h2>
+    
+    <div class="settings-option">
+      <span>Modo Alto Contraste</span>
+      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
+    </div>
+
+    <div class="stats-display">
+      <h3 style="margin-bottom:15px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">ESTADÍSTICAS</h3>
+      <div class="stat-row"><span>Partidos completados:</span><span id="stat-matches">0</span></div>
+      <div class="stat-row"><span>Jugadores adivinados:</span><span id="stat-players">0</span></div>
+      <div class="stat-row"><span>Tasa de acierto:</span><span id="stat-success">0%</span></div>
+      <div class="stat-row"><span>Racha actual:</span><span id="stat-streak">0</span></div>
+      <div class="stat-row"><span>Mejor racha:</span><span id="stat-best-streak">0</span></div>
+      <button class="reset-stats-btn" onclick="resetStats()">Resetear estadísticas</button>
+    </div>
+
+    <button class="next-btn" style="width:100%;margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PANTALLA 1: MENÚ DEL ONCE                  -->
+<!-- ========================================== -->
+<div id="once-menu" class="once-menu-screen">
+  <button class="menu-back-btn" onclick="window.location.href='../'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    <span>MENÚ</span>
+  </button>
+  
+  <h1 class="mode-title">EN EL ONCE</h1>
+  
+  <div class="mode-buttons">
+
+    <div class="mode-btn mode-btn--daily" onclick="startGame('diario')">
+      <div class="mode-btn-title">📅 ONCE DIARIO</div>
+      <div class="mode-btn-desc">El partido del día. Igual para todos</div>
+      <div class="mode-btn-teams">Un nuevo partido cada 24 horas</div>
+    </div>
+
+    <div class="mode-btn" onclick="startGame('liga')">
+      <div class="mode-btn-title">⚽ LIGA</div>
+      <div class="mode-btn-desc">Partidos de La Liga</div>
+      <div class="mode-btn-teams">Real Madrid, Barcelona, Atleti, Sevilla...</div>
+    </div>
+
+    <div class="mode-btn" onclick="startGame('champions')">
+      <div class="mode-btn-title">🏆 CHAMPIONS LEAGUE</div>
+      <div class="mode-btn-desc">Grandes noches de Champions</div>
+      <div class="mode-btn-teams">Finales, remontadas épicas, clásicos europeos...</div>
+    </div>
+
+    <div class="mode-btn" onclick="startGame('historico')">
+      <div class="mode-btn-title">📜 PARTIDOS HISTÓRICOS</div>
+      <div class="mode-btn-desc">Momentos legendarios del fútbol</div>
+      <div class="mode-btn-teams">Mundiales, Eurocopas, olimpiadas...</div>
+    </div>
+
+    <div class="mode-btn" onclick="startGame('random')">
+      <div class="mode-btn-title">🎲 ALEATORIO</div>
+      <div class="mode-btn-desc">Mezcla de todo</div>
+      <div class="mode-btn-teams">Una sorpresa cada vez</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PANTALLA 2: LOADING                        -->
+<!-- ========================================== -->
+<div id="loading" class="loading" style="display:none;">
+  <div class="loading-title">CARGANDO PARTIDOS</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar-track">
+      <div class="loading-bar-fill" id="loading-bar-fill"></div>
+      <div class="loading-ball" id="loading-ball">⚽</div>
+    </div>
+  </div>
+  <div class="loading-percent" id="loading-percent">0%</div>
+</div>
+
+<!-- ========================================== -->
+<!-- PANTALLA 3: JUEGO DEL ONCE                 -->
+<!-- ========================================== -->
+<div id="game" style="display:none;">
+  
+  <!-- Navegación días anteriores (solo para modo diario) -->
+  <div id="daily-header" class="daily-header" style="display:none;">
+    <div class="daily-nav">
+      <button class="daily-nav-btn" id="prev-day-btn" onclick="navigateDay(-1)">← Anterior</button>
+      <div class="daily-edition">
+        <div class="daily-label">EDICIÓN</div>
+        <div class="daily-number" id="daily-number">1</div>
+        <div class="daily-past-badge" id="daily-past-badge" style="display:none;">ARCHIVO</div>
+      </div>
+      <button class="daily-nav-btn" id="next-day-btn" onclick="navigateDay(1)">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="match-header">
+    <button class="home-btn" id="home-btn" onclick="goBackToMenu()">← MENÚ</button>
+    <div class="competition-name" id="competition"></div>
+    <div class="match-score">
+      <div class="team-info">
+        <div class="team-badge" id="home-badge">🏟️</div>
+        <div class="team-name" id="home-team"></div>
+      </div>
+      <div class="score-display" id="score"></div>
+      <div class="team-info">
+        <div class="team-badge" id="away-badge">🏟️</div>
+        <div class="team-name" id="away-team"></div>
+      </div>
+    </div>
+    <div class="match-date" id="date"></div>
+  </div>
+
+  <div class="playing-team" id="playing-team"></div>
+
+  <div class="field-container">
+    <div class="field-pattern"></div>
+    <div class="penalty-area"></div>
+    <div id="formation" class="formation"></div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="revealed-count">
+      <span id="revealed-count">0</span>/11
+    </div>
+    <div class="btn-group">
+      <button class="next-btn" id="next-match-btn" onclick="nextMatch()">Siguiente</button>
+      <button class="give-up-btn" id="give-up-btn" onclick="giveUp()">Revelar todo</button>
+    </div>
+  </div>
+
+  <!-- Modal de adivinanza -->
+  <div id="guess-modal" class="guess-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="back-btn" id="back-btn" title="Volver">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div class="modal-title">ADIVINA EL JUGADOR</div>
+        <button class="reveal-btn-modal" id="reveal-btn-modal" onclick="revealCurrentPlayer()">Revelar</button>
+      </div>
+      <div id="guess-grid" class="guess-grid"></div>
+      <div id="mobile-tap-bar" class="mobile-tap-bar" onclick="focusMobileInput()">
+        <span class="mobile-tap-text">Toca aquí para escribir ✏️</span>
+      </div>
+      <div class="keyboard">
+        <div class="keyboard-row">
+          <button class="key" data-key="Q">Q</button><button class="key" data-key="W">W</button>
+          <button class="key" data-key="E">E</button><button class="key" data-key="R">R</button>
+          <button class="key" data-key="T">T</button><button class="key" data-key="Y">Y</button>
+          <button class="key" data-key="U">U</button><button class="key" data-key="I">I</button>
+          <button class="key" data-key="O">O</button><button class="key" data-key="P">P</button>
+        </div>
+        <div class="keyboard-row">
+          <button class="key" data-key="A">A</button><button class="key" data-key="S">S</button>
+          <button class="key" data-key="D">D</button><button class="key" data-key="F">F</button>
+          <button class="key" data-key="G">G</button><button class="key" data-key="H">H</button>
+          <button class="key" data-key="J">J</button><button class="key" data-key="K">K</button>
+          <button class="key" data-key="L">L</button>
+        </div>
+        <div class="keyboard-row">
+          <button class="key wide" data-key="Enter">ENTER</button>
+          <button class="key" data-key="Z">Z</button><button class="key" data-key="X">X</button>
+          <button class="key" data-key="C">C</button><button class="key" data-key="V">V</button>
+          <button class="key" data-key="B">B</button><button class="key" data-key="N">N</button>
+          <button class="key" data-key="M">M</button>
+          <button class="key wide" data-key="Delete">⌫</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de completado -->
+<div id="completion-modal" class="completion-modal">
+  <div class="completion-content">
+    <div class="completion-title">✅ ALINEACIÓN COMPLETADA</div>
+    <div class="completion-match" id="completion-match"></div>
+    <div class="completion-stats">
+      <div class="completion-stat">
+        <div class="completion-stat-value" id="comp-guessed">0</div>
+        <div class="completion-stat-label">Adivinados</div>
+      </div>
+      <div class="completion-stat">
+        <div class="completion-stat-value" id="comp-failed">0</div>
+        <div class="completion-stat-label">Fallados</div>
+      </div>
+      <div class="completion-stat">
+        <div class="completion-stat-value" id="comp-revealed">0</div>
+        <div class="completion-stat-label">Revelados</div>
+      </div>
+    </div>
+    <div class="completion-streak" id="comp-streak"></div>
+    <div class="comp-countdown" id="comp-countdown" style="display:none;"></div>
+    <div class="completion-buttons">
+      <button class="next-btn" onclick="nextMatch()">Siguiente partido →</button>
+      <button class="give-up-btn" onclick="closeCompletionModal()">Ver alineación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="../js/shared.js"></script>
+<script src="./js/once-game.js"></script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+/* =============================================
+   CRUCIGRAMA.CSS — Estilos del crucigrama diario
+   QUIÉN COÑO FALTA
+   ============================================= */
+
+/* ── PANTALLA PRINCIPAL ── */
+#crucigrama-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--bg-dark);
+  position: relative;
+  overflow-y: auto;
+}
+
+/* ── HEADER ── */
+.cruc-header {
+  background: var(--bg-purple);
+  padding: 12px 20px 10px;
+  border-bottom: 3px solid var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.cruc-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cruc-back-btn {
+  background: rgba(200,168,75,0.12);
+  border: 2px solid var(--neon-green);
+  color: var(--neon-green);
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cruc-back-btn:hover { background: rgba(200,168,75,0.28); }
+
+.cruc-title-block {
+  flex: 1;
+  text-align: center;
+}
+
+.cruc-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 4px;
+  color: var(--neon-yellow);
+  line-height: 1;
+  margin: 0;
+}
+
+.cruc-edition {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--neon-green);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.cruc-daily-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(200,168,75,0.05);
+  border: 1px solid rgba(200,168,75,0.15);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
+.cruc-nav-btn {
+  background: rgba(200,168,75,0.1);
+  border: 1px solid rgba(200,168,75,0.3);
+  color: var(--neon-green);
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.cruc-nav-btn:hover:not(:disabled) { background: rgba(200,168,75,0.25); }
+.cruc-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.cruc-edition-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cruc-edition-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  color: var(--neon-yellow);
+  line-height: 1;
+}
+
+.cruc-past-badge {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: rgba(255,100,50,0.2);
+  border: 1px solid rgba(255,100,50,0.4);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: #ff9060;
+  text-transform: uppercase;
+}
+
+/* ── BODY: GRID + PISTAS ── */
+.cruc-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 16px 20px;
+  gap: 16px;
+  flex: 1;
+}
+
+/* ── LAYOUT DESKTOP 3 COLUMNAS ── */
+@media (min-width: 601px) {
+  .cruc-body {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 16px;
+    gap: 20px;
+  }
+
+  /* Columna lateral de pistas */
+  .cruc-clues-desktop {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 210px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+  }
+
+  .cruc-clues-desktop .cruc-clues-section {
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  /* Columna central */
+  .cruc-center-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    flex: 0 0 auto;
+  }
+
+  /* Panel de pistas (ocultar en desktop, se mueven a columnas laterales) */
+  .cruc-clues-panel {
+    display: none;
+  }
+}
+
+/* ── CUADRÍCULA ── */
+.cruc-grid-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.cruc-grid {
+  display: inline-grid;
+  gap: 2px;
+  background: #111;
+  padding: 3px;
+  border-radius: 6px;
+  border: 2px solid rgba(200,168,75,0.3);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.cruc-cell {
+  /* Tamaño calculado dinámicamente en JS según viewport */
+  width: 44px;
+  height: 44px;
+  position: relative;
+  border-radius: 3px;
+}
+
+.cruc-cell--black {
+  background: #0d0d0d;
+}
+
+.cruc-cell--white {
+  background: #e8e0d0;
+  cursor: pointer;
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+.cruc-cell--white:hover {
+  background: #d4cbbf;
+}
+
+/* Celda seleccionada (palabra activa) */
+.cruc-cell--word-active {
+  background: #b8d4f0 !important;
+}
+
+/* Celda seleccionada (la celda exacta clickada) */
+.cruc-cell--selected {
+  background: #5b9bd5 !important;
+}
+
+/* Celda correctamente completada */
+.cruc-cell--correct {
+  background: #c8e6b0 !important;
+}
+
+.cruc-cell--correct.cruc-cell--word-active {
+  background: #a8d888 !important;
+}
+
+.cruc-cell--correct.cruc-cell--selected {
+  background: #6cb84a !important;
+}
+
+/* Número de casilla */
+.cruc-cell-number {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  font-size: 0.52rem;
+  font-weight: 700;
+  font-family: 'Rajdhani', sans-serif;
+  color: #333;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Letra de la celda */
+.cruc-cell-letter {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  color: #1a1a1a;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+  position: relative;
+}
+
+.cruc-cell--selected .cruc-cell-letter,
+.cruc-cell--word-active .cruc-cell-letter {
+  color: #0a2a4a;
+}
+
+/* ── PISTA ACTIVA ── */
+.cruc-clue-bar {
+  width: 100%;
+  max-width: 500px;
+  background: var(--bg-purple);
+  border: 2px solid var(--neon-green);
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cruc-clue-direction {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  color: var(--neon-yellow);
+  opacity: 0.9;
+}
+
+.cruc-clue-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-light);
+  line-height: 1.35;
+}
+
+.cruc-clue-empty {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  opacity: 0.4;
+  font-style: italic;
+}
+
+/* ── LISTAS DE PISTAS ── */
+.cruc-clues-panel {
+  width: 100%;
+  max-width: 500px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cruc-clues-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(200,168,75,0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.cruc-clues-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  color: var(--neon-green);
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.cruc-clue-item {
+  display: flex;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 2px;
+}
+
+.cruc-clue-item:hover {
+  background: rgba(200,168,75,0.1);
+}
+
+.cruc-clue-item.active {
+  background: rgba(91,155,213,0.25);
+  border: 1px solid rgba(91,155,213,0.4);
+}
+
+.cruc-clue-item.solved {
+  opacity: 0.4;
+}
+
+.cruc-clue-item.solved .cruc-clue-num {
+  color: #6cb84a;
+}
+
+.cruc-clue-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem;
+  color: var(--neon-yellow);
+  min-width: 20px;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+}
+
+.cruc-clue-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  color: var(--text-light);
+  opacity: 0.75;
+  line-height: 1.3;
+}
+
+/* ── TECLADO VIRTUAL ── */
+.cruc-keyboard {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cruc-keyboard-row {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.cruc-key {
+  height: 44px;
+  min-width: 32px;
+  padding: 0 4px;
+  background: #4b5563;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: 'Rajdhani', sans-serif;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.05s;
+  text-transform: uppercase;
+  flex: 1;
+  max-width: 38px;
+}
+
+.cruc-key:hover { background: #6b7280; }
+.cruc-key:active { transform: scale(0.93); }
+
+.cruc-key--wide {
+  min-width: 56px;
+  max-width: 70px;
+  font-size: 0.78rem;
+  flex: 1.6;
+}
+
+.cruc-key--erase {
+  min-width: 48px;
+  max-width: 60px;
+  flex: 1.4;
+}
+
+/* ── BARRA INFERIOR (progreso + acciones) ── */
+.cruc-bottom-bar {
+  background: var(--bg-purple);
+  border-top: 3px solid var(--bg-dark);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cruc-progress {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+  color: var(--neon-green);
+}
+
+.cruc-progress span {
+  color: var(--neon-yellow);
+}
+
+.cruc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cruc-btn-reveal {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.cruc-btn-reveal:hover { background: #dc2626; transform: translateY(-1px); }
+
+/* ── MODAL DE COMPLETADO ── */
+.cruc-completion-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.cruc-completion-modal.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+
+.cruc-completion-content {
+  background: var(--bg-purple);
+  border: 2px solid var(--neon-yellow);
+  border-radius: 16px;
+  padding: 32px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.35s ease;
+}
+
+.cruc-completion-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 3px;
+  color: var(--neon-yellow);
+  margin-bottom: 6px;
+}
+
+.cruc-completion-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text-light);
+  opacity: 0.6;
+  margin-bottom: 24px;
+}
+
+.cruc-completion-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.cruc-comp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cruc-comp-stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.cruc-comp-stat:nth-child(1) .cruc-comp-stat-value { color: #4ade80; }
+.cruc-comp-stat:nth-child(2) .cruc-comp-stat-value { color: #fbbf24; }
+
+.cruc-comp-stat-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cruc-countdown {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  color: var(--neon-green);
+  background: rgba(200,168,75,0.07);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 8px;
+  padding: 10px 18px;
+  margin: 16px 0;
+}
+
+.cruc-completion-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cruc-completion-btns .next-btn {
+  background: var(--neon-green);
+  color: var(--bg-dark);
+}
+
+.cruc-completion-btns .next-btn:hover {
+  background: var(--neon-yellow);
+}
+
+/* ── MOBILE TAP BAR ── */
+.cruc-tap-bar {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .cruc-tap-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    background: rgba(200,168,75,0.08);
+    border: 2px dashed var(--neon-green);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--neon-green);
+    letter-spacing: 1px;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .cruc-tap-bar:active { background: rgba(200,168,75,0.2); }
+
+  .cruc-keyboard { display: none; }
+
+  .cruc-cell {
+    /* El JS recalcula en móvil automáticamente */
+  }
+
+  .cruc-cell-letter {
+    /* font-size calculado en JS */
+  }
+
+  .cruc-cell-number {
+    /* font-size calculado en JS */
+  }
+
+  .cruc-clues-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .cruc-clue-text {
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .cruc-cell {
+    /* El JS recalcula automáticamente */
+  }
+}
