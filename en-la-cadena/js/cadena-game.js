@@ -465,6 +465,7 @@ const CadenaGame = (() => {
 const App = (() => {
 
   let selectedLives = 1;
+  let selectedTime  = 15;
   let selectedType  = 'local';
 
   /* ── Pantallas ── */
@@ -486,6 +487,13 @@ const App = (() => {
     document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedLives = parseInt(card.dataset.mode);
+  }
+
+  /* ── Tiempo por turno ── */
+  function selectTime(card) {
+    document.querySelectorAll('.time-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedTime = parseInt(card.dataset.time);
   }
 
   /* ── Tipo (local / online) ── */
@@ -543,51 +551,38 @@ const App = (() => {
     const names = getPlayerNames();
     if (names.length < 2) { showToast('Necesitas al menos 2 jugadores', 'error'); return; }
 
-    // Esperar a que los datos estén cargados
-    await CadenaData.init();
+    try {
+      await CadenaData.init();
+    } catch (err) {
+      showToast('Error al cargar datos: ' + err.message, 'error');
+      console.error('CadenaData.init error:', err);
+      return;
+    }
 
     if (selectedType === 'online') {
       if (!window._FB?.configured) {
         showToast('Firebase no configurado para modo online', 'error');
         return;
       }
-      await startOnlineAsHost(names, selectedLives);
+      await startOnlineAsHost(names, selectedLives, selectedTime);
     } else {
-      startLocalGame(names, selectedLives);
+      startLocalGame(names, selectedLives, selectedTime);
     }
   }
 
-  function startLocalGame(names, lives) {
-    const gs = CadenaGame;
-    // Inicializar estado
-    window._gameState = {
-      players: names.map((name, i) => ({ id: i, name, lives, eliminated: false })),
-      currentIndex: 0,
-      chain: [],
-      chainLength: 0,
-      lives,
-      mode: 'local',
-      roomCode: null,
-      isHost: false,
-      myPlayerId: null,
-      phase: 'playing'
-    };
-    // Exponer al módulo interno
-    Object.assign(CadenaGame.getState ? {} : {}, {});
-
-    // Usar la función interna accediendo al estado
-    _startGameUI(names, lives, 'local', null, null);
+  function startLocalGame(names, lives, turnSecs) {
+    _startGameUI(names, lives, 'local', null, null, turnSecs || 15);
   }
 
-  function _startGameUI(names, lives, mode, roomCode, myId) {
+  function _startGameUI(names, lives, mode, roomCode, myId, turnSecs) {
     // Construir estado en el módulo de juego
-    // Accedemos directamente usando el objeto interno
     const state = {
       players: names.map((name, i) => ({ id: i, name, lives, eliminated: false })),
       currentIndex: 0,
       chain: [],
       chainLength: 0,
       lives,
+      turnSecs: turnSecs || 15,
       mode,
       roomCode,
       isHost: true,
@@ -612,7 +607,7 @@ const App = (() => {
   }
 
   /* ── Online: host crea sala ── */
-  async function startOnlineAsHost(names, lives) {
+  async function startOnlineAsHost(names, lives, turnSecs) {
     showToast('Creando sala…');
     try {
       const code = await CadenaGame.FBSync.createRoom(names, lives);
@@ -630,7 +625,7 @@ const App = (() => {
       CadenaGame.FBSync.listenRoom(code, remote => {
         if (remote.players) renderLobbyPlayers(remote.players.map(p => p.name), 0);
         if (remote.status === 'playing') {
-          _startGameUI(remote.players.map(p => p.name), remote.lives, 'online', code, 0);
+          _startGameUI(remote.players.map(p => p.name), remote.lives, 'online', code, 0, turnSecs || 15);
         }
       });
 
@@ -699,6 +694,16 @@ const App = (() => {
 
   /* ── Después de eliminación ── */
   function continueAfterElim() {
+    // Resetear la cadena cuando un jugador es eliminado
+    const s = CadenaGame._state;
+    if (s) {
+      s.chain = [];
+      s.chainLength = 0;
+      document.getElementById('chain-entries').innerHTML = '';
+    }
+    // Ocultar el panel de opciones válidas si estaba visible
+    const vop = document.getElementById('valid-options-panel');
+    if (vop) vop.classList.add('hidden');
     showScreen('screen-game');
     CadenaGame.beginTurn();
   }
@@ -737,7 +742,7 @@ const App = (() => {
 
   return {
     showMenu, showCreateGame, showJoinGame,
-    selectMode, setType, addPlayer, removePlayer,
+    selectMode, selectTime, setType, addPlayer, removePlayer,
     startGame, startOnlineGame, joinRoom,
     copyRoomCode, continueAfterElim, playAgain,
     showToast, init, _startGameUI
@@ -786,7 +791,7 @@ const App = (() => {
     _nextTurn();
   };
 
-  CadenaGame.penalizeWrongAnswer = function(value) {
+  CadenaGame.penalizeWrongAnswer = function(value, type, validOptions) {
     const s = CadenaGame._state;
     if (!s) return;
     clearInterval(window._timerInterval);
@@ -796,8 +801,10 @@ const App = (() => {
     cp.lives--;
     if (cp.lives <= 0) {
       cp.eliminated = true;
-      _showEliminated(cp, `"${value}" no es válido`);
+      _showEliminated(cp, `"${value}" no es válido`, validOptions);
     } else {
+      // Mostrar opciones válidas en el panel del juego (no-eliminación)
+      _showValidOptionsPanel(validOptions);
       App.showToast(`❤️ Le quedan ${cp.lives} vida${cp.lives !== 1 ? 's' : ''}`, 'error');
       _nextTurn();
     }
@@ -806,6 +813,10 @@ const App = (() => {
   CadenaGame.beginTurn = function() {
     const s = CadenaGame._state;
     if (!s) return;
+
+    // Ocultar panel de opciones válidas al inicio de cada turno
+    const vop = document.getElementById('valid-options-panel');
+    if (vop) vop.classList.add('hidden');
 
     const active = s.players.filter(p => !p.eliminated);
     if (active.length <= 1) { _endGame(active[0]); return; }
@@ -861,19 +872,25 @@ const App = (() => {
   };
 
   /* ── Helpers internos del parche ── */
-  const TURN_SECS = 15;
 
   function _startTimer() {
     clearInterval(window._timerInterval);
     const start = Date.now();
     const s = CadenaGame._state;
+    const SECS = s?.turnSecs || 15;
+
+    // Mostrar valor inicial inmediatamente
+    const barInit  = document.getElementById('timer-bar');
+    const textInit = document.getElementById('timer-text');
+    if (barInit)  { barInit.style.width = '100%'; barInit.classList.remove('warning'); }
+    if (textInit) textInit.textContent = SECS;
 
     window._timerInterval = setInterval(() => {
       const elapsed = (Date.now() - start) / 1000;
-      const rem = Math.max(0, TURN_SECS - elapsed);
+      const rem = Math.max(0, SECS - elapsed);
       const bar  = document.getElementById('timer-bar');
       const text = document.getElementById('timer-text');
-      if (bar)  { bar.style.width = (rem / TURN_SECS * 100) + '%'; bar.classList.toggle('warning', rem <= 5); }
+      if (bar)  { bar.style.width = (rem / SECS * 100) + '%'; bar.classList.toggle('warning', rem <= 5); }
       if (text) text.textContent = Math.ceil(rem);
 
       if (rem <= 0) {
@@ -886,7 +903,7 @@ const App = (() => {
           App.showToast(`⏰ ¡Tiempo! ${cp?.name} pierde una vida`, 'error');
           if (cp) {
             cp.lives--;
-            if (cp.lives <= 0) { cp.eliminated = true; _showEliminated(cp, 'Se quedó sin tiempo'); }
+            if (cp.lives <= 0) { cp.eliminated = true; _showEliminated(cp, 'Se quedó sin tiempo', null); }
             else { App.showToast(`❤️ Le quedan ${cp.lives} vida${cp.lives !== 1 ? 's' : ''}`, 'error'); _nextTurn(); }
           }
         }
@@ -903,12 +920,40 @@ const App = (() => {
     setTimeout(() => CadenaGame.beginTurn(), 400);
   }
 
-  function _showEliminated(player, reason) {
+  function _showEliminated(player, reason, validOptions) {
     clearInterval(window._timerInterval);
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-eliminated').classList.add('active');
     document.getElementById('elim-title').textContent = `💀 ${player.name} ELIMINADO`;
     document.getElementById('elim-msg').textContent   = reason + '\n\nLa partida continúa sin él.';
+
+    // Mostrar opciones válidas que había en la pantalla de eliminado
+    const elimOpts = document.getElementById('elim-valid-options');
+    const elimList = document.getElementById('elim-options-list');
+    if (elimOpts && elimList) {
+      if (validOptions && validOptions.length > 0) {
+        elimList.innerHTML = validOptions.slice(0, 10).map(o =>
+          `<span class="valid-option-tag">${o}</span>`
+        ).join('');
+        elimOpts.classList.remove('hidden');
+      } else {
+        elimOpts.classList.add('hidden');
+      }
+    }
+  }
+
+  function _showValidOptionsPanel(validOptions) {
+    const panel = document.getElementById('valid-options-panel');
+    const list  = document.getElementById('valid-options-list');
+    if (!panel || !list) return;
+    if (validOptions && validOptions.length > 0) {
+      list.innerHTML = validOptions.slice(0, 10).map(o =>
+        `<span class="valid-option-tag">${o}</span>`
+      ).join('');
+      panel.classList.remove('hidden');
+    } else {
+      panel.classList.add('hidden');
+    }
   }
 
   function _endGame(winner) {
@@ -980,4 +1025,7 @@ const App = (() => {
    ══════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   App.init();
+  // Precargar datos en background nada más cargar la página,
+  // para que al iniciar partida ya estén listos y no haya lag en el primer turno.
+  CadenaData.init().catch(() => {});
 });
