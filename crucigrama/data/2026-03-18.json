@@ -1,0 +1,212 @@
+{
+  "date": "2026-03.18",
+  "title": "Crucigrama #2026-03.18",
+  "grid_size": {
+    "rows": 10,
+    "cols": 10
+  },
+  "grid": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1
+    ]
+  ],
+  "words": [
+    {
+      "id": 1,
+      "number": 1,
+      "answer": "SORLOTH",
+      "row": 0,
+      "col": 5,
+      "direction": "down",
+      "length": 7,
+      "clue": "Delantero noruego que pasó por media Europa antes de brillar"
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "answer": "KOKE",
+      "row": 1,
+      "col": 4,
+      "direction": "across",
+      "length": 4,
+      "clue": "Capitán rojiblanco de larga trayectoria"
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "answer": "SILBIDO",
+      "row": 3,
+      "col": 3,
+      "direction": "down",
+      "length": 7,
+      "clue": "Sonido habitual en el campo cuando algo no gusta"
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "answer": "DANJUMA",
+      "row": 3,
+      "col": 7,
+      "direction": "down",
+      "length": 7,
+      "clue": "Extremo holandés con carácter complicado que explotó en Villarreal"
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "answer": "CEDIDO",
+      "row": 4,
+      "col": 0,
+      "direction": "across",
+      "length": 6,
+      "clue": "Coutinho en el Bayern"
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "answer": "RABONA",
+      "row": 4,
+      "col": 9,
+      "direction": "down",
+      "length": 6,
+      "clue": "Golpear el balón cruzando las piernas"
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "answer": "TANDA",
+      "row": 5,
+      "col": 5,
+      "direction": "across",
+      "length": 5,
+      "clue": "Serie de penaltis para decidir un partido"
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "answer": "IDOLO",
+      "row": 9,
+      "col": 1,
+      "direction": "across",
+      "length": 5,
+      "clue": "Lo es Totti para los aficionados de la Roma"
+    }
+  ]
+}

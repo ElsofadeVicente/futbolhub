@@ -1,0 +1,261 @@
+{
+  "date": "2026-04-08",
+  "title": "Crucigrama #2026-04-08",
+  "grid_size": {
+    "rows": 13,
+    "cols": 11
+  },
+  "grid": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "words": [
+    {
+      "id": 1,
+      "number": 1,
+      "answer": "DESPEJE",
+      "row": 0,
+      "col": 7,
+      "direction": "down",
+      "length": 7,
+      "clue": "Accion defensiva de alejar el balon del area propia"
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "answer": "DELANTERO",
+      "row": 0,
+      "col": 10,
+      "direction": "down",
+      "length": 9,
+      "clue": "Posición para la que hay muchos candidatos pero muy pocos que la cubran bien"
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "answer": "JAMES",
+      "row": 2,
+      "col": 2,
+      "direction": "down",
+      "length": 5,
+      "clue": "Ganó el Puskas, fichó por el Madrid y luego nadie supo muy bien qué pasó"
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "answer": "SCHOLES",
+      "row": 6,
+      "col": 2,
+      "direction": "across",
+      "length": 7,
+      "clue": "Centrocampista del United que nunca ganó la Champions siendo titular"
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "answer": "CANCELO",
+      "row": 6,
+      "col": 3,
+      "direction": "down",
+      "length": 7,
+      "clue": "Lateral portugués que jugó en medio mundo antes de explotar en el City"
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "answer": "MUNDIALITO",
+      "row": 8,
+      "col": 1,
+      "direction": "across",
+      "length": 10,
+      "clue": "Nombre popular del campeonato del Mundo de clubes"
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "answer": "ARTETA",
+      "row": 10,
+      "col": 0,
+      "direction": "across",
+      "length": 6,
+      "clue": "Ex jugador del Arsenal que volvió como entrenador para devolverle el brillo"
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "answer": "BLOQUE",
+      "row": 12,
+      "col": 1,
+      "direction": "across",
+      "length": 6,
+      "clue": "Equipo bien organizado que defiende junto y ocupa espacios"
+    }
+  ]
+}

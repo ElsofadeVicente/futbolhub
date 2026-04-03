@@ -1,0 +1,3423 @@
+[
+  {
+    "competition": "Eurocopa 2024",
+    "homeTeam": "España",
+    "awayTeam": "Inglaterra",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "14 de julio 2024",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "SIMÓN",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "CUCURELLA",
+          "position": "LB",
+          "number": "24"
+        },
+        {
+          "name": "LAPORTE",
+          "position": "CB",
+          "number": "14"
+        },
+        {
+          "name": "LE NORMAND",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "CARVAJAL",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "OLMO",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "RODRI",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "RUIZ",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "WILLIAMS",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "MORATA",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "LAMINE YAMAL",
+          "position": "RW",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2024",
+    "homeTeam": "España",
+    "awayTeam": "Inglaterra",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "14 de julio 2024",
+    "playingTeam": "Inglaterra",
+    "formation": [
+      [
+        {
+          "name": "PICKFORD",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "SHAW",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "GUÉHI",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "STONES",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "WALKER",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "BELLINGHAM",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "RICE",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "MAINOO",
+          "position": "CM",
+          "number": "26"
+        }
+      ],
+      [
+        {
+          "name": "FODEN",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "KANE",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "SAKA",
+          "position": "RW",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2024",
+    "homeTeam": "España",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "09 de julio 2024",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "MAIGNAN",
+          "position": "GK",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "HERNÁNDEZ",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "SALIBA",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "UPAMECANO",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "KOUNDÉ",
+          "position": "RB",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "KANTÉ",
+          "position": "CM",
+          "number": "13"
+        },
+        {
+          "name": "TCHOUAMÉNI",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "RABIOT",
+          "position": "CM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "MBAPPÉ",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "KOLO MUANI",
+          "position": "ST",
+          "number": "12"
+        },
+        {
+          "name": "DEMBÉLÉ",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2024",
+    "homeTeam": "Portugal",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-5",
+    "date": "05 de julio 2024",
+    "playingTeam": "Portugal",
+    "formation": [
+      [
+        {
+          "name": "COSTA",
+          "position": "GK",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "MENDES",
+          "position": "LB",
+          "number": "19"
+        },
+        {
+          "name": "PEPE",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "DIAS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "CANCELO",
+          "position": "RB",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "PALHINHA",
+          "position": "CDM",
+          "number": "6"
+        },
+        {
+          "name": "VITINHA",
+          "position": "CDM",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "LEÃO",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "FERNANDES",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "SILVA",
+          "position": "RW",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "CRISTIANO .",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2024",
+    "homeTeam": "España",
+    "awayTeam": "Alemania",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "05 de julio 2024",
+    "playingTeam": "Alemania",
+    "formation": [
+      [
+        {
+          "name": "NEUER",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "RAUM",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "RÜDIGER",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "TAH",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "KIMMICH",
+          "position": "RB",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "CAN",
+          "position": "CDM",
+          "number": "25"
+        },
+        {
+          "name": "KROOS",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "MUSIALA",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "GÜNDOĞAN",
+          "position": "CAM",
+          "number": "21"
+        },
+        {
+          "name": "SANÉ",
+          "position": "RW",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "HAVERTZ",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2020",
+    "homeTeam": "Italia",
+    "awayTeam": "Inglaterra",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-3",
+    "date": "11 de julio 2021",
+    "playingTeam": "Italia",
+    "formation": [
+      [
+        {
+          "name": "DONNARUMMA",
+          "position": "GK",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "EMERSON",
+          "position": "LB",
+          "number": "13"
+        },
+        {
+          "name": "CHIELLINI",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "BONUCCI",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "DI LORENZO",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "BARELLA",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "JORGINHO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "VERRATTI",
+          "position": "CM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "INSIGNE",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "IMMOBILE",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "CHIESA",
+          "position": "RW",
+          "number": "14"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2020",
+    "homeTeam": "Italia",
+    "awayTeam": "Inglaterra",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-3",
+    "date": "11 de julio 2021",
+    "playingTeam": "Inglaterra",
+    "formation": [
+      [
+        {
+          "name": "PICKFORD",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "STONES",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "MAGUIRE",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "WALKER",
+          "position": "CB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "SHAW",
+          "position": "LWB",
+          "number": "3"
+        },
+        {
+          "name": "RICE",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "PHILLIPS",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "TRIPPIER",
+          "position": "RWB",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "MOUNT",
+          "position": "LW",
+          "number": "19"
+        },
+        {
+          "name": "STERLING",
+          "position": "RW",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "KANE",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2020",
+    "homeTeam": "Italia",
+    "awayTeam": "España",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "5-3",
+    "date": "06 de julio 2021",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "SIMÓN",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "ALBA",
+          "position": "LB",
+          "number": "18"
+        },
+        {
+          "name": "LAPORTE",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "CB",
+          "number": "12"
+        },
+        {
+          "name": "AZPILICUETA",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "KOKE",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "BUSQUETS",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "PEDRI",
+          "position": "CM",
+          "number": "26"
+        }
+      ],
+      [
+        {
+          "name": "OYARZABAL",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "OLMO",
+          "position": "ST",
+          "number": "19"
+        },
+        {
+          "name": "TORRES",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2020",
+    "homeTeam": "Bélgica",
+    "awayTeam": "Italia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-2",
+    "date": "02 de julio 2021",
+    "playingTeam": "Bélgica",
+    "formation": [
+      [
+        {
+          "name": "COURTOIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "VERTONGHEN",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "VERMAELEN",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "ALDERWEIRELD",
+          "position": "CB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "HAZARD",
+          "position": "LWB",
+          "number": "16"
+        },
+        {
+          "name": "TIELEMANS",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "WITSEL",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "MEUNIER",
+          "position": "RWB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "DOKU",
+          "position": "LW",
+          "number": "25"
+        },
+        {
+          "name": "DE BRUYNE",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "LUKAKU",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2016",
+    "homeTeam": "Portugal",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "10 de julio 2016",
+    "playingTeam": "Portugal",
+    "formation": [
+      [
+        {
+          "name": "PATRÍCIO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "GUERREIRO",
+          "position": "LB",
+          "number": "5"
+        },
+        {
+          "name": "FONTE",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "PEPE",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "SOARES",
+          "position": "RB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "CARVALHO",
+          "position": "CDM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "JOÃO MÁRIO",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "SILVA",
+          "position": "CAM",
+          "number": "23"
+        },
+        {
+          "name": "SANCHES",
+          "position": "RW",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "CRISTIANO .",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "NANI",
+          "position": "ST",
+          "number": "17"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2016",
+    "homeTeam": "Portugal",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "10 de julio 2016",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "LLORIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "EVRA",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "UMTITI",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "KOSCIELNY",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "SAGNA",
+          "position": "RB",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "POGBA",
+          "position": "CDM",
+          "number": "15"
+        },
+        {
+          "name": "MATUIDI",
+          "position": "CDM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "PAYET",
+          "position": "LW",
+          "number": "8"
+        },
+        {
+          "name": "GRIEZMANN",
+          "position": "CAM",
+          "number": "7"
+        },
+        {
+          "name": "SISSOKO",
+          "position": "RW",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "GIROUD",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2016",
+    "homeTeam": "Portugal",
+    "awayTeam": "Gales",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "06 de julio 2016",
+    "playingTeam": "Gales",
+    "formation": [
+      [
+        {
+          "name": "HENNESSEY",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "COLLINS",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "WILLIAMS",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "CHESTER",
+          "position": "CB",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "TAYLOR",
+          "position": "LWB",
+          "number": "3"
+        },
+        {
+          "name": "ALLEN",
+          "position": "CM",
+          "number": "7"
+        },
+        {
+          "name": "LEDLEY",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "GUNTER",
+          "position": "RWB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "KING",
+          "position": "LW",
+          "number": "8"
+        },
+        {
+          "name": "BALE",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "ROBSON-KANU",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2016",
+    "homeTeam": "Alemania",
+    "awayTeam": "Italia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "7-6",
+    "date": "02 de julio 2016",
+    "playingTeam": "Alemania",
+    "formation": [
+      [
+        {
+          "name": "NEUER",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "HUMMELS",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "HÖWEDES",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "BOATENG",
+          "position": "CB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "HECTOR",
+          "position": "LWB",
+          "number": "3"
+        },
+        {
+          "name": "KROOS",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "ÖZIL",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "KHEDIRA",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "KIMMICH",
+          "position": "RWB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "GÓMEZ",
+          "position": "ST",
+          "number": "23"
+        },
+        {
+          "name": "MÜLLER",
+          "position": "ST",
+          "number": "13"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2016",
+    "homeTeam": "Alemania",
+    "awayTeam": "Italia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "7-6",
+    "date": "02 de julio 2016",
+    "playingTeam": "Italia",
+    "formation": [
+      [
+        {
+          "name": "BUFFON",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BARZAGLI",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "BONUCCI",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "CHIELLINI",
+          "position": "CB",
+          "number": "3"
+        }
+      ],
+      [
+        {
+          "name": "DE SCIGLIO",
+          "position": "LWB",
+          "number": "2"
+        },
+        {
+          "name": "GIACCHERINI",
+          "position": "CM",
+          "number": "23"
+        },
+        {
+          "name": "PAROLO",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "STURARO",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "FLORENZI",
+          "position": "RWB",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "PELLÈ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "ÉDER",
+          "position": "ST",
+          "number": "17"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2012",
+    "homeTeam": "España",
+    "awayTeam": "Italia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-0",
+    "date": "01 de julio 2012",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "CASILLAS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ALBA",
+          "position": "LB",
+          "number": "18"
+        },
+        {
+          "name": "PIQUÉ",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "RAMOS",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "ARBELOA",
+          "position": "RB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "ALONSO",
+          "position": "CDM",
+          "number": "14"
+        },
+        {
+          "name": "BUSQUETS",
+          "position": "CDM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "INIESTA",
+          "position": "LW",
+          "number": "6"
+        },
+        {
+          "name": "XAVI",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "SILVA",
+          "position": "RW",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "FÀBREGAS",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2012",
+    "homeTeam": "España",
+    "awayTeam": "Italia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-0",
+    "date": "01 de julio 2012",
+    "playingTeam": "Italia",
+    "formation": [
+      [
+        {
+          "name": "BUFFON",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CHIELLINI",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "BARZAGLI",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "BONUCCI",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "ABATE",
+          "position": "RB",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "DE ROSSI",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "PIRLO",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "MARCHISIO",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "MONTOLIVO",
+          "position": "CAM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "BALOTELLI",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "CASSANO",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2012",
+    "homeTeam": "Portugal",
+    "awayTeam": "España",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-4",
+    "date": "27 de junio 2012",
+    "playingTeam": "Portugal",
+    "formation": [
+      [
+        {
+          "name": "PATRÍCIO",
+          "position": "GK",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "COENTRÃO",
+          "position": "LB",
+          "number": "5"
+        },
+        {
+          "name": "ALVES",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "PEPE",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "PEREIRA",
+          "position": "RB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "MOUTINHO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "VELOSO",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "MEIRELES",
+          "position": "CM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "CRISTIANO .",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "ALMEIDA",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "NANI",
+          "position": "RW",
+          "number": "17"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2012",
+    "homeTeam": "España",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "23 de junio 2012",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "LLORIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CLICHY",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "KOSCIELNY",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "RAMI",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "RÉVEILLÈRE",
+          "position": "RB",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "CABAYE",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "M'VILA",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "MALOUDA",
+          "position": "CM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "RIBÉRY",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "BENZEMA",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "DEBUCHY",
+          "position": "RW",
+          "number": "2"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2008",
+    "homeTeam": "Alemania",
+    "awayTeam": "España",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "29 de junio 2008",
+    "playingTeam": "Alemania",
+    "formation": [
+      [
+        {
+          "name": "LEHMANN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "LAHM",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "MERTESACKER",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "METZELDER",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "FRIEDRICH",
+          "position": "RB",
+          "number": "3"
+        }
+      ],
+      [
+        {
+          "name": "FRINGS",
+          "position": "CDM",
+          "number": "8"
+        },
+        {
+          "name": "HITZLSPERGER",
+          "position": "CDM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "PODOLSKI",
+          "position": "LW",
+          "number": "20"
+        },
+        {
+          "name": "BALLACK",
+          "position": "CAM",
+          "number": "13"
+        },
+        {
+          "name": "SCHWEINSTE.",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "KLOSE",
+          "position": "ST",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2008",
+    "homeTeam": "Alemania",
+    "awayTeam": "España",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "29 de junio 2008",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "CASILLAS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CAPDEVILA",
+          "position": "LB",
+          "number": "11"
+        },
+        {
+          "name": "PUYOL",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "MARCHENA",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "RAMOS",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "FÀBREGAS",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "SENNA",
+          "position": "CM",
+          "number": "19"
+        },
+        {
+          "name": "XAVI",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "INIESTA",
+          "position": "LW",
+          "number": "6"
+        },
+        {
+          "name": "TORRES",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "SILVA",
+          "position": "RW",
+          "number": "21"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2008",
+    "homeTeam": "Portugal",
+    "awayTeam": "Alemania",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-3",
+    "date": "19 de junio 2008",
+    "playingTeam": "Portugal",
+    "formation": [
+      [
+        {
+          "name": "RICARDO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "FERREIRA",
+          "position": "LB",
+          "number": "2"
+        },
+        {
+          "name": "CARVALHO",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "PEPE",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "BOSINGWA",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "DECO",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "PETIT",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "MOUTINHO",
+          "position": "CM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "CRISTIANO .",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "NUNO GOMES",
+          "position": "ST",
+          "number": "21"
+        },
+        {
+          "name": "SIMÃO",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2004",
+    "homeTeam": "Portugal",
+    "awayTeam": "Grecia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "04 de julio 2004",
+    "playingTeam": "Portugal",
+    "formation": [
+      [
+        {
+          "name": "RICARDO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "VALENTE",
+          "position": "LB",
+          "number": "14"
+        },
+        {
+          "name": "CARVALHO",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "ANDRADE",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MIGUEL",
+          "position": "RB",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "DECO",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "COSTINHA",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "MANICHE",
+          "position": "CM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "CRISTIANO .",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "PAULETA",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "FIGO",
+          "position": "RW",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2004",
+    "homeTeam": "Portugal",
+    "awayTeam": "Grecia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "04 de julio 2004",
+    "playingTeam": "Grecia",
+    "formation": [
+      [
+        {
+          "name": "NIKOPOLIDIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "FYSSAS",
+          "position": "LB",
+          "number": "14"
+        },
+        {
+          "name": "DELLAS",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "KAPSIS",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "SEITARIDIS",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "ZAGORAKIS",
+          "position": "CM",
+          "number": "7"
+        },
+        {
+          "name": "KATSOURANIS",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "BASINAS",
+          "position": "CM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "GIANNAKOPO.",
+          "position": "LW",
+          "number": "8"
+        },
+        {
+          "name": "VRYZAS",
+          "position": "ST",
+          "number": "15"
+        },
+        {
+          "name": "CHARISTEAS",
+          "position": "RW",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2000",
+    "homeTeam": "Francia",
+    "awayTeam": "Italia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "02 de julio 2000",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "BARTHEZ",
+          "position": "GK",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "LIZARAZU",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "BLANC",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "DESAILLY",
+          "position": "CB",
+          "number": "8"
+        },
+        {
+          "name": "THURAM",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "VIEIRA",
+          "position": "CDM",
+          "number": "4"
+        },
+        {
+          "name": "DESCHAMPS",
+          "position": "CDM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "DUGARRY",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "ZIDANE",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "DJORKAEFF",
+          "position": "RW",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "HENRY",
+          "position": "ST",
+          "number": "12"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Eurocopa 2000",
+    "homeTeam": "Francia",
+    "awayTeam": "Italia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "02 de julio 2000",
+    "playingTeam": "Italia",
+    "formation": [
+      [
+        {
+          "name": "TOLDO",
+          "position": "GK",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "IULIANO",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "CANNAVARO",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "NESTA",
+          "position": "CB",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "MALDINI",
+          "position": "LWB",
+          "number": "3"
+        },
+        {
+          "name": "ALBERTINI",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "DI BIAGIO",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "PESSOTTO",
+          "position": "RWB",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "FIORE",
+          "position": "CAM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "TOTTI",
+          "position": "ST",
+          "number": "20"
+        },
+        {
+          "name": "DELVECCHIO",
+          "position": "ST",
+          "number": "21"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Argentina",
+    "awayTeam": "Colombia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "15 de julio 2024",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "TAGLIAFICO",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "CB",
+          "number": "25"
+        },
+        {
+          "name": "ROMERO",
+          "position": "CB",
+          "number": "13"
+        },
+        {
+          "name": "MONTIEL",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "MAC ALLISTER",
+          "position": "LM",
+          "number": "20"
+        },
+        {
+          "name": "DE PAUL",
+          "position": "CM",
+          "number": "7"
+        },
+        {
+          "name": "FERNÁNDEZ",
+          "position": "CM",
+          "number": "24"
+        },
+        {
+          "name": "DI MARÍA",
+          "position": "RM",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "ALVAREZ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "MESSI",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Argentina",
+    "awayTeam": "Colombia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "15 de julio 2024",
+    "playingTeam": "Colombia",
+    "formation": [
+      [
+        {
+          "name": "VARGAS",
+          "position": "GK",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "MOJICA",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "CUESTA",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "ARIAS",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "RÍOS",
+          "position": "CDM",
+          "number": "6"
+        },
+        {
+          "name": "LERMA",
+          "position": "CDM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "DÍAZ",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "ARIAS",
+          "position": "CAM",
+          "number": "11"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "RW",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "CÓRDOBA",
+          "position": "ST",
+          "number": "24"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Uruguay",
+    "awayTeam": "Brasil",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-2",
+    "date": "07 de julio 2024",
+    "playingTeam": "Uruguay",
+    "formation": [
+      [
+        {
+          "name": "ROCHET",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "VIÑA",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "OLIVERA",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "ARAUJO",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "NÁNDEZ",
+          "position": "RB",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "UGARTE",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "VALVERDE",
+          "position": "CDM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "ARAÚJO",
+          "position": "LW",
+          "number": "20"
+        },
+        {
+          "name": "DE LA CRUZ",
+          "position": "CAM",
+          "number": "7"
+        },
+        {
+          "name": "PELLISTRI",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "NÚÑEZ",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Uruguay",
+    "awayTeam": "Brasil",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-2",
+    "date": "07 de julio 2024",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "ALISSON",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ARANA",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "MILITÃO",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "MARQUINHOS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "DANILO",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "GUIMARÃES",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "GOMES",
+          "position": "CDM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "RODRYGO",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "PAQUETÁ",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "RAPHINHA",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "ENDRICK",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Argentina",
+    "awayTeam": "Brasil",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "11 de julio 2021",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "ACUÑA",
+          "position": "LB",
+          "number": "8"
+        },
+        {
+          "name": "OTAMENDI",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "ROMERO",
+          "position": "CB",
+          "number": "13"
+        },
+        {
+          "name": "MONTIEL",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "LO CELSO",
+          "position": "LM",
+          "number": "20"
+        },
+        {
+          "name": "DE PAUL",
+          "position": "CM",
+          "number": "7"
+        },
+        {
+          "name": "PAREDES",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "DI MARÍA",
+          "position": "RM",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "ST",
+          "number": "22"
+        },
+        {
+          "name": "MESSI",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Argentina",
+    "awayTeam": "Brasil",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "11 de julio 2021",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "EDERSON",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "LODI",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "MARQUINHOS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "SILVA",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "DANILO",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "FRED",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "CASEMIRO",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "PAQUETÁ",
+          "position": "CM",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "RICHARLISON",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "NEYMAR",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "EVERTON",
+          "position": "RW",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Colombia",
+    "awayTeam": "Perú",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "10 de julio 2021",
+    "playingTeam": "Colombia",
+    "formation": [
+      [
+        {
+          "name": "VARGAS",
+          "position": "GK",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "TESILLO",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "MURILLO",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "MINA",
+          "position": "CB",
+          "number": "13"
+        },
+        {
+          "name": "MEDINA",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "DÍAZ",
+          "position": "LM",
+          "number": "14"
+        },
+        {
+          "name": "BARRIOS",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "CUÉLLAR",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "CUADRADO",
+          "position": "RM",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "ZAPATA",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "CARDONA",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Colombia",
+    "awayTeam": "Perú",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "10 de julio 2021",
+    "playingTeam": "Perú",
+    "formation": [
+      [
+        {
+          "name": "GALLESE",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "LÓPEZ",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "CALLENS",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "SANTAMARÍA",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "CORZO",
+          "position": "RB",
+          "number": "3"
+        }
+      ],
+      [
+        {
+          "name": "TAPIA",
+          "position": "CDM",
+          "number": "13"
+        },
+        {
+          "name": "YOTÚN",
+          "position": "CDM",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "CUEVA",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "PEÑA",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "CARRILLO",
+          "position": "RW",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "LAPADULA",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Brasil",
+    "awayTeam": "Perú",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-1",
+    "date": "07 de julio 2019",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "ALISSON",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ALEX SANDRO",
+          "position": "LB",
+          "number": "12"
+        },
+        {
+          "name": "MARQUINHOS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "SILVA",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "DANI ALVES",
+          "position": "RB",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "CASEMIRO",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "ARTHUR MELO",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "EVERTON",
+          "position": "LW",
+          "number": "19"
+        },
+        {
+          "name": "COUTINHO",
+          "position": "CAM",
+          "number": "11"
+        },
+        {
+          "name": "JESUS",
+          "position": "RW",
+          "number": "9"
+        }
+      ],
+      [
+        {
+          "name": "ROBERTO FI.",
+          "position": "ST",
+          "number": "20"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Brasil",
+    "awayTeam": "Perú",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-1",
+    "date": "07 de julio 2019",
+    "playingTeam": "Perú",
+    "formation": [
+      [
+        {
+          "name": "GALLESE",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "TRAUCO",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "ABRAM",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "ZAMBRANO",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "ADVÍNCULA",
+          "position": "RB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "TAPIA",
+          "position": "CDM",
+          "number": "13"
+        },
+        {
+          "name": "YOTÚN",
+          "position": "CDM",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "CARRILLO",
+          "position": "LW",
+          "number": "18"
+        },
+        {
+          "name": "CUEVA",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "FLORES",
+          "position": "RW",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "GUERRERO",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Brasil",
+    "awayTeam": "Argentina",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "03 de julio 2019",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "ARMANI",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "TAGLIAFICO",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "OTAMENDI",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "PEZZELLA",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "FOYTH",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "ACUÑA",
+          "position": "LM",
+          "number": "8"
+        },
+        {
+          "name": "PAREDES",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "MESSI",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "DE PAUL",
+          "position": "RM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "AGÜERO",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "ST",
+          "number": "22"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Chile",
+    "awayTeam": "Perú",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-3",
+    "date": "04 de julio 2019",
+    "playingTeam": "Chile",
+    "formation": [
+      [
+        {
+          "name": "ARIAS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BEAUSEJOUR",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "MEDEL",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "MARIPÁN",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "ISLA",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "VIDAL",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "PULGAR",
+          "position": "CM",
+          "number": "13"
+        },
+        {
+          "name": "ARÁNGUIZ",
+          "position": "CM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "SÁNCHEZ",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "VARGAS",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "FUENZALIDA",
+          "position": "RW",
+          "number": "6"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Chile",
+    "awayTeam": "Argentina",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-1",
+    "date": "04 de julio 2015",
+    "playingTeam": "Chile",
+    "formation": [
+      [
+        {
+          "name": "BRAVO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BEAUSEJOUR",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "MEDEL",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "SILVA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "ISLA",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "ARÁNGUIZ",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "DÍAZ",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "VIDAL",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "VALDIVIA",
+          "position": "CAM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "VARGAS",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Chile",
+    "awayTeam": "Argentina",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-1",
+    "date": "04 de julio 2015",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "ROMERO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ROJO",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "DEMICHELIS",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "OTAMENDI",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "ZABALETA",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "PASTORE",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "MASCHERANO",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "BIGLIA",
+          "position": "CM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "DI MARÍA",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "AGÜERO",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "MESSI",
+          "position": "RW",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Perú",
+    "awayTeam": "Paraguay",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "04 de julio 2015",
+    "playingTeam": "Perú",
+    "formation": [
+      [
+        {
+          "name": "GALLESE",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "VARGAS",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "ASCUES",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "RAMOS",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "ADVÍNCULA",
+          "position": "RB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "LOBATÓN",
+          "position": "CDM",
+          "number": "16"
+        },
+        {
+          "name": "BALLÓN",
+          "position": "CDM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "CUEVA",
+          "position": "LW",
+          "number": "8"
+        },
+        {
+          "name": "REYNA",
+          "position": "CAM",
+          "number": "11"
+        },
+        {
+          "name": "CARRILLO",
+          "position": "RW",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "GUERRERO",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Argentina",
+    "awayTeam": "Colombia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "5-4",
+    "date": "27 de junio 2015",
+    "playingTeam": "Colombia",
+    "formation": [
+      [
+        {
+          "name": "OSPINA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ARIAS",
+          "position": "LB",
+          "number": "4"
+        },
+        {
+          "name": "MURILLO",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "ZAPATA",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "ZÚÑIGA",
+          "position": "RB",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "MEJÍA",
+          "position": "CDM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "IBARBO",
+          "position": "LW",
+          "number": "16"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "CUADRADO",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "ST",
+          "number": "21"
+        },
+        {
+          "name": "GUTIÉRREZ",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Uruguay",
+    "awayTeam": "Paraguay",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-0",
+    "date": "24 de julio 2011",
+    "playingTeam": "Uruguay",
+    "formation": [
+      [
+        {
+          "name": "MUSLERA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CÁCERES",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "COATES",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "LUGANO",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "PEREIRA",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "PEREIRA",
+          "position": "LM",
+          "number": "11"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "ARÉVALO RÍOS",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "GONZÁLEZ",
+          "position": "RM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "SUÁREZ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "FORLÁN",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Uruguay",
+    "awayTeam": "Paraguay",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-0",
+    "date": "24 de julio 2011",
+    "playingTeam": "Paraguay",
+    "formation": [
+      [
+        {
+          "name": "VILLAR",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MARECOS",
+          "position": "LB",
+          "number": "4"
+        },
+        {
+          "name": "VERÓN",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "DA SILVA",
+          "position": "CB",
+          "number": "14"
+        },
+        {
+          "name": "PIRIS",
+          "position": "RB",
+          "number": "3"
+        }
+      ],
+      [
+        {
+          "name": "CÁCERES",
+          "position": "CM",
+          "number": "15"
+        },
+        {
+          "name": "ORTIGOZA",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "RIVEROS",
+          "position": "CM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "VERA",
+          "position": "CAM",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "VALDEZ",
+          "position": "ST",
+          "number": "18"
+        },
+        {
+          "name": "ZEBALLOS",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Colombia",
+    "awayTeam": "Perú",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-2",
+    "date": "16 de julio 2011",
+    "playingTeam": "Perú",
+    "formation": [
+      [
+        {
+          "name": "FERNÁNDEZ",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "VÍLCHEZ",
+          "position": "LB",
+          "number": "4"
+        },
+        {
+          "name": "RAMOS",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "REVOREDO",
+          "position": "RB",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "VARGAS",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "BALBÍN",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "ADVÍNCULA",
+          "position": "CM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "CHIROQUE",
+          "position": "CAM",
+          "number": "18"
+        },
+        {
+          "name": "CRUZADO",
+          "position": "CAM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "GUERRERO",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Copa América",
+    "homeTeam": "Colombia",
+    "awayTeam": "Perú",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-2",
+    "date": "16 de julio 2011",
+    "playingTeam": "Colombia",
+    "formation": [
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "GK",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "ARMERO",
+          "position": "LB",
+          "number": "7"
+        },
+        {
+          "name": "YEPES",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "PEREA",
+          "position": "CB",
+          "number": "14"
+        },
+        {
+          "name": "ZÚÑIGA",
+          "position": "RB",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "GUARÍN",
+          "position": "CM",
+          "number": "13"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "AGUILAR",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "RAMOS",
+          "position": "LW",
+          "number": "20"
+        },
+        {
+          "name": "FALCAO",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "MORENO",
+          "position": "RW",
+          "number": "17"
+        }
+      ]
+    ]
+  }
+]

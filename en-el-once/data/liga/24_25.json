@@ -1,0 +1,1520 @@
+[
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Rayo Vallecano",
+    "awayTeam": "UD Las Palmas",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-3",
+    "date": "08 de noviembre 2024",
+    "playingTeam": "Rayo Vallecano",
+    "formation": [
+      [
+        {
+          "name": "BATALLA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "CHAVARRÍA",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "HERNÁNDEZ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "LEJEUNE",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "RAȚIU",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "VALENTÍN",
+          "position": "CDM",
+          "number": "23"
+        },
+        {
+          "name": "GUMBAU",
+          "position": "CDM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "LW",
+          "number": "18"
+        },
+        {
+          "name": "PALAZÓN",
+          "position": "CAM",
+          "number": "7"
+        },
+        {
+          "name": "DE FRUTOS",
+          "position": "RW",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "CAMELLO",
+          "position": "ST",
+          "number": "14"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Rayo Vallecano",
+    "awayTeam": "UD Las Palmas",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-3",
+    "date": "08 de noviembre 2024",
+    "playingTeam": "UD Las Palmas",
+    "formation": [
+      [
+        {
+          "name": "CILLESSEN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MUÑOZ",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "MCKENNA",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "SUÁREZ",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "ROZADA",
+          "position": "RB",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "ESSUGO",
+          "position": "CM",
+          "number": "29"
+        },
+        {
+          "name": "MUÑOZ",
+          "position": "CM",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "MOLEIRO",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "SILVA",
+          "position": "ST",
+          "number": "37"
+        },
+        {
+          "name": "RAMÍREZ",
+          "position": "RW",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Madrid CF",
+    "awayTeam": "CA Osasuna",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-0",
+    "date": "09 de noviembre 2024",
+    "playingTeam": "Real Madrid CF",
+    "formation": [
+      [
+        {
+          "name": "LUNIN",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "LB",
+          "number": "20"
+        },
+        {
+          "name": "RÜDIGER",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "MILITÃO",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "VÁZQUEZ",
+          "position": "RB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "BELLINGHAM",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "CAMAVINGA",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "VALVERDE",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "VINICIUS J.",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "MBAPPÉ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "RODRYGO",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Madrid CF",
+    "awayTeam": "CA Osasuna",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-0",
+    "date": "09 de noviembre 2024",
+    "playingTeam": "CA Osasuna",
+    "formation": [
+      [
+        {
+          "name": "HERRERA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BRETONES",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "BOYOMO",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "CATENA",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "ARESO",
+          "position": "RB",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "OROZ",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "TORRÓ",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "MONCAYOLA",
+          "position": "CM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "ZARAGOZA",
+          "position": "LW",
+          "number": "19"
+        },
+        {
+          "name": "BUDIMIR",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "PEÑA",
+          "position": "RW",
+          "number": "15"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Villarreal CF",
+    "awayTeam": "Deportivo Alavés",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-0",
+    "date": "09 de noviembre 2024",
+    "playingTeam": "Villarreal CF",
+    "formation": [
+      [
+        {
+          "name": "CONDE",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "CARDONA",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "COSTA",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "ALBIOL",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "FEMENÍA",
+          "position": "RB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "BAENA",
+          "position": "LM",
+          "number": "16"
+        },
+        {
+          "name": "PAREJO",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "GUEYE",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "AKHOMACH",
+          "position": "RM",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "PÉREZ",
+          "position": "ST",
+          "number": "22"
+        },
+        {
+          "name": "PÉPÉ",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Villarreal CF",
+    "awayTeam": "Deportivo Alavés",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-0",
+    "date": "09 de noviembre 2024",
+    "playingTeam": "Deportivo Alavés",
+    "formation": [
+      [
+        {
+          "name": "SIVERA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "SÁNCHEZ",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "ABQAR",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "PICA",
+          "position": "CB",
+          "number": "36"
+        },
+        {
+          "name": "TENAGLIA",
+          "position": "RB",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "BLANCO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "GUEVARA",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "GURIDI",
+          "position": "CM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "REBBACH",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "VICENTE",
+          "position": "RW",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "CD Leganés",
+    "awayTeam": "Sevilla FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "09 de noviembre 2024",
+    "playingTeam": "CD Leganés",
+    "formation": [
+      [
+        {
+          "name": "DMITROVIC",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "FRANQUESA",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "NASTASIĆ",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "GONZÁLEZ",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "ALTIMIRA",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "TAPIA",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "CISSÉ",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "EL HADDADI",
+          "position": "LW",
+          "number": "23"
+        },
+        {
+          "name": "BRASANAC",
+          "position": "CAM",
+          "number": "14"
+        },
+        {
+          "name": "CRUZ",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "DE LA FUENTE",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "CD Leganés",
+    "awayTeam": "Sevilla FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "09 de noviembre 2024",
+    "playingTeam": "Sevilla FC",
+    "formation": [
+      [
+        {
+          "name": "FERNÁNDEZ",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "PEDROSA",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "SALAS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "GUDELJ",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "CARMONA",
+          "position": "RB",
+          "number": "32"
+        }
+      ],
+      [
+        {
+          "name": "SOW",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "AGOUMÉ",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "SAMBI LOKO.",
+          "position": "CM",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "IHEANACHO",
+          "position": "LW",
+          "number": "9"
+        },
+        {
+          "name": "ROMERO",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "LUKÉBAKIO",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Betis Balompié",
+    "awayTeam": "RC Celta de Vigo",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-2",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "Real Betis Balompié",
+    "formation": [
+      [
+        {
+          "name": "SILVA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "PERRAUD",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "NATAN",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "LLORENTE",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "SABALY",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "CARDOSO",
+          "position": "CDM",
+          "number": "4"
+        },
+        {
+          "name": "ALTIMIRA",
+          "position": "CDM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "EZZALZOULI",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "LOSADA",
+          "position": "CAM",
+          "number": "19"
+        },
+        {
+          "name": "FORNALS",
+          "position": "RW",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "VITOR ROQUE",
+          "position": "ST",
+          "number": "8"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Betis Balompié",
+    "awayTeam": "RC Celta de Vigo",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-2",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "RC Celta de Vigo",
+    "formation": [
+      [
+        {
+          "name": "GUAITA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "RISTIC",
+          "position": "LB",
+          "number": "21"
+        },
+        {
+          "name": "ALONSO",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "STARFELT",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CB",
+          "number": "32"
+        },
+        {
+          "name": "MINGUEZA",
+          "position": "RB",
+          "number": "3"
+        }
+      ],
+      [
+        {
+          "name": "SOTELO",
+          "position": "CM",
+          "number": "33"
+        },
+        {
+          "name": "BELTRÁN",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "BAMBA",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "ASPAS",
+          "position": "RW",
+          "number": "10"
+        },
+        {
+          "name": "IGLESIAS",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Mallorca",
+    "awayTeam": "Atlético de Madrid",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "RCD Mallorca",
+    "formation": [
+      [
+        {
+          "name": "GREIF",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MOJICA",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "RAÍLLO",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "VALJENT",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "MAFFEO",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "DARDER",
+          "position": "LM",
+          "number": "10"
+        },
+        {
+          "name": "MORLANES",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "COSTA",
+          "position": "CM",
+          "number": "12"
+        },
+        {
+          "name": "NAVARRO",
+          "position": "RM",
+          "number": "27"
+        }
+      ],
+      [
+        {
+          "name": "LARIN",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "MURIQI",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Mallorca",
+    "awayTeam": "Atlético de Madrid",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "Atlético de Madrid",
+    "formation": [
+      [
+        {
+          "name": "OBLAK",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "MANDAVA",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "LENGLET",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "GIMÉNEZ",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "MOLINA",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "RIQUELME",
+          "position": "LM",
+          "number": "17"
+        },
+        {
+          "name": "KOKE",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "BARRIOS",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "SIMEONE",
+          "position": "RM",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "GRIEZMANN",
+          "position": "CAM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "ALVAREZ",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Girona FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "Getafe CF",
+    "formation": [
+      [
+        {
+          "name": "SORIA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "RICO",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "ALDERETE",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "DUARTE",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "IGLESIAS",
+          "position": "RB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "SANTIAGO",
+          "position": "CDM",
+          "number": "20"
+        },
+        {
+          "name": "MILLA",
+          "position": "CDM",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "PÉREZ",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "ARAMBARRI",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "NYOM",
+          "position": "RW",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "UCHE",
+          "position": "ST",
+          "number": "6"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Girona FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "Girona FC",
+    "formation": [
+      [
+        {
+          "name": "GAZZANIGA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "BLIND",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "LÓPEZ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "JUANPE",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "ROMEU",
+          "position": "CDM",
+          "number": "14"
+        },
+        {
+          "name": "HERRERA",
+          "position": "CDM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "GUTIÉRREZ",
+          "position": "LW",
+          "number": "3"
+        },
+        {
+          "name": "VAN DE BEEK",
+          "position": "CAM",
+          "number": "6"
+        },
+        {
+          "name": "GIL",
+          "position": "RW",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "MIOVSKI",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Valladolid CF",
+    "awayTeam": "Athletic Club",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "Athletic Club",
+    "formation": [
+      [
+        {
+          "name": "AGIRREZABALA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "BOIRO",
+          "position": "LB",
+          "number": "32"
+        },
+        {
+          "name": "PAREDES",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "ÁLVAREZ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "DE MARCOS",
+          "position": "RB",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "PRADOS",
+          "position": "CDM",
+          "number": "24"
+        },
+        {
+          "name": "JAUREGIZAR",
+          "position": "CDM",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "WILLIAMS",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "GÓMEZ",
+          "position": "CAM",
+          "number": "20"
+        },
+        {
+          "name": "SERRANO",
+          "position": "RW",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "BERENGUER",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Valladolid CF",
+    "awayTeam": "Athletic Club",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "Real Valladolid CF",
+    "formation": [
+      [
+        {
+          "name": "HEIN",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ROSA",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "BAH",
+          "position": "CB",
+          "number": "35"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "TORRES",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "JURIC",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "MORO",
+          "position": "LM",
+          "number": "11"
+        },
+        {
+          "name": "ANUAR",
+          "position": "RW",
+          "number": "23"
+        },
+        {
+          "name": "SYLLA",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Sociedad",
+    "awayTeam": "FC Barcelona",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "Real Sociedad",
+    "formation": [
+      [
+        {
+          "name": "REMIRO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MUÑOZ",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "AGUERD",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "ZUBELDIA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "ARAMBURU",
+          "position": "RB",
+          "number": "27"
+        }
+      ],
+      [
+        {
+          "name": "ZUBIMENDI",
+          "position": "CDM",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "BECKER",
+          "position": "LM",
+          "number": "11"
+        },
+        {
+          "name": "MÉNDEZ",
+          "position": "CM",
+          "number": "23"
+        },
+        {
+          "name": "SUCIC",
+          "position": "CM",
+          "number": "24"
+        },
+        {
+          "name": "KUBO",
+          "position": "RM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "OYARZABAL",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Sociedad",
+    "awayTeam": "FC Barcelona",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "10 de noviembre 2024",
+    "playingTeam": "FC Barcelona",
+    "formation": [
+      [
+        {
+          "name": "PEÑA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "BALDE",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "CUBARSÍ",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "KOUNDÉ",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "DE JONG",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "CASADÓ",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "PEDRI",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "RAPHINHA",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "LEWANDOWSKI",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "LÓPEZ",
+          "position": "RW",
+          "number": "16"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Espanyol",
+    "awayTeam": "Valencia CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "18 de diciembre 2024",
+    "playingTeam": "RCD Espanyol",
+    "formation": [
+      [
+        {
+          "name": "GARCÍA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "OLIVÁN",
+          "position": "LB",
+          "number": "14"
+        },
+        {
+          "name": "CABRERA",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "KUMBULLA",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "EL HILALI",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "CARRERAS",
+          "position": "LM",
+          "number": "17"
+        },
+        {
+          "name": "KRÁL",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "SMITH",
+          "position": "CM",
+          "number": "40"
+        },
+        {
+          "name": "ROCA",
+          "position": "RM",
+          "number": "31"
+        }
+      ],
+      [
+        {
+          "name": "CHEDDIRA",
+          "position": "ST",
+          "number": "16"
+        },
+        {
+          "name": "PUADO",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Espanyol",
+    "awayTeam": "Valencia CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "18 de diciembre 2024",
+    "playingTeam": "Valencia CF",
+    "formation": [
+      [
+        {
+          "name": "DIMITRIEVSKI",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "RIOJA",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "TÁRREGA",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "MOSQUERA",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "FOULQUIER",
+          "position": "RB",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "BARRENECHEA",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "PEPELU",
+          "position": "CDM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "LÓPEZ",
+          "position": "LW",
+          "number": "16"
+        },
+        {
+          "name": "ALMEIDA",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "RW",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "GÓMEZ",
+          "position": "ST",
+          "number": "17"
+        }
+      ]
+    ]
+  }
+]

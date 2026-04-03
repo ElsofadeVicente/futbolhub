@@ -1,0 +1,232 @@
+{
+  "date": "2026-04-11",
+  "title": "Crucigrama #2026-04-11",
+  "grid_size": {
+    "rows": 10,
+    "cols": 12
+  },
+  "grid": [
+    [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ]
+  ],
+  "words": [
+    {
+      "id": 1,
+      "number": 1,
+      "answer": "JOSELU",
+      "row": 0,
+      "col": 3,
+      "direction": "across",
+      "length": 6,
+      "clue": "Llegó al Madrid con 33 años y marcó el gol que clasificó al Madrid para la final"
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "answer": "SILBATO",
+      "row": 0,
+      "col": 5,
+      "direction": "down",
+      "length": 7,
+      "clue": "Instrumento del arbitro para detener el juego"
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "answer": "GREALISH",
+      "row": 2,
+      "col": 7,
+      "direction": "down",
+      "length": 8,
+      "clue": "Inglés del City conocido por sus medias bajas y su habilidad en el regate"
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "answer": "FACUP",
+      "row": 2,
+      "col": 9,
+      "direction": "down",
+      "length": 5,
+      "clue": "Copa nacional inglesa mas antigua del mundo"
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "answer": "MURILLO",
+      "row": 3,
+      "col": 11,
+      "direction": "down",
+      "length": 7,
+      "clue": "Central colombiano que ha jugado en Valencia, Granada, Sampdoria y Barcelona"
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "answer": "KEANE",
+      "row": 4,
+      "col": 3,
+      "direction": "across",
+      "length": 5,
+      "clue": "Capitán del United, famoso por su liderazgo y su carácter"
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "answer": "DORADO",
+      "row": 6,
+      "col": 0,
+      "direction": "across",
+      "length": 6,
+      "clue": "Balón que se da al mejor jugador del mundo y que Messi tiene más que nadie"
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "answer": "LIPPI",
+      "row": 6,
+      "col": 7,
+      "direction": "across",
+      "length": 5,
+      "clue": "Italiano que llevó a la azzurra a ganar el Mundial de 2006"
+    }
+  ]
+}

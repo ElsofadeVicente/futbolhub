@@ -1,0 +1,65 @@
+{
+  "date": "2026-04-04",
+  "title": "TORRE DIARIA",
+  "subtitle": "Todos menos uno cumplen la misma condición",
+  "commonTrait": "Todos han sido expulsados (tarjeta roja) en un partido de un Mundial",
+  "oddPlayerId": "modric",
+  "oddReason": "Luka Modrić ha jugado varios Mundiales con Croacia, incluyendo llegar a la final en 2018, pero nunca ha recibido una tarjeta roja en un partido de Mundial.",
+  "players": [
+    {
+      "id": "ramos",
+      "playerId": "3157",
+      "name": "Sergio Ramos",
+      "position": "DFC",
+      "team": "Retirado",
+      "detail": "España",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "zidane_player",
+      "playerId": "11643",
+      "name": "Zinedine Zidane",
+      "position": "MC",
+      "team": "Retirado",
+      "detail": "Francia",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "vidal",
+      "playerId": "44956",
+      "name": "Arturo Vidal",
+      "position": "MC",
+      "team": "Colo-Colo",
+      "detail": "Chile",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "pepe",
+      "playerId": "27456",
+      "name": "Pepe",
+      "position": "DFC",
+      "team": "Retirado",
+      "detail": "Portugal",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "modric",
+      "playerId": "27992",
+      "name": "Luka Modrić",
+      "position": "MC",
+      "team": "Real Madrid",
+      "detail": "Croacia",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    }
+  ]
+}

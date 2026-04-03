@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Torre - Quién Coño Falta</title>
+<meta name="description" content="Juego diario offline. Encuentra al futbolista que rompe la torre.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="./css/la-torre.css?v=2026-04-03-2">
+</head>
+<body>
+<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+<div id="settings-modal" class="settings-modal">
+  <div class="settings-content">
+    <h2 class="settings-title">CONFIGURACIÓN</h2>
+    <div class="settings-option">
+      <span>Modo Alto Contraste</span>
+      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
+    </div>
+    <div class="stats-display">
+      <h3 style="margin-bottom:15px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">ESTADÍSTICAS</h3>
+      <div class="stat-row"><span>Torres jugadas:</span><span id="tower-stat-played">0</span></div>
+      <div class="stat-row"><span>Torres ganadas:</span><span id="tower-stat-wins">0</span></div>
+      <div class="stat-row"><span>Tasa de acierto:</span><span id="tower-stat-rate">0%</span></div>
+      <div class="stat-row"><span>Racha actual:</span><span id="tower-stat-streak">0</span></div>
+      <div class="stat-row"><span>Mejor racha:</span><span id="tower-stat-best">0</span></div>
+      <button class="reset-stats-btn" onclick="towerResetStats()">Resetear estadísticas</button>
+    </div>
+    <button class="next-btn" style="width:100%;margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
+  </div>
+</div>
+<div id="tower-screen"></div>
+<script src="../js/shared.js"></script>
+<script src="../js/player-data-loader.js"></script>
+<script src="./js/la-torre-game.js?v=2026-04-03-2"></script>
+</body>
+</html>

@@ -5,36 +5,44 @@
 
 /* ── VARIABLES CSS ────────────────────────── */
 :root {
-  /* Colores principales (Version 8) */
-  --bg-dark: #1c1a14;
-  --bg-purple: #2a2518;
-  --bg-gold: #2e2610;
-  --bg-field: #2d7a32;
-  --field-dark: #235f27;
-  
-  /* Neones (Version 8) */
-  --neon-green: #c8a84b;
+  /* Fondo y superficies */
+  --bg-dark:    #0c110c;
+  --bg-purple:  #18201a;
+  --bg-gold:    #1e2a1e;
+  --bg-field:   #2e7d32;
+  --field-dark: #256628;
+
+  /* Dorados */
+  --neon-green:  #c9a84c;
   --neon-yellow: #e8c96d;
-  --neon-gold: #c8a84b;
-  
-  /* Texto (Version 8) */
-  --text-light: #f5f0e8;
-  --text-dark: #1a1a1a;
-  
+  --neon-gold:   #c9a84c;
+
+  /* Texto */
+  --text-light: #f0ece0;
+  --text-dark:  #0c110c;
+
   /* Juego */
-  --player-bg: #8b1a1a;
-  --gk-bg: #d4a017;
-  --card-dark: #2a2518;
-  
+  --player-bg: #7b1c1c;
+  --gk-bg:     #b8860b;
+  --card-dark: #18201a;
+
   /* Estados Wordle */
-  --correct: #4a8c3e;
-  --present: #c8a84b;
-  --absent: #4a3f2f;
-  
+  --correct: #3a7d44;
+  --present: #c9a84c;
+  --absent:  #252e25;
+
   /* Estados generales */
   --success: #4ade80;
-  --error: #ef4444;
+  --error:   #ef4444;
   --warning: #fbbf24;
+
+  /* UI compartida */
+  --ui-panel: rgba(10,16,10,0.82);
+  --ui-panel-soft: rgba(255,255,255,0.04);
+  --ui-line: rgba(200,168,75,0.18);
+  --ui-line-strong: rgba(200,168,75,0.34);
+  --ui-shadow: 0 16px 38px rgba(0,0,0,0.3);
+  --ui-shadow-strong: 0 22px 48px rgba(0,0,0,0.38);
 }
 
 /* ── RESET BÁSICO ────────────────────────── */
@@ -46,10 +54,33 @@
 
 body {
   font-family: 'Rajdhani', sans-serif;
-  background: var(--bg-dark);
   color: var(--text-light);
   overflow-x: hidden;
   min-height: 100vh;
+
+  /* ═══ FONDO PREMIUM ═══
+     1. Base negro verdoso
+     2. Trama de cuadrícula sutil (líneas finas)
+     3. Halo dorado en la parte alta (foco de estadio)
+     4. Viñeta oscura en los bordes
+  */
+  background-color: var(--bg-dark);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% 50%,
+      transparent 52%, rgba(0,0,0,0.48) 100%),
+    radial-gradient(ellipse 70% 45% at 50% 0%,
+      rgba(201,168,76,0.065) 0%, transparent 65%),
+    repeating-linear-gradient(
+      90deg,
+      transparent, transparent 79px,
+      rgba(255,255,255,0.013) 79px, rgba(255,255,255,0.013) 80px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent, transparent 79px,
+      rgba(255,255,255,0.013) 79px, rgba(255,255,255,0.013) 80px
+    );
+  background-attachment: fixed;
 }
 
 /* ── FUENTES ─────────────────────────────── */
@@ -58,27 +89,27 @@ body {
 /* ── BOTÓN SETTINGS (global en todas las páginas) ── */
 .settings-btn {
   position: fixed;
-  top: 16px;
-  right: 16px;
-  background: rgba(200,168,75,0.15);
-  border: 2px solid var(--neon-gold);
+  top: 18px;
+  right: 18px;
+  background: rgba(201,168,76,0.10);
+  border: 1.5px solid var(--neon-gold);
   border-radius: 50%;
-  width: 46px;
-  height: 46px;
-  font-size: 1.4rem;
+  width: 42px;
+  height: 42px;
+  font-size: 1.1rem;
   cursor: pointer;
   z-index: 999;
-  transition: all 0.25s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
 }
 
 .settings-btn:hover {
-  background: rgba(200,168,75,0.3);
-  transform: rotate(90deg) scale(1.08);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  background: rgba(201,168,76,0.22);
+  transform: rotate(90deg);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.55);
 }
 
 /* ── MODAL SETTINGS ──────────────────────── */
@@ -86,12 +117,13 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.88);
+  background: rgba(0,0,0,0.82);
   z-index: 1000;
   align-items: center;
   justify-content: center;
   padding: 20px;
   animation: fadeIn 0.25s ease;
+  backdrop-filter: blur(4px);
 }
 
 .settings-modal.active {
@@ -100,12 +132,13 @@ body {
 
 .settings-content {
   background: var(--bg-purple);
-  border: 2px solid var(--neon-green);
+  border: 1px solid rgba(201,168,76,0.25);
   border-radius: 16px;
-  padding: 28px 24px;
+  padding: 32px 28px;
   max-width: 420px;
   width: 100%;
   animation: slideUp 0.3s ease;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.65);
 }
 
 .settings-title {
@@ -121,11 +154,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(200,168,75,0.15);
-  border-radius: 8px;
-  margin-bottom: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -163,11 +193,11 @@ body {
 
 /* ── ESTADÍSTICAS ────────────────────────── */
 .stats-display {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(200,168,75,0.1);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
   border-radius: 10px;
-  padding: 16px;
-  margin-top: 8px;
+  padding: 18px;
+  margin-top: 12px;
 }
 
 .stat-row {
@@ -217,57 +247,128 @@ body {
 }
 
 /* ── BOTONES GLOBALES ────────────────────── */
-.next-btn {
-  background: var(--neon-green);
-  color: var(--bg-dark);
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
+.next-btn,
+.btn-primary {
+  background: linear-gradient(180deg, #d8b95c 0%, #b89234 100%);
+  color: var(--text-dark);
+  border: 1px solid rgba(255,235,171,0.18);
+  padding: 12px 22px;
+  border-radius: 12px;
   font-family: 'Rajdhani', sans-serif;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 1.8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
   text-transform: uppercase;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.16);
 }
 
-.next-btn:hover {
-  background: var(--neon-yellow);
+.next-btn:hover,
+.btn-primary:hover {
+  background: linear-gradient(180deg, #e5c86f 0%, #c79f3e 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(57,255,20,0.3);
+  box-shadow: 0 16px 30px rgba(200,168,75,0.2), 0 14px 30px rgba(0,0,0,0.28);
+}
+
+.next-btn:disabled,
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  color: var(--text-light);
+  border: 1px solid rgba(255,255,255,0.14);
+  padding: 11px 22px;
+  border-radius: 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border-color: rgba(200,168,75,0.34);
+  transform: translateY(-1px);
+  box-shadow: var(--ui-shadow);
+}
+
+.back-btn,
+.menu-back-btn,
+.hol-back-btn,
+.cruc-back-btn,
+.tower-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(200,168,75,0.34);
+  background: rgba(8,14,8,0.6);
+  color: var(--neon-yellow);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.back-btn:hover,
+.menu-back-btn:hover,
+.hol-back-btn:hover,
+.cruc-back-btn:hover,
+.tower-back-btn:hover {
+  background: rgba(200,168,75,0.14);
+  border-color: var(--neon-yellow);
+  color: var(--text-light);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.28);
 }
 
 .give-up-btn {
-  background: transparent;
-  color: var(--text-light);
-  border: 2px solid rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, #a93226, #c0392b);
+  color: white;
+  border: none;
   padding: 10px 22px;
   border-radius: 8px;
   font-family: 'Rajdhani', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.2s;
   text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(192,57,43,0.28);
 }
 
 .give-up-btn:hover {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.4);
-  transform: translateY(-1px);
+  filter: brightness(1.1);
+  transform: translateY(-2px);
 }
 
-/* ── MODO ALTO CONTRASTE ─────────────────── */
-/* ── MODO ALTO CONTRASTE ─────────────────── */
 body.high-contrast {
-  --bg-dark: #000000;
-  --bg-purple: #1a1a1a;
+  --bg-dark:    #000000;
+  --bg-purple:  #1a1a1a;
   --text-light: #ffffff;
-  --correct: #00aa00;
-  --present: #ccaa00;
-  --absent: #555555;
+  --correct:    #00aa00;
+  --present:    #ccaa00;
+  --absent:     #555555;
 }
 
 body.high-contrast .settings-btn {
@@ -302,9 +403,9 @@ body.high-contrast .settings-btn {
   .settings-btn {
     top: 12px;
     right: 12px;
-    width: 42px;
-    height: 42px;
-    font-size: 1.2rem;
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
   }
 
   .settings-content {

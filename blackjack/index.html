@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blackjack de Fútbol — Quién Coño Falta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="css/blackjack.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     PANTALLA 1: MENÚ PRINCIPAL
+     ═══════════════════════════════════════════════ -->
+<div id="screen-menu" class="screen active">
+  <a href="../index.html" class="back-btn">← Volver</a>
+
+  <div class="menu-hero">
+    <div class="menu-logo">🃏</div>
+    <h1 class="menu-title">BLACKJACK</h1>
+    <p class="menu-subtitle">de Fútbol</p>
+  </div>
+
+  <div class="menu-wrap">
+
+    <!-- Modo de stat -->
+    <div>
+      <p style="font-family:'Rajdhani',sans-serif;font-size:0.7rem;letter-spacing:2px;color:var(--neon-green);opacity:0.7;text-transform:uppercase;margin-bottom:7px;">Objetivo</p>
+      <div class="mode-selector">
+        <button class="mode-btn selected" data-mode="mv" onclick="App.selectMode(this)">💰 Valor mercado</button>
+        <button class="mode-btn" data-mode="national" onclick="App.selectMode(this)">🌍 Internacionales</button>
+        <button class="mode-btn" data-mode="age" onclick="App.selectMode(this)">🎂 Edad actual</button>
+      </div>
+    </div>
+
+    <!-- Tabs online / local -->
+    <div class="menu-tabs">
+      <button class="menu-tab active" id="tab-private" onclick="App.setTab('private')">🔒 Privada</button>
+      <button class="menu-tab" id="tab-public" onclick="App.setTab('public')">🌐 Pública</button>
+      <button class="menu-tab" id="tab-local" onclick="App.setTab('local')">🎮 Local</button>
+    </div>
+
+    <!-- Panel: Sala privada -->
+    <div id="panel-private" class="menu-panel active">
+
+      <!-- Crear sala -->
+      <input id="input-host-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="20" />
+      <button class="btn-primary" onclick="App.createRoom()">CREAR SALA ▶</button>
+
+      <div style="display:flex;align-items:center;gap:10px;margin:4px 0;">
+        <div style="flex:1;height:1px;background:rgba(200,168,75,0.15)"></div>
+        <span style="font-family:'Rajdhani',sans-serif;font-size:0.75rem;opacity:0.4;letter-spacing:1px">O</span>
+        <div style="flex:1;height:1px;background:rgba(200,168,75,0.15)"></div>
+      </div>
+
+      <!-- Unirse a sala -->
+      <div style="display:flex;gap:8px;">
+        <input id="input-join-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="20" style="flex:1" />
+        <input id="input-join-code" class="menu-input menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6"
+               oninput="this.value=this.value.toUpperCase()" style="flex:1;max-width:130px" />
+      </div>
+      <button class="btn-secondary" onclick="App.joinRoom()">UNIRSE A SALA ▶</button>
+
+      <p class="menu-error hidden" id="error-private"></p>
+    </div>
+
+    <!-- Panel: Sala pública -->
+    <div id="panel-public" class="menu-panel">
+      <input id="input-public-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="20" />
+      <button class="btn-primary" onclick="App.findPublicRoom()">BUSCAR PARTIDA ▶</button>
+      <p class="menu-error hidden" id="error-public"></p>
+    </div>
+
+    <!-- Panel: Local (un jugador, sin internet) -->
+    <div id="panel-local" class="menu-panel">
+      <p style="font-family:'Rajdhani',sans-serif;font-size:0.75rem;letter-spacing:1.5px;
+                color:var(--text-light);opacity:0.45;text-align:center;margin-bottom:4px;">
+        Juega solo, sin sala ni conexión
+      </p>
+      <input id="input-local-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="20" />
+      <button class="btn-primary" onclick="App.startLocalGame()">JUGAR SOLO ▶</button>
+      <p class="menu-error hidden" id="error-local"></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PANTALLA 2: LOBBY
+     ═══════════════════════════════════════════════ -->
+<div id="screen-lobby" class="screen">
+  <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
+
+  <div class="lobby-wrap" style="justify-content:center;min-height:100vh;">
+
+    <div class="lobby-code-card">
+      <div class="lobby-code-label">Código de sala</div>
+      <div class="lobby-code-big" id="lobby-code-display">------</div>
+      <div id="lobby-code-link-display"
+           style="font-family:'Rajdhani',sans-serif;font-size:0.68rem;color:var(--text-light);
+                  opacity:0.35;margin-top:5px;word-break:break-all;padding:0 8px;
+                  text-align:center;letter-spacing:0;line-height:1.4;"></div>
+      <button onclick="App.copyLink()" style="margin-top:6px;background:none;border:none;color:var(--neon-green);font-family:'Rajdhani',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;letter-spacing:1px;">
+        🔗 Copiar enlace
+      </button>
+    </div>
+
+    <div style="width:100%">
+      <p style="font-family:'Rajdhani',sans-serif;font-size:0.7rem;letter-spacing:2px;color:var(--neon-green);opacity:0.7;text-transform:uppercase;margin-bottom:8px;">Jugadores</p>
+      <div class="lobby-players-list" id="lobby-players-list"></div>
+    </div>
+
+    <div id="lobby-mode-display" style="font-family:'Rajdhani',sans-serif;font-size:0.85rem;color:var(--text-light);opacity:0.5;letter-spacing:1px;text-align:center;"></div>
+
+    <button class="btn-primary" id="btn-start-game" onclick="App.startGame()" style="display:none" disabled>
+      EMPEZAR ▶
+    </button>
+    <p id="lobby-hint" style="font-family:'Rajdhani',sans-serif;font-size:0.8rem;color:var(--text-light);opacity:0.4;text-align:center;letter-spacing:1px;">
+      Esperando jugadores… (mín. 2)
+    </p>
+
+    <!-- Contador auto-arranque sala pública -->
+    <div id="lobby-autotimer" class="lobby-autotimer hidden">
+      <div class="lobby-autotimer-bar-wrap">
+        <div class="lobby-autotimer-bar" id="lobby-autotimer-bar"></div>
+      </div>
+      <div class="lobby-autotimer-text">
+        <span id="lobby-autotimer-label">⏱ La partida arranca en</span>
+        <span id="lobby-autotimer-count" class="lobby-autotimer-count">3:00</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     BARRA SUPERIOR (visible durante el juego)
+     ═══════════════════════════════════════════════ -->
+<div id="game-topbar" class="game-topbar hidden">
+  <div class="topbar-objective">
+    <span class="topbar-obj-label">Objetivo</span>
+    <span class="topbar-obj-value" id="objective-display">—</span>
+  </div>
+  <div class="opponent-activity" id="opponent-activity"></div>
+  <div class="topbar-scoreboard" id="scoreboard"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PANTALLA 3: SELECCIONANDO CARTAS
+     ═══════════════════════════════════════════════ -->
+<div id="screen-selecting" class="screen">
+  <div class="selecting-body">
+
+    <!-- Botón salir (solo modo local) -->
+    <button class="back-btn back-btn-local hidden" id="btn-local-exit-selecting" onclick="App.leaveRoom()">← Salir</button>
+
+    <!-- Timer -->
+    <div class="card-timer-wrap">
+      <div class="card-timer-bar" id="card-timer-bar"></div>
+    </div>
+
+    <!-- Contador + tiempo -->
+    <div class="card-counter-row">
+      <span class="card-counter" id="card-counter">1 / 10</span>
+      <span class="card-timer-text" id="card-timer-text">8</span>
+    </div>
+
+    <!-- Carta actual -->
+    <div id="current-card" style="position:relative;"></div>
+
+    <!-- Bust indicator -->
+    <div class="bust-indicator hidden" id="bust-indicator"></div>
+
+    <!-- Botones de acción -->
+    <div class="action-buttons">
+      <button class="btn-action btn-discard" id="btn-discard" onclick="BlackjackGame.actionDiscard()">
+        ✕<span class="btn-label">Descartar</span>
+      </button>
+      <button class="btn-action btn-stand" id="btn-stand" onclick="BlackjackGame.actionStand()" disabled>
+        ⏸<span class="btn-label">Plantarse</span>
+      </button>
+      <button class="btn-action btn-add" id="btn-add" onclick="BlackjackGame.actionAdd()">
+        ✓<span class="btn-label">Añadir</span>
+      </button>
+    </div>
+
+
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PANTALLA 4: ESPERANDO AL RESTO
+     ═══════════════════════════════════════════════ -->
+<div id="screen-waiting" class="screen">
+  <button class="back-btn back-btn-local hidden" id="btn-local-exit-waiting" onclick="App.leaveRoom()">← Salir</button>
+  <div class="waiting-icon">⏳</div>
+  <h2 class="waiting-title">Esperando a los demás…</h2>
+  <p class="waiting-subtitle">Ya has terminado de elegir tus cartas</p>
+  <div class="waiting-players" id="waiting-players"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PANTALLA 5: REVEAL
+     ═══════════════════════════════════════════════ -->
+<div id="screen-reveal" class="screen">
+
+  <div class="reveal-header">
+    <button class="back-btn back-btn-local hidden" id="btn-local-exit-reveal" onclick="App.leaveRoom()">← Salir</button>
+    <div class="reveal-title">REVELANDO CARTAS</div>
+    <div class="reveal-objective">Objetivo: <span id="reveal-objective-val">—</span></div>
+  </div>
+
+  <div class="reveal-players" id="reveal-players">
+    <!-- Se construye dinámicamente según número de jugadores -->
+  </div>
+
+  <div class="reveal-footer">
+    <button class="btn-primary hidden" id="btn-next-round" onclick="App.nextRound()">
+      SIGUIENTE RONDA ▶
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PANTALLA 6: FIN DE PARTIDA
+     ═══════════════════════════════════════════════ -->
+<div id="screen-finished" class="screen">
+  <div class="finished-trophy">🏆</div>
+  <h2 class="finished-title">¡GANADOR!</h2>
+  <div class="winner-name" id="winner-name">—</div>
+  <div class="final-scores" id="final-scores"></div>
+  <div class="finished-buttons">
+    <button class="btn-primary" onclick="App.playAgain()">🔄 Jugar de nuevo</button>
+    <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     OVERLAY CUENTA ATRÁS (encima de todo)
+     ═══════════════════════════════════════════════ -->
+<div id="countdown-overlay" class="countdown-overlay hidden">
+  <div class="countdown-inner">
+    <div class="countdown-label">EMPIEZA EN</div>
+    <div class="countdown-number" id="countdown-number">10</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TOAST
+     ═══════════════════════════════════════════════ -->
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, get, update, onValue, push,
+           serverTimestamp, remove, runTransaction, onDisconnect }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM",
+    authDomain:        "futbolhub-9d0a4.firebaseapp.com",
+    databaseURL:       "https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "futbolhub-9d0a4",
+    storageBucket:     "futbolhub-9d0a4.firebasestorage.app",
+    messagingSenderId: "179751773212",
+    appId:             "1:179751773212:web:9acfe3d5b8c344c51a2bd9"
+  };
+
+  const FB_CONFIGURED = FIREBASE_CONFIG.apiKey !== "TU_API_KEY";
+  let firebaseApp = null;
+  let db = null;
+
+  if (FB_CONFIGURED) {
+    try {
+      firebaseApp = initializeApp(FIREBASE_CONFIG);
+      db = getDatabase(firebaseApp);
+      console.log('✅ Firebase conectado (Blackjack)');
+    } catch (e) {
+      console.warn('⚠️ Firebase error:', e);
+    }
+  }
+
+  window._FB = {
+    configured: FB_CONFIGURED && !!db,
+    db, ref, set, get, update, onValue, push, serverTimestamp, remove, runTransaction
+  };
+  // Exponer onDisconnect para blackjack-sync.js
+  window._FBOnDisconnect = onDisconnect;
+
+  // Cargar scripts del juego
+  const V = '?v=' + Date.now();
+  const scripts = [
+    '../../js/shared.js',
+    '../../js/player-data-loader.js',
+    '../../js/extended-data-loader.js',
+    'js/blackjack-sets.js' + V,
+    'js/blackjack-game.js' + V,
+    'js/blackjack-sync.js' + V,
+    'js/blackjack-app.js' + V,
+  ];
+
+  let chain = Promise.resolve();
+  scripts.forEach(src => {
+    chain = chain.then(() => new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = res;
+      s.onerror = () => { console.warn('Script no cargado:', src); res(); };
+      document.body.appendChild(s);
+    }));
+  });
+
+  chain.then(() => {
+    if (typeof App !== 'undefined') App.init();
+    // Pre-cargar pools de ligas en background
+    ['bundesliga','eredivisie','laliga','liga-portugal','ligue-1','premier-league','resto-del-mundo','serie-a'].forEach(name => {
+      fetch(`data/blackjack/${name}.json`).catch(() => {});
+    });
+  });
+</script>
+
+</body>
+</html>

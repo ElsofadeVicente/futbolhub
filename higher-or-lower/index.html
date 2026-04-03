@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>HIGHER OR LOWER — Quién Coño Falta</title>
+<meta name="description" content="¿Quién vale más? Adivina si el valor de mercado del siguiente jugador es mayor, igual o menor.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="higher-or-lower.css">
+</head>
+<body>
+
+<!-- SETTINGS -->
+<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+<div id="settings-modal" class="settings-modal">
+  <div class="settings-content">
+    <h2 class="settings-title">CONFIGURACIÓN</h2>
+    <div class="settings-option">
+      <span>Modo Alto Contraste</span>
+      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
+    </div>
+    <button class="next-btn" style="width:100%;margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
+  </div>
+</div>
+
+<!-- ═══ MENÚ DE MODO — pantalla independiente ═══ -->
+<div class="hol-mode-menu" id="hol-mode-menu">
+  <a href="../" class="hol-back-btn">← Volver</a>
+  <div class="hol-mode-menu-inner">
+    <div class="hol-mode-header">
+      <div class="hol-mode-header-title">HIGHER OR LOWER</div>
+      <div class="hol-mode-header-sub">¿Quién vale más? · Elige un modo</div>
+    </div>
+    <div class="hol-mode-grid" id="hol-mode-grid"></div>
+  </div>
+</div>
+
+<!-- ═══ JUEGO ═══ -->
+<div class="hol-game" id="hol-game">
+
+  <div class="hol-loading hidden" id="hol-loading">
+    <div class="hol-loading-spinner"></div>
+    <div class="hol-loading-title">CARGANDO JUGADORES…</div>
+  </div>
+
+  <!-- Botón volver durante la partida -->
+  <a href="../" class="hol-back-btn hol-back-btn--ingame">← Volver</a>
+
+  <div class="hol-topbar">
+    <div class="hol-score-left">
+      <span class="hol-score-label">PUNTOS</span>
+      <span class="hol-score-value" id="hol-score-value">0</span>
+    </div>
+    <div class="hol-score-center">
+      <span class="hol-mode-name" id="hol-mode-name"></span>
+    </div>
+    <div class="hol-score-right">
+      <span class="hol-score-label">MI RÉCORD</span>
+      <span class="hol-score-value" id="hol-record-value">0</span>
+    </div>
+  </div>
+
+  <div class="hol-arena">
+    <div class="hol-panel hol-panel--left" id="hol-left-panel">
+      <div class="hol-panel-bg" id="hol-left-bg"></div>
+      <div class="hol-panel-content">
+        <div class="hol-player-club" id="hol-left-club"></div>
+        <div class="hol-player-name" id="hol-left-name"></div>
+        <div class="hol-stat-block">
+          <div class="hol-stat-label" id="hol-left-stat-label">VALOR DE MERCADO</div>
+          <div class="hol-stat-value" id="hol-left-stat-value">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hol-vs">VS</div>
+
+    <div class="hol-panel hol-panel--right" id="hol-right-panel">
+      <div class="hol-panel-bg" id="hol-right-bg"></div>
+      <div class="hol-panel-content">
+        <div class="hol-player-club" id="hol-right-club"></div>
+        <div class="hol-player-name" id="hol-right-name"></div>
+        <div class="hol-stat-reveal" id="hol-right-reveal">
+          <div class="hol-stat-label" id="hol-right-stat-label">VALOR DE MERCADO</div>
+          <div class="hol-stat-value" id="hol-right-stat-value">—</div>
+        </div>
+        <div class="hol-choices" id="hol-choices">
+          <button class="hol-choice-btn hol-choice-btn--higher" id="hol-btn-higher">
+            <span class="hol-btn-arrow">▲</span> SUPERIOR <span class="hol-btn-arrow">▲</span>
+          </button>
+          <button class="hol-choice-btn hol-choice-btn--equal" id="hol-btn-equal">
+            <span class="hol-btn-arrow">◁</span> IGUAL <span class="hol-btn-arrow">▷</span>
+          </button>
+          <button class="hol-choice-btn hol-choice-btn--lower" id="hol-btn-lower">
+            <span class="hol-btn-arrow">▼</span> INFERIOR <span class="hol-btn-arrow">▼</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hol-gameover" id="hol-gameover">
+    <div class="hol-gameover-content">
+      <div class="hol-gameover-icon">💀</div>
+      <div class="hol-gameover-title">GAME OVER</div>
+      <div class="hol-gameover-score" id="hol-go-score">0</div>
+      <div class="hol-gameover-score-label">PUNTOS</div>
+      <div class="hol-gameover-record" id="hol-go-record">Tu récord: <strong>0</strong></div>
+      <button class="hol-play-again-btn" id="hol-play-again">JUGAR DE NUEVO</button>
+      <button class="hol-change-mode-btn" id="hol-change-mode">CAMBIAR MODO</button>
+      <a href="../" class="hol-back-hub-link">← Volver al Hub</a>
+    </div>
+  </div>
+
+</div>
+
+<script src="../js/shared.js"></script>
+<script src="higher-or-lower.js"></script>
+</body>
+</html>

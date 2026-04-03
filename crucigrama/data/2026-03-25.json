@@ -1,0 +1,236 @@
+{
+  "date": "2026-03-25",
+  "title": "Crucigrama #2026-03-25",
+  "grid_size": {
+    "rows": 12,
+    "cols": 10
+  },
+  "grid": [
+    [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  ],
+  "words": [
+    {
+      "id": 1,
+      "number": 1,
+      "answer": "PROTOCOLO",
+      "row": 0,
+      "col": 0,
+      "direction": "down",
+      "length": 9,
+      "clue": "Lo que dice el cuarto árbitro que va a revisar el VAR para desesperar a los aficionados"
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "answer": "KAKA",
+      "row": 0,
+      "col": 3,
+      "direction": "down",
+      "length": 4,
+      "clue": "Brasileño que ganó el Balón de Oro en 2007 interrumpiendo la racha"
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "answer": "MODRIC",
+      "row": 0,
+      "col": 9,
+      "direction": "down",
+      "length": 6,
+      "clue": "Un año interrumpió el duopolio Messi-Ronaldo y se llevó el Balón de Oro"
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "answer": "RONALDINHO",
+      "row": 1,
+      "col": 0,
+      "direction": "across",
+      "length": 10,
+      "clue": "Brasileño que hacía magia con el balón y siempre sonreía"
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "answer": "HAZARD",
+      "row": 3,
+      "col": 2,
+      "direction": "across",
+      "length": 6,
+      "clue": "Se lesionó tantas veces en el Madrid que algunos sospechan que nunca existió"
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "answer": "DESCUENTO",
+      "row": 3,
+      "col": 7,
+      "direction": "down",
+      "length": 9,
+      "clue": "Tiempo que siempre parece demasiado o demasiado poco dependiendo del marcador"
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "answer": "TORRES",
+      "row": 5,
+      "col": 2,
+      "direction": "across",
+      "length": 6,
+      "clue": "Delantero de Fuenlabrada que fue el mejor nueve del mundo en 2008"
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "answer": "ALLIANZ",
+      "row": 9,
+      "col": 2,
+      "direction": "across",
+      "length": 7,
+      "clue": "Estadio del Bayern de Munich que se ilumina de colores"
+    }
+  ]
+}

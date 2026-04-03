@@ -1,0 +1,1512 @@
+[
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RC Celta de Vigo",
+    "awayTeam": "Real Valladolid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "29 de noviembre 2019",
+    "playingTeam": "RC Celta de Vigo",
+    "formation": [
+      [
+        {
+          "name": "ÁLVAREZ",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "OLAZA",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "AIDOO",
+          "position": "CB",
+          "number": "18"
+        },
+        {
+          "name": "ARAÚJO",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MALLO",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "SUÁREZ",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "LOBOTKA",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "CHEIKH",
+          "position": "CM",
+          "number": "24"
+        }
+      ],
+      [
+        {
+          "name": "SISTO",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "ASPAS",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "MINA",
+          "position": "RW",
+          "number": "22"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RC Celta de Vigo",
+    "awayTeam": "Real Valladolid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "29 de noviembre 2019",
+    "playingTeam": "Real Valladolid CF",
+    "formation": [
+      [
+        {
+          "name": "MASIP",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "SALISU",
+          "position": "CB",
+          "number": "27"
+        },
+        {
+          "name": "OLIVAS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MOYANO",
+          "position": "RB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "PLANO",
+          "position": "LM",
+          "number": "10"
+        },
+        {
+          "name": "FERNÁNDEZ",
+          "position": "CM",
+          "number": "24"
+        },
+        {
+          "name": "HERRERO",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "HERVÍAS",
+          "position": "RM",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "RAMÍREZ",
+          "position": "ST",
+          "number": "20"
+        },
+        {
+          "name": "GUARDIOLA",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Deportivo Alavés",
+    "awayTeam": "Real Madrid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-2",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "Deportivo Alavés",
+    "formation": [
+      [
+        {
+          "name": "PACHECO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "DUARTE",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "LAGUARDIA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "NAVARRO",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "AGUIRREGAB.",
+          "position": "RB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "RIOJA",
+          "position": "LM",
+          "number": "11"
+        },
+        {
+          "name": "PINA",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "WAKASO",
+          "position": "CM",
+          "number": "22"
+        },
+        {
+          "name": "VIDAL",
+          "position": "RM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "JOSELU",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Deportivo Alavés",
+    "awayTeam": "Real Madrid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-2",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "Real Madrid CF",
+    "formation": [
+      [
+        {
+          "name": "AREOLA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MARCELO",
+          "position": "LB",
+          "number": "12"
+        },
+        {
+          "name": "MILITÃO",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "RAMOS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "CARVAJAL",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "MODRIĆ",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "CASEMIRO",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "KROOS",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "ISCO",
+          "position": "LW",
+          "number": "22"
+        },
+        {
+          "name": "BENZEMA",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "BALE",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Sociedad",
+    "awayTeam": "SD Eibar",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-1",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "Real Sociedad",
+    "formation": [
+      [
+        {
+          "name": "REMIRO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MONREAL",
+          "position": "LB",
+          "number": "20"
+        },
+        {
+          "name": "ELUSTONDO",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "LLORENTE",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "ZALDUA",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "ZUBELDIA",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "MERINO",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "OYARZABAL",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "ØDEGAARD",
+          "position": "CAM",
+          "number": "21"
+        },
+        {
+          "name": "PORTU",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "WILLIAN JOSÉ",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Sociedad",
+    "awayTeam": "SD Eibar",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-1",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "SD Eibar",
+    "formation": [
+      [
+        {
+          "name": "DMITROVIC",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "COTE",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "OLIVEIRA",
+          "position": "CB",
+          "number": "12"
+        },
+        {
+          "name": "RAMIS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "DE BLASIS",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "DIOP",
+          "position": "CDM",
+          "number": "8"
+        },
+        {
+          "name": "ESCALANTE",
+          "position": "CDM",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "INUI",
+          "position": "LW",
+          "number": "22"
+        },
+        {
+          "name": "ORELLANA",
+          "position": "CAM",
+          "number": "14"
+        },
+        {
+          "name": "LEÓN",
+          "position": "RW",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "CHARLES",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Mallorca",
+    "awayTeam": "Real Betis Balompié",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-2",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "RCD Mallorca",
+    "formation": [
+      [
+        {
+          "name": "REINA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "AGBENYENU",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "RAÍLLO",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "VALJENT",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "GÁMEZ",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "BABA",
+          "position": "CDM",
+          "number": "12"
+        },
+        {
+          "name": "SEVILLA",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "RODRÍGUEZ",
+          "position": "LW",
+          "number": "14"
+        },
+        {
+          "name": "FEBAS",
+          "position": "CAM",
+          "number": "23"
+        },
+        {
+          "name": "KUBO",
+          "position": "RW",
+          "number": "26"
+        }
+      ],
+      [
+        {
+          "name": "BUDIMIR",
+          "position": "ST",
+          "number": "22"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Mallorca",
+    "awayTeam": "Real Betis Balompié",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-2",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "Real Betis Balompié",
+    "formation": [
+      [
+        {
+          "name": "ROBLES",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "PEDRAZA",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "FEDDAL",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MANDI",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "ROYAL",
+          "position": "RB",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "BARTRA",
+          "position": "CDM",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "FEKIR",
+          "position": "LM",
+          "number": "8"
+        },
+        {
+          "name": "CANALES",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "GUARDADO",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "JOAQUÍN",
+          "position": "RM",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "MORÓN",
+          "position": "ST",
+          "number": "16"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Valencia CF",
+    "awayTeam": "Villarreal CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "Valencia CF",
+    "formation": [
+      [
+        {
+          "name": "CILLESSEN",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "GAYÀ",
+          "position": "LB",
+          "number": "14"
+        },
+        {
+          "name": "MANGALA",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "GABRIEL PA.",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "WASS",
+          "position": "RB",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "SOLER",
+          "position": "LM",
+          "number": "8"
+        },
+        {
+          "name": "COQUELIN",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "PAREJO",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "TORRES",
+          "position": "RM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "GÓMEZ",
+          "position": "ST",
+          "number": "22"
+        },
+        {
+          "name": "RODRIGO",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Valencia CF",
+    "awayTeam": "Villarreal CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "30 de noviembre 2019",
+    "playingTeam": "Villarreal CF",
+    "formation": [
+      [
+        {
+          "name": "ASENJO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "QUINTILLÀ",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "TORRES",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "ALBIOL",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "GASPAR",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "TRIGUEROS",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "ANGUISSA",
+          "position": "CM",
+          "number": "19"
+        },
+        {
+          "name": "MORLANES",
+          "position": "CM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "GÓMEZ",
+          "position": "LW",
+          "number": "23"
+        },
+        {
+          "name": "TOKO EKAMBI",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "MORENO",
+          "position": "RW",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Sevilla FC",
+    "awayTeam": "CD Leganés",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "Sevilla FC",
+    "formation": [
+      [
+        {
+          "name": "VACLÍK",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "REGUILÓN",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "DIEGO CARLOS",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "KOUNDÉ",
+          "position": "CB",
+          "number": "12"
+        },
+        {
+          "name": "NAVAS",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "TORRES",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "JORDÁN",
+          "position": "CM",
+          "number": "24"
+        },
+        {
+          "name": "BANEGA",
+          "position": "CM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "NOLITO",
+          "position": "LW",
+          "number": "8"
+        },
+        {
+          "name": "DE JONG",
+          "position": "ST",
+          "number": "19"
+        },
+        {
+          "name": "VÁZQUEZ",
+          "position": "RW",
+          "number": "22"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Sevilla FC",
+    "awayTeam": "CD Leganés",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "CD Leganés",
+    "formation": [
+      [
+        {
+          "name": "CUÉLLAR",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "SILVA",
+          "position": "LWB",
+          "number": "5"
+        },
+        {
+          "name": "SIOVAS",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "BUSTINZA",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "AWAZIEM",
+          "position": "CB",
+          "number": "12"
+        },
+        {
+          "name": "ROSALES",
+          "position": "RWB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "RECIO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CM",
+          "number": "27"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "CM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "BRAITHWAITE",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "EN-NESYRI",
+          "position": "ST",
+          "number": "26"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Athletic Club",
+    "awayTeam": "Granada CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "Athletic Club",
+    "formation": [
+      [
+        {
+          "name": "SIMÓN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BERCHICHE",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "ÁLVAREZ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "CAPA",
+          "position": "RB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "LÓPEZ",
+          "position": "CDM",
+          "number": "8"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "CDM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "CÓRDOBA",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "SANCET",
+          "position": "CAM",
+          "number": "34"
+        },
+        {
+          "name": "WILLIAMS",
+          "position": "RW",
+          "number": "9"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "ST",
+          "number": "22"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Athletic Club",
+    "awayTeam": "Granada CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "Granada CF",
+    "formation": [
+      [
+        {
+          "name": "SILVA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "QUINI",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "DUARTE",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "DÍAZ",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "MONTORO",
+          "position": "CM",
+          "number": "19"
+        },
+        {
+          "name": "GONALONS",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "HERRERA",
+          "position": "CM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "MACHÍS",
+          "position": "LW",
+          "number": "23"
+        },
+        {
+          "name": "SOLDADO",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "PUERTAS",
+          "position": "RW",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Espanyol",
+    "awayTeam": "CA Osasuna",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-4",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "CA Osasuna",
+    "formation": [
+      [
+        {
+          "name": "PÉREZ",
+          "position": "GK",
+          "number": "26"
+        }
+      ],
+      [
+        {
+          "name": "ESTUPIÑÁN",
+          "position": "LB",
+          "number": "30"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "RONCAGLIA",
+          "position": "CB",
+          "number": "12"
+        },
+        {
+          "name": "VIDAL",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "LM",
+          "number": "14"
+        },
+        {
+          "name": "SANJURJO",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "BRASANAC",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "TORRES",
+          "position": "RM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "ÁVILA",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "LÓPEZ",
+          "position": "ST",
+          "number": "22"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Espanyol",
+    "awayTeam": "CA Osasuna",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-4",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "RCD Espanyol",
+    "formation": [
+      [
+        {
+          "name": "LÓPEZ",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ESPINOSA",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "CALERO",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "LÓPEZ",
+          "position": "CB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "PEDROSA",
+          "position": "LWB",
+          "number": "3"
+        },
+        {
+          "name": "ROCA",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "DARDER",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "PIPA",
+          "position": "RWB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "WU",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "CAMPUZANO",
+          "position": "ST",
+          "number": "31"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Levante UD",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-0",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "Getafe CF",
+    "formation": [
+      [
+        {
+          "name": "SORIA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "NYOM",
+          "position": "LB",
+          "number": "12"
+        },
+        {
+          "name": "CABRERA",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "ETXEITA",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "SUÁREZ",
+          "position": "RB",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "CUCURELLA",
+          "position": "LM",
+          "number": "15"
+        },
+        {
+          "name": "MAKSIMOVIC",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "TIMOR",
+          "position": "CM",
+          "number": "24"
+        },
+        {
+          "name": "JASON REME.",
+          "position": "RM",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "RODRÍGUEZ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "MOLINA",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Levante UD",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-0",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "Levante UD",
+    "formation": [
+      [
+        {
+          "name": "FERNÁNDEZ",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "CLERC",
+          "position": "LB",
+          "number": "19"
+        },
+        {
+          "name": "VEZO",
+          "position": "CB",
+          "number": "14"
+        },
+        {
+          "name": "DUARTE",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "MIRAMÓN",
+          "position": "RB",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "BARDHI",
+          "position": "LM",
+          "number": "10"
+        },
+        {
+          "name": "RADOJA",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "VUKCEVIC",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "ROCHINA",
+          "position": "RM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "MORALES",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "MAYORAL",
+          "position": "ST",
+          "number": "21"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Atlético de Madrid",
+    "awayTeam": "FC Barcelona",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "FC Barcelona",
+    "formation": [
+      [
+        {
+          "name": "TER STEGEN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "FIRPO",
+          "position": "LB",
+          "number": "24"
+        },
+        {
+          "name": "LENGLET",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "PIQUÉ",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "ROBERTO",
+          "position": "RB",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "ARTHUR MELO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "RAKITIC",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "DE JONG",
+          "position": "CM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "GRIEZMANN",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "SUÁREZ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "MESSI",
+          "position": "RW",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Atlético de Madrid",
+    "awayTeam": "FC Barcelona",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "01 de diciembre 2019",
+    "playingTeam": "Atlético de Madrid",
+    "formation": [
+      [
+        {
+          "name": "OBLAK",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ÑÍGUEZ",
+          "position": "LB",
+          "number": "8"
+        },
+        {
+          "name": "HERMOSO",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "FELIPE",
+          "position": "CB",
+          "number": "18"
+        },
+        {
+          "name": "TRIPPIER",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "KOKE",
+          "position": "LM",
+          "number": "6"
+        },
+        {
+          "name": "PARTEY",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "HERRERA",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "CORREA",
+          "position": "RM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "MORATA",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "FÉLIX",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  }
+]

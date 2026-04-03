@@ -15,20 +15,80 @@
 <!-- ══════════════ PANTALLA 1: MENÚ PRINCIPAL ══════════════ -->
 <div id="screen-menu" class="screen active">
   <a href="../index.html" class="back-btn">← Volver</a>
-  <div class="menu-center">
-    <div class="game-logo">
+
+  <div class="menu-wrap">
+    <div class="menu-hero">
       <div class="logo-icon">⛓️</div>
       <h1 class="logo-title">EN LA CADENA</h1>
       <p class="logo-sub">Jugador → Equipo → Jugador → Equipo…</p>
     </div>
-    <div class="menu-buttons">
-      <button class="btn-primary" onclick="App.showCreateGame()">🏠 Crear Partida</button>
-      <button class="btn-secondary" onclick="App.showJoinGame()">🔗 Unirse con Código</button>
+
+    <!-- Toggle Online / Local -->
+    <div class="menu-mode-toggle">
+      <button class="menu-tab active" id="menu-tab-online" onclick="App.menuSetMode('online')">🌐 Online</button>
+      <button class="menu-tab" id="menu-tab-local" onclick="App.menuSetMode('local')">📱 Local</button>
     </div>
-    <div class="firebase-note" id="firebase-status">
-      <span id="fb-indicator">●</span> <span id="fb-text">Modo local — configura Firebase para jugar online</span>
+
+    <!-- ── Panel ONLINE ── -->
+    <div class="menu-panel" id="menu-panel-online">
+
+      <!-- Unirse a sala -->
+      <div class="menu-section">
+        <h3 class="menu-section-title">Unirse a una sala</h3>
+        <div class="menu-join-row">
+          <input id="menu-player-name" class="menu-name-input" type="text" placeholder="Tu nombre" maxlength="20" />
+          <input id="menu-join-code" class="menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6"
+                 oninput="this.value=this.value.toUpperCase()" />
+          <button class="btn-primary menu-join-btn" onclick="App.menuJoinRoom()">UNIRSE ▶</button>
+        </div>
+      </div>
+
+      <div class="menu-divider">— o crea una nueva sala —</div>
+
+      <!-- Crear sala -->
+      <div class="menu-section">
+        <h3 class="menu-section-title">Nueva sala</h3>
+        <div class="menu-create-row">
+          <input id="menu-host-name" class="menu-name-input" type="text" placeholder="Tu nombre" maxlength="20" />
+          <div class="menu-lives-row">
+            <span class="menu-lives-label">Vidas:</span>
+            <button class="lives-opt selected" data-lives="1" onclick="App.menuSelectLives(this)">💀 1 vida</button>
+            <button class="lives-opt" data-lives="2" onclick="App.menuSelectLives(this)">⚽ 2 vidas</button>
+            <button class="lives-opt" data-lives="3" onclick="App.menuSelectLives(this)">🏆 3 vidas</button>
+          </div>
+          <button class="btn-primary" onclick="App.menuCreateRoom()">CREAR SALA ▶</button>
+        </div>
+      </div>
+
+      <p class="error-msg hidden" id="menu-error"></p>
+    </div>
+
+    <!-- ── Panel LOCAL ── -->
+    <div class="menu-panel hidden" id="menu-panel-local">
+      <p class="menu-local-note">📱 Todos se pasan el móvil por turnos</p>
+      <div id="menu-local-players">
+        <div class="player-input-row">
+          <span class="player-num">1</span>
+          <input class="player-name-input" type="text" placeholder="Jugador 1" maxlength="20" />
+          <button class="remove-player-btn" onclick="App.removePlayer(this)" style="visibility:hidden">✕</button>
+        </div>
+        <div class="player-input-row">
+          <span class="player-num">2</span>
+          <input class="player-name-input" type="text" placeholder="Jugador 2" maxlength="20" />
+          <button class="remove-player-btn" onclick="App.removePlayer(this)" style="visibility:hidden">✕</button>
+        </div>
+      </div>
+      <button class="btn-add-player" onclick="App.addPlayer()">+ Añadir jugador</button>
+      <div class="menu-lives-row" style="margin-top:14px">
+        <span class="menu-lives-label">Vidas:</span>
+        <button class="lives-opt selected" data-lives="1" onclick="App.menuSelectLivesLocal(this)">💀 1 vida</button>
+        <button class="lives-opt" data-lives="2" onclick="App.menuSelectLivesLocal(this)">⚽ 2 vidas</button>
+        <button class="lives-opt" data-lives="3" onclick="App.menuSelectLivesLocal(this)">🏆 3 vidas</button>
+      </div>
+      <button class="btn-primary" style="margin-top:16px;width:100%" onclick="App.menuStartLocal()">EMPEZAR ▶</button>
     </div>
   </div>
+
 </div>
 
 <!-- ══════════════ PANTALLA 2: CREAR PARTIDA ══════════════ -->
@@ -36,6 +96,15 @@
   <button class="back-btn" onclick="App.showMenu()">← Volver</button>
   <div class="setup-container">
     <h2 class="section-title">⚙️ Nueva Partida</h2>
+
+    <!-- Tipo de partida (PRIMERO) -->
+    <div class="setup-block">
+      <label class="block-label">TIPO DE PARTIDA</label>
+      <div class="type-toggle">
+        <button class="type-btn active" id="btn-local" onclick="App.setType('local')">📱 Local</button>
+        <button class="type-btn" id="btn-online" onclick="App.setType('online')">🌐 Online</button>
+      </div>
+    </div>
 
     <!-- Modo de juego -->
     <div class="setup-block">
@@ -59,9 +128,10 @@
       </div>
     </div>
 
-    <!-- Jugadores -->
-    <div class="setup-block">
+    <!-- Jugadores (solo LOCAL) -->
+    <div class="setup-block" id="local-players-block">
       <label class="block-label">JUGADORES <span class="hint">(mín. 2, máx. 8)</span></label>
+      <p class="type-note" style="margin-bottom:10px">Todos los jugadores se pasan el dispositivo por turnos.</p>
       <div id="player-inputs">
         <div class="player-input-row">
           <span class="player-num">1</span>
@@ -77,18 +147,23 @@
       <button class="btn-add-player" onclick="App.addPlayer()">+ Añadir jugador</button>
     </div>
 
-    <!-- Tipo de partida -->
-    <div class="setup-block" id="online-block">
-      <label class="block-label">TIPO DE PARTIDA</label>
-      <div class="type-toggle">
-        <button class="type-btn active" id="btn-local" onclick="App.setType('local')">📱 Local (mismo dispositivo)</button>
-        <button class="type-btn" id="btn-online" onclick="App.setType('online')">🌐 Online (distintos dispositivos)</button>
+    <!-- Tu nombre + info (solo ONLINE) -->
+    <div class="setup-block hidden" id="online-host-block">
+      <label class="block-label">TU NOMBRE</label>
+      <input id="online-host-name" class="player-name-input big" type="text" placeholder="Tu nombre de jugador" maxlength="20" />
+      <p class="type-note" style="margin-top:12px">🌐 Se creará una sala con un código que compartirás con tus amigos. Cada jugador se une desde su propio dispositivo.</p>
+      <div class="online-divider">— o bien —</div>
+      <label class="block-label" style="margin-top:14px">UNIRSE A UNA SALA</label>
+      <div class="join-inline-row">
+        <input id="join-code-inline" class="code-input" type="text" placeholder="CÓDIGO" maxlength="6"
+               oninput="this.value=this.value.toUpperCase()" />
+        <input id="join-name-inline" class="player-name-input" type="text" placeholder="Tu nombre" maxlength="20" />
+        <button class="btn-primary" onclick="App.joinRoom()">UNIRSE ▶</button>
       </div>
-      <p class="type-note" id="type-note-local">Todos los jugadores se pasan el dispositivo por turnos.</p>
-      <p class="type-note hidden" id="type-note-online">Se generará un código de sala para que los demás se unan desde sus dispositivos.</p>
+      <p class="error-msg hidden" id="join-error"></p>
     </div>
 
-    <button class="btn-primary btn-start" onclick="App.startGame()">EMPEZAR ▶</button>
+    <button class="btn-primary btn-start" onclick="App.startGame()">CREAR SALA ▶</button>
   </div>
 </div>
 
@@ -113,21 +188,27 @@
 
 <!-- ══════════════ PANTALLA 4: SALA DE ESPERA ══════════════ -->
 <div id="screen-lobby" class="screen">
+  <button class="back-btn" onclick="App.leaveLobby()">← Salir</button>
   <div class="lobby-container">
-    <h2 class="section-title">🕐 Sala de Espera</h2>
-    <div class="room-code-display">
-      <div class="room-label">CÓDIGO DE SALA</div>
-      <div class="room-code" id="room-code-display">------</div>
-      <button class="copy-btn" onclick="App.copyRoomCode()">📋 Copiar</button>
+    <h2 class="section-title">⛓️ Sala de Espera</h2>
+
+    <!-- Código + enlace compartible -->
+    <div class="lobby-share-card">
+      <div class="lobby-code-label">CÓDIGO DE SALA</div>
+      <div class="lobby-code-big" id="room-code-display">------</div>
+      <div class="lobby-share-link-wrap">
+        <span class="lobby-share-link" id="lobby-share-url">—</span>
+        <button class="lobby-copy-btn" onclick="App.copyRoomCode()" title="Copiar enlace">📋</button>
+      </div>
     </div>
-    <div class="lobby-players" id="lobby-players-list">
-      <!-- jugadores conectados -->
-    </div>
+
+    <div class="lobby-players" id="lobby-players-list"></div>
     <div class="lobby-mode" id="lobby-mode-display"></div>
-    <button class="btn-primary" id="btn-start-online" onclick="App.startOnlineGame()" style="display:none">
+
+    <button class="btn-primary" id="btn-start-online" onclick="App.startOnlineGame()" style="display:none" disabled>
       EMPEZAR PARTIDA ▶
     </button>
-    <p class="lobby-hint">Comparte el código con tus amigos para que se unan</p>
+    <p class="lobby-hint" id="lobby-hint-players">Esperando jugadores… (mínimo 2 para empezar)</p>
   </div>
 </div>
 
@@ -199,10 +280,18 @@
     <h2 class="result-title">¡GANADOR!</h2>
     <div class="winner-name" id="winner-name">—</div>
     <div class="chain-stats" id="chain-stats"></div>
-    <div class="result-buttons">
+    <div class="result-buttons" id="result-buttons">
       <button class="btn-primary" onclick="App.playAgain()">🔄 Jugar de nuevo</button>
       <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════ OVERLAY CUENTA ATRÁS ══════════════ -->
+<div id="countdown-overlay" class="countdown-overlay hidden">
+  <div class="countdown-inner">
+    <div class="countdown-label">EMPIEZA EN</div>
+    <div class="countdown-number" id="countdown-number">10</div>
   </div>
 </div>
 
@@ -213,23 +302,18 @@
 <!-- Firebase SDK (modular, CDN) -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getDatabase, ref, set, get, update, onValue, push, serverTimestamp, remove }
+  import { getDatabase, ref, set, get, update, onValue, push, serverTimestamp, remove, runTransaction }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-  // ══ CONFIGURACIÓN FIREBASE ═══════════════════════════════════════════════
-  // Crea un proyecto en https://console.firebase.google.com
-  // → Realtime Database → Crear base de datos → modo prueba
-  // → Configuración del proyecto → Añadir app web → copia el objeto firebaseConfig
   const FIREBASE_CONFIG = {
-    apiKey:            "TU_API_KEY",
-    authDomain:        "TU_PROYECTO.firebaseapp.com",
-    databaseURL:       "https://TU_PROYECTO-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId:         "TU_PROYECTO",
-    storageBucket:     "TU_PROYECTO.appspot.com",
-    messagingSenderId: "TU_SENDER_ID",
-    appId:             "TU_APP_ID"
+    apiKey:            "AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM",
+    authDomain:        "futbolhub-9d0a4.firebaseapp.com",
+    databaseURL:       "https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "futbolhub-9d0a4",
+    storageBucket:     "futbolhub-9d0a4.firebasestorage.app",
+    messagingSenderId: "179751773212",
+    appId:             "1:179751773212:web:9acfe3d5b8c344c51a2bd9"
   };
-  // ═════════════════════════════════════════════════════════════════════════
 
   // Detectar si Firebase está configurado
   const FB_CONFIGURED = FIREBASE_CONFIG.apiKey !== "TU_API_KEY";
@@ -250,7 +334,7 @@
   // Exponer Firebase al resto del código
   window._FB = {
     configured: FB_CONFIGURED && !!db,
-    db, ref, set, get, update, onValue, push, serverTimestamp, remove
+    db, ref, set, get, update, onValue, push, serverTimestamp, remove, runTransaction
   };
 
   // Cargar el resto del juego

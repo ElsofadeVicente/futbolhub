@@ -32,22 +32,10 @@
 }
 
 .cruc-back-btn {
-  background: rgba(200,168,75,0.12);
-  border: 2px solid var(--neon-green);
-  color: var(--neon-green);
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  transition: background 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
 }
-
-.cruc-back-btn:hover { background: rgba(200,168,75,0.28); }
+.cruc-back-btn:hover { transform: translateY(-1px); }
 
 .cruc-title-block {
   flex: 1;
@@ -140,6 +128,11 @@
   flex: 1;
 }
 
+/* Columnas laterales: ocultas en móvil, visibles solo en desktop */
+.cruc-clues-desktop {
+  display: none;
+}
+
 /* ── LAYOUT DESKTOP 3 COLUMNAS ── */
 @media (min-width: 601px) {
   .cruc-body {
@@ -155,7 +148,7 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    width: 210px;
+    width: 240px;
     flex-shrink: 0;
     position: sticky;
     top: 20px;
@@ -165,7 +158,27 @@
 
   .cruc-clues-desktop .cruc-clues-section {
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 12px 14px;
+  }
+
+  .cruc-clues-desktop .cruc-clues-heading {
+    font-size: 1.15rem;
+    margin-bottom: 10px;
+  }
+
+  .cruc-clues-desktop .cruc-clue-num {
+    font-size: 1.1rem;
+    min-width: 24px;
+  }
+
+  .cruc-clues-desktop .cruc-clue-desc {
+    font-size: 0.92rem;
+    opacity: 0.85;
+  }
+
+  .cruc-clues-desktop .cruc-clue-item {
+    padding: 6px 8px;
+    margin-bottom: 3px;
   }
 
   /* Columna central */
@@ -175,11 +188,6 @@
     align-items: center;
     gap: 14px;
     flex: 0 0 auto;
-  }
-
-  /* Panel de pistas (ocultar en desktop, se mueven a columnas laterales) */
-  .cruc-clues-panel {
-    display: none;
   }
 }
 
@@ -318,13 +326,6 @@
 }
 
 /* ── LISTAS DE PISTAS ── */
-.cruc-clues-panel {
-  width: 100%;
-  max-width: 500px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
 
 .cruc-clues-section {
   background: rgba(255,255,255,0.03);
@@ -580,7 +581,69 @@
   background: var(--neon-yellow);
 }
 
-/* ── MOBILE TAP BAR ── */
+/* ── BOTÓN REVELAR CON MENÚ DESPLEGABLE ── */
+.cruc-reveal-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.cruc-reveal-menu {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: #1e1535;
+  border: 2px solid #ef4444;
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 160px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+  z-index: 200;
+  flex-direction: column;
+}
+
+.cruc-reveal-menu.open {
+  display: flex;
+  animation: fadeInUp 0.15s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cruc-reveal-option {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(239,68,68,0.2);
+  color: #fff;
+  padding: 12px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0.5px;
+  transition: background 0.15s;
+}
+
+.cruc-reveal-option:last-child {
+  border-bottom: none;
+}
+
+.cruc-reveal-option:hover {
+  background: rgba(239,68,68,0.18);
+}
+
+.cruc-reveal-option--danger {
+  color: #ff9090;
+}
+
+.cruc-reveal-option--danger:hover {
+  background: rgba(239,68,68,0.32);
+}
+
+
 .cruc-tap-bar {
   display: none;
 }
@@ -608,22 +671,6 @@
   .cruc-tap-bar:active { background: rgba(200,168,75,0.2); }
 
   .cruc-keyboard { display: none; }
-
-  .cruc-cell {
-    /* El JS recalcula en móvil automáticamente */
-  }
-
-  .cruc-cell-letter {
-    /* font-size calculado en JS */
-  }
-
-  .cruc-cell-number {
-    /* font-size calculado en JS */
-  }
-
-  .cruc-clues-panel {
-    grid-template-columns: 1fr;
-  }
 
   .cruc-clue-text {
     font-size: 0.92rem;

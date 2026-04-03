@@ -1,0 +1,65 @@
+{
+  "date": "2026-04-06",
+  "title": "TORRE DIARIA",
+  "subtitle": "Todos menos uno cumplen la misma condición",
+  "commonTrait": "Todos han jugado alguna vez en Arabia Saudí",
+  "oddPlayerId": "vinicius",
+  "oddReason": "Vinicius Jr. ha recibido ofertas astronómicas de Arabia Saudí pero las ha rechazado para seguir en el Real Madrid. Nunca ha jugado en la Saudi Pro League, a diferencia de los demás.",
+  "players": [
+    {
+      "id": "benzema",
+      "playerId": "18922",
+      "name": "Karim Benzema",
+      "position": "DC",
+      "team": "Al Ittihad",
+      "detail": "Francia",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "kante",
+      "playerId": "198096",
+      "name": "N'Golo Kanté",
+      "position": "MC",
+      "team": "Al Ittihad",
+      "detail": "Francia",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "neymar",
+      "playerId": "190460",
+      "name": "Neymar",
+      "position": "EI",
+      "team": "Al Hilal",
+      "detail": "Brasil",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "mane",
+      "playerId": "45513",
+      "name": "Sadio Mané",
+      "position": "EI",
+      "team": "Al Nassr",
+      "detail": "Senegal",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "vinicius",
+      "playerId": "345364",
+      "name": "Vinicius Jr.",
+      "position": "EI",
+      "team": "Real Madrid",
+      "detail": "Brasil",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    }
+  ]
+}

@@ -1,0 +1,1540 @@
+[
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Sociedad",
+    "awayTeam": "Cádiz CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "03 de marzo 2023",
+    "playingTeam": "Real Sociedad",
+    "formation": [
+      [
+        {
+          "name": "REMIRO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "RICO",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "LE NORMAND",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "ZUBELDIA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "GOROSABEL",
+          "position": "RB",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "MERINO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "ZUBIMENDI",
+          "position": "CM",
+          "number": "3"
+        },
+        {
+          "name": "MÉNDEZ",
+          "position": "CM",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "KUBO",
+          "position": "CAM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "OYARZABAL",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "FERNÁNDEZ",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Sociedad",
+    "awayTeam": "Cádiz CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "03 de marzo 2023",
+    "playingTeam": "Cádiz CF",
+    "formation": [
+      [
+        {
+          "name": "LEDESMA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ESPINO",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "FALI",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "HERNÁNDEZ",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "CARCELÉN",
+          "position": "RB",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "ESCALANTE",
+          "position": "CDM",
+          "number": "17"
+        },
+        {
+          "name": "SAN EMETERIO",
+          "position": "CDM",
+          "number": "24"
+        }
+      ],
+      [
+        {
+          "name": "SOBRINO",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "FERNÁNDEZ",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "BONGONDA",
+          "position": "RW",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "MARTÍ",
+          "position": "ST",
+          "number": "15"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Girona FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "04 de marzo 2023",
+    "playingTeam": "Getafe CF",
+    "formation": [
+      [
+        {
+          "name": "SORIA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "DJENÉ",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "ALDERETE",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "DUARTE",
+          "position": "CB",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "PORTU",
+          "position": "LWB",
+          "number": "9"
+        },
+        {
+          "name": "MAKSIMOVIC",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "ALGOBIA",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "SUÁREZ",
+          "position": "RWB",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "EL HADDADI",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "ÜNAL",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "MAYORAL",
+          "position": "RW",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Girona FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "04 de marzo 2023",
+    "playingTeam": "Girona FC",
+    "formation": [
+      [
+        {
+          "name": "GAZZANIGA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "HERNÁNDEZ",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "BUENO",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "JUANPE",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "ROMEU",
+          "position": "CDM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "RIQUELME",
+          "position": "LM",
+          "number": "17"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "CM",
+          "number": "24"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "TSYGANKOV",
+          "position": "RM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "CASTELLANOS",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "UD Almería",
+    "awayTeam": "Villarreal CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-2",
+    "date": "04 de marzo 2023",
+    "playingTeam": "UD Almería",
+    "formation": [
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "AKIEME",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "BABIC",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "ELY",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "CHUMI",
+          "position": "RB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "ROBERTONE",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "DE LA HOZ",
+          "position": "CDM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "LÉO BAPTIS.",
+          "position": "CAM",
+          "number": "12"
+        },
+        {
+          "name": "EMBARBA",
+          "position": "CAM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "SUÁREZ",
+          "position": "ST",
+          "number": "16"
+        },
+        {
+          "name": "TOURÉ",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "UD Almería",
+    "awayTeam": "Villarreal CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-2",
+    "date": "04 de marzo 2023",
+    "playingTeam": "Villarreal CF",
+    "formation": [
+      [
+        {
+          "name": "REINA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MORENO",
+          "position": "LB",
+          "number": "18"
+        },
+        {
+          "name": "TORRES",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "ALBIOL",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "FOYTH",
+          "position": "RB",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "PAREJO",
+          "position": "CDM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "BAENA",
+          "position": "CAM",
+          "number": "16"
+        },
+        {
+          "name": "TERRATS",
+          "position": "CAM",
+          "number": "39"
+        }
+      ],
+      [
+        {
+          "name": "PINO",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "MORALES",
+          "position": "ST",
+          "number": "22"
+        },
+        {
+          "name": "CHUKWUEZE",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Mallorca",
+    "awayTeam": "Elche CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "04 de marzo 2023",
+    "playingTeam": "RCD Mallorca",
+    "formation": [
+      [
+        {
+          "name": "RAJKOVIĆ",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "RAÍLLO",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "COPETE",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "VALJENT",
+          "position": "CB",
+          "number": "24"
+        }
+      ],
+      [
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "RUIZ DE GA.",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "LEE",
+          "position": "CM",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "COSTA",
+          "position": "CAM",
+          "number": "18"
+        },
+        {
+          "name": "MAFFEO",
+          "position": "CAM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "KADEWERE",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "MURIQI",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Mallorca",
+    "awayTeam": "Elche CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "04 de marzo 2023",
+    "playingTeam": "Elche CF",
+    "formation": [
+      [
+        {
+          "name": "BADIA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "VERDÚ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "BIGAS",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "PALACIOS",
+          "position": "CB",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "MASCARELL",
+          "position": "CDM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "CLERC",
+          "position": "LM",
+          "number": "23"
+        },
+        {
+          "name": "FIDEL",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "GUMBAU",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "CARMONA",
+          "position": "RM",
+          "number": "40"
+        }
+      ],
+      [
+        {
+          "name": "BOYÉ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "NTEKA",
+          "position": "ST",
+          "number": "18"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Atlético de Madrid",
+    "awayTeam": "Sevilla FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "6-1",
+    "date": "04 de marzo 2023",
+    "playingTeam": "Atlético de Madrid",
+    "formation": [
+      [
+        {
+          "name": "OBLAK",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "HERMOSO",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "GIMÉNEZ",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "SAVIC",
+          "position": "CB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "WITSEL",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "LEMAR",
+          "position": "CM",
+          "number": "11"
+        },
+        {
+          "name": "KOKE",
+          "position": "CM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "CARRASCO",
+          "position": "CAM",
+          "number": "21"
+        },
+        {
+          "name": "LLORENTE",
+          "position": "CAM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "DEPAY",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "GRIEZMANN",
+          "position": "ST",
+          "number": "8"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Atlético de Madrid",
+    "awayTeam": "Sevilla FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "6-1",
+    "date": "04 de marzo 2023",
+    "playingTeam": "Sevilla FC",
+    "formation": [
+      [
+        {
+          "name": "BOUNOU",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ACUÑA",
+          "position": "LB",
+          "number": "19"
+        },
+        {
+          "name": "NIANZOU",
+          "position": "CB",
+          "number": "14"
+        },
+        {
+          "name": "GUDELJ",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "MONTIEL",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "JORDÁN",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "RAKITIC",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "GUEYE",
+          "position": "CAM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "OCAMPOS",
+          "position": "LW",
+          "number": "5"
+        },
+        {
+          "name": "EN-NESYRI",
+          "position": "ST",
+          "number": "15"
+        },
+        {
+          "name": "SUSO",
+          "position": "RW",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Valladolid CF",
+    "awayTeam": "RCD Espanyol",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "05 de marzo 2023",
+    "playingTeam": "Real Valladolid CF",
+    "formation": [
+      [
+        {
+          "name": "ASENJO",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ESCUDERO",
+          "position": "LB",
+          "number": "18"
+        },
+        {
+          "name": "EL YAMIQ",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "FERNÁNDEZ",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "FRESNEDA",
+          "position": "RB",
+          "number": "27"
+        }
+      ],
+      [
+        {
+          "name": "HONGLA",
+          "position": "CDM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "MESA",
+          "position": "CAM",
+          "number": "17"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CAM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "PLANO",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "LARIN",
+          "position": "ST",
+          "number": "25"
+        },
+        {
+          "name": "PLATA",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Valladolid CF",
+    "awayTeam": "RCD Espanyol",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "05 de marzo 2023",
+    "playingTeam": "RCD Espanyol",
+    "formation": [
+      [
+        {
+          "name": "PACHECO",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "OLIVÁN",
+          "position": "LB",
+          "number": "14"
+        },
+        {
+          "name": "GÓMEZ",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "MONTES",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "GIL",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "DARDER",
+          "position": "CDM",
+          "number": "10"
+        },
+        {
+          "name": "SOUZA",
+          "position": "CDM",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "BRAITHWAITE",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "SUÁREZ",
+          "position": "CAM",
+          "number": "6"
+        },
+        {
+          "name": "PUADO",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "JOSELU",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "FC Barcelona",
+    "awayTeam": "Valencia CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "05 de marzo 2023",
+    "playingTeam": "FC Barcelona",
+    "formation": [
+      [
+        {
+          "name": "TER STEGEN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BALDE",
+          "position": "LB",
+          "number": "28"
+        },
+        {
+          "name": "ARAUJO",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "CHRISTENSEN",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "KOUNDÉ",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "BUSQUETS",
+          "position": "CDM",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "DE JONG",
+          "position": "CAM",
+          "number": "21"
+        },
+        {
+          "name": "ROBERTO",
+          "position": "CAM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "FATI",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "TORRES",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "RAPHINHA",
+          "position": "RW",
+          "number": "22"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "FC Barcelona",
+    "awayTeam": "Valencia CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "05 de marzo 2023",
+    "playingTeam": "Valencia CF",
+    "formation": [
+      [
+        {
+          "name": "MAMARDASHV.",
+          "position": "GK",
+          "number": "25"
+        }
+      ],
+      [
+        {
+          "name": "VÁZQUEZ",
+          "position": "LB",
+          "number": "21"
+        },
+        {
+          "name": "ÖZKACAR",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "CÖMERT",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "FOULQUIER",
+          "position": "RB",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "GUILLAMÓN",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "ALMEIDA",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "MORIBA",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "CORREIA",
+          "position": "CAM",
+          "number": "2"
+        },
+        {
+          "name": "LINO",
+          "position": "CAM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "DURO",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Rayo Vallecano",
+    "awayTeam": "Athletic Club",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "05 de marzo 2023",
+    "playingTeam": "Rayo Vallecano",
+    "formation": [
+      [
+        {
+          "name": "DIMITRIEVSKI",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "LEJEUNE",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "MUMIN",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "BALLIU",
+          "position": "RB",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "VALENTÍN",
+          "position": "CDM",
+          "number": "23"
+        },
+        {
+          "name": "COMESAÑA",
+          "position": "CDM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "LW",
+          "number": "18"
+        },
+        {
+          "name": "TREJO",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "PALAZÓN",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "CAMELLO",
+          "position": "ST",
+          "number": "34"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Rayo Vallecano",
+    "awayTeam": "Athletic Club",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "05 de marzo 2023",
+    "playingTeam": "Athletic Club",
+    "formation": [
+      [
+        {
+          "name": "AGIRREZABALA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "BERCHICHE",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "MARTÍNEZ",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "VIVIAN",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "LEKUE",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "CDM",
+          "number": "14"
+        },
+        {
+          "name": "ZARRAGA",
+          "position": "CDM",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "BERENGUER",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "SANCET",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "WILLIAMS",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "GURUZETA",
+          "position": "ST",
+          "number": "12"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Betis Balompié",
+    "awayTeam": "Real Madrid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "05 de marzo 2023",
+    "playingTeam": "Real Betis Balompié",
+    "formation": [
+      [
+        {
+          "name": "BRAVO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MIRANDA",
+          "position": "LB",
+          "number": "33"
+        },
+        {
+          "name": "LUIZ FELIPE",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "PEZZELLA",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "SABALY",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "CARVALHO",
+          "position": "CDM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "PÉREZ",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CAM",
+          "number": "28"
+        },
+        {
+          "name": "RUIBAL",
+          "position": "RW",
+          "number": "24"
+        }
+      ],
+      [
+        {
+          "name": "IGLESIAS",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Real Betis Balompié",
+    "awayTeam": "Real Madrid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "05 de marzo 2023",
+    "playingTeam": "Real Madrid CF",
+    "formation": [
+      [
+        {
+          "name": "COURTOIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CAMAVINGA",
+          "position": "LB",
+          "number": "12"
+        },
+        {
+          "name": "MILITÃO",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "RÜDIGER",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "VÁZQUEZ",
+          "position": "RB",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "TCHOUAMÉNI",
+          "position": "CDM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "KROOS",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "VALVERDE",
+          "position": "CAM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "VINICIUS J.",
+          "position": "LW",
+          "number": "20"
+        },
+        {
+          "name": "BENZEMA",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "RODRYGO",
+          "position": "RW",
+          "number": "21"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "CA Osasuna",
+    "awayTeam": "RC Celta de Vigo",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "06 de marzo 2023",
+    "playingTeam": "CA Osasuna",
+    "formation": [
+      [
+        {
+          "name": "FERNÁNDEZ",
+          "position": "GK",
+          "number": "25"
+        }
+      ],
+      [
+        {
+          "name": "SÁNCHEZ",
+          "position": "LB",
+          "number": "20"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "HERNÁNDEZ",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "MONCAYOLA",
+          "position": "RB",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "TORRÓ",
+          "position": "CDM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "GÓMEZ",
+          "position": "CAM",
+          "number": "16"
+        },
+        {
+          "name": "OROZ",
+          "position": "CAM",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "EZZALZOULI",
+          "position": "LW",
+          "number": "12"
+        },
+        {
+          "name": "BUDIMIR",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "ÁVILA",
+          "position": "RW",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "CA Osasuna",
+    "awayTeam": "RC Celta de Vigo",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-0",
+    "date": "06 de marzo 2023",
+    "playingTeam": "RC Celta de Vigo",
+    "formation": [
+      [
+        {
+          "name": "VILLAR",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "GALÁN",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "AIDOO",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "NÚÑEZ",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MALLO",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "VEIGA",
+          "position": "CDM",
+          "number": "24"
+        },
+        {
+          "name": "BELTRÁN",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "DE LA TORRE",
+          "position": "CAM",
+          "number": "23"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "CAM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "STRAND LAR.",
+          "position": "ST",
+          "number": "18"
+        },
+        {
+          "name": "ASPAS",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  }
+]

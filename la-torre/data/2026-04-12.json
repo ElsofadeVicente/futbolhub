@@ -1,0 +1,65 @@
+{
+  "date": "2026-04-12",
+  "title": "TORRE DIARIA",
+  "subtitle": "Todos menos uno cumplen la misma condición",
+  "commonTrait": "Todos han marcado en un derbi — Manchester, Milano, Madrileño o Merseyside",
+  "oddPlayerId": "dias",
+  "oddReason": "Rúben Dias es el central titular del Manchester City y uno de los mejores defensas del mundo, pero nunca ha marcado en un derbi de Mánchester contra el United. Es un defensa que raramente aparece en zona de gol.",
+  "players": [
+    {
+      "id": "salah",
+      "playerId": "257971",
+      "name": "Mohamed Salah",
+      "position": "ED",
+      "team": "Liverpool",
+      "detail": "Egipto",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "leao",
+      "playerId": "433648",
+      "name": "Rafael Leão",
+      "position": "EI",
+      "team": "AC Milan",
+      "detail": "Portugal",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "haaland",
+      "playerId": "418560",
+      "name": "Erling Haaland",
+      "position": "DC",
+      "team": "Manchester City",
+      "detail": "Noruega",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "griezmann",
+      "playerId": "194765",
+      "name": "Antoine Griezmann",
+      "position": "DC",
+      "team": "Atlético de Madrid",
+      "detail": "Francia",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    },
+    {
+      "id": "dias",
+      "playerId": "321821",
+      "name": "Rúben Dias",
+      "position": "DFC",
+      "team": "Manchester City",
+      "detail": "Portugal",
+      "photo": "",
+      "teamLogo": "",
+      "flag": ""
+    }
+  ]
+}

@@ -1,0 +1,1520 @@
+[
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RC Celta de Vigo",
+    "awayTeam": "Real Madrid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-2",
+    "date": "06 de marzo 2026",
+    "playingTeam": "RC Celta de Vigo",
+    "formation": [
+      [
+        {
+          "name": "RADU",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ALONSO",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CB",
+          "number": "32"
+        },
+        {
+          "name": "STARFELT",
+          "position": "CB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "MINGUEZA",
+          "position": "LWB",
+          "number": "3"
+        },
+        {
+          "name": "MORIBA",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "ROMÁN",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "CARREIRA",
+          "position": "RWB",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "SWEDBERG",
+          "position": "LW",
+          "number": "19"
+        },
+        {
+          "name": "IGLESIAS",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "JUTGLÀ",
+          "position": "RW",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RC Celta de Vigo",
+    "awayTeam": "Real Madrid CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-2",
+    "date": "06 de marzo 2026",
+    "playingTeam": "Real Madrid CF",
+    "formation": [
+      [
+        {
+          "name": "COURTOIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MENDY",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "RÜDIGER",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "ASENCIO",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "ALEXANDER-.",
+          "position": "RB",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "PITARCH",
+          "position": "LM",
+          "number": "45"
+        },
+        {
+          "name": "TCHOUAMÉNI",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "GÜLER",
+          "position": "CM",
+          "number": "15"
+        },
+        {
+          "name": "VALVERDE",
+          "position": "RM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "VINICIUS J.",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "DÍAZ",
+          "position": "ST",
+          "number": "21"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "CA Osasuna",
+    "awayTeam": "RCD Mallorca",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-2",
+    "date": "07 de marzo 2026",
+    "playingTeam": "CA Osasuna",
+    "formation": [
+      [
+        {
+          "name": "HERRERA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "GALÁN",
+          "position": "LB",
+          "number": "20"
+        },
+        {
+          "name": "HERRANDO",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "CATENA",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "ROSIER",
+          "position": "RB",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "TORRÓ",
+          "position": "CDM",
+          "number": "6"
+        },
+        {
+          "name": "MONCAYOLA",
+          "position": "CDM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "MUÑOZ",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "OROZ",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "RW",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "BUDIMIR",
+          "position": "ST",
+          "number": "17"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "CA Osasuna",
+    "awayTeam": "RCD Mallorca",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-2",
+    "date": "07 de marzo 2026",
+    "playingTeam": "RCD Mallorca",
+    "formation": [
+      [
+        {
+          "name": "ROMÁN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MOJICA",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "RAÍLLO",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "VALJENT",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "MAFFEO",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "COSTA",
+          "position": "CM",
+          "number": "12"
+        },
+        {
+          "name": "MASCARELL",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "MORLANES",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "TORRE",
+          "position": "CAM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "JOSEPH",
+          "position": "ST",
+          "number": "18"
+        },
+        {
+          "name": "MURIQI",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Levante UD",
+    "awayTeam": "Girona FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "07 de marzo 2026",
+    "playingTeam": "Levante UD",
+    "formation": [
+      [
+        {
+          "name": "RYAN",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "SÁNCHEZ",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "DELA",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MORENO",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "TOLJAN",
+          "position": "RB",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "CORTÉS",
+          "position": "LM",
+          "number": "27"
+        },
+        {
+          "name": "OLASAGASTI",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "REY",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "TUNDE",
+          "position": "RM",
+          "number": "26"
+        }
+      ],
+      [
+        {
+          "name": "ROMERO",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "ESPÍ",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Levante UD",
+    "awayTeam": "Girona FC",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "07 de marzo 2026",
+    "playingTeam": "Girona FC",
+    "formation": [
+      [
+        {
+          "name": "GAZZANIGA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "LB",
+          "number": "4"
+        },
+        {
+          "name": "BLIND",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "REIS",
+          "position": "CB",
+          "number": "12"
+        },
+        {
+          "name": "RINCÓN",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "WITSEL",
+          "position": "CDM",
+          "number": "20"
+        },
+        {
+          "name": "BELTRÁN",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "ECHEVERRI",
+          "position": "LW",
+          "number": "14"
+        },
+        {
+          "name": "LEMAR",
+          "position": "CAM",
+          "number": "11"
+        },
+        {
+          "name": "TSYGANKOV",
+          "position": "RW",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "VANAT",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Atlético de Madrid",
+    "awayTeam": "Real Sociedad",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "07 de marzo 2026",
+    "playingTeam": "Atlético de Madrid",
+    "formation": [
+      [
+        {
+          "name": "OBLAK",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "RUGGERI",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "HANCKO",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "GIMÉNEZ",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "MOLINA",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "ALMADA",
+          "position": "LM",
+          "number": "11"
+        },
+        {
+          "name": "MENDOZA",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "KOKE",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "SIMEONE",
+          "position": "RM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "LOOKMAN",
+          "position": "ST",
+          "number": "22"
+        },
+        {
+          "name": "SØRLOTH",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Atlético de Madrid",
+    "awayTeam": "Real Sociedad",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "07 de marzo 2026",
+    "playingTeam": "Real Sociedad",
+    "formation": [
+      [
+        {
+          "name": "REMIRO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "GÓMEZ",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "CALETA-CAR",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "MARTÍN",
+          "position": "CB",
+          "number": "31"
+        },
+        {
+          "name": "ARAMBURU",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "HERRERA",
+          "position": "CDM",
+          "number": "12"
+        },
+        {
+          "name": "SOLER",
+          "position": "CDM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "BARRENETXEA",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "SUCIC",
+          "position": "CAM",
+          "number": "24"
+        },
+        {
+          "name": "MARÍN",
+          "position": "RW",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "ÓSKARSSON",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Athletic Club",
+    "awayTeam": "FC Barcelona",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "07 de marzo 2026",
+    "playingTeam": "Athletic Club",
+    "formation": [
+      [
+        {
+          "name": "SIMÓN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BOIRO",
+          "position": "LB",
+          "number": "19"
+        },
+        {
+          "name": "LAPORTE",
+          "position": "CB",
+          "number": "14"
+        },
+        {
+          "name": "VIVIAN",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "GOROSABEL",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "REGO",
+          "position": "CDM",
+          "number": "30"
+        },
+        {
+          "name": "JAUREGIZAR",
+          "position": "CDM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "GÓMEZ",
+          "position": "LW",
+          "number": "20"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CAM",
+          "number": "44"
+        },
+        {
+          "name": "BERENGUER",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "WILLIAMS",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Athletic Club",
+    "awayTeam": "FC Barcelona",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "07 de marzo 2026",
+    "playingTeam": "FC Barcelona",
+    "formation": [
+      [
+        {
+          "name": "GARCÍA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "CANCELO",
+          "position": "LB",
+          "number": "2"
+        },
+        {
+          "name": "MARTÍN",
+          "position": "CB",
+          "number": "18"
+        },
+        {
+          "name": "CUBARSÍ",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "GARCÍA",
+          "position": "RB",
+          "number": "24"
+        }
+      ],
+      [
+        {
+          "name": "CASADÓ",
+          "position": "CDM",
+          "number": "17"
+        },
+        {
+          "name": "BERNAL",
+          "position": "CDM",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "RASHFORD",
+          "position": "LW",
+          "number": "14"
+        },
+        {
+          "name": "OLMO",
+          "position": "CAM",
+          "number": "20"
+        },
+        {
+          "name": "LAMINE YAMAL",
+          "position": "RW",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "TORRES",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Villarreal CF",
+    "awayTeam": "Elche CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Villarreal CF",
+    "formation": [
+      [
+        {
+          "name": "LUIZ JÚNIOR",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CARDONA",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "MARÍN",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "NAVARRO",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "MOURIÑO",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "MOLEIRO",
+          "position": "LM",
+          "number": "20"
+        },
+        {
+          "name": "COMESAÑA",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "GUEYE",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "BUCHANAN",
+          "position": "RM",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "MIKAUTADZE",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "PÉPÉ",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Villarreal CF",
+    "awayTeam": "Elche CF",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Elche CF",
+    "formation": [
+      [
+        {
+          "name": "DITURO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CHUST",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "AFFENGRUBER",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "PÉTROT",
+          "position": "CB",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "VALERA",
+          "position": "LWB",
+          "number": "11"
+        },
+        {
+          "name": "AGUADO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "DIANGANA",
+          "position": "CM",
+          "number": "19"
+        },
+        {
+          "name": "FEBAS",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "SANGARÉ",
+          "position": "RWB",
+          "number": "42"
+        }
+      ],
+      [
+        {
+          "name": "MIR",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "ST",
+          "number": "20"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Real Betis Balompié",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Real Betis Balompié",
+    "formation": [
+      [
+        {
+          "name": "VALLES",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "FIRPO",
+          "position": "LB",
+          "number": "23"
+        },
+        {
+          "name": "GÓMEZ",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "BARTRA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "ORTIZ",
+          "position": "RB",
+          "number": "40"
+        }
+      ],
+      [
+        {
+          "name": "FIDALGO",
+          "position": "CM",
+          "number": "15"
+        },
+        {
+          "name": "ALTIMIRA",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "DEOSSA",
+          "position": "CM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "EZZALZOULI",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "HERNÁNDEZ",
+          "position": "ST",
+          "number": "19"
+        },
+        {
+          "name": "ÁVILA",
+          "position": "RW",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Getafe CF",
+    "awayTeam": "Real Betis Balompié",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Getafe CF",
+    "formation": [
+      [
+        {
+          "name": "SORIA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "IGLESIAS",
+          "position": "LB",
+          "number": "21"
+        },
+        {
+          "name": "ABQAR",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "ROMERO",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "DUARTE",
+          "position": "CB",
+          "number": "22"
+        },
+        {
+          "name": "DJENÉ",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "ARAMBARRI",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "MILLA",
+          "position": "CM",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "SATRIANO",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "FEMENÍA",
+          "position": "RW",
+          "number": "17"
+        },
+        {
+          "name": "VÁZQUEZ",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Sevilla FC",
+    "awayTeam": "Rayo Vallecano",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Sevilla FC",
+    "formation": [
+      [
+        {
+          "name": "VLACHODIMOS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "SALAS",
+          "position": "LB",
+          "number": "4"
+        },
+        {
+          "name": "NIANZOU",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "GUDELJ",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "AZPILICUETA",
+          "position": "RB",
+          "number": "3"
+        }
+      ],
+      [
+        {
+          "name": "OSO",
+          "position": "LM",
+          "number": "36"
+        },
+        {
+          "name": "SOW",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "AGOUMÉ",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "RM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "ADAMS",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Sevilla FC",
+    "awayTeam": "Rayo Vallecano",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Rayo Vallecano",
+    "formation": [
+      [
+        {
+          "name": "BATALLA",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ESPINO",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "MENDY",
+          "position": "CB",
+          "number": "32"
+        },
+        {
+          "name": "LEJEUNE",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "RAȚIU",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "VALENTÍN",
+          "position": "CDM",
+          "number": "23"
+        },
+        {
+          "name": "GUMBAU",
+          "position": "CDM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "PÉREZ",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "PALAZÓN",
+          "position": "CAM",
+          "number": "7"
+        },
+        {
+          "name": "MARTÍN",
+          "position": "RW",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "DE FRUTOS",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Valencia CF",
+    "awayTeam": "Deportivo Alavés",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Valencia CF",
+    "formation": [
+      [
+        {
+          "name": "DIMITRIEVSKI",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "GAYÀ",
+          "position": "LB",
+          "number": "14"
+        },
+        {
+          "name": "CÖMERT",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "NÚÑEZ",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "CORREIA",
+          "position": "RB",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "UGRINIC",
+          "position": "CM",
+          "number": "23"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "CM",
+          "number": "2"
+        },
+        {
+          "name": "GUERRA",
+          "position": "CM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "RAMAZANI",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "SADIQ",
+          "position": "ST",
+          "number": "6"
+        },
+        {
+          "name": "RIOJA",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "Valencia CF",
+    "awayTeam": "Deportivo Alavés",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-2",
+    "date": "08 de marzo 2026",
+    "playingTeam": "Deportivo Alavés",
+    "formation": [
+      [
+        {
+          "name": "SIVERA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "OTTO",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "PACHECO",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "PROTESONI",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "TENAGLIA",
+          "position": "RB",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "ALEÑÁ",
+          "position": "LM",
+          "number": "10"
+        },
+        {
+          "name": "BLANCO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "GURIDI",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "RM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "BOYÉ",
+          "position": "ST",
+          "number": "15"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Espanyol",
+    "awayTeam": "Real Oviedo",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "09 de marzo 2026",
+    "playingTeam": "RCD Espanyol",
+    "formation": [
+      [
+        {
+          "name": "DMITROVIC",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "ROMERO",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "CABRERA",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "RIEDEL",
+          "position": "CB",
+          "number": "38"
+        },
+        {
+          "name": "EL HILALI",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "LOZANO",
+          "position": "CDM",
+          "number": "10"
+        },
+        {
+          "name": "GONZÁLEZ D.",
+          "position": "CDM",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "DOLAN",
+          "position": "LW",
+          "number": "24"
+        },
+        {
+          "name": "TERRATS",
+          "position": "CAM",
+          "number": "14"
+        },
+        {
+          "name": "NGONGE",
+          "position": "RW",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "GARCÍA",
+          "position": "ST",
+          "number": "19"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "LaLiga",
+    "homeTeam": "RCD Espanyol",
+    "awayTeam": "Real Oviedo",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-1",
+    "date": "09 de marzo 2026",
+    "playingTeam": "Real Oviedo",
+    "formation": [
+      [
+        {
+          "name": "ESCANDELL",
+          "position": "GK",
+          "number": "13"
+        }
+      ],
+      [
+        {
+          "name": "LÓPEZ",
+          "position": "LB",
+          "number": "25"
+        },
+        {
+          "name": "CARMO",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "CALVO",
+          "position": "CB",
+          "number": "12"
+        },
+        {
+          "name": "VIDAL",
+          "position": "RB",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "FONSECA",
+          "position": "CDM",
+          "number": "23"
+        },
+        {
+          "name": "SIBO",
+          "position": "CDM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "FERNÁNDEZ",
+          "position": "LW",
+          "number": "15"
+        },
+        {
+          "name": "REINA",
+          "position": "CAM",
+          "number": "5"
+        },
+        {
+          "name": "ILIC",
+          "position": "RW",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "VIÑAS",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  }
+]

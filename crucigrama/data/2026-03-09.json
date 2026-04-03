@@ -1,0 +1,261 @@
+{
+  "date": "2026-03.09",
+  "title": "Crucigrama #2026-03.09",
+  "grid_size": {
+    "rows": 13,
+    "cols": 11
+  },
+  "grid": [
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+    ]
+  ],
+  "words": [
+    {
+      "id": 1,
+      "number": 1,
+      "answer": "TIFO",
+      "row": 0,
+      "col": 4,
+      "direction": "down",
+      "length": 4,
+      "clue": "Mosaico gigante en la grada"
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "answer": "MERENGUE",
+      "row": 1,
+      "col": 6,
+      "direction": "down",
+      "length": 8,
+      "clue": "Aficionado del Real Madrid"
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "answer": "MAFFEO",
+      "row": 2,
+      "col": 2,
+      "direction": "across",
+      "length": 6,
+      "clue": "Lateral mas conocido por sus enfrentamientos ante estrellas que por su juego"
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "answer": "SOMBRERO",
+      "row": 5,
+      "col": 3,
+      "direction": "down",
+      "length": 8,
+      "clue": "Regate que levanta el balón por encima del rival."
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "answer": "WEMBLEY",
+      "row": 5,
+      "col": 10,
+      "direction": "down",
+      "length": 7,
+      "clue": "Catedral del fútbol inglés"
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "answer": "ORIGI",
+      "row": 6,
+      "col": 3,
+      "direction": "across",
+      "length": 5,
+      "clue": "Apareció cuando el Liverpool necesitaba un milagro"
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "answer": "DESMARQUE",
+      "row": 10,
+      "col": 2,
+      "direction": "across",
+      "length": 9,
+      "clue": "Movimiento del delantero para quedar libre de marca"
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "answer": "TCHOUAMENI",
+      "row": 12,
+      "col": 0,
+      "direction": "across",
+      "length": 10,
+      "clue": "Mediocentro que llegó a Madrid tras destacar en Francia"
+    }
+  ]
+}

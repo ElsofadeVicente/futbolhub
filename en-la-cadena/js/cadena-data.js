@@ -25,6 +25,24 @@ const CadenaData = (() => {
      .replace(/\s+/g, ' ')
      .trim();
 
+
+  /* ── Filtro de filiales ── */
+  function isFilialTeam(name) {
+    if (!name) return false;
+    if (/Juan Pablo II/.test(name)) return false;
+    if (/\b(II|III)\s*($|\()/.test(name)) return true;
+    if (/\bII\b/.test(name)) return true;
+    if (/\s[BC]$/.test(name)) return true;
+    if (/\bU[\s-]?\d{2}\b/i.test(name)) return true;
+    if (/\bUnder[\s-]?\d{1,2}\b/i.test(name)) return true;
+    const keywords = ["reserve","youth","juvenil","filial","canterano","academy","mestalla","castilla"];
+    const lower = name.toLowerCase();
+    return keywords.some(k => lower.includes(k));
+  }
+
+  function filterTeams(teams) {
+    return (teams || []).filter(t => !isFilialTeam(t));
+  }
   /* ── Chunk helpers ── */
   const RANGES = [
     [0,99999],[100000,199999],[200000,299999],[300000,399999],[400000,499999],
@@ -57,36 +75,69 @@ const CadenaData = (() => {
   }
 
   /* ── Inicialización: carga índices ── */
+  let _initPromise = null;  // Singleton: evita cargas duplicadas en paralelo
+
   async function init() {
-    // Guard: no recargar si ya está inicializado
-    if (nameIndex && teamNames) return;
+    if (nameIndex && teamNames) return;   // ya cargado
+    if (_initPromise) return _initPromise; // carga en curso, esperar
 
-    // Cargar los tres ficheros en paralelo
-    const [ni, tn, leagueData] = await Promise.all([
-      fetch('../data/players/name-index.json').then(r => r.json()),
-      fetch('../data/teams/team-names.json').then(r => r.json()),
-      fetch('../data/teams/league-teams.json').then(r => r.json()).catch(() => null),
-    ]);
-    nameIndex = ni;
-    teamNames = tn;
+    _initPromise = (async () => {
+      const [ni, tn, leagueData] = await Promise.all([
+        fetch('../data/players/name-index.json').then(r => r.json()),
+        fetch('../data/teams/team-names.json').then(r => r.json()),
+        fetch('../data/teams/league-teams.json').then(r => r.json()).catch(() => null),
+      ]);
+      nameIndex = ni;
+      teamNames = tn.filter(t => !isFilialTeam(t));
 
-    teamLeaguePrio = {};
-    if (leagueData) {
-      for (const league of leagueData.leagues) {
-        for (const teamName of league.teams) {
-          // Usar nombre normalizado como clave; si el equipo ya aparece en una
-          // liga de mayor prioridad (número más bajo), no sobreescribir.
-          const key = norm(teamName);
-          if (teamLeaguePrio[key] === undefined || league.priority < teamLeaguePrio[key]) {
-            teamLeaguePrio[key] = league.priority;
+      teamLeaguePrio = {};
+      if (leagueData) {
+        // Estructura: { "La Liga": { priority: 1, teams: [...] }, ... }
+        for (const [, leagueInfo] of Object.entries(leagueData)) {
+          for (const teamName of leagueInfo.teams) {
+            const key = norm(teamName);
+            if (teamLeaguePrio[key] === undefined || leagueInfo.priority < teamLeaguePrio[key]) {
+              teamLeaguePrio[key] = leagueInfo.priority;
+            }
           }
         }
+      } else {
+        console.warn('⚠️ league-teams.json no disponible, sin prioridad de ligas');
       }
-    } else {
-      console.warn('⚠️ league-teams.json no disponible, sin prioridad de ligas');
-    }
 
-    console.log(`✅ CadenaData: ${nameIndex.length.toLocaleString()} jugadores, ${teamNames.length.toLocaleString()} equipos`);
+      console.log(`✅ CadenaData: ${nameIndex.length.toLocaleString()} jugadores, ${teamNames.length.toLocaleString()} equipos`);
+    })();
+
+    return _initPromise;
+  }
+
+  /* ── Precarga de todos los chunks de jugadores ── */
+  const ALL_CHUNKS = [
+    '0-99999.json','100000-199999.json','200000-299999.json','300000-399999.json',
+    '400000-499999.json','500000-599999.json','600000-699999.json','700000-799999.json',
+    '800000-899999.json','900000-999999.json','1000000-1099999.json','1100000-1199999.json',
+    '1200000-1299999.json','1300000-1399999.json','1400000-1499999.json'
+  ];
+  let _chunksPromise = null;
+  let _chunksLoaded  = false;
+
+  async function preloadAllChunks() {
+    if (_chunksLoaded) return;           // ya cargados con éxito, no repetir
+    if (_chunksPromise) return _chunksPromise; // carga en curso, esperar
+    _chunksPromise = Promise.all(
+      ALL_CHUNKS.map(cf => loadPlayerChunk(cf).catch(() => null))
+    ).then(results => {
+      // Solo marcar como cargado si todos los chunks respondieron (no null)
+      const failed = results.filter(r => r === null).length;
+      if (failed === 0) {
+        _chunksLoaded = true;
+      } else {
+        // Hubo fallos — resetear para poder reintentar
+        _chunksPromise = null;
+        console.warn(`⚠️ ${failed} chunks fallaron al precargar`);
+      }
+    });
+    return _chunksPromise;
   }
 
   /* ── Autocomplete ── */
@@ -103,11 +154,8 @@ const CadenaData = (() => {
     _debounceTimer = setTimeout(() => buildSuggestions(value), 150);
   }
 
-  // Comprueba si la query coincide con el inicio de alguna palabra del nombre
   function wordBoundaryMatch(n, q) {
-    // n y q ya están normalizados
     const words = n.split(' ');
-    // q puede ser varias palabras (ej: "boca juniors") → buscar subcadena que empiece en límite de palabra
     for (let i = 0; i < words.length; i++) {
       const fromWord = words.slice(i).join(' ');
       if (fromWord.startsWith(q)) return true;
@@ -115,7 +163,6 @@ const CadenaData = (() => {
     return false;
   }
 
-  // Traducciones cortas de posición
   const POS_LABEL = { GK: 'Portero', DEF: 'Defensa', MID: 'Centrocampista', FWD: 'Delantero' };
 
   async function buildSuggestions(query) {
@@ -125,22 +172,15 @@ const CadenaData = (() => {
     let results = [];
 
     if (type === 'player') {
-      // Recoger candidatos por categoría sin límite fijo por categoría,
-      // para no perder jugadores famosos que estén más adelante en el índice.
-      // Sí ponemos un tope por categoría para evitar queries muy genéricas ("a"):
-      //   exact: sin límite  |  starts: 300  |  wordBound: 150  |  contains: 80
       let exact = [], starts = [], wordBound = [], contains = [];
       for (const [id, name] of nameIndex) {
         const n = norm(name);
-        if      (n === q)                                          exact.push([id, name]);
-        else if (n.startsWith(q)          && starts.length   < 300) starts.push([id, name]);
-        else if (wordBoundaryMatch(n, q)  && wordBound.length < 150) wordBound.push([id, name]);
-        else if (n.includes(q)            && contains.length  <  80) contains.push([id, name]);
-        // Parar solo cuando todas las categorías están llenas
-        if (starts.length >= 300 && wordBound.length >= 150 && contains.length >= 80) break;
+        if      (n === q)                  exact.push([id, name]);
+        else if (n.startsWith(q))          starts.push([id, name]);
+        else if (wordBoundaryMatch(n, q))  wordBound.push([id, name]);
+        else if (n.includes(q))            contains.push([id, name]);
       }
 
-      // Taggear con categoría para mantener prioridad de relevancia
       const tagged = [
         ...exact.map(([id, name])     => ({ id, name, cat: 0 })),
         ...starts.map(([id, name])    => ({ id, name, cat: 1 })),
@@ -148,64 +188,61 @@ const CadenaData = (() => {
         ...contains.map(([id, name])  => ({ id, name, cat: 3 })),
       ];
 
-      // Mostrar una preview rápida mientras se cargan los datos
+      // Render provisional rápido con los primeros 8 del índice
       renderSuggestions(
         tagged.slice(0, 8).map(({ id, name }) => ({ type: 'player', id, name })),
         query
       );
 
-      // Cargar datos en paralelo — máx 300 para no saturar
-      // (los chunks se cachean, así que el segundo render es casi instantáneo)
-      const toLoad = tagged.slice(0, 300);
-      const dataList = await Promise.all(toLoad.map(t => getPlayerById(t.id)));
-      const itemsWithData = toLoad.map((t, i) => ({
+      // Cargar datos de TODOS los candidatos para poder ordenar correctamente
+      const dataList = await Promise.all(tagged.map(t => getPlayerById(t.id)));
+      const itemsWithData = tagged.map((t, i) => ({
         type: 'player', id: t.id, name: t.name, cat: t.cat, data: dataList[i]
       }));
 
-      // Ordenar: categoría primero, luego apps DESC dentro de cada categoría
+      // Calcular mejor prioridad de liga de cada jugador
+      const bestLeaguePrio = (data) => {
+        const ft = filterTeams(data?.teams);
+        if (!ft.length) return 999;
+        return ft.reduce((best, t) => {
+          const p = teamLeaguePrio?.[norm(t)] ?? 999;
+          return p < best ? p : best;
+        }, 999);
+      };
+
       itemsWithData.sort((a, b) => {
         if (a.cat !== b.cat) return a.cat - b.cat;
+        const prioA = bestLeaguePrio(a.data);
+        const prioB = bestLeaguePrio(b.data);
+        if (prioA !== prioB) return prioA - prioB;
         return (b.data?.apps || 0) - (a.data?.apps || 0);
       });
 
-      results = itemsWithData.slice(0, 8);
+      // Excluir jugadores que SOLO tienen equipos filiales (no tendrían salida válida)
+      const playableItems = itemsWithData.filter(item => filterTeams(item.data?.teams).length > 0);
+      results = playableItems.slice(0, 8);
 
-      // Calcular qué info mostrar para diferenciar jugadores con el mismo nombre
       const finalItems = results.map((item, _, arr) => {
         const d = item.data;
         if (!d) return item;
-
         const sameName = arr.filter(o => norm(o.name) === norm(item.name));
-
         let tags = [];
-
-        // Siempre mostrar posición
         const posLabel = POS_LABEL[d.p] || d.p || '';
         if (posLabel) tags.push(posLabel);
-
-        // Si hay otro jugador con mismo nombre Y misma posición → añadir nacionalidad
         if (sameName.length > 1) {
           const samePos = sameName.filter(o => o.data?.p === d.p);
           if (samePos.length > 1 && d.nat) {
             tags.push(d.nat);
-
-            // Si además misma nacionalidad → añadir altura
             const sameNat = samePos.filter(o => o.data?.nat === d.nat);
-            if (sameNat.length > 1 && d.h) {
-              tags.push(d.h + ' cm');
-            }
+            if (sameNat.length > 1 && d.h) tags.push(d.h + ' cm');
           }
         }
-
         return { ...item, disambig: tags.join(' · ') };
       });
 
       renderSuggestions(finalItems, query);
 
     } else {
-      // Buscar en lista de equipos — escaneamos TODOS para no perdernos nada
-      // Cada candidato recibe un código de categoría de match:
-      //   0=exact  1=starts  2=wordBound  3=contains
       const candidates = [];
       for (const t of teamNames) {
         const n = norm(t);
@@ -218,18 +255,10 @@ const CadenaData = (() => {
         candidates.push({ t, cat });
       }
 
-      // Ordenar en dos bloques:
-      //   BLOQUE 1 — matches relevantes (exact/starts/wordBound, cat 0-2):
-      //     dentro del bloque: liga primero, luego cat, luego popularidad DESC.
-      //     Así "Le" → Leganés [LaLiga,word] y Lecce [SerieA,word] salen antes
-      //     que Leyton Orient [desconocido,starts].
-      //   BLOQUE 2 — matches "contains" (cat 3):
-      //     solo por popularidad; nunca suben sobre el bloque 1.
-      //     Así Valencia CF ("va-le-ncia") no ocupa sitios de Lecce o Leyton.
       candidates.sort((a, b) => {
         const aIsContains = a.cat === 3;
         const bIsContains = b.cat === 3;
-        if (aIsContains !== bIsContains) return aIsContains ? 1 : -1;  // contains al final
+        if (aIsContains !== bIsContains) return aIsContains ? 1 : -1;
         const prioA = teamLeaguePrio?.[norm(a.t)] ?? 999;
         const prioB = teamLeaguePrio?.[norm(b.t)] ?? 999;
         if (prioA !== prioB) return prioA - prioB;
@@ -255,10 +284,8 @@ const CadenaData = (() => {
   function renderSuggestions(items, query) {
     const box = document.getElementById('suggestions');
     if (!items.length) { closeSuggestions(); return; }
-
     suggestionItems = items;
     suggestionIndex = -1;
-
     box.innerHTML = items.map((item, i) => {
       const icon = item.type === 'player' ? '⚽' : '🏟️';
       const meta = item.type === 'player' ? (item.disambig || '') : '';
@@ -269,7 +296,6 @@ const CadenaData = (() => {
         ${meta ? `<span class="sug-meta">${meta}</span>` : ''}
       </div>`;
     }).join('');
-
     box.classList.add('open');
   }
 
@@ -286,14 +312,12 @@ const CadenaData = (() => {
     selectedSuggestion = suggestionItems[index];
     document.getElementById('answer-input').value = selectedSuggestion.name;
     closeSuggestions();
-    // Auto-confirmar la selección directamente
     submitAnswer();
   }
 
   function onKeyDown(e) {
     const box = document.getElementById('suggestions');
     const isOpen = box.classList.contains('open');
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (!isOpen) return;
@@ -306,11 +330,8 @@ const CadenaData = (() => {
       updateSuggestionHighlight();
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (isOpen && suggestionIndex >= 0) {
-        selectSuggestion(suggestionIndex);
-      } else {
-        submitAnswer();
-      }
+      if (isOpen && suggestionIndex >= 0) selectSuggestion(suggestionIndex);
+      else submitAnswer();
     } else if (e.key === 'Escape') {
       closeSuggestions();
     }
@@ -325,73 +346,42 @@ const CadenaData = (() => {
   }
 
   /* ── Validación ── */
-
-  /**
-   * Valida si un jugador (por ID) jugó en el equipo dado.
-   * Retorna { valid, playerData, reason }
-   */
   async function validatePlayer(playerId, requiredTeam) {
     const player = await getPlayerById(playerId);
     if (!player) return { valid: false, reason: 'Jugador no encontrado en la base de datos.' };
-
-    if (!requiredTeam) {
-      // Primera jugada: cualquier jugador válido
-      return { valid: true, playerData: player };
-    }
-
+    const playerTeamsFilt = filterTeams(player.teams);
+    if (!playerTeamsFilt.length) return { valid: false, reason: `${player.n} solo ha jugado en equipos filiales y no es válido en este juego.` };
+    if (!requiredTeam) return { valid: true, playerData: player };
     const qt = norm(requiredTeam);
-    const played = (player.teams || []).some(t => norm(t) === qt);
-
+    const played = playerTeamsFilt.some(t => norm(t) === qt);
     if (!played) {
-      const teamList = (player.teams || []).slice(0, 4).join(', ');
-      return {
-        valid: false,
-        reason: `${player.n} no jugó en ${requiredTeam}. Sus equipos: ${teamList}…`
-      };
+      const teamList = playerTeamsFilt.slice(0, 4).join(', ');
+      return { valid: false, reason: `${player.n} no jugó en ${requiredTeam}. Sus equipos: ${teamList}…` };
     }
     return { valid: true, playerData: player };
   }
 
-  /**
-   * Valida si un equipo es válido para el jugador dado.
-   * Retorna { valid, reason, isOneClubMan }
-   */
   function validateTeam(teamName, playerData, previousTeam) {
     const qt = norm(teamName);
-    const teams = playerData.teams || [];
-
-    // ¿El jugador jugó en este equipo?
+    const teams = filterTeams(playerData.teams);
     const played = teams.some(t => norm(t) === qt);
     if (!played) {
       const teamList = teams.slice(0, 4).join(', ');
-      return {
-        valid: false,
-        reason: `${playerData.n} no jugó en ${teamName}. Sus equipos: ${teamList}…`
-      };
+      return { valid: false, reason: `${playerData.n} no jugó en ${teamName}. Sus equipos: ${teamList}…` };
     }
-
-    // One-club man: solo jugó en un equipo → puede repetir
     const isOneClubMan = teams.length === 1;
-
-    // ¿Repite el equipo anterior?
     if (previousTeam && !isOneClubMan && norm(teamName) === norm(previousTeam)) {
-      return {
-        valid: false,
-        reason: `¡No puedes repetir el equipo anterior (${previousTeam})!`
-      };
+      return { valid: false, reason: `¡No puedes repetir el equipo anterior (${previousTeam})!` };
     }
-
     return { valid: true, isOneClubMan };
   }
 
-  /* ── Submit answer (entrada pública) ── */
+  /* ── Submit answer ── */
   async function submitAnswer() {
     const input = document.getElementById('answer-input');
     const value = (input.value || '').trim();
     if (!value) return;
 
-    // Si hay sugerencias visibles y no se ha seleccionado nada explícitamente,
-    // usar la sugerencia resaltada o la primera disponible
     if (!selectedSuggestion && suggestionItems.length > 0) {
       const idx = suggestionIndex >= 0 ? suggestionIndex : 0;
       selectedSuggestion = suggestionItems[idx];
@@ -399,7 +389,6 @@ const CadenaData = (() => {
       closeSuggestions();
     }
 
-    // Disable input mientras validamos
     input.disabled = true;
     document.querySelector('.submit-btn').disabled = true;
 
@@ -408,12 +397,10 @@ const CadenaData = (() => {
 
     try {
       if (type === 'player') {
-        // Buscar el jugador: primero en selectedSuggestion, si no por nombre en índice
         let playerId   = selectedSuggestion?.id;
         let playerName = selectedSuggestion?.name || value;
 
         if (!playerId) {
-          // Buscar por nombre normalizado
           const q = norm(value);
           const found = nameIndex.find(([id, n]) => norm(n) === q);
           if (!found) {
@@ -425,7 +412,6 @@ const CadenaData = (() => {
           playerName = found[1];
         }
 
-        // Comprobar que el jugador no ha aparecido ya en la cadena
         const alreadyInChain = state.chain.some(e => e.type === 'player' && e.id === playerId);
         if (alreadyInChain) {
           App.showToast(`⚽ ${playerName} ya ha aparecido en la cadena`, 'error');
@@ -439,26 +425,38 @@ const CadenaData = (() => {
 
         if (!valid) {
           App.showToast(reason, 'error');
-          // Para fallos de jugador no tenemos lista fácil de opciones válidas
           CadenaGame.penalizeWrongAnswer(value, 'player', null);
           resetInput(input);
           return;
         }
 
-        CadenaGame.addToChain({ type: 'player', id: playerId, name: playerName, data: playerData });
+        CadenaGame.addToChain({
+          type: 'player', id: playerId, name: playerName, data: playerData,
+          nat: playerData?.nat || null,
+          b:   playerData?.b   || null
+        });
 
       } else {
-        // Validar equipo
-        const lastEntry   = state.chain[state.chain.length - 1];  // jugador anterior
-        const prevTeam    = state.chain.length >= 2 ? state.chain[state.chain.length - 2].value : null;
+        const lastEntry = state.chain[state.chain.length - 1];
+        const prevTeam  = state.chain.length >= 2 ? state.chain[state.chain.length - 2].value : null;
+
+        // En online lastEntry.data no viaja por Firebase — cargar por id desde chunks locales
+        // Los chunks están precargados en memoria tras el countdown, así que esto es instantáneo
+        let playerData = lastEntry?.data;
+        if (!playerData && lastEntry?.id) {
+          playerData = await getPlayerById(lastEntry.id);
+        }
+        if (!playerData) {
+          App.showToast('Error: no se encontró el jugador anterior', 'error');
+          resetInput(input);
+          return;
+        }
 
         let teamName = selectedSuggestion?.name || value;
-        // Normalizar al nombre canónico del índice (si existe)
         const q = norm(teamName);
         const canonical = teamNames.find(t => norm(t) === q);
 
-        // Calcular opciones válidas: equipos del jugador anterior, excluyendo el equipo previo
-        const playerTeams  = lastEntry?.data?.teams || [];
+        const playerTeams  = filterTeams(playerData?.teams);
         const isOCM        = playerTeams.length === 1;
         const prevTeamNorm = prevTeam ? norm(prevTeam) : null;
         const validTeams   = playerTeams.filter(t => !prevTeamNorm || isOCM || norm(t) !== prevTeamNorm);
@@ -471,7 +469,7 @@ const CadenaData = (() => {
         }
         teamName = canonical;
 
-        const { valid, reason, isOneClubMan } = validateTeam(teamName, lastEntry.data, prevTeam);
+        const { valid, reason, isOneClubMan } = validateTeam(teamName, playerData, prevTeam);
 
         if (!valid) {
           App.showToast(reason, 'error');
@@ -498,6 +496,6 @@ const CadenaData = (() => {
   }
 
   /* ── API pública ── */
-  return { init, onInput, onKeyDown, selectSuggestion, submitAnswer, closeSuggestions, getPlayerById };
+  return { init, preloadAllChunks, chunksLoaded: () => _chunksLoaded, onInput, onKeyDown, selectSuggestion, submitAnswer, closeSuggestions, getPlayerById };
 
 })();

@@ -1,0 +1,779 @@
+/* =============================================
+   HIGHER-OR-LOWER.CSS
+   QUIÉN COÑO FALTA
+   ============================================= */
+
+/* ── BOTÓN VOLVER — igual que .back-btn en cadena.css ── */
+.hol-back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 160;
+}
+.hol-back-btn:hover { transform: translateY(-1px); }
+
+/* Durante el juego necesita fixed para no depender del scroll */
+.hol-back-btn--ingame {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 60;
+}
+
+/* ── JUEGO — oculto hasta que se seleccione un modo ── */
+.hol-game {
+  display: none;
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-dark, #0c110c);
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+.hol-game.active {
+  display: flex;
+}
+
+/* ── TOP BAR ── */
+.hol-topbar {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px 10px;
+  z-index: 50;
+}
+
+.hol-score-left,
+.hol-score-right {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.hol-score-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.hol-score-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(245,240,232,0.4);
+}
+
+.hol-score-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  color: var(--neon-yellow, #e8c96d);
+  line-height: 1;
+}
+
+.hol-mode-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 4px;
+  color: rgba(245,240,232,0.2);
+  text-transform: uppercase;
+}
+
+/* ── ARENA ── */
+.hol-arena {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  max-width: 900px;
+  padding: 8px 16px 24px;
+  flex: 1;
+}
+
+/* ── TARJETA DE JUGADOR ── */
+.hol-panel {
+  position: relative;
+  flex: 1;
+  max-width: 380px;
+  /* Ratio Transfermarkt: 200×267 ≈ 3:4 */
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+  transition: box-shadow 0.2s ease;
+  /* Color de fondo exacto de Transfermarkt */
+  background: #e8e8e8;
+}
+
+.hol-panel-bg {
+  position: absolute;
+  inset: 0;
+  /* cover para que la foto llene toda la card sin bordes blancos */
+  background-size: cover;
+  /* Transfermarkt: cabeza en tercio superior, centrado horizontalmente */
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-color: #e8e8e8;
+  transition: transform 0.6s ease;
+}
+
+.hol-panel:hover .hol-panel-bg {
+  transform: scale(1.02);
+}
+
+.hol-panel-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0)    0%,
+    rgba(0,0,0,0)    45%,
+    rgba(0,0,0,0.55) 68%,
+    rgba(0,0,0,0.92) 100%
+  );
+}
+
+.hol-panel-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 20px 16px 22px;
+  z-index: 5;
+  text-align: center;
+}
+
+.hol-player-club {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 4px;
+}
+
+.hol-player-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.2rem, 2.8vw, 1.9rem);
+  letter-spacing: 3px;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+.hol-stat-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(200,168,75,0.25);
+  border-radius: 8px;
+  padding: 10px 20px 12px;
+  backdrop-filter: blur(8px);
+  min-width: 155px;
+}
+
+.hol-stat-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(200,168,75,0.7);
+}
+
+.hol-stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  letter-spacing: 1px;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.hol-stat-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(200,168,75,0.25);
+  border-radius: 8px;
+  padding: 10px 20px 12px;
+  backdrop-filter: blur(8px);
+  min-width: 155px;
+  margin-bottom: 12px;
+  opacity: 0;
+  transform: scale(0.85) translateY(6px);
+  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hol-stat-reveal.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* ── BOTONES DE RESPUESTA ── */
+.hol-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 210px;
+}
+
+.hol-choice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.hol-choice-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.12);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.hol-choice-btn:hover::after { opacity: 1; }
+.hol-choice-btn:hover { transform: translateY(-1px); }
+.hol-choice-btn:active { transform: scale(0.98); }
+
+.hol-choice-btn--higher {
+  background: linear-gradient(135deg, #1a7a42, #20994e);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(26,138,74,0.4);
+}
+
+.hol-choice-btn--equal {
+  background: linear-gradient(135deg, #36363f, #48484e);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+.hol-choice-btn--lower {
+  background: linear-gradient(135deg, #a82820, #c63028);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(180,48,37,0.4);
+}
+
+.hol-btn-arrow {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.hol-choice-btn.disabled {
+  pointer-events: none;
+  opacity: 0.22;
+  transform: scale(0.96);
+}
+
+.hol-choice-btn.correct-pick {
+  opacity: 1 !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 0 20px rgba(74,222,128,0.7) !important;
+}
+
+.hol-choice-btn.wrong-pick {
+  opacity: 1 !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 0 20px rgba(239,68,68,0.7) !important;
+  background: linear-gradient(135deg, #6f1a1a, #8b1f1f) !important;
+}
+
+/* ── VS BADGE ── */
+.hol-vs {
+  position: relative;
+  z-index: 20;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark, #0c110c);
+  border: 1.5px solid rgba(200,168,75,0.4);
+  border-radius: 50%;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  color: rgba(200,168,75,0.75);
+  box-shadow: 0 0 18px rgba(0,0,0,0.5);
+  margin: 0 -8px;
+}
+
+/* ── FEEDBACK FLASH ── */
+.hol-panel.flash-correct::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 3px rgba(34,197,94,0.85);
+  background: rgba(34,197,94,0.08);
+  animation: flashFade 0.9s ease forwards;
+  pointer-events: none;
+}
+
+.hol-panel.flash-wrong::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 3px rgba(239,68,68,0.85);
+  background: rgba(239,68,68,0.08);
+  animation: flashFade 0.9s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes flashFade {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── TRANSICIONES ── */
+.hol-panel.sliding-out {
+  animation: holSlideOut 0.4s ease-in forwards;
+}
+.hol-panel.sliding-in {
+  animation: holSlideIn 0.4s ease-out forwards;
+}
+
+@keyframes holSlideOut {
+  from { transform: translateX(0) scale(1); opacity: 1; }
+  to   { transform: translateX(-20px) scale(0.97); opacity: 0; }
+}
+
+@keyframes holSlideIn {
+  from { transform: translateX(20px) scale(0.97); opacity: 0; }
+  to   { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+/* ── LOADING ── */
+.hol-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: var(--bg-dark, #0c110c);
+}
+
+.hol-loading.hidden { display: none; }
+
+.hol-loading-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  letter-spacing: 6px;
+  color: var(--neon-yellow, #e8c96d);
+}
+
+.hol-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(200,168,75,0.2);
+  border-top-color: var(--neon-gold, #c8a84b);
+  border-radius: 50%;
+  animation: holSpin 0.8s linear infinite;
+}
+
+@keyframes holSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── GAME OVER OVERLAY ── */
+.hol-gameover {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.35s ease;
+}
+
+.hol-gameover.active { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.hol-gameover-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+  padding: 34px 36px;
+  max-width: 360px;
+  width: 90%;
+  background: var(--bg-purple, #18201a);
+  border: 2px solid var(--neon-green, #c8a84b);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+  animation: slideUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(28px) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.hol-gameover-icon  { font-size: 2.8rem; }
+
+.hol-gameover-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.1rem;
+  letter-spacing: 6px;
+  color: var(--neon-yellow, #e8c96d);
+}
+
+.hol-gameover-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 4.2rem;
+  letter-spacing: 2px;
+  color: var(--text-light, #f5f0e8);
+  line-height: 1;
+}
+
+.hol-gameover-score-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(245,240,232,0.38);
+  margin-top: -8px;
+}
+
+.hol-gameover-record {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--neon-green, #c8a84b);
+}
+
+.hol-gameover-record .new-record {
+  color: var(--neon-yellow, #e8c96d);
+  font-weight: 700;
+}
+
+.hol-play-again-btn {
+  background: var(--neon-green, #c8a84b);
+  color: var(--bg-dark, #0c110c);
+  border: none;
+  padding: 13px 32px;
+  border-radius: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.hol-play-again-btn:hover {
+  background: var(--neon-yellow, #e8c96d);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(200,168,75,0.3);
+}
+
+.hol-change-mode-btn {
+  background: transparent;
+  color: rgba(245,240,232,0.45);
+  border: 1px solid rgba(245,240,232,0.13);
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.hol-change-mode-btn:hover {
+  border-color: rgba(245,240,232,0.3);
+  color: rgba(245,240,232,0.75);
+}
+
+.hol-back-hub-link {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(245,240,232,0.28);
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: color 0.2s;
+}
+
+.hol-back-hub-link:hover { color: rgba(245,240,232,0.6); }
+
+
+/* ============================================================ */
+/* ── MENÚ DE SELECCIÓN DE MODO                                 */
+/* ============================================================ */
+
+.hol-mode-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  animation: fadeIn 0.25s ease;
+  position: relative;
+  background-color: #0c110c;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% 50%, transparent 52%, rgba(0,0,0,0.48) 100%),
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(201,168,76,0.065) 0%, transparent 65%),
+    repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,0.013) 79px, rgba(255,255,255,0.013) 80px),
+    repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,0.013) 79px, rgba(255,255,255,0.013) 80px);
+  background-attachment: fixed;
+}
+
+.hol-mode-menu.active { display: flex; }
+
+/* Botón ← HUB dentro del menú */
+.hol-mode-menu .back-to-hub-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 160;
+}
+
+.hol-mode-menu-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 56px 20px 48px;
+  width: 100%;
+  max-width: 560px;
+}
+
+/* ── CABECERA ── */
+.hol-mode-header { text-align: center; }
+
+.hol-mode-header-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 8vw, 4.8rem);
+  letter-spacing: 10px;
+  color: var(--neon-green, #c8a84b);
+  text-shadow: 3px 3px 0 #000, 1px 1px 0 rgba(0,0,0,0.8);
+  line-height: 1;
+}
+
+.hol-mode-header-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(245,240,232,0.45);
+  margin-top: 8px;
+  display: block;
+}
+
+/* ── LISTA DE MODOS — columna vertical, todas iguales ── */
+.hol-mode-grid {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1.2vh, 12px);
+  width: 100%;
+}
+
+.hol-mode-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, var(--bg-purple, #18201a), #1e2a1e);
+  border: 2px solid var(--neon-green, #c8a84b);
+  border-radius: 10px;
+  padding: clamp(12px, 1.8vh, 20px) 20px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  animation: holCardIn 0.5s ease-out both;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.hol-mode-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 60%, rgba(200,168,75,0.07));
+  pointer-events: none;
+}
+
+.hol-mode-card:nth-child(1) { animation-delay: 0.05s; }
+.hol-mode-card:nth-child(2) { animation-delay: 0.13s; }
+.hol-mode-card:nth-child(3) { animation-delay: 0.21s; }
+.hol-mode-card:nth-child(4) { animation-delay: 0.29s; }
+.hol-mode-card:nth-child(5) { animation-delay: 0.37s; }
+.hol-mode-card:nth-child(6) { animation-delay: 0.45s; }
+
+@keyframes holCardIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hol-mode-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  border-color: var(--neon-yellow, #e8c96d);
+  background: linear-gradient(135deg, #1e2a1e, #243024);
+}
+
+.hol-mode-card:active { transform: translateY(-1px); }
+
+/* ── LOGO DE LIGA ── */
+.hol-league-logo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 4px;
+}
+
+.hol-league-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 1px rgba(255,255,255,0.9))
+    drop-shadow(0 0 2px rgba(255,255,255,0.6))
+    drop-shadow(0 0 1px rgba(255,255,255,0.9))
+    drop-shadow(0 0 1px rgba(255,255,255,0.9));
+}
+
+/* ── TEXTOS DE LA CARD ── */
+.hol-mode-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hol-mode-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  letter-spacing: 3px;
+  color: var(--neon-yellow, #e8c96d);
+  line-height: 1.1;
+  margin-bottom: 3px;
+}
+
+.hol-mode-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(0.8rem, 1.3vw, 0.95rem);
+  font-weight: 600;
+  color: rgba(245,240,232,0.8);
+  line-height: 1.3;
+}
+
+.hol-mode-record {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(0.7rem, 1.1vw, 0.82rem);
+  font-weight: 600;
+  color: rgba(245,240,232,0.5);
+  font-style: italic;
+  margin-top: 1px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .hol-arena {
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 12px 20px;
+  }
+
+  .hol-panel {
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 3 / 4;
+  }
+
+  .hol-panel--left  { border-radius: 14px 14px 0 0; }
+  .hol-panel--right { border-radius: 0 0 14px 14px; }
+
+  .hol-vs {
+    width: 38px;
+    height: 38px;
+    font-size: 0.8rem;
+    margin: -9px 0;
+    z-index: 25;
+  }
+
+  .hol-player-name { font-size: 1.15rem; }
+  .hol-stat-value  { font-size: 1.5rem; }
+  .hol-choices { max-width: 190px; gap: 5px; }
+
+  .hol-choice-btn {
+    padding: 9px 10px;
+    font-size: 0.9rem;
+  }
+
+  .hol-panel-content { padding: 12px 10px 14px; }
+
+  .hol-stat-block,
+  .hol-stat-reveal {
+    padding: 7px 12px 9px;
+    min-width: 120px;
+  }
+
+  .hol-topbar { padding: 12px 14px 6px; }
+
+  .hol-mode-header-title { font-size: clamp(2.4rem, 10vw, 3.2rem); letter-spacing: 6px; }
+  .hol-mode-menu-inner { gap: 16px; padding: 44px 16px 36px; }
+}
+
+@media (max-width: 400px) {
+  .hol-choice-btn {
+    font-size: 0.82rem;
+    letter-spacing: 2px;
+  }
+}

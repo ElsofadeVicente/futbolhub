@@ -1,0 +1,1404 @@
+/* =============================================
+   BLACKJACK.CSS
+   Blackjack de Fútbol — QUIÉN COÑO FALTA
+   ============================================= */
+
+/* ══════════════════════════════════════════════
+   PANTALLAS
+   ══════════════════════════════════════════════ */
+.screen {
+  display: none;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+}
+.screen.active {
+  display: flex;
+}
+
+/* ══════════════════════════════════════════════
+   MENÚ
+   ══════════════════════════════════════════════ */
+#screen-menu {
+  justify-content: center;
+  padding: clamp(16px, 3vh, 40px) 20px;
+  gap: clamp(14px, 2.5vh, 24px);
+  background-color: #0c110c;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% 50%, transparent 52%, rgba(0,0,0,0.48) 100%),
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(201,168,76,0.065) 0%, transparent 65%),
+    repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,0.013) 79px, rgba(255,255,255,0.013) 80px),
+    repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,0.013) 79px, rgba(255,255,255,0.013) 80px);
+  background-attachment: fixed;
+}
+
+.menu-hero {
+  text-align: center;
+}
+
+.menu-logo {
+  font-size: clamp(2.8rem, 7vw, 4.5rem);
+  display: inline-block;
+  animation: cardFloat 3s ease-in-out infinite;
+}
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-8px) rotate(3deg); }
+}
+
+.menu-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.4rem, 8vw, 5rem);
+  letter-spacing: 6px;
+  color: var(--neon-green);
+  text-shadow: 3px 3px 0 #000;
+  line-height: 1;
+  margin: 4px 0;
+}
+
+.menu-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: var(--text-light);
+  opacity: 0.65;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.menu-wrap {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Selector de modo */
+.mode-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  flex: 1;
+  min-width: 100px;
+  background: rgba(200,168,75,0.08);
+  border: 1.5px solid rgba(200,168,75,0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--text-light);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mode-btn:hover { border-color: var(--neon-green); }
+
+.mode-btn.selected {
+  background: rgba(200,168,75,0.2);
+  border-color: var(--neon-yellow);
+  color: var(--neon-yellow);
+}
+
+/* Opciones de sala */
+.menu-tabs {
+  display: flex;
+  gap: 0;
+  border: 1.5px solid rgba(200,168,75,0.25);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.menu-tab {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  opacity: 0.6;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.menu-tab.active {
+  background: rgba(200,168,75,0.15);
+  opacity: 1;
+  color: var(--neon-yellow);
+}
+
+.menu-panel { display: none; }
+.menu-panel.active { display: flex; flex-direction: column; gap: 10px; }
+
+.menu-input {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(200,168,75,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-light);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.menu-input:focus { border-color: var(--neon-green); }
+.menu-input::placeholder { opacity: 0.4; }
+
+.menu-code-input {
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  text-align: center;
+  font-size: 1.3rem;
+}
+
+.btn-primary {
+  background: var(--neon-green);
+  color: var(--bg-dark);
+  border: none;
+  padding: 13px 24px;
+  border-radius: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  background: var(--neon-yellow);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(200,168,75,0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-light);
+  border: 1.5px solid rgba(255,255,255,0.2);
+  padding: 11px 24px;
+  border-radius: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.btn-secondary:hover { border-color: rgba(255,255,255,0.4); }
+
+.menu-error {
+  color: var(--error);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  text-align: center;
+  min-height: 20px;
+}
+
+/* ══════════════════════════════════════════════
+   LOBBY
+   ══════════════════════════════════════════════ */
+#screen-lobby {
+  justify-content: center;
+  padding: 24px 20px;
+  gap: 16px;
+  background: var(--bg-dark);
+}
+
+.lobby-wrap {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+.lobby-code-card {
+  width: 100%;
+  background: rgba(200,168,75,0.08);
+  border: 1.5px solid var(--neon-green);
+  border-radius: 14px;
+  padding: 18px 20px;
+  text-align: center;
+}
+
+.lobby-code-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  color: var(--neon-green);
+  opacity: 0.7;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.lobby-code-big {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  letter-spacing: 10px;
+  color: var(--neon-yellow);
+}
+
+.lobby-players-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lobby-player-row {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(200,168,75,0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+}
+
+.lobby-player-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(200,168,75,0.2);
+  border: 1px solid rgba(200,168,75,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--neon-green);
+  flex-shrink: 0;
+}
+
+.lobby-player-name { flex: 1; color: var(--text-light); }
+.lobby-player-host {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: var(--neon-yellow);
+  opacity: 0.8;
+}
+
+/* ══════════════════════════════════════════════
+   CABECERA DE PARTIDA (fija en top)
+   ══════════════════════════════════════════════ */
+.game-topbar {
+  width: 100%;
+  background: rgba(8,14,8,0.95);
+  border-bottom: 1px solid rgba(200,168,75,0.15);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar-objective {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.topbar-obj-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--neon-green);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.topbar-obj-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  color: var(--neon-yellow);
+  line-height: 1;
+}
+
+/* Marcador de puntos (rondas ganadas) */
+.topbar-scoreboard {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sb-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.sb-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  opacity: 0.65;
+  color: var(--text-light);
+  text-transform: uppercase;
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  color: var(--neon-yellow);
+  line-height: 1;
+}
+
+/* Actividad rivales */
+.opponent-activity {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.opp-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border: 1.5px solid;
+  transition: all 0.3s;
+}
+
+.opp-thinking {
+  background: rgba(200,168,75,0.1);
+  border-color: rgba(200,168,75,0.35);
+  color: var(--neon-green);
+  animation: avatarPulse 1.2s ease-in-out infinite;
+}
+
+.opp-done {
+  background: rgba(74,140,62,0.2);
+  border-color: var(--success);
+  color: var(--success);
+  animation: none;
+}
+
+@keyframes avatarPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.92); }
+}
+
+/* ══════════════════════════════════════════════
+   PANTALLA DE SELECCIÓN
+   ══════════════════════════════════════════════ */
+#screen-selecting {
+  background: var(--bg-dark);
+  padding: 0;
+}
+
+.selecting-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  gap: clamp(10px, 1.8vh, 18px);
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* Timer de carta */
+.card-timer-wrap {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.card-timer-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--neon-green);
+  border-radius: 2px;
+  transition: width 0.1s linear, background 0.3s;
+}
+
+.card-timer-bar.warning { background: var(--error); }
+
+/* Contador de cartas */
+.card-counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.card-counter {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-light);
+  opacity: 0.5;
+}
+
+.card-timer-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  color: var(--neon-yellow);
+}
+
+/* ═══════════════════════════════════════════
+   CARTA — DISEÑO PANINI
+   ═══════════════════════════════════════════ */
+.card-stack {
+  position: relative;
+  width: clamp(200px, 55vw, 260px);
+  height: clamp(290px, 72vw, 370px);
+}
+
+/* Cartas de la pila (traseras) */
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1a2a1a 0%, #0c110c 100%);
+  border: 2px solid rgba(200,168,75,0.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+.card-stack-3 {
+  top: -8px; left: -8px;
+  background: linear-gradient(135deg, #162016 0%, #0a0f0a 100%);
+  border-color: rgba(200,168,75,0.15);
+  z-index: 1;
+}
+
+.card-stack-2 {
+  top: -4px; left: -4px;
+  background: linear-gradient(135deg, #1a2a1a 0%, #111a11 100%);
+  border-color: rgba(200,168,75,0.22);
+  z-index: 2;
+}
+
+/* ── Carta principal (cara) ── */
+.card-face {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 14px;
+  background: #0c110c;
+  border: 2px solid var(--neon-yellow);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.65);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header verde: 3 columnas (escudo | bandera | posición) ── */
+.card-face-header {
+  height: 54px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1a3a1a 0%, #0e2010 100%);
+  border-bottom: 1px solid rgba(74,222,128,0.22);
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  padding: 0 8px;
+  gap: 4px;
+}
+
+/* Escudo del equipo (columna izquierda) */
+.card-badge-wrap {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-badge-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.8));
+}
+
+/* Bandera (columna central) */
+.card-header-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-header-flag-img {
+  width: 46px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.7));
+  border: 1px solid rgba(255,255,255,0.12);
+  display: block;
+}
+
+.card-header-flag-nat {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  opacity: 0.5;
+  font-weight: 600;
+  color: var(--text-light);
+  text-align: center;
+}
+
+/* Posición (columna derecha) */
+.card-pos {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: var(--neon-green);
+  line-height: 1;
+  text-align: right;
+  display: block;
+}
+
+/* Legacy — mantenidos por compatibilidad con reveal cards */
+.card-header-right { text-align: right; }
+.card-league {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 2px;
+  opacity: 0.4;
+  text-transform: uppercase;
+}
+.card-club-logo {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.9));
+}
+
+/* ── Foto enmarcada en el centro ── */
+.card-face-img {
+  margin: 7px 7px 0;
+  border-radius: 7px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid rgba(200,168,75,0.12);
+  background: #080d08;
+  position: relative;
+}
+
+.card-face-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 8%;
+  display: block;
+}
+
+.card-face-img.img-error img { display: none; }
+
+.card-face-img--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(200,168,75,0.18);
+}
+
+.card-face-initials {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  color: rgba(200,168,75,0.25);
+  letter-spacing: 2px;
+}
+
+/* ── Barra dorada con nombre ── */
+.card-namebar {
+  background: linear-gradient(90deg, var(--neon-yellow) 0%, #a8882b 100%);
+  padding: 5px 10px 4px;
+  margin: 0 7px;
+  border-radius: 0 0 5px 5px;
+  flex-shrink: 0;
+}
+
+.card-face-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1rem, 3.5vw, 1.25rem);
+  letter-spacing: 2px;
+  color: #0c110c;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Footer: solo contador de cartas ── */
+.card-face-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 10px 6px;
+  flex-shrink: 0;
+}
+
+/* Legacy — usados en las reveal cards */
+.card-flag-row { display: flex; align-items: center; gap: 6px; }
+.card-flag-row img,
+.card-flag-img {
+  width: 26px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+}
+.card-nat {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.card-face-value-hidden {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  color: var(--neon-yellow);
+  opacity: 0.3;
+  letter-spacing: 3px;
+}
+
+/* cardsLeft counter (ya no existe en el footer, se mueve al card-remaining) */
+.card-remaining {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem;
+  opacity: 0.35;
+  letter-spacing: 1px;
+}
+
+.card-bust-tag {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--error);
+  letter-spacing: 1px;
+  animation: bustPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes bustPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Reveal del comodín sobre la carta */
+.joker-reveal {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(8,14,8,0.9);
+  border: 2px solid var(--neon-yellow);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: var(--neon-yellow);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* Bust indicator */
+.bust-indicator {
+  width: 100%;
+  background: rgba(139,26,26,0.3);
+  border: 1.5px solid rgba(239,68,68,0.5);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ef4444;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* ── BOTONES DE ACCIÓN ── */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  align-items: center;
+}
+
+.btn-action {
+  flex: 1;
+  padding: clamp(14px, 2.5vh, 20px) 10px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  letter-spacing: 2px;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn-action:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-action:active:not(:disabled) { transform: scale(0.95); }
+
+.btn-action .btn-label {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+/* Descartar (rojo) */
+.btn-discard {
+  background: rgba(139,26,26,0.3);
+  border: 2px solid rgba(239,68,68,0.5);
+  color: #ef4444;
+}
+.btn-discard:hover:not(:disabled) {
+  background: rgba(139,26,26,0.55);
+  border-color: #ef4444;
+  transform: translateY(-2px);
+}
+
+/* Plantarse (amarillo) — central, más grande */
+.btn-stand {
+  flex: 1.3;
+  background: rgba(251,191,36,0.15);
+  border: 2px solid rgba(251,191,36,0.45);
+  color: #fbbf24;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+}
+.btn-stand:hover:not(:disabled) {
+  background: rgba(251,191,36,0.3);
+  border-color: #fbbf24;
+  transform: translateY(-2px);
+}
+
+/* Añadir (verde) */
+.btn-add {
+  background: rgba(45,122,50,0.3);
+  border: 2px solid rgba(74,222,128,0.45);
+  color: #4ade80;
+}
+.btn-add:hover:not(:disabled) {
+  background: rgba(45,122,50,0.55);
+  border-color: #4ade80;
+  transform: translateY(-2px);
+}
+
+/* Comodín */
+
+
+/* ══════════════════════════════════════════════
+   PANTALLA ESPERA (hasta que todos terminan)
+   ══════════════════════════════════════════════ */
+#screen-waiting {
+  justify-content: center;
+  gap: 20px;
+  background: var(--bg-dark);
+  padding: 24px;
+}
+
+.waiting-icon {
+  font-size: 4rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.waiting-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--neon-yellow);
+  text-align: center;
+}
+
+.waiting-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  color: var(--text-light);
+  opacity: 0.6;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.waiting-players {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.waiting-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.waiting-player-chip .chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(200,168,75,0.4);
+  animation: avatarPulse 1s ease-in-out infinite;
+}
+
+.waiting-player-chip.done .chip-dot {
+  background: var(--success);
+  animation: none;
+}
+
+/* ══════════════════════════════════════════════
+   PANTALLA REVEAL
+   ══════════════════════════════════════════════ */
+#screen-reveal {
+  background: var(--bg-dark);
+  padding: 0;
+  justify-content: flex-start;
+}
+
+.reveal-header {
+  width: 100%;
+  text-align: center;
+  padding: 14px 16px 10px;
+  flex-shrink: 0;
+}
+
+.reveal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 4px;
+  color: var(--neon-green);
+}
+
+.reveal-objective {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  opacity: 0.6;
+  letter-spacing: 2px;
+}
+
+.reveal-players {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  gap: 1px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Grid adaptativo según número de jugadores */
+.reveal-players.players-2 { grid-template-columns: 1fr 1fr; }
+.reveal-players.players-3 { grid-template-columns: 1fr 1fr 1fr; }
+.reveal-players.players-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.reveal-players.players-5,
+.reveal-players.players-6 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* Área de cada jugador */
+.reveal-player-area {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 8px 8px;
+  border: 1px solid rgba(200,168,75,0.08);
+  background: rgba(255,255,255,0.02);
+  min-height: 0;
+  transition: background 0.4s, border-color 0.4s;
+}
+
+/* Estados de resultado */
+.reveal-player-area.result-winner {
+  background: rgba(45,122,50,0.12);
+  border-color: rgba(74,222,128,0.3);
+}
+
+.reveal-player-area.result-bust {
+  background: rgba(139,26,26,0.12);
+  border-color: rgba(239,68,68,0.25);
+}
+
+.reveal-player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.reveal-player-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-light);
+  text-transform: uppercase;
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.reveal-player-total {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  color: var(--text-light);
+  transition: color 0.4s;
+}
+
+.reveal-player-total.total-winner { color: #4ade80; }
+.reveal-player-total.total-bust   { color: #ef4444; }
+
+/* Lista de cartas escogidas en el reveal */
+.reveal-cards-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 4px 0;
+  min-height: 80px;
+}
+
+/* Carta revelada — formato mini Panini */
+.reveal-card {
+  width: 54px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.3s, transform 0.3s;
+  background: #0c110c;
+  border: 1.5px solid var(--neon-yellow);
+}
+
+.reveal-card.flip-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.reveal-card--added {
+  border-color: var(--neon-yellow);
+}
+
+/* Header mini panini: escudo izq, pos der */
+.reveal-card-header {
+  height: 18px;
+  background: linear-gradient(135deg, #1a3a1a 0%, #0e2010 100%);
+  border-bottom: 1px solid rgba(74,222,128,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3px;
+  flex-shrink: 0;
+}
+
+.reveal-card-badge {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+}
+
+.reveal-card-pos {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 1px;
+  color: var(--neon-green);
+  line-height: 1;
+}
+
+/* Foto */
+.reveal-card-img {
+  width: 100%;
+  height: 56px;
+  object-fit: cover;
+  object-position: center 8%;
+  display: block;
+  flex-shrink: 0;
+}
+
+.reveal-card-img--empty {
+  width: 100%;
+  height: 56px;
+  background: rgba(200,168,75,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  color: rgba(200,168,75,0.3);
+  flex-shrink: 0;
+}
+
+.reveal-card-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: var(--text-light);
+  opacity: 0.75;
+  text-align: center;
+  padding: 2px 2px 0;
+  line-height: 1.2;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reveal-card-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+  color: var(--neon-yellow);
+  text-align: center;
+  padding-bottom: 3px;
+  line-height: 1;
+}
+
+/* Badge de puntos ganados */
+.reveal-points-badge {
+  background: rgba(74,222,128,0.2);
+  border: 1px solid rgba(74,222,128,0.4);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: #4ade80;
+  white-space: nowrap;
+}
+
+/* Botón siguiente ronda */
+.reveal-footer {
+  width: 100%;
+  padding: 10px 16px;
+  flex-shrink: 0;
+}
+
+#btn-next-round {
+  width: 100%;
+}
+
+/* ══════════════════════════════════════════════
+   PANTALLA FINAL
+   ══════════════════════════════════════════════ */
+#screen-finished {
+  justify-content: center;
+  gap: 20px;
+  background: var(--bg-dark);
+  padding: 24px;
+}
+
+.finished-trophy { font-size: 5rem; animation: pulse 2s infinite; }
+
+.finished-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: 5px;
+  color: var(--neon-green);
+  text-align: center;
+}
+
+.winner-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 3px;
+  color: var(--neon-yellow);
+  text-align: center;
+}
+
+.final-scores {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.final-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(200,168,75,0.12);
+  border-radius: 8px;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.final-score-row.winner {
+  background: rgba(200,168,75,0.12);
+  border-color: var(--neon-green);
+}
+
+.fs-name { font-weight: 700; font-size: 1rem; }
+.fs-pts {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  color: var(--neon-yellow);
+}
+
+.finished-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* ══════════════════════════════════════════════
+   TOAST
+   ══════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(30,25,12,0.95);
+  border: 1.5px solid var(--neon-green);
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.error   { border-color: var(--error); color: #ef9090; }
+.toast.warning { border-color: #fbbf24; color: #fbbf24; }
+.toast.success { border-color: var(--success); }
+
+/* ══════════════════════════════════════════════
+   BACK BUTTON
+   ══════════════════════════════════════════════ */
+.back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.back-btn:hover { transform: translateY(-1px); }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .card-stack {
+    width: clamp(170px, 72vw, 240px);
+    height: clamp(238px, 101vw, 336px);
+  }
+
+  .reveal-players.players-3,
+  .reveal-players.players-5,
+  .reveal-players.players-6 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .action-buttons { gap: 7px; }
+
+  .btn-action {
+    padding: 12px 6px;
+    font-size: 0.95rem;
+  }
+
+  .topbar-scoreboard { gap: 5px; }
+  .sb-name { max-width: 38px; font-size: 0.55rem; }
+  .sb-score { font-size: 1.2rem; }
+}
+
+@media (max-width: 360px) {
+  .reveal-cards-list { gap: 3px; }
+  .card-face-name { font-size: 1.1rem; }
+}
+
+/* ══════════════════════════════════════════════
+   OVERLAY CUENTA ATRÁS (mismo patrón que cadena)
+   ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   TIMER AUTO-ARRANQUE LOBBY PÚBLICO
+   ══════════════════════════════════════════════ */
+.lobby-autotimer {
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: rgba(200,168,75,0.07);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 10px;
+}
+.lobby-autotimer.hidden { display: none; }
+
+.lobby-autotimer-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: rgba(200,168,75,0.12);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.lobby-autotimer-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--neon-yellow);
+  border-radius: 2px;
+  transition: width 1s linear, background 1s;
+}
+.lobby-autotimer-bar.urgent { background: #e05555; }
+
+.lobby-autotimer-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 1.5px;
+  color: var(--text-light);
+  opacity: 0.65;
+  text-transform: uppercase;
+}
+.lobby-autotimer-count {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: var(--neon-yellow);
+  opacity: 1;
+  transition: color 1s;
+}
+.lobby-autotimer-count.urgent { color: #e05555; }
+
+/* ══════════════════════════════════════════════
+   BOTÓN SALIR MODO LOCAL (selecting / waiting / reveal)
+   ══════════════════════════════════════════════ */
+.back-btn-local {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+}
+#screen-selecting { position: relative; }
+#screen-waiting   { position: relative; }
+#screen-reveal    { position: relative; }
+
+
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.countdown-overlay.hidden { display: none; }
+.countdown-inner { text-align: center; }
+.countdown-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  letter-spacing: 6px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 16px;
+}
+.countdown-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14rem;
+  line-height: 1;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 60px rgba(200,168,75,0.6);
+  animation: countPulse 1s ease-in-out infinite;
+}
+@keyframes countPulse {
+  0%,100% { transform: scale(1);    opacity: 1; }
+  50%     { transform: scale(1.06); opacity: 0.85; }
+}

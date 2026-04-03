@@ -84,26 +84,23 @@ async function loadMatchData(mode) {
     try {
         let folders = [];
         switch (mode) {
-            case 'diario':
-            case 'random':    folders = ['../data/liga', '../data/champions', '../data/historico']; break;
-            case 'liga':      folders = ['../data/liga'];      break;
-            case 'champions': folders = ['../data/champions']; break;
-            case 'historico': folders = ['../data/historico']; break;
+            case 'diario':    folders = ['./data/once-diario']; break;
+            case 'random':    folders = ['./data/liga', './data/champions', './data/historico']; break;
+            case 'liga':      folders = ['./data/liga'];      break;
+            case 'champions': folders = ['./data/champions']; break;
+            case 'historico': folders = ['./data/historico']; break;
         }
 
         const knownFiles = {
-            '../data/liga': [
-                'ALAVES.json','ALMERIA.json','ATHLETIC_CLUB.json','ATLETICO_MADRID.json',
-                'BARCELONA.json','CADIZ.json','CELTA_VIGO.json','CORDOBA.json',
-                'DEPORTIVO_LA_CORUNA.json','EIBAR.json','ELCHE.json','ESPANYOL.json',
-                'GETAFE.json','GIRONA.json','GRANADA.json','LAS_PALMAS.json',
-                'LEGANES.json','LEVANTE.json','MALAGA.json','MALLORCA.json',
-                'OSASUNA.json','RAYO_VALLECANO.json','REAL_BETIS.json','REAL_MADRID.json',
-                'REAL_SOCIEDAD.json','REAL_VALLADOLID.json','SD_HUESCA.json','SEVILLA.json',
-                'SPORTING_GIJON.json','VALENCIA.json','VILLARREAL.json'
+            './data/once-diario': ['once-diario.json'],
+            './data/liga': [
+                '14_15.json','15_16.json','16_17.json',
+                '17_18.json','18_19.json','19_20.json',
+                '20_21.json','21_22.json','22_23.json',
+                '23_24.json','24_25.json','25_26.json'
             ],
-            '../data/champions': ['finales.json','semifinales.json','remontadas.json','clasicos.json'],
-            '../data/historico': ['mundiales.json','eurocopas.json','olimpiadas.json']
+            './data/champions': ['finales.json','semifinales.json','cuartos.json','remontadas.json','clasicos.json'],
+            './data/historico': ['mundiales.json','eurocopas.json','olimpiadas.json','euroamerica.json']
         };
 
         const allUrls = [];
@@ -173,14 +170,9 @@ function shuffleArray(array) {
 }
 
 function getDailyMatchForOffset(offset) {
-    const d = new Date();
-    d.setDate(d.getDate() - offset);
-    const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-    let hash = seed;
-    hash = ((hash >>> 16) ^ hash) * 0x45d9f3b;
-    hash = ((hash >>> 16) ^ hash) * 0x45d9f3b;
-    hash = (hash >>> 16) ^ hash;
-    return dailyPool[Math.abs(hash) % dailyPool.length];
+    const edition = getDailyEditionNumber(offset); // 1, 2, 3...
+    const index = (edition - 1) % dailyPool.length;
+    return dailyPool[index];
 }
 
 function getDailyEditionNumber(offset) {
@@ -368,49 +360,129 @@ function loadMatch() {
 // RENDER FORMACIÓN
 // =============================================
 
+/**
+ * Cada posición tiene un "grupo de fila" (rowGroup).
+ * Todos los jugadores del mismo grupo se muestran en la misma fila visual.
+ * El número determina la altura: mayor número = más arriba en el campo.
+ *
+ * Grupos:
+ *  1 → Portero (GK)
+ *  2 → Defensas (CB, LB, RB, LWB, RWB, SW)
+ *  3 → Centrocampistas: CM, CDM, DM y cualquier posición de mediocampo
+ *  4 → CAM / Mediapunta  (línea propia entre medios y delanteros)
+ *  5 → Delanteros: ST, CF, LW, RW, LM, RM y similares
+ *
+ * LM/RM = extremos/bandas → grupo 5 (delanteros), igual que LW/RW
+ */
+const ROW_GROUP = {
+    'GK':1,
+    'CB':2,'LB':2,'RB':2,'DF':2,'SW':2,'LCB':2,'RCB':2,
+    'CDM':3,'DM':3,'MCD':3,'PIVOT':3,'PIVOTE':3,'VOL':3,
+    'CM':3,'MC':3,'MF':3,'BOX':3,
+    'LWB':3,'RWB':3,
+    'CAM':4,'AM':4,'MCO':4,'TREQUARTISTA':4,'MEZ':4,'MEDIAPUNTA':4,
+    'ST':5,'CF':5,'LW':5,'RW':5,'FW':5,'ATT':5,'SS':5,'DC':5,
+};
+
+// LM/RM: fila 3 si no hay CAM, fila 4 si hay CAM
+const WIDE_MID = new Set(['LM','RM','ML','MR']);
+// LW/RW: normalmente fila 5, pero fila 4 si hay CAM y NO hay ST/CF
+const WIDE_FWD = new Set(['LW','RW']);
+const STRIKER_POS = new Set(['ST','CF','FW','ATT','SS','DC']);
+
+function getRowGroup(position, hasCAM, hasStriker) {
+    if (!position) return 3;
+    const pos = position.toUpperCase().trim();
+    if (WIDE_MID.has(pos)) return hasCAM ? 4 : 3;
+    if (WIDE_FWD.has(pos)) return hasCAM ? 4 : 5;
+    return ROW_GROUP[pos] ?? 3;
+}
+
+function buildPlayerCard(player, globalIndex) {
+    const isRevealed = revealedPlayers.has(globalIndex);
+
+    const playerCard = document.createElement('div');
+    playerCard.className = 'player-card' + (isRevealed ? ' revealed' : '');
+
+    const jersey = document.createElement('div');
+    jersey.className = `jersey ${player.position === 'GK' ? 'goalkeeper' : ''}`;
+    jersey.onclick = () => openGuessModal(globalIndex);
+    jersey.innerHTML = `
+        <span class="jersey-shoulder jersey-shoulder-left" aria-hidden="true"></span>
+        <span class="jersey-shoulder jersey-shoulder-right" aria-hidden="true"></span>
+        <span class="jersey-collar" aria-hidden="true"></span>
+        <span class="jersey-panel" aria-hidden="true"></span>
+        <span class="jersey-mark" aria-hidden="true"></span>
+        <span class="jersey-ring" aria-hidden="true"></span>
+        <span class="jersey-number">${player.number || ''}</span>
+    `;
+
+    const nameContainer = document.createElement('div');
+    nameContainer.className = 'player-name-container';
+
+    if (isRevealed) {
+        const revealedName = document.createElement('div');
+        const knownName = getKnownName(player.name);
+        const longClass = knownName.length > 10 ? ' revealed-name--long' : '';
+        revealedName.className   = 'revealed-name' + (failedPlayers.has(globalIndex) ? ' failed-reveal' : '') + longClass;
+        revealedName.textContent = knownName;
+        nameContainer.appendChild(revealedName);
+    } else {
+        const displayName = getKnownName(player.name);
+        for (const char of displayName) {
+            const slot = document.createElement('div');
+            if (char === ' ') {
+                slot.className = 'name-slot space';
+            } else if ("'-.·".includes(char)) {
+                slot.className   = 'name-slot special-char-slot';
+                slot.textContent = char;
+            } else {
+                slot.className = 'name-slot';
+            }
+            nameContainer.appendChild(slot);
+        }
+    }
+
+    playerCard.appendChild(jersey);
+    playerCard.appendChild(nameContainer);
+    return playerCard;
+}
+
 function renderFormation() {
     const formationContainer = document.getElementById('formation');
     formationContainer.innerHTML = '';
     const formation = currentMatch.formation;
 
-    formation.forEach((line, lineIndex) => {
+    // 1. Aplanar todos los jugadores manteniendo su índice global
+    const allPlayers = [];
+    let globalOffset = 0;
+    formation.forEach(line => {
+        line.forEach((player, i) => {
+            allPlayers.push({ player, globalIndex: globalOffset + i });
+        });
+        globalOffset += line.length;
+    });
+
+    // 2. Detectar si hay CAM y si hay delantero centro (ST/CF) en la alineación
+    const hasCAM     = allPlayers.some(({ player }) => ROW_GROUP[(player.position || '').toUpperCase().trim()] === 4);
+    const hasStriker = allPlayers.some(({ player }) => STRIKER_POS.has((player.position || '').toUpperCase().trim()));
+
+    // 3. Agrupar por rowGroup manteniendo el orden original dentro de cada grupo
+    const groups = new Map();
+    allPlayers.forEach(({ player, globalIndex }) => {
+        const group = getRowGroup(player.position, hasCAM, hasStriker);
+        if (!groups.has(group)) groups.set(group, []);
+        groups.get(group).push({ player, globalIndex });
+    });
+
+    // 3. Renderizar en orden ascendente de grupo
+    // column-reverse del contenedor invierte la visual: grupo 1 (GK) queda abajo, grupo 5 (delanteros) arriba
+    [...groups.keys()].sort((a, b) => a - b).forEach(group => {
         const lineDiv = document.createElement('div');
         lineDiv.className = 'line';
-
-        line.forEach((player, playerIndex) => {
-            const globalIndex = formation.slice(0, lineIndex).reduce((s, l) => s + l.length, 0) + playerIndex;
-            const isRevealed  = revealedPlayers.has(globalIndex);
-
-            const playerCard = document.createElement('div');
-            playerCard.className = 'player-card' + (isRevealed ? ' revealed' : '');
-
-            const jersey = document.createElement('div');
-            jersey.className   = `jersey ${player.position === 'GK' ? 'goalkeeper' : ''}`;
-            jersey.textContent = player.number || '';
-            jersey.onclick     = () => openGuessModal(globalIndex);
-
-            const nameContainer = document.createElement('div');
-            nameContainer.className = 'player-name-container';
-
-            if (isRevealed) {
-                const revealedName = document.createElement('div');
-                revealedName.className   = 'revealed-name' + (failedPlayers.has(globalIndex) ? ' failed-reveal' : '');
-                revealedName.textContent = getKnownName(player.name);
-                nameContainer.appendChild(revealedName);
-            } else {
-                const displayName = getKnownName(player.name);
-                for (const char of displayName) {
-                    const slot = document.createElement('div');
-                    slot.className = char === ' ' ? 'name-slot space' : 'name-slot';
-                    nameContainer.appendChild(slot);
-                }
-            }
-
-            playerCard.appendChild(jersey);
-            playerCard.appendChild(nameContainer);
-            lineDiv.appendChild(playerCard);
+        groups.get(group).forEach(({ player, globalIndex }) => {
+            lineDiv.appendChild(buildPlayerCard(player, globalIndex));
         });
-
         formationContainer.appendChild(lineDiv);
     });
 }
@@ -531,9 +603,18 @@ function getKnownName(fullName) {
         'DANI ALVES': 'ALVES', 'DANIEL ALVES': 'ALVES',
         'DANIEL CARVAJAL': 'CARVAJAL', 'DIEGO COSTA': 'DIEGO COSTA',
         'WISSAM BEN YEDDER': 'BEN YEDDER', 'MUNIR EL HADDADI': 'MUNIR',
-        'MOI GOMEZ': 'MOI GOMEZ', 'CUCHO HERNANDEZ': 'CUCHO', 'CUCHO HERNÁNDEZ': 'CUCHO'
+        'MOI GOMEZ': 'MOI GOMEZ', 'CUCHO HERNANDEZ': 'CUCHO',
+        'RAFA SILVA': 'RAFA', 'JOAO MARIO': 'JOAO MARIO',
+        'XAVI HERNANDEZ': 'XAVI',
+        'ERIC MAXIM CHOUPO-MOTING': 'CHOUPO-MOTING', 'CHOUPO-MOTING': 'CHOUPO-MOTING',
+        'ALISSON BECKER': 'ALISSON',
+        'ADRIAN LOPEZ': 'ADRIAN',
+        'JUANFRAN TORRES': 'JUANFRAN', 'JUAN FRANCISCO TORRES': 'JUANFRAN',
+        'ABDE EZZALZOULI': 'ABDE',
+        'GIORGI MAMARDASHVILI': 'MAMARDASHVILI', 'MAMARDASHVILI': 'MAMARDASHVILI'
     };
-    if (exceptions[name]) return exceptions[name];
+    const nameNorm = normalizeText(name);
+    if (exceptions[nameNorm]) return exceptions[nameNorm];
 
     const words = name.split(' ');
     if (words.length === 1) return words[0];

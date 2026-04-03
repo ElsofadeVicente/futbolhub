@@ -12,16 +12,6 @@
   justify-content: center;
   padding: clamp(20px, 4vh, 50px) 20px;
   gap: clamp(20px, 3vh, 36px);
-  background:
-    linear-gradient(rgba(20,15,5,0.92), rgba(20,15,5,0.92)),
-    repeating-linear-gradient(
-      90deg, transparent, transparent 60px,
-      rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 62px
-    ),
-    repeating-linear-gradient(
-      0deg, transparent, transparent 60px,
-      rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 62px
-    );
 }
 
 /* ── HEADER ── */
@@ -33,36 +23,48 @@
   gap: 6px;
 }
 
-.hub-logo {
-  font-size: clamp(2.5rem, 6vw, 4rem);
-  animation: hubBallSpin 6s linear infinite;
-  display: inline-block;
+/* ── LOGO WRAP ── */
+.hub-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  max-width: 340px;
 }
 
-@keyframes hubBallSpin {
-  0%   { transform: rotate(0deg)   translateY(0);   }
-  25%  { transform: rotate(90deg)  translateY(-4px); }
-  50%  { transform: rotate(180deg) translateY(0);   }
-  75%  { transform: rotate(270deg) translateY(-4px); }
-  100% { transform: rotate(360deg) translateY(0);   }
+.hub-logo-silueta {
+  height: clamp(90px, 15vw, 150px);
+  width: auto;
+  max-width: 100%;
+  display: block;
+  filter: drop-shadow(0 4px 20px rgba(201,168,76,0.2));
 }
 
-.hub-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2.6rem, 9vw, 5.5rem);
-  letter-spacing: 8px;
-  color: var(--neon-green);
-  text-shadow: 3px 3px 0 #000, 1px 1px 0 rgba(0,0,0,0.8);
+.hub-logo-divider {
+  width: 90%;
+  height: 1px;
+  background: rgba(201,168,76,0.4);
+  margin: 6px 0 5px;
+}
+
+.hub-logo-text {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  font-weight: 900;
+  font-style: italic;
+  color: #c9a84c;
+  letter-spacing: 3px;
   line-height: 1;
-  margin: 0;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
 }
 
 .hub-subtitle {
   font-family: 'Rajdhani', sans-serif;
   font-size: clamp(0.9rem, 2vw, 1.1rem);
-  color: var(--text-light);
-  opacity: 0.7;
-  letter-spacing: 3px;
+  color: #f0ece0;
+  opacity: 0.5;
+  letter-spacing: 5px;
   text-transform: uppercase;
   margin: 0;
 }
@@ -71,9 +73,9 @@
 .hub-games {
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 1.8vh, 16px);
+  gap: clamp(8px, 1.5vh, 14px);
   width: 100%;
-  max-width: 600px;
+  max-width: 560px;
 }
 
 /* ── CARD DE JUEGO ── */
@@ -81,13 +83,13 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: linear-gradient(135deg, var(--bg-purple), #3a2e1c);
+  background: linear-gradient(135deg, var(--bg-purple), var(--bg-gold));
   border: 2px solid var(--neon-green);
-  border-radius: 14px;
-  padding: clamp(14px, 2.2vh, 22px) 20px;
+  border-radius: 10px;
+  padding: clamp(12px, 2vh, 20px) 20px;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
   animation: hubCardIn 0.5s ease-out both;
   position: relative;
   overflow: hidden;
@@ -95,44 +97,39 @@
   color: inherit;
 }
 
-.hub-game-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, transparent 60%, rgba(200,168,75,0.07));
-  pointer-events: none;
-}
-
 .hub-game-card:nth-child(1) { animation-delay: 0.05s; }
-.hub-game-card:nth-child(2) { animation-delay: 0.15s; }
-.hub-game-card:nth-child(3) { animation-delay: 0.25s; }
+.hub-game-card:nth-child(2) { animation-delay: 0.12s; }
+.hub-game-card:nth-child(3) { animation-delay: 0.19s; }
+.hub-game-card:nth-child(4) { animation-delay: 0.26s; }
+.hub-game-card:nth-child(5) { animation-delay: 0.33s; }
 
 @keyframes hubCardIn {
-  from { opacity: 0; transform: translateY(22px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .hub-game-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.55);
   border-color: var(--neon-yellow);
+  background: linear-gradient(135deg, var(--bg-gold), #243024);
 }
 
 .hub-game-card:active {
   transform: translateY(-1px);
 }
 
-/* Cards desactivadas (próximamente) */
 .hub-game-card--soon {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
-  border-color: rgba(200,168,75,0.3);
+  border-color: rgba(201,168,76,0.25);
 }
 
 .hub-game-card--soon:hover {
   transform: none;
-  border-color: rgba(200,168,75,0.3);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  border-color: rgba(201,168,76,0.25);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  background: linear-gradient(135deg, var(--bg-purple), var(--bg-gold));
 }
 
 .hub-game-card--placeholder {
@@ -141,9 +138,9 @@
 
 /* ── ICONO ── */
 .hub-game-icon {
-  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
   flex-shrink: 0;
-  width: 52px;
+  width: 48px;
   text-align: center;
 }
 
@@ -155,7 +152,7 @@
 
 .hub-game-title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
   letter-spacing: 3px;
   color: var(--neon-yellow);
   line-height: 1.1;
@@ -163,9 +160,9 @@
 
 .hub-game-desc {
   font-family: 'Rajdhani', sans-serif;
-  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+  font-size: clamp(0.8rem, 1.5vw, 0.92rem);
   color: var(--text-light);
-  opacity: 0.8;
+  opacity: 0.75;
   margin-top: 3px;
   line-height: 1.3;
 }
@@ -178,12 +175,12 @@
 }
 
 .hub-tag {
-  background: rgba(200,168,75,0.18);
-  border: 1px solid rgba(200,168,75,0.4);
+  background: rgba(201,168,76,0.15);
+  border: 1px solid rgba(201,168,76,0.35);
   border-radius: 4px;
   padding: 2px 8px;
   font-family: 'Rajdhani', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--neon-green);
@@ -198,9 +195,9 @@
 
 /* ── FLECHA ── */
 .hub-game-arrow {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   color: var(--neon-green);
-  opacity: 0.5;
+  opacity: 0.45;
   flex-shrink: 0;
   transition: opacity 0.2s, transform 0.2s;
 }
@@ -219,7 +216,7 @@
   font-family: 'Rajdhani', sans-serif;
   font-size: 0.8rem;
   color: var(--text-light);
-  opacity: 0.35;
+  opacity: 0.3;
   letter-spacing: 2px;
   text-align: center;
 }
@@ -235,108 +232,45 @@
   justify-content: center;
   padding: clamp(12px, 2vh, 24px) 20px;
   gap: clamp(6px, 1.5vh, 16px);
-  background:
-    linear-gradient(rgba(26,18,8,0.88), rgba(26,18,8,0.88)),
-    repeating-linear-gradient(
-      90deg, transparent, transparent 60px,
-      rgba(255,255,255,0.02) 60px, rgba(255,255,255,0.02) 62px
-    ),
-    repeating-linear-gradient(
-      0deg, transparent, transparent 60px,
-      rgba(255,255,255,0.02) 60px, rgba(255,255,255,0.02) 62px
-    );
   position: relative;
 }
 
 .back-to-hub-btn {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  background: rgba(200,168,75,0.12);
-  border: 2px solid var(--neon-green);
+  top: 18px;
+  left: 18px;
+  background: rgba(201,168,76,0.10);
+  border: 1.5px solid var(--neon-green);
   color: var(--neon-green);
-  padding: 8px 16px;
+  padding: 7px 14px;
   border-radius: 8px;
   cursor: pointer;
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 1px;
+  font-size: 0.88rem;
+  letter-spacing: 1.5px;
   transition: background 0.2s;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .back-to-hub-btn:hover {
-  background: rgba(200,168,75,0.28);
+  background: rgba(201,168,76,0.22);
 }
 
-/* Botón de modo diario destacado */
 .mode-btn--daily {
   border-color: var(--neon-yellow) !important;
-  background: linear-gradient(135deg, #2e2a10, #3a3415) !important;
-  box-shadow: 0 0 20px rgba(232,201,109,0.15) !important;
+  background: linear-gradient(135deg, #1e2810, #243018) !important;
+  box-shadow: 0 0 20px rgba(232,201,109,0.1) !important;
 }
 
 .mode-btn--daily .mode-btn-title {
   color: var(--neon-yellow) !important;
 }
 
-/* =============================================
-   COMING SOON (crucigrama placeholder)
-   ============================================= */
-#crucigrama-screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-dark);
-  position: relative;
-  padding: 20px;
-}
-
-.coming-soon-wrapper {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  max-width: 400px;
-}
-
-.coming-soon-icon {
-  font-size: 5rem;
-  animation: pulse 2s infinite;
-}
-
-.coming-soon-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.8rem;
-  letter-spacing: 4px;
-  color: var(--neon-green);
-}
-
-.coming-soon-text {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 1.1rem;
-  color: var(--text-light);
-  opacity: 0.75;
-  line-height: 1.6;
-}
-
-.coming-soon-badge {
-  background: rgba(255,100,50,0.15);
-  border: 2px solid rgba(255,100,50,0.5);
-  border-radius: 8px;
-  padding: 8px 24px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.2rem;
-  letter-spacing: 4px;
-  color: #ff9060;
-}
-
-/* ── COUNTDOWN ONCE DIARIO ── */
+/* ── COUNTDOWN ── */
 .comp-countdown {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.5rem;
@@ -350,18 +284,15 @@
   text-align: center;
 }
 
-/* ── CABECERA ONCE DIARIO (número + navegación) ── */
-.daily-header {
-  padding: 6px 20px 0;
-}
+.daily-header { padding: 6px 20px 0; }
 
 .daily-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: rgba(200,168,75,0.06);
-  border: 1px solid rgba(200,168,75,0.2);
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.2);
   border-radius: 10px;
   padding: 8px 14px;
 }
@@ -405,8 +336,8 @@
 }
 
 .daily-nav-btn {
-  background: rgba(200,168,75,0.1);
-  border: 1px solid rgba(200,168,75,0.3);
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3);
   color: var(--neon-green);
   padding: 6px 12px;
   border-radius: 6px;
@@ -419,148 +350,93 @@
   white-space: nowrap;
 }
 
-.daily-nav-btn:hover:not(.disabled) {
-  background: rgba(200,168,75,0.25);
-}
-
+.daily-nav-btn:hover:not(.disabled) { background: rgba(201,168,76,0.25); }
 .daily-nav-btn.disabled,
-.daily-nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+.daily-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── COMING SOON ── */
+#crucigrama-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  position: relative;
+  padding: 20px;
 }
 
-/* =============================================
-   FIX MÓVIL — formación compacta
-   ============================================= */
+.coming-soon-wrapper {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.coming-soon-icon { font-size: 5rem; animation: pulse 2s infinite; }
+
+.coming-soon-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.8rem;
+  letter-spacing: 4px;
+  color: var(--neon-green);
+}
+
+.coming-soon-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-light);
+  opacity: 0.75;
+  line-height: 1.6;
+}
+
+.coming-soon-badge {
+  background: rgba(255,100,50,0.15);
+  border: 2px solid rgba(255,100,50,0.5);
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 4px;
+  color: #ff9060;
+}
+
+/* ── RESPONSIVE MÓVIL ── */
 @media (max-width: 600px) {
-  /* Reducir tamaño de camisetas y campo */
-  .field-container {
-    padding: 14px 6px;
-    min-height: auto;
-  }
+  .hub-logo-silueta { height: clamp(70px, 22vw, 120px); }
+  .hub-logo-text { font-size: clamp(1.8rem, 8vw, 2.8rem); }
+  .hub-logo-divider { width: 85%; }
 
-  .formation {
-    gap: 10px;
-    min-height: auto;
-  }
-
-  .line {
-    gap: 4px;
-    flex-wrap: nowrap; /* CLAVE: nunca romper la fila */
-    justify-content: center;
-  }
-
-  .player-card {
-    width: auto;
-    min-width: 0;
-    gap: 4px;
-  }
-
-  .jersey {
-    width: 42px;
-    height: 50px;
-    font-size: 1.1rem;
-    border-radius: 5px 5px 8px 8px;
-  }
-
-  .jersey::before {
-    top: -5px;
-    height: 5px;
-  }
-
-  .player-name-container {
-    width: 46px;
-    min-width: 46px;
-    max-width: 46px;
-    padding: 3px 4px;
-  }
-
-  .name-slot {
-    width: 5px;
-    height: 2px;
-  }
-
-  .name-slot.space {
-    width: 3px;
-  }
-
-  .revealed-name {
-    font-size: 0.55rem;
-    letter-spacing: 0;
-  }
-
-  /* Reducir gap del header para ganar espacio */
-  .match-header {
-    padding: 12px 10px;
-  }
-
-  .team-name {
-    font-size: 0.9rem;
-  }
-
-  .score-display {
-    font-size: 2rem;
-    letter-spacing: 3px;
-  }
-
-  .competition-name {
-    font-size: 0.9rem;
-  }
-
-  .match-date {
-    font-size: 0.8rem;
-  }
+  .field-container { padding: 14px 6px; min-height: auto; }
+  .formation { gap: 10px; min-height: auto; }
+  .line { gap: 4px; flex-wrap: nowrap; justify-content: center; }
+  .player-card { width: auto; min-width: 0; gap: 4px; }
+  .jersey { width: 42px; height: 50px; font-size: 1.1rem; border-radius: 5px 5px 8px 8px; }
+  .jersey::before { top: -5px; height: 5px; }
+  .player-name-container { width: 46px; min-width: 46px; max-width: 46px; padding: 3px 4px; }
+  .name-slot { width: 5px; height: 2px; }
+  .name-slot.space { width: 3px; }
+  .revealed-name { font-size: 0.55rem; letter-spacing: 0; }
+  .match-header { padding: 12px 10px; }
+  .team-name { font-size: 0.9rem; }
+  .score-display { font-size: 2rem; letter-spacing: 3px; }
+  .competition-name { font-size: 0.9rem; }
+  .match-date { font-size: 0.8rem; }
 }
 
 @media (max-width: 400px) {
-  .jersey {
-    width: 36px;
-    height: 44px;
-    font-size: 1rem;
-  }
-
-  .player-name-container {
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
-  }
-
-  .revealed-name {
-    font-size: 0.5rem;
-  }
-
-  .line {
-    gap: 2px;
-  }
+  .jersey { width: 36px; height: 44px; font-size: 1rem; }
+  .player-name-container { width: 40px; min-width: 40px; max-width: 40px; }
+  .revealed-name { font-size: 0.5rem; }
+  .line { gap: 2px; }
 }
 
-/* =============================================
-   RESPONSIVE GENERAL
-   ============================================= */
 @media (max-width: 480px) {
-  .hub-title {
-    letter-spacing: 4px;
-  }
-
-  .hub-game-card {
-    padding: 14px 16px;
-    gap: 12px;
-  }
-
-  .hub-game-icon {
-    font-size: 1.8rem;
-    width: 42px;
-  }
-
-  .hub-game-title {
-    font-size: 1.2rem;
-    letter-spacing: 2px;
-  }
-
-  .back-to-hub-btn {
-    top: 12px;
-    left: 12px;
-    font-size: 0.8rem;
-    padding: 6px 12px;
-  }
+  .hub-title { letter-spacing: 4px; }
+  .hub-game-card { padding: 14px 16px; gap: 12px; }
+  .hub-game-icon { font-size: 1.8rem; width: 42px; }
+  .hub-game-title { font-size: 1.2rem; letter-spacing: 2px; }
+  .back-to-hub-btn { top: 12px; left: 12px; font-size: 0.8rem; padding: 6px 12px; }
 }

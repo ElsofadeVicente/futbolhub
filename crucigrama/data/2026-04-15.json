@@ -1,0 +1,248 @@
+{
+  "date": "2026-04-15",
+  "title": "Crucigrama #2026-04-15",
+  "grid_size": {
+    "rows": 12,
+    "cols": 11
+  },
+  "grid": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ]
+  ],
+  "words": [
+    {
+      "id": 1,
+      "number": 1,
+      "answer": "HAVERTZ",
+      "row": 0,
+      "col": 6,
+      "direction": "down",
+      "length": 7,
+      "clue": "Alemán del Arsenal más cómodo como nueve que como mediapunta"
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "answer": "RICE",
+      "row": 5,
+      "col": 4,
+      "direction": "down",
+      "length": 4,
+      "clue": "Centrocampista inglés que el Arsenal pagó más de 100 millones"
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "answer": "TITULAR",
+      "row": 5,
+      "col": 10,
+      "direction": "down",
+      "length": 7,
+      "clue": "Jugador que empieza el partido desde el inicio"
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "answer": "INZAGHI",
+      "row": 6,
+      "col": 4,
+      "direction": "across",
+      "length": 7,
+      "clue": "Delantero italiano maestro del fuera de juego"
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "answer": "GAKPO",
+      "row": 6,
+      "col": 8,
+      "direction": "down",
+      "length": 5,
+      "clue": "Holandés que llegó al Liverpool en enero y marcó en su primer partido"
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "answer": "SLOT",
+      "row": 7,
+      "col": 1,
+      "direction": "down",
+      "length": 4,
+      "clue": "El entrenador que llegó después de Klopp y nadie creía que pudiera funcionar"
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "answer": "KLOSE",
+      "row": 8,
+      "col": 0,
+      "direction": "across",
+      "length": 5,
+      "clue": "Alemán máximo goleador de la historia de los Mundiales"
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "answer": "ABONO",
+      "row": 10,
+      "col": 4,
+      "direction": "across",
+      "length": 5,
+      "clue": "Lo que el socio paga para ver perder a su equipo con fidelidad absoluta"
+    }
+  ]
+}

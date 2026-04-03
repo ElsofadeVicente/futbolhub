@@ -459,6 +459,13 @@ const CadenaGame = (() => {
 
 })();
 
+/* ── Helper global: Firebase convierte arrays en objetos {0:{...},1:{...}} ── */
+function toPlayersArray(players) {
+  if (!players) return [];
+  if (!Array.isArray(players)) players = Object.values(players);
+  return players.filter(p => p && p.name);
+}
+
 /* ══════════════════════════════════════════════
    APP — Navegación y setup
    ══════════════════════════════════════════════ */
@@ -477,6 +484,8 @@ const App = (() => {
 
   function showMenu() {
     CadenaGame.FBSync.cleanup();
+    // Limpiar el parámetro ?sala= de la URL al volver al menú
+    history.pushState(null, '', window.location.pathname);
     showScreen('screen-menu');
   }
   function showCreateGame() { showScreen('screen-create'); }
@@ -501,42 +510,52 @@ const App = (() => {
     selectedType = type;
     document.getElementById('btn-local').classList.toggle('active', type === 'local');
     document.getElementById('btn-online').classList.toggle('active', type === 'online');
-    document.getElementById('type-note-local').classList.toggle('hidden', type !== 'local');
-    document.getElementById('type-note-online').classList.toggle('hidden', type !== 'online');
+
+    // Mostrar bloque jugadores (local) u online-host (online)
+    const localBlock  = document.getElementById('local-players-block');
+    const onlineBlock = document.getElementById('online-host-block');
+    if (localBlock)  localBlock.classList.toggle('hidden', type !== 'local');
+    if (onlineBlock) onlineBlock.classList.toggle('hidden', type !== 'online');
+
+    // Cambiar texto del botón de inicio
+    const btnStart = document.querySelector('.btn-start');
+    if (btnStart) btnStart.textContent = type === 'online' ? 'CREAR SALA ▶' : 'EMPEZAR ▶';
   }
 
   /* ── Jugadores ── */
   function addPlayer() {
-    const rows = document.querySelectorAll('.player-input-row');
+    const container = document.getElementById('menu-local-players') || document.getElementById('player-inputs');
+    const rows = container.querySelectorAll('.player-input-row');
     if (rows.length >= 8) { showToast('Máximo 8 jugadores', 'error'); return; }
     const n = rows.length + 1;
     const div = document.createElement('div');
     div.className = 'player-input-row';
     div.innerHTML = `
       <span class="player-num">${n}</span>
-      <input class="player-name-input" type="text" placeholder="Nombre del jugador ${n}" maxlength="20" />
+      <input class="player-name-input" type="text" placeholder="Jugador ${n}" maxlength="20" />
       <button class="remove-player-btn" onclick="App.removePlayer(this)">✕</button>`;
-    document.getElementById('player-inputs').appendChild(div);
-    updateRemoveButtons();
+    container.appendChild(div);
+    updateRemoveButtons(container);
   }
 
   function removePlayer(btn) {
-    const rows = document.querySelectorAll('.player-input-row');
+    const container = btn.closest('#menu-local-players') || btn.closest('#player-inputs') || btn.closest('.setup-container');
+    const rows = container ? container.querySelectorAll('.player-input-row') : document.querySelectorAll('.player-input-row');
     if (rows.length <= 2) return;
     btn.closest('.player-input-row').remove();
-    // Renumerar
-    document.querySelectorAll('.player-input-row').forEach((row, i) => {
+    const remaining = container ? container.querySelectorAll('.player-input-row') : document.querySelectorAll('.player-input-row');
+    remaining.forEach((row, i) => {
       row.querySelector('.player-num').textContent = i + 1;
-      row.querySelector('input').placeholder = `Nombre del jugador ${i + 1}`;
+      row.querySelector('input').placeholder = `Jugador ${i + 1}`;
     });
-    updateRemoveButtons();
+    updateRemoveButtons(container);
   }
 
-  function updateRemoveButtons() {
-    const rows = document.querySelectorAll('.player-input-row');
-    rows.forEach((row, i) => {
+  function updateRemoveButtons(container) {
+    const rows = container ? container.querySelectorAll('.player-input-row') : document.querySelectorAll('.player-input-row');
+    rows.forEach(row => {
       const btn = row.querySelector('.remove-player-btn');
-      btn.style.visibility = rows.length > 2 ? 'visible' : 'hidden';
+      if (btn) btn.style.visibility = rows.length > 2 ? 'visible' : 'hidden';
     });
   }
 
@@ -548,6 +567,26 @@ const App = (() => {
 
   /* ── Iniciar partida ── */
   async function startGame() {
+    if (selectedType === 'online') {
+      const hostName = document.getElementById('online-host-name')?.value.trim();
+      if (!hostName) { showToast('Escribe tu nombre para crear la sala', 'error'); return; }
+
+      try {
+        await CadenaData.init();
+      } catch (err) {
+        showToast('Error al cargar datos: ' + err.message, 'error');
+        return;
+      }
+
+      if (!window._FB?.configured) {
+        showToast('Firebase no configurado para modo online', 'error');
+        return;
+      }
+      await startOnlineAsHost([hostName], selectedLives, selectedTime);
+      return;
+    }
+
+    // Modo local
     const names = getPlayerNames();
     if (names.length < 2) { showToast('Necesitas al menos 2 jugadores', 'error'); return; }
 
@@ -559,23 +598,62 @@ const App = (() => {
       return;
     }
 
-    if (selectedType === 'online') {
-      if (!window._FB?.configured) {
-        showToast('Firebase no configurado para modo online', 'error');
-        return;
-      }
-      await startOnlineAsHost(names, selectedLives, selectedTime);
-    } else {
-      startLocalGame(names, selectedLives, selectedTime);
-    }
+    startLocalGame(names, selectedLives, selectedTime);
   }
 
   function startLocalGame(names, lives, turnSecs) {
     _startGameUI(names, lives, 'local', null, null, turnSecs || 15);
   }
 
+  /* Muestra el countdown+precarga y llama onDone cuando todo listo */
+  function _runCountdownThenStart(onDone) {
+    const overlay = document.getElementById('countdown-overlay');
+    const numEl   = document.getElementById('countdown-number');
+    if (!overlay || !numEl) { onDone(); return; }
+    const SECS = 10;
+    let remaining = SECS, countdownDone = false, dataReady = false;
+    numEl.textContent = remaining;
+    overlay.classList.remove('hidden');
+    // Reintentar precarga hasta que todos los chunks estén en memoria
+    async function ensureAllLoaded() {
+      await CadenaData.init().catch(() => {});
+      let attempts = 0;
+      while (attempts < 5) {
+        await CadenaData.preloadAllChunks().catch(() => {});
+        if (CadenaData.chunksLoaded()) break;
+        attempts++;
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    ensureAllLoaded().then(() => {
+      dataReady = true;
+      if (countdownDone) { overlay.classList.add('hidden'); onDone(); }
+    });
+    const iv = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(iv);
+        countdownDone = true;
+        if (dataReady) { overlay.classList.add('hidden'); onDone(); }
+        else numEl.textContent = '⏳';
+      } else {
+        numEl.textContent = remaining;
+      }
+    }, 1000);
+  }
+
   function _startGameUI(names, lives, mode, roomCode, myId, turnSecs) {
-    // Construir estado en el módulo de juego
+    // Guardar sesión completa como fallback para playAgain
+    if (myId !== null && names[myId]) window._myLobbyName = names[myId];
+    window._lastGameMode = mode;
+    if (mode === 'online') {
+      window._lastOnlineSession = {
+        roomCode: roomCode,
+        myId:     myId,
+        myName:   myId !== null ? names[myId] : '',
+        lives:    lives
+      };
+    }
     const state = {
       players: names.map((name, i) => ({ id: i, name, lives, eliminated: false })),
       currentIndex: 0,
@@ -585,18 +663,41 @@ const App = (() => {
       turnSecs: turnSecs || 15,
       mode,
       roomCode,
-      isHost: true,
+      isHost: myId === 0,
       myPlayerId: myId,
-      phase: 'playing'
+      phase: 'playing',
+      _lastAppliedTurn: -1,  // -1 para que turnIndex 0 siempre se aplique
+      _graceGiven: true   // countdown ya hace de gracia, no repetir en beginTurn
     };
 
-    // Inyectar estado al módulo CadenaGame a través de un reset
     _injectState(state);
-
-    // Limpiar UI del juego
     document.getElementById('chain-entries').innerHTML = '';
     showScreen('screen-game');
-    CadenaGame.beginTurn();
+
+    _runCountdownThenStart(() => {
+      if (mode === 'online') {
+        CadenaGame.FBSync.cleanup();
+        CadenaGame.FBSync.listenRoom(roomCode, remote => {
+          CadenaGame.applyRemoteState(remote);
+        });
+        if (myId === 0) {
+          // Host: marcar 'playing' en Firebase y arrancar turno
+          const FB = window._FB;
+          if (FB?.configured && roomCode) {
+            const { db, ref, update, serverTimestamp } = FB;
+            update(ref(db, 'rooms/' + roomCode), {
+              status: 'playing',
+              turnIndex: 0,
+              turnStartTime: serverTimestamp()
+            });
+          }
+          CadenaGame.beginTurn();
+        }
+        // Joiners: esperan a que applyRemoteState reciba turnIndex y llame beginTurn
+      } else {
+        CadenaGame.beginTurn();
+      }
+    });
   }
 
   /* Inyectar estado al módulo cerrado mediante eval temporal */
@@ -612,84 +713,74 @@ const App = (() => {
     try {
       const code = await CadenaGame.FBSync.createRoom(names, lives);
       if (!code) return;
-
-      showScreen('screen-lobby');
-      document.getElementById('room-code-display').textContent = code;
-      document.getElementById('lobby-mode-display').textContent =
-        `${lives === 1 ? '💀 Supervivencia' : lives === 2 ? '⚽ Normal' : '🏆 Largo'} · ${names.length} jugadores`;
-      document.getElementById('btn-start-online').style.display = 'block';
-
-      renderLobbyPlayers(names, 0);
-
-      // Escuchar sala para ver si se unen más
-      CadenaGame.FBSync.listenRoom(code, remote => {
-        if (remote.players) renderLobbyPlayers(remote.players.map(p => p.name), 0);
-        if (remote.status === 'playing') {
-          _startGameUI(remote.players.map(p => p.name), remote.lives, 'online', code, 0, turnSecs || 15);
-        }
-      });
-
-      // Guardar código en estado local
-      window._pendingRoomCode = code;
-      window._pendingNames    = names;
-      window._pendingLives    = lives;
-
+      _enterLobby(code, 0, names[0], lives, names.map((name, i) => ({ id: i, name, lives, eliminated: false })));
     } catch (err) {
       showToast('Error al crear sala: ' + err.message, 'error');
     }
   }
 
   function startOnlineGame() {
-    CadenaGame.FBSync.startGame(window._pendingRoomCode);
+    const btn = document.getElementById('btn-start-online');
+    if (btn && btn.disabled) { showToast('Necesitas al menos 2 jugadores para empezar', 'error'); return; }
+    // Escribir 'countdown' para que todos arranquen la precarga a la vez
+    const FB = window._FB;
+    const { db, ref, update } = FB;
+    update(ref(db, 'rooms/' + window._pendingRoomCode), { status: 'countdown' });
   }
 
   /* ── Online: unirse ── */
   async function joinRoom() {
-    const name = document.getElementById('join-name').value.trim();
-    const code = document.getElementById('join-code').value.trim().toUpperCase();
+    const nameEl = document.getElementById('join-name-inline') || document.getElementById('join-name');
+    const codeEl = document.getElementById('join-code-inline') || document.getElementById('join-code');
+    const name = nameEl?.value.trim();
+    const code = codeEl?.value.trim().toUpperCase();
     if (!name) { showToast('Escribe tu nombre', 'error'); return; }
-    if (code.length !== 6) { showToast('El código debe tener 6 caracteres', 'error'); return; }
+    if (!code || code.length !== 6) { showToast('El código debe tener 6 caracteres', 'error'); return; }
 
     showToast('Conectando…');
     try {
-      await CadenaData.init();
       const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name);
-
-      showScreen('screen-lobby');
-      document.getElementById('room-code-display').textContent = code;
-      document.getElementById('btn-start-online').style.display = 'none';
-
-      renderLobbyPlayers(roomData.players.map(p => p.name), myId);
-
-      CadenaGame.FBSync.listenRoom(code, remote => {
-        if (remote.players) renderLobbyPlayers(remote.players.map(p => p.name), myId);
-        if (remote.status === 'playing') {
-          _startGameUI(remote.players.map(p => p.name), remote.lives, 'online', code, myId);
-          // Re-aplicar cambios remotos en curso
-          CadenaGame.FBSync.listenRoom(code, CadenaGame.applyRemoteState);
-        }
-      });
-
+      _enterLobby(code, myId, name, roomData.lives, roomData.players);
     } catch (err) {
       showToast(err.message, 'error');
     }
   }
 
-  function renderLobbyPlayers(names, myId) {
+  function renderLobbyPlayers(players, myId) {
+    const normalized = toPlayersArray(players)
+      .map(p => typeof p === 'string' ? { id: null, name: p } : p);
     const list = document.getElementById('lobby-players-list');
-    list.innerHTML = names.map((name, i) => `
-      <div class="lobby-player-item">
-        <div class="lobby-player-avatar">${name[0].toUpperCase()}</div>
-        <span class="lobby-player-name">${name}</span>
-        ${i === 0 ? '<span class="lobby-player-host">👑 Host</span>' : ''}
-        ${i === myId ? '<span class="lobby-player-host">← Tú</span>' : ''}
-      </div>`).join('');
+    list.innerHTML = normalized.map((p, i) => {
+      const pid = p.id !== null ? p.id : i;
+      return `<div class="lobby-player-item">
+        <div class="lobby-player-avatar">${p.name[0].toUpperCase()}</div>
+        <span class="lobby-player-name">${p.name}</span>
+        ${pid === 0 ? '<span class="lobby-player-host">👑 Host</span>' : ''}
+        ${pid === myId ? '<span class="lobby-player-host">← Tú</span>' : ''}
+      </div>`;
+    }).join('');
+
+    const btnStart = document.getElementById('btn-start-online');
+    const hintEl   = document.getElementById('lobby-hint-players');
+    if (btnStart) {
+      const isHost = myId === 0;
+      btnStart.style.display = isHost ? 'block' : 'none';
+      if (isHost) {
+        const enough = normalized.length >= 2;
+        btnStart.disabled = !enough;
+        btnStart.style.opacity = enough ? '1' : '0.45';
+        if (hintEl) hintEl.textContent = enough
+          ? `${normalized.length} jugadores listos — ¡puedes empezar!`
+          : `Esperando jugadores… (${normalized.length}/2 mínimo para empezar)`;
+      }
+    }
   }
 
-  /* ── Sala: copiar código ── */
+  /* ── Sala: copiar enlace completo ── */
   function copyRoomCode() {
     const code = document.getElementById('room-code-display').textContent;
-    navigator.clipboard.writeText(code).then(() => showToast('¡Código copiado!', 'success'));
+    const url  = window.location.origin + window.location.pathname + '?sala=' + code;
+    navigator.clipboard.writeText(url).then(() => showToast('¡Enlace copiado!', 'success'));
   }
 
   /* ── Después de eliminación ── */
@@ -709,12 +800,143 @@ const App = (() => {
   }
 
   /* ── Jugar de nuevo ── */
-  function playAgain() {
-    showScreen('screen-create');
+  async function playAgain() {
+    clearInterval(window._timerInterval);
+
+    // Leer sesión online guardada al arrancar la partida (nunca se borra)
+    const session = window._lastOnlineSession;
+
+    CadenaGame.FBSync.cleanup();
+    CadenaGame._resetState(null);
     document.getElementById('chain-entries').innerHTML = '';
+    document.getElementById('players-lives').innerHTML = '';
+
+    if (session?.roomCode) {
+      await _rejoinLobby(session.roomCode, session.myName, session.myId, session.lives);
+    } else {
+      showMenu();
+      menuSetMode('local');
+    }
   }
 
-  /* ── Toast ── */
+  /* Vuelve al lobby con el mismo codigo.
+     El host original (myPlayerId===0) resetea la sala y escribe su slot.
+     El resto espera a que exista status:lobby y escribe su slot propio. */
+  async function _rejoinLobby(roomCode, myName, myOriginalId, lives) {
+    const FB = window._FB;
+    if (!FB?.configured) { showMenu(); return; }
+    try {
+      const { db, ref, get, update, set } = FB;
+      const roomRef = ref(db, 'rooms/' + roomCode);
+      const snap = await get(roomRef);
+      if (!snap.exists()) { showToast('La sala ya no existe', 'error'); showMenu(); return; }
+      const room = snap.val();
+      const roomLives = room.lives || lives;
+
+      const myEntry = { id: myOriginalId, name: myName, lives: roomLives, eliminated: false };
+
+      if (myOriginalId == 0) {
+        // Host: resetear sala y escribir slot 0
+        await update(roomRef, {
+          status: 'lobby', chain: null, chainLength: 0, turnIndex: 0, players: null
+        });
+        await set(ref(db, 'rooms/' + roomCode + '/players/0'), myEntry);
+      } else {
+        // Joiner: ir al lobby YA con solo mi nombre, y en background esperar al host y escribir mi slot
+        _enterLobby(roomCode, myOriginalId, myName, roomLives, [myEntry]);
+        // Esperar en background a que el host resetee y luego escribir mi slot
+        (async () => {
+          let retries = 0;
+          while (retries < 20) {
+            const s2 = await get(roomRef);
+            if (s2.val()?.status === 'lobby') break;
+            await new Promise(r => setTimeout(r, 500));
+            retries++;
+          }
+          await set(ref(db, 'rooms/' + roomCode + '/players/' + myOriginalId), myEntry);
+        })();
+        return; // ya llamamos _enterLobby arriba
+      }
+
+      const snapFinal = await get(roomRef);
+      const finalPlayers = toPlayersArray(snapFinal.val()?.players);
+      _enterLobby(roomCode, myOriginalId, myName, roomLives,
+        finalPlayers.length ? finalPlayers : [myEntry]);
+    } catch(e) {
+      showToast('Error al volver al lobby: ' + e.message, 'error');
+      showMenu();
+    }
+  }
+
+  /* Muestra la pantalla de lobby y registra el listener
+     myName: nombre propio (pasado directamente, no derivado del array) */
+  function _enterLobby(roomCode, myId, myName, lives, currentPlayers) {
+    // Actualizar URL con el código de sala
+    const _shareUrl = window.location.origin + window.location.pathname + '?sala=' + roomCode;
+    history.pushState(null, '', window.location.pathname + '?sala=' + roomCode);
+    showScreen('screen-lobby');
+    // Mostrar enlace compartible en el lobby
+    const _shareEl = document.getElementById('lobby-share-url');
+    if (_shareEl) _shareEl.textContent = _shareUrl;
+    document.getElementById('room-code-display').textContent = roomCode;
+    document.getElementById('lobby-mode-display').textContent =
+      lives === 1 ? '💀 Supervivencia' : lives === 2 ? '⚽ Normal' : '🏆 Largo';
+    window._pendingRoomCode = roomCode;
+    window._pendingLives    = lives;
+    window._myLobbyId       = myId;
+    window._myLobbyName     = myName;
+
+    renderLobbyPlayers(currentPlayers, myId);
+
+    const FB = window._FB;
+    const { db, ref, onValue } = FB;
+    const rRef = ref(db, 'rooms/' + roomCode);
+    const unsub = onValue(rRef, snap => {
+      if (!snap.exists()) return;
+      const remote = snap.val();
+      let freshPlayers = toPlayersArray(remote.players);
+      // Si la lista está vacía (reset en curso) asegurarnos de que al menos yo aparezco
+      if (!freshPlayers.find(p => p.name === myName)) {
+        freshPlayers = [...freshPlayers.filter(p => p.name !== myName),
+          { id: myId, name: myName, lives, eliminated: false }];
+        freshPlayers.sort((a, b) => a.id - b.id);
+      }
+      const me = freshPlayers.find(p => p.name === myName);
+      const freshMyId = me ? me.id : myId;
+      renderLobbyPlayers(freshPlayers, freshMyId);
+      if (remote.status === 'countdown' || remote.status === 'playing') {
+        unsub();
+        _startGameUI(freshPlayers.map(p => p.name), remote.lives || lives, 'online', roomCode, freshMyId, 15);
+      }
+    });
+    window._lobbyUnsub = unsub;
+  }
+
+  /* ── Salir del lobby ── */
+  function leaveLobby() {
+    if (window._lobbyUnsub) { window._lobbyUnsub(); window._lobbyUnsub = null; }
+    // Eliminar al jugador de la sala si está en el lobby
+    const FB = window._FB;
+    const code = window._pendingRoomCode;
+    const myId = window._myLobbyId;
+    if (FB?.configured && code && typeof myId === 'number') {
+      const { db, ref, get, update } = FB;
+      get(ref(db, 'rooms/' + code)).then(snap => {
+        if (!snap.exists()) return;
+        const room = snap.val();
+        if (room.status !== 'lobby') return;
+        // Eliminar jugador y reasignar ids
+        const remaining = (room.players || [])
+          .filter(p => p.id !== myId)
+          .map((p, i) => ({ ...p, id: i }));
+        // Si queda alguien, actualizar; si no, dejar sala vacía
+        update(ref(db, 'rooms/' + code), { players: remaining });
+      }).catch(() => {});
+    }
+    showMenu();
+  }
+
+    /* ── Toast ── */
   let toastTimer = null;
   function showToast(msg, type = '') {
     const el = document.getElementById('toast');
@@ -724,28 +946,100 @@ const App = (() => {
     toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
   }
 
+  /* ── Menú principal nuevo ── */
+  let _menuLives = 1;
+  let _menuLivesLocal = 1;
+  let _menuMode = 'online';
+
+  function menuSetMode(mode) {
+    _menuMode = mode;
+    document.getElementById('menu-tab-online').classList.toggle('active', mode === 'online');
+    document.getElementById('menu-tab-local').classList.toggle('active', mode === 'local');
+    document.getElementById('menu-panel-online').classList.toggle('hidden', mode !== 'online');
+    document.getElementById('menu-panel-local').classList.toggle('hidden', mode !== 'local');
+  }
+
+  function menuSelectLives(btn) {
+    btn.closest('.menu-lives-row').querySelectorAll('.lives-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _menuLives = parseInt(btn.dataset.lives);
+  }
+
+  function menuSelectLivesLocal(btn) {
+    btn.closest('.menu-lives-row').querySelectorAll('.lives-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _menuLivesLocal = parseInt(btn.dataset.lives);
+  }
+
+  async function menuCreateRoom() {
+    const name = (document.getElementById('menu-host-name') || document.getElementById('menu-player-name'))?.value.trim();
+    if (!name) { _menuError('Escribe tu nombre en «Nueva sala»'); return; }
+    if (!window._FB?.configured) { _menuError('Firebase no disponible'); return; }
+    selectedLives = _menuLives;
+    selectedType  = 'online';
+    try {
+      await CadenaData.init();
+    } catch(e) { _menuError('Error al cargar datos'); return; }
+    await startOnlineAsHost([name], _menuLives, 15);
+  }
+
+  async function menuJoinRoom() {
+    const name = document.getElementById('menu-player-name')?.value.trim();
+    const code = document.getElementById('menu-join-code')?.value.trim().toUpperCase();
+    if (!name) { _menuError('Escribe tu nombre primero'); return; }
+    if (!code || code.length !== 6) { _menuError('El código debe tener 6 caracteres'); return; }
+    showToast('Conectando…');
+    try {
+      const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name);
+      _enterLobby(code, myId, name, roomData.lives, roomData.players);
+    } catch(err) {
+      _menuError(err.message);
+    }
+  }
+
+  async function menuStartLocal() {
+    const rows  = document.querySelectorAll('#menu-local-players .player-name-input');
+    const names = [...rows].map(i => i.value.trim()).filter(n => n.length > 0);
+    if (names.length < 2) { showToast('Necesitas al menos 2 jugadores', 'error'); return; }
+    try { await CadenaData.init(); } catch(e) { showToast('Error cargando datos', 'error'); return; }
+    startLocalGame(names, _menuLivesLocal, 15);
+  }
+
+  function _menuError(msg) {
+    const el = document.getElementById('menu-error');
+    if (!el) { showToast(msg, 'error'); return; }
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3500);
+  }
+
   /* ── Firebase status ── */
   function updateFBStatus() {
-    const indicator = document.getElementById('fb-indicator');
-    const text      = document.getElementById('fb-text');
-    if (window._FB?.configured) {
-      indicator.textContent = '●';
-      indicator.className = 'ok';
-      text.textContent = 'Firebase conectado — modo online disponible';
-    }
+    // No mostrar nada si Firebase funciona — el indicador ya no está en el nuevo menú
   }
 
   /* ── Init ── */
   function init() {
     updateFBStatus();
+    // Leer ?sala= de la URL para unirse automáticamente
+    const params   = new URLSearchParams(window.location.search);
+    const salaCode = params.get('sala');
+    if (salaCode && salaCode.length === 6) {
+      // Pre-rellenar el código y poner el foco en el nombre
+      const codeInput = document.getElementById('menu-join-code');
+      if (codeInput) codeInput.value = salaCode.toUpperCase();
+      showToast(`Código ${salaCode} detectado — escribe tu nombre y pulsa UNIRSE`, 'success');
+    }
   }
 
   return {
     showMenu, showCreateGame, showJoinGame,
     selectMode, selectTime, setType, addPlayer, removePlayer,
-    startGame, startOnlineGame, joinRoom,
+    startGame, startOnlineGame, joinRoom, leaveLobby,
     copyRoomCode, continueAfterElim, playAgain,
-    showToast, init, _startGameUI
+    showToast, init, _startGameUI,
+    menuSetMode, menuSelectLives, menuSelectLivesLocal,
+    menuCreateRoom, menuJoinRoom, menuStartLocal
   };
 
 })();
@@ -784,11 +1078,39 @@ const App = (() => {
     const active = s.players.filter(p => !p.eliminated);
     const cp = active[s.currentIndex % active.length];
     entry.submittedBy = cp?.name || '?';
+    // Promover nat y b al nivel raíz para que Firebase los serialice y _renderEntry los lea
+    if (entry.type === 'player' && entry.data) {
+      if (!entry.nat) entry.nat = entry.data.nat || null;
+      if (!entry.b)   entry.b   = entry.data.b   || null;
+    }
     s.chain.push(entry);
     s.chainLength++;
 
     _renderEntry(entry);
-    _nextTurn();
+
+    if (s.mode === 'online') {
+      const nextActive = s.players.filter(p => !p.eliminated);
+      const nextIndex = (s.currentIndex + 1) % nextActive.length;
+      s.currentIndex = nextIndex;
+      const chainSerial = s.chain.map(e => ({
+        type: e.type, name: e.name || null, value: e.value || null,
+        id: e.id || null, isOneClubMan: e.isOneClubMan || false, submittedBy: e.submittedBy || '',
+        nat: e.nat || e.data?.nat || null,
+        b:   e.b   || e.data?.b   || null
+      }));
+      const FB = window._FB;
+      if (FB?.configured && s.roomCode) {
+        const { db, ref, update, serverTimestamp } = FB;
+        update(ref(db, 'rooms/' + s.roomCode), {
+          chain: chainSerial, chainLength: chainSerial.length,
+          turnIndex: nextIndex,
+          players: s.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, eliminated: p.eliminated })),
+          turnStartTime: serverTimestamp(), status: 'playing'
+        });
+      }
+    } else {
+      _nextTurn();
+    }
   };
 
   CadenaGame.penalizeWrongAnswer = function(value, type, validOptions) {
@@ -801,14 +1123,38 @@ const App = (() => {
     cp.lives--;
     if (cp.lives <= 0) {
       cp.eliminated = true;
-      _showEliminated(cp, `"${value}" no es válido`, validOptions);
+      if (s.mode === 'online') _pushPenaltyToFirebase(s);
+      _showEliminated(cp, '"' + value + '" no es válido', validOptions);
     } else {
-      // Mostrar opciones válidas en el panel del juego (no-eliminación)
+      s.chain = []; s.chainLength = 0;
+      document.getElementById('chain-entries').innerHTML = '';
       _showValidOptionsPanel(validOptions);
-      App.showToast(`❤️ Le quedan ${cp.lives} vida${cp.lives !== 1 ? 's' : ''}`, 'error');
-      _nextTurn();
+      App.showToast('❤️ Le quedan ' + cp.lives + ' vida' + (cp.lives !== 1 ? 's' : ''), 'error');
+      if (s.mode === 'online') _pushPenaltyToFirebase(s);
+      else _nextTurn();
     }
   };
+
+  function _pushPenaltyToFirebase(s) {
+    const active = s.players.filter(p => !p.eliminated);
+    const FB = window._FB;
+    if (!FB?.configured || !s.roomCode) return;
+    const { db, ref, update, serverTimestamp } = FB;
+    if (active.length <= 1) {
+      update(ref(db, 'rooms/' + s.roomCode), {
+        players: s.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, eliminated: p.eliminated })),
+        chain: [], chainLength: 0, status: 'finished'
+      });
+      return;
+    }
+    const nextIndex = (s.currentIndex + 1) % active.length;
+    s.currentIndex = nextIndex;
+    update(ref(db, 'rooms/' + s.roomCode), {
+      players: s.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, eliminated: p.eliminated })),
+      chain: [], chainLength: 0, turnIndex: nextIndex,
+      turnStartTime: serverTimestamp(), status: 'playing'
+    });
+  }
 
   CadenaGame.beginTurn = function() {
     const s = CadenaGame._state;
@@ -836,38 +1182,73 @@ const App = (() => {
 
     const isMyTurn = (s.mode === 'local') || (s.myPlayerId !== null && cp.id === s.myPlayerId);
 
+    // Período de gracia al inicio de la partida (cadena vacía, solo una vez)
+    const isFirstTurn = s.chain.length === 0 && !s._graceGiven;
+    if (isFirstTurn) s._graceGiven = true;
+    const graceMs = isFirstTurn ? 10000 : 0;
+
     if (isMyTurn) {
       answerZone.classList.remove('hidden');
       waitingMsg.classList.add('hidden');
       input.disabled = false;
       input.value = '';
       CadenaData.closeSuggestions();
-      _startTimer();
-      setTimeout(() => input.focus(), 100);
+      if (graceMs > 0) {
+        _showCountdownOverlay(graceMs, () => { _startTimer(); setTimeout(() => input.focus(), 50); });
+      } else {
+        _startTimer();
+        setTimeout(() => input.focus(), 100);
+      }
     } else {
       answerZone.classList.add('hidden');
       waitingMsg.classList.remove('hidden');
       document.getElementById('waiting-name').textContent = cp.name;
-      _startTimer();
+      if (graceMs > 0) {
+        _showCountdownOverlay(graceMs, () => _startTimer());
+      } else {
+        _startTimer();
+      }
     }
   };
 
   CadenaGame.applyRemoteState = function(remote) {
     const s = CadenaGame._state;
     if (!s) return;
-    if (remote.players) s.players = remote.players;
-    if (typeof remote.turnIndex === 'number') s.currentIndex = remote.turnIndex;
-    if (remote.chain && remote.chain.length !== s.chain.length) {
-      s.chain = remote.chain;
-      s.chainLength = remote.chainLength || remote.chain.length;
-      const c = document.getElementById('chain-entries');
-      c.innerHTML = '';
-      s.chain.forEach(e => _renderEntry(e));
+
+    let needsBeginTurn = false;
+
+    if (remote.players) s.players = toPlayersArray(remote.players);
+
+    // Solo reaccionar a cambio de turno si el índice cambió Y no soy yo quien acaba de actuar
+    if (typeof remote.turnIndex === 'number' && remote.turnIndex !== s._lastAppliedTurn) {
+      s._lastAppliedTurn = remote.turnIndex;
+      s.currentIndex = remote.turnIndex;
+      needsBeginTurn = true;
     }
-    if (remote.status === 'playing') CadenaGame.beginTurn();
+
+    // Actualizar cadena si cambió
+    if (remote.chain) {
+      const remoteLen = Array.isArray(remote.chain) ? remote.chain.length : 0;
+      if (remoteLen !== s.chain.length) {
+        s.chain = Array.isArray(remote.chain) ? remote.chain : [];
+        s.chainLength = remote.chainLength || s.chain.length;
+        const c = document.getElementById('chain-entries');
+        c.innerHTML = '';
+        s.chain.forEach(e => _renderEntry(e));
+      }
+    }
+
     if (remote.status === 'finished') {
       const active = s.players.filter(p => !p.eliminated);
       _endGame(active[0]);
+      return;
+    }
+
+    // Ignorar snapshots de countdown: cada cliente arranca por su cuenta
+    if (remote.status === 'countdown') return;
+
+    if (needsBeginTurn && remote.status === 'playing') {
+      setTimeout(() => CadenaGame.beginTurn(), 100);
     }
   };
 
@@ -895,16 +1276,24 @@ const App = (() => {
 
       if (rem <= 0) {
         clearInterval(window._timerInterval);
-        const isMyTurn = s.mode === 'local' || s.myPlayerId !== null &&
-          s.players.filter(p => !p.eliminated)[s.currentIndex % s.players.filter(p => !p.eliminated).length]?.id === s.myPlayerId;
+        const active2 = s.players.filter(p => !p.eliminated);
+        const cp2 = active2[s.currentIndex % active2.length];
+        const isMyTurn = s.mode === 'local' || (s.myPlayerId !== null && cp2?.id === s.myPlayerId);
         if (isMyTurn) {
-          const active = s.players.filter(p => !p.eliminated);
-          const cp = active[s.currentIndex % active.length];
-          App.showToast(`⏰ ¡Tiempo! ${cp?.name} pierde una vida`, 'error');
-          if (cp) {
-            cp.lives--;
-            if (cp.lives <= 0) { cp.eliminated = true; _showEliminated(cp, 'Se quedó sin tiempo', null); }
-            else { App.showToast(`❤️ Le quedan ${cp.lives} vida${cp.lives !== 1 ? 's' : ''}`, 'error'); _nextTurn(); }
+          App.showToast('⏰ ¡Tiempo! ' + (cp2?.name || '') + ' pierde una vida', 'error');
+          if (cp2) {
+            cp2.lives--;
+            if (cp2.lives <= 0) {
+              cp2.eliminated = true;
+              if (s.mode === 'online') _pushPenaltyToFirebase(s);
+              _showEliminated(cp2, 'Se quedó sin tiempo', null);
+            } else {
+              s.chain = []; s.chainLength = 0;
+              document.getElementById('chain-entries').innerHTML = '';
+              App.showToast('❤️ Le quedan ' + cp2.lives + ' vida' + (cp2.lives !== 1 ? 's' : ''), 'error');
+              if (s.mode === 'online') _pushPenaltyToFirebase(s);
+              else _nextTurn();
+            }
           }
         }
       }
@@ -956,6 +1345,48 @@ const App = (() => {
     }
   }
 
+  function _showCountdownOverlay(totalMs, onDone) {
+    const SECS = Math.round(totalMs / 1000);
+    const overlay = document.getElementById('countdown-overlay');
+    const numEl   = document.getElementById('countdown-number');
+    if (!overlay || !numEl) { onDone(); return; }
+
+    let remaining = SECS;
+    let countdownDone = false;
+    let dataReady = false;
+
+    numEl.textContent = remaining;
+    overlay.classList.remove('hidden');
+
+    // Lanzar carga de índices Y todos los chunks en paralelo con la cuenta atrás
+    Promise.all([
+      CadenaData.init().catch(() => {}),
+      CadenaData.preloadAllChunks().catch(() => {})
+    ]).then(() => {
+      dataReady = true;
+      if (countdownDone) {
+        overlay.classList.add('hidden');
+        onDone();
+      }
+    });
+
+    const iv = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(iv);
+        countdownDone = true;
+        if (dataReady) {
+          overlay.classList.add('hidden');
+          onDone();
+        } else {
+          numEl.textContent = '⏳';
+        }
+      } else {
+        numEl.textContent = remaining;
+      }
+    }, 1000);
+  }
+
   function _endGame(winner) {
     clearInterval(window._timerInterval);
     const s = CadenaGame._state;
@@ -963,6 +1394,12 @@ const App = (() => {
     setTimeout(() => {
       document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
       document.getElementById('screen-result').classList.add('active');
+
+      const btns = document.getElementById('result-buttons');
+      const exitLabel = s?.mode === 'online' ? '🏠 Salir de sala' : '🏠 Menú';
+      btns.innerHTML = '<button class="btn-primary" onclick="App.playAgain()">🔄 Jugar de nuevo</button>' +
+                       '<button class="btn-secondary" onclick="App.showMenu()">' + exitLabel + '</button>';
+
       document.getElementById('winner-name').textContent = winner ? winner.name : '— Empate —';
       document.getElementById('chain-stats').innerHTML =
         `Cadena de <strong>${s?.chainLength || 0}</strong> eslabones<br>` +
@@ -973,11 +1410,19 @@ const App = (() => {
   function _renderEntry(entry) {
     const container = document.getElementById('chain-entries');
     const div = document.createElement('div');
-    const val  = entry.name || entry.value || '?';
-    const meta = entry.type === 'player'
-      ? (entry.data?.nat || '') + (entry.data?.b ? ` · ${entry.data.b}` : '')
-      : (entry.isOneClubMan ? '★ One-club man' : '');
+    const val = entry.name || entry.value || '?';
     div.className = `chain-entry type-${entry.type}`;
+
+    let meta = '';
+    if (entry.type === 'team') {
+      meta = entry.isOneClubMan ? '★ One-club man' : '';
+    } else {
+      // nat y b vienen directamente en el entry (guardados al añadir y al serializar a Firebase)
+      const nat = entry.nat || entry.data?.nat || '';
+      const b   = entry.b   || entry.data?.b   || '';
+      meta = nat + (b ? ' · ' + b : '');
+    }
+
     div.innerHTML = `
       <span class="ce-icon">${entry.type === 'player' ? '⚽' : '🏟️'}</span>
       <div class="ce-content">
@@ -1025,7 +1470,7 @@ const App = (() => {
    ══════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   App.init();
-  // Precargar datos en background nada más cargar la página,
-  // para que al iniciar partida ya estén listos y no haya lag en el primer turno.
+  // Precargar índices y todos los chunks en background nada más cargar la página
   CadenaData.init().catch(() => {});
+  CadenaData.preloadAllChunks().catch(() => {});
 });

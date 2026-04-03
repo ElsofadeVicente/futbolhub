@@ -1,0 +1,2586 @@
+[
+  {
+    "competition": "Mundial 2022",
+    "homeTeam": "Argentina",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "7-5",
+    "date": "18 de diciembre 2022",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "MARTÍNEZ",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "TAGLIAFICO",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "OTAMENDI",
+          "position": "CB",
+          "number": "19"
+        },
+        {
+          "name": "ROMERO",
+          "position": "CB",
+          "number": "13"
+        },
+        {
+          "name": "MOLINA",
+          "position": "RB",
+          "number": "26"
+        }
+      ],
+      [
+        {
+          "name": "MAC ALLISTER",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "FERNÁNDEZ",
+          "position": "CM",
+          "number": "24"
+        },
+        {
+          "name": "DE PAUL",
+          "position": "CM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "DI MARÍA",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "ALVAREZ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "MESSI",
+          "position": "RW",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2022",
+    "homeTeam": "Argentina",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "7-5",
+    "date": "18 de diciembre 2022",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "LLORIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "HERNÁNDEZ",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "UPAMECANO",
+          "position": "CB",
+          "number": "18"
+        },
+        {
+          "name": "VARANE",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "KOUNDÉ",
+          "position": "RB",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "TCHOUAMÉNI",
+          "position": "CDM",
+          "number": "8"
+        },
+        {
+          "name": "RABIOT",
+          "position": "CDM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "MBAPPÉ",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "GRIEZMANN",
+          "position": "CAM",
+          "number": "7"
+        },
+        {
+          "name": "DEMBÉLÉ",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "GIROUD",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2022",
+    "homeTeam": "Croacia",
+    "awayTeam": "Marruecos",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "17 de diciembre 2022",
+    "playingTeam": "Croacia",
+    "formation": [
+      [
+        {
+          "name": "LIVAKOVIC",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "PERIŠIĆ",
+          "position": "LB",
+          "number": "4"
+        },
+        {
+          "name": "GVARDIOL",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "SUTALO",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "STANISIC",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "MODRIĆ",
+          "position": "CDM",
+          "number": "10"
+        },
+        {
+          "name": "KOVACIC",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "ORSIC",
+          "position": "LW",
+          "number": "18"
+        },
+        {
+          "name": "KRAMARIC",
+          "position": "CAM",
+          "number": "9"
+        },
+        {
+          "name": "MAJER",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "LIVAJA",
+          "position": "ST",
+          "number": "14"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2022",
+    "homeTeam": "Croacia",
+    "awayTeam": "Marruecos",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "17 de diciembre 2022",
+    "playingTeam": "Marruecos",
+    "formation": [
+      [
+        {
+          "name": "BOUNOU",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ATTIYAT AL.",
+          "position": "LB",
+          "number": "25"
+        },
+        {
+          "name": "DARI",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "EL YAMIQ",
+          "position": "CB",
+          "number": "18"
+        },
+        {
+          "name": "HAKIMI",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "EL KHANNOUSS",
+          "position": "CM",
+          "number": "23"
+        },
+        {
+          "name": "AMRABAT",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "SABIRI",
+          "position": "CM",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "BOUFAL",
+          "position": "LW",
+          "number": "17"
+        },
+        {
+          "name": "EN-NESYRI",
+          "position": "ST",
+          "number": "19"
+        },
+        {
+          "name": "ZIYECH",
+          "position": "RW",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2022",
+    "homeTeam": "Croacia",
+    "awayTeam": "Brasil",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "5-3",
+    "date": "09 de diciembre 2022",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "ALISSON",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "DANILO",
+          "position": "LB",
+          "number": "2"
+        },
+        {
+          "name": "SILVA",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "MARQUINHOS",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MILITÃO",
+          "position": "RB",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "CASEMIRO",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "PAQUETÁ",
+          "position": "CDM",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "VINICIUS J.",
+          "position": "LW",
+          "number": "20"
+        },
+        {
+          "name": "NEYMAR",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "RAPHINHA",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "RICHARLISON",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2022",
+    "homeTeam": "España",
+    "awayTeam": "Costa Rica",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "7-0",
+    "date": "23 de noviembre 2022",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "SIMÓN",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "ALBA",
+          "position": "LB",
+          "number": "18"
+        },
+        {
+          "name": "LAPORTE",
+          "position": "CB",
+          "number": "24"
+        },
+        {
+          "name": "RODRI",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "AZPILICUETA",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "PEDRI",
+          "position": "CM",
+          "number": "26"
+        },
+        {
+          "name": "BUSQUETS",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "GAVI",
+          "position": "CM",
+          "number": "9"
+        }
+      ],
+      [
+        {
+          "name": "OLMO",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "ASENSIO",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "TORRES",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "Francia",
+    "awayTeam": "Croacia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-2",
+    "date": "15 de julio 2018",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "LLORIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "HERNÁNDEZ",
+          "position": "LB",
+          "number": "21"
+        },
+        {
+          "name": "UMTITI",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "VARANE",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "PAVARD",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "KANTÉ",
+          "position": "CDM",
+          "number": "13"
+        },
+        {
+          "name": "POGBA",
+          "position": "CDM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "MATUIDI",
+          "position": "LW",
+          "number": "14"
+        },
+        {
+          "name": "GRIEZMANN",
+          "position": "CAM",
+          "number": "7"
+        },
+        {
+          "name": "MBAPPÉ",
+          "position": "RW",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "GIROUD",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "Francia",
+    "awayTeam": "Croacia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-2",
+    "date": "15 de julio 2018",
+    "playingTeam": "Croacia",
+    "formation": [
+      [
+        {
+          "name": "SUBASIC",
+          "position": "GK",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "STRINIC",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "LOVREN",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "VIDA",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "VRSALJKO",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "RAKITIC",
+          "position": "CM",
+          "number": "7"
+        },
+        {
+          "name": "BROZOVIĆ",
+          "position": "CM",
+          "number": "11"
+        },
+        {
+          "name": "MODRIĆ",
+          "position": "CM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "PERIŠIĆ",
+          "position": "LW",
+          "number": "4"
+        },
+        {
+          "name": "MANDŽUKIĆ",
+          "position": "ST",
+          "number": "17"
+        },
+        {
+          "name": "REBIĆ",
+          "position": "RW",
+          "number": "18"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "Bélgica",
+    "awayTeam": "Inglaterra",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "14 de julio 2018",
+    "playingTeam": "Bélgica",
+    "formation": [
+      [
+        {
+          "name": "COURTOIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "KOMPANY",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "ALDERWEIRELD",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "VERTONGHEN",
+          "position": "CB",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "CHADLI",
+          "position": "LWB",
+          "number": "22"
+        },
+        {
+          "name": "TIELEMANS",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "WITSEL",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "MEUNIER",
+          "position": "RWB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "HAZARD",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "DE BRUYNE",
+          "position": "RW",
+          "number": "7"
+        }
+      ],
+      [
+        {
+          "name": "LUKAKU",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "Bélgica",
+    "awayTeam": "Inglaterra",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-0",
+    "date": "14 de julio 2018",
+    "playingTeam": "Inglaterra",
+    "formation": [
+      [
+        {
+          "name": "PICKFORD",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MAGUIRE",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "JONES",
+          "position": "CB",
+          "number": "16"
+        },
+        {
+          "name": "STONES",
+          "position": "CB",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "ROSE",
+          "position": "LWB",
+          "number": "3"
+        },
+        {
+          "name": "DIER",
+          "position": "CM",
+          "number": "4"
+        },
+        {
+          "name": "LOFTUS-CHEEK",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "DELPH",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "TRIPPIER",
+          "position": "RWB",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "KANE",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "STERLING",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "Colombia",
+    "awayTeam": "Inglaterra",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-5",
+    "date": "03 de julio 2018",
+    "playingTeam": "Colombia",
+    "formation": [
+      [
+        {
+          "name": "OSPINA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MOJICA",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "MINA",
+          "position": "CB",
+          "number": "13"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "ARIAS",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "LERMA",
+          "position": "CM",
+          "number": "16"
+        },
+        {
+          "name": "BARRIOS",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "SÁNCHEZ",
+          "position": "CM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "QUINTERO",
+          "position": "LW",
+          "number": "20"
+        },
+        {
+          "name": "FALCAO",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "CUADRADO",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "España",
+    "awayTeam": "Rusia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-5",
+    "date": "01 de julio 2018",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "DE GEA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ALBA",
+          "position": "LB",
+          "number": "18"
+        },
+        {
+          "name": "RAMOS",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "PIQUÉ",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "NACHO",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "KOKE",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "BUSQUETS",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "SILVA",
+          "position": "CM",
+          "number": "21"
+        }
+      ],
+      [
+        {
+          "name": "ISCO",
+          "position": "LW",
+          "number": "22"
+        },
+        {
+          "name": "DIEGO COSTA",
+          "position": "ST",
+          "number": "19"
+        },
+        {
+          "name": "ASENSIO",
+          "position": "RW",
+          "number": "20"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "Uruguay",
+    "awayTeam": "Portugal",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "30 de junio 2018",
+    "playingTeam": "Uruguay",
+    "formation": [
+      [
+        {
+          "name": "MUSLERA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "LAXALT",
+          "position": "LB",
+          "number": "17"
+        },
+        {
+          "name": "GIMÉNEZ",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "GODÍN",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "CÁCERES",
+          "position": "RB",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "NÁNDEZ",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "TORREIRA",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "VECINO",
+          "position": "CM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "BENTANCUR",
+          "position": "CAM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "SUÁREZ",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "CAVANI",
+          "position": "ST",
+          "number": "21"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2018",
+    "homeTeam": "Uruguay",
+    "awayTeam": "Portugal",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-1",
+    "date": "30 de junio 2018",
+    "playingTeam": "Portugal",
+    "formation": [
+      [
+        {
+          "name": "PATRÍCIO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "GUERREIRO",
+          "position": "LB",
+          "number": "5"
+        },
+        {
+          "name": "FONTE",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "PEPE",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "PEREIRA",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "CARVALHO",
+          "position": "CDM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "JOÃO MÁRIO",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "SILVA",
+          "position": "CAM",
+          "number": "23"
+        },
+        {
+          "name": "SILVA",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "CRISTIANO .",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "GUEDES",
+          "position": "ST",
+          "number": "17"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2014",
+    "homeTeam": "Países Bajos",
+    "awayTeam": "Costa Rica",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "4-3",
+    "date": "05 de julio 2014",
+    "playingTeam": "Países Bajos",
+    "formation": [
+      [
+        {
+          "name": "CILLESSEN",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "MARTINS INDI",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "DE VRIJ",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "VLAAR",
+          "position": "CB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "BLIND",
+          "position": "LWB",
+          "number": "5"
+        },
+        {
+          "name": "WIJNALDUM",
+          "position": "CM",
+          "number": "20"
+        },
+        {
+          "name": "SNEIJDER",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "KUYT",
+          "position": "RWB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "DEPAY",
+          "position": "LW",
+          "number": "21"
+        },
+        {
+          "name": "VAN PERSIE",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "ROBBEN",
+          "position": "RW",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2014",
+    "homeTeam": "Alemania",
+    "awayTeam": "Argentina",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "13 de julio 2014",
+    "playingTeam": "Alemania",
+    "formation": [
+      [
+        {
+          "name": "NEUER",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "HÖWEDES",
+          "position": "LB",
+          "number": "4"
+        },
+        {
+          "name": "BOATENG",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "HUMMELS",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "LAHM",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "KROOS",
+          "position": "CM",
+          "number": "18"
+        },
+        {
+          "name": "SCHWEINSTE.",
+          "position": "CM",
+          "number": "7"
+        },
+        {
+          "name": "KRAMER",
+          "position": "CM",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "ÖZIL",
+          "position": "LW",
+          "number": "8"
+        },
+        {
+          "name": "KLOSE",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "MÜLLER",
+          "position": "RW",
+          "number": "13"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2014",
+    "homeTeam": "Alemania",
+    "awayTeam": "Argentina",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "13 de julio 2014",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "ROMERO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ROJO",
+          "position": "LB",
+          "number": "16"
+        },
+        {
+          "name": "DEMICHELIS",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "GARAY",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "ZABALETA",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "MASCHERANO",
+          "position": "CDM",
+          "number": "14"
+        },
+        {
+          "name": "BIGLIA",
+          "position": "CDM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "PÉREZ",
+          "position": "LW",
+          "number": "8"
+        },
+        {
+          "name": "MESSI",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "LAVEZZI",
+          "position": "RW",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "HIGUAÍN",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2014",
+    "homeTeam": "Brasil",
+    "awayTeam": "Alemania",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-7",
+    "date": "08 de julio 2014",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "JÚLIO CÉSAR",
+          "position": "GK",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "MARCELO",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "DANTE",
+          "position": "CB",
+          "number": "13"
+        },
+        {
+          "name": "DAVID LUIZ",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "MAICON",
+          "position": "RB",
+          "number": "23"
+        }
+      ],
+      [
+        {
+          "name": "FERNANDINHO",
+          "position": "CDM",
+          "number": "5"
+        },
+        {
+          "name": "LUIZ GUSTAVO",
+          "position": "CDM",
+          "number": "17"
+        }
+      ],
+      [
+        {
+          "name": "HULK",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "OSCAR",
+          "position": "CAM",
+          "number": "11"
+        },
+        {
+          "name": "BERNARD",
+          "position": "RW",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "FRED",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2014",
+    "homeTeam": "Francia",
+    "awayTeam": "Alemania",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "04 de julio 2014",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "LLORIS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "EVRA",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "SAKHO",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "VARANE",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "DEBUCHY",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "POGBA",
+          "position": "CM",
+          "number": "19"
+        },
+        {
+          "name": "CABAYE",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "MATUIDI",
+          "position": "CM",
+          "number": "14"
+        }
+      ],
+      [
+        {
+          "name": "GRIEZMANN",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "BENZEMA",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "VALBUENA",
+          "position": "RW",
+          "number": "8"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2010",
+    "homeTeam": "Países Bajos",
+    "awayTeam": "España",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "11 de julio 2010",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "CASILLAS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CAPDEVILA",
+          "position": "LB",
+          "number": "11"
+        },
+        {
+          "name": "PIQUÉ",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "PUYOL",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "RAMOS",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "ALONSO",
+          "position": "CDM",
+          "number": "14"
+        },
+        {
+          "name": "BUSQUETS",
+          "position": "CDM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "INIESTA",
+          "position": "LW",
+          "number": "6"
+        },
+        {
+          "name": "XAVI",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "PEDRO",
+          "position": "RW",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "VILLA",
+          "position": "ST",
+          "number": "7"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2010",
+    "homeTeam": "Países Bajos",
+    "awayTeam": "España",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "11 de julio 2010",
+    "playingTeam": "Países Bajos",
+    "formation": [
+      [
+        {
+          "name": "STEKELENBURG",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "VAN BRONCK.",
+          "position": "LB",
+          "number": "5"
+        },
+        {
+          "name": "MATHIJSEN",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "HEITINGA",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "VAN DER WIEL",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "VAN BOMMEL",
+          "position": "CDM",
+          "number": "6"
+        },
+        {
+          "name": "DE JONG",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "KUYT",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "SNEIJDER",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "ROBBEN",
+          "position": "RW",
+          "number": "11"
+        }
+      ],
+      [
+        {
+          "name": "VAN PERSIE",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2010",
+    "homeTeam": "Alemania",
+    "awayTeam": "España",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-1",
+    "date": "07 de julio 2010",
+    "playingTeam": "Alemania",
+    "formation": [
+      [
+        {
+          "name": "NEUER",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "BOATENG",
+          "position": "LB",
+          "number": "20"
+        },
+        {
+          "name": "FRIEDRICH",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "MERTESACKER",
+          "position": "CB",
+          "number": "17"
+        },
+        {
+          "name": "LAHM",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "SCHWEINSTE.",
+          "position": "CDM",
+          "number": "7"
+        },
+        {
+          "name": "KHEDIRA",
+          "position": "CDM",
+          "number": "6"
+        }
+      ],
+      [
+        {
+          "name": "PODOLSKI",
+          "position": "LW",
+          "number": "10"
+        },
+        {
+          "name": "ÖZIL",
+          "position": "CAM",
+          "number": "8"
+        },
+        {
+          "name": "TROCHOWSKI",
+          "position": "RW",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "KLOSE",
+          "position": "ST",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2010",
+    "homeTeam": "Uruguay",
+    "awayTeam": "Países Bajos",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "2-3",
+    "date": "06 de julio 2010",
+    "playingTeam": "Uruguay",
+    "formation": [
+      [
+        {
+          "name": "MUSLERA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "CÁCERES",
+          "position": "LB",
+          "number": "22"
+        },
+        {
+          "name": "GODÍN",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "VICTORINO",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "PEREIRA",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "PEREIRA",
+          "position": "LM",
+          "number": "11"
+        },
+        {
+          "name": "GARGANO",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "ARÉVALO RÍOS",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "PÉREZ",
+          "position": "RM",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "CAVANI",
+          "position": "ST",
+          "number": "7"
+        },
+        {
+          "name": "FORLÁN",
+          "position": "ST",
+          "number": "10"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2010",
+    "homeTeam": "Argentina",
+    "awayTeam": "México",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-1",
+    "date": "27 de junio 2010",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "ROMERO",
+          "position": "GK",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "HEINZE",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "BURDISSO",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "DEMICHELIS",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "OTAMENDI",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "DI MARÍA",
+          "position": "LM",
+          "number": "7"
+        },
+        {
+          "name": "MASCHERANO",
+          "position": "CM",
+          "number": "14"
+        },
+        {
+          "name": "MESSI",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "RM",
+          "number": "20"
+        }
+      ],
+      [
+        {
+          "name": "TEVEZ",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "HIGUAÍN",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2006",
+    "homeTeam": "Italia",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "6-4",
+    "date": "09 de julio 2006",
+    "playingTeam": "Italia",
+    "formation": [
+      [
+        {
+          "name": "BUFFON",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "GROSSO",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "MATERAZZI",
+          "position": "CB",
+          "number": "23"
+        },
+        {
+          "name": "CANNAVARO",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "ZAMBROTTA",
+          "position": "RB",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "PERROTTA",
+          "position": "LM",
+          "number": "20"
+        },
+        {
+          "name": "GATTUSO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "PIRLO",
+          "position": "CM",
+          "number": "21"
+        },
+        {
+          "name": "CAMORANESI",
+          "position": "RM",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "TOTTI",
+          "position": "CAM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "TONI",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2006",
+    "homeTeam": "Italia",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "6-4",
+    "date": "09 de julio 2006",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "BARTHEZ",
+          "position": "GK",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "ABIDAL",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "GALLAS",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "THURAM",
+          "position": "CB",
+          "number": "15"
+        },
+        {
+          "name": "SAGNOL",
+          "position": "RB",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "MAKÉLÉLÉ",
+          "position": "CDM",
+          "number": "6"
+        },
+        {
+          "name": "VIEIRA",
+          "position": "CDM",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "MALOUDA",
+          "position": "LW",
+          "number": "7"
+        },
+        {
+          "name": "ZIDANE",
+          "position": "CAM",
+          "number": "10"
+        },
+        {
+          "name": "RIBÉRY",
+          "position": "RW",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "HENRY",
+          "position": "ST",
+          "number": "12"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2006",
+    "homeTeam": "Alemania",
+    "awayTeam": "Portugal",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-1",
+    "date": "08 de julio 2006",
+    "playingTeam": "Alemania",
+    "formation": [
+      [
+        {
+          "name": "KAHN",
+          "position": "GK",
+          "number": "12"
+        }
+      ],
+      [
+        {
+          "name": "JANSEN",
+          "position": "LB",
+          "number": "2"
+        },
+        {
+          "name": "NOWOTNY",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "METZELDER",
+          "position": "CB",
+          "number": "21"
+        },
+        {
+          "name": "LAHM",
+          "position": "RB",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "SCHWEINSTE.",
+          "position": "LM",
+          "number": "7"
+        },
+        {
+          "name": "FRINGS",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "KEHL",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "SCHNEIDER",
+          "position": "RM",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "KLOSE",
+          "position": "ST",
+          "number": "11"
+        },
+        {
+          "name": "PODOLSKI",
+          "position": "ST",
+          "number": "20"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2006",
+    "homeTeam": "Alemania",
+    "awayTeam": "Portugal",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-1",
+    "date": "08 de julio 2006",
+    "playingTeam": "Portugal",
+    "formation": [
+      [
+        {
+          "name": "RICARDO",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "VALENTE",
+          "position": "LB",
+          "number": "14"
+        },
+        {
+          "name": "MEIRA",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "COSTA",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "FERREIRA",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "COSTINHA",
+          "position": "CM",
+          "number": "6"
+        },
+        {
+          "name": "MANICHE",
+          "position": "CM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "SIMÃO",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "DECO",
+          "position": "ST",
+          "number": "20"
+        },
+        {
+          "name": "PAULETA",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "CRISTIANO .",
+          "position": "RW",
+          "number": "17"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2006",
+    "homeTeam": "Francia",
+    "awayTeam": "Brasil",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "1-0",
+    "date": "01 de julio 2006",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "DIDA",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ROBERTO CA.",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "LÚCIO",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "JUAN",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "CAFU",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "ZÉ ROBERTO",
+          "position": "LM",
+          "number": "11"
+        },
+        {
+          "name": "SILVA",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "KAKÁ",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "JUNINHO PE.",
+          "position": "RM",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "RONALDINHO",
+          "position": "ST",
+          "number": "10"
+        },
+        {
+          "name": "RONALDO",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2006",
+    "homeTeam": "Alemania",
+    "awayTeam": "Argentina",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "5-3",
+    "date": "30 de junio 2006",
+    "playingTeam": "Argentina",
+    "formation": [
+      [
+        {
+          "name": "ABBONDANZI.",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "SORÍN",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "HEINZE",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "AYALA",
+          "position": "CB",
+          "number": "2"
+        },
+        {
+          "name": "COLOCCINI",
+          "position": "RB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "GONZÁLEZ",
+          "position": "LM",
+          "number": "22"
+        },
+        {
+          "name": "MASCHERANO",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "RIQUELME",
+          "position": "CM",
+          "number": "10"
+        },
+        {
+          "name": "RODRÍGUEZ",
+          "position": "RM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "CRESPO",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "TEVEZ",
+          "position": "ST",
+          "number": "11"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2002",
+    "homeTeam": "Alemania",
+    "awayTeam": "Brasil",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-2",
+    "date": "30 de junio 2002",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "MARCOS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "LÚCIO",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "EDMÍLSON",
+          "position": "CB",
+          "number": "5"
+        },
+        {
+          "name": "ROQUE JÚNIOR",
+          "position": "CB",
+          "number": "4"
+        }
+      ],
+      [
+        {
+          "name": "ROBERTO CA.",
+          "position": "LWB",
+          "number": "6"
+        },
+        {
+          "name": "KLÉBERSON",
+          "position": "CM",
+          "number": "15"
+        },
+        {
+          "name": "SILVA",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "CAFU",
+          "position": "RWB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "RONALDINHO",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "RIVALDO",
+          "position": "RW",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "RONALDO",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 2002",
+    "homeTeam": "España",
+    "awayTeam": "Corea del Sur",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "3-5",
+    "date": "22 de junio 2002",
+    "playingTeam": "España",
+    "formation": [
+      [
+        {
+          "name": "CASILLAS",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ROMERO",
+          "position": "LB",
+          "number": "15"
+        },
+        {
+          "name": "NADAL",
+          "position": "CB",
+          "number": "20"
+        },
+        {
+          "name": "HIERRO",
+          "position": "CB",
+          "number": "6"
+        },
+        {
+          "name": "PUYOL",
+          "position": "RB",
+          "number": "5"
+        }
+      ],
+      [
+        {
+          "name": "HELGUERA",
+          "position": "CDM",
+          "number": "4"
+        },
+        {
+          "name": "BARAJA",
+          "position": "CDM",
+          "number": "8"
+        }
+      ],
+      [
+        {
+          "name": "DE PEDRO",
+          "position": "LW",
+          "number": "11"
+        },
+        {
+          "name": "VALERÓN",
+          "position": "CAM",
+          "number": "17"
+        },
+        {
+          "name": "JOAQUÍN",
+          "position": "RW",
+          "number": "22"
+        }
+      ],
+      [
+        {
+          "name": "MORIENTES",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 1998",
+    "homeTeam": "Brasil",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-3",
+    "date": "12 de julio 1998",
+    "playingTeam": "Francia",
+    "formation": [
+      [
+        {
+          "name": "BARTHEZ",
+          "position": "GK",
+          "number": "16"
+        }
+      ],
+      [
+        {
+          "name": "LIZARAZU",
+          "position": "LB",
+          "number": "3"
+        },
+        {
+          "name": "DESAILLY",
+          "position": "CB",
+          "number": "8"
+        },
+        {
+          "name": "LEBOEUF",
+          "position": "CB",
+          "number": "18"
+        },
+        {
+          "name": "THURAM",
+          "position": "RB",
+          "number": "15"
+        }
+      ],
+      [
+        {
+          "name": "PETIT",
+          "position": "CM",
+          "number": "17"
+        },
+        {
+          "name": "DESCHAMPS",
+          "position": "CM",
+          "number": "7"
+        },
+        {
+          "name": "KAREMBEU",
+          "position": "CM",
+          "number": "19"
+        }
+      ],
+      [
+        {
+          "name": "DJORKAEFF",
+          "position": "CAM",
+          "number": "6"
+        },
+        {
+          "name": "ZIDANE",
+          "position": "CAM",
+          "number": "10"
+        }
+      ],
+      [
+        {
+          "name": "GUIVARC'H",
+          "position": "ST",
+          "number": "9"
+        }
+      ]
+    ]
+  },
+  {
+    "competition": "Mundial 1998",
+    "homeTeam": "Brasil",
+    "awayTeam": "Francia",
+    "homeBadge": "🏟️",
+    "awayBadge": "⚽",
+    "score": "0-3",
+    "date": "12 de julio 1998",
+    "playingTeam": "Brasil",
+    "formation": [
+      [
+        {
+          "name": "TAFFAREL",
+          "position": "GK",
+          "number": "1"
+        }
+      ],
+      [
+        {
+          "name": "ROBERTO CA.",
+          "position": "LB",
+          "number": "6"
+        },
+        {
+          "name": "JÚNIOR BAI.",
+          "position": "CB",
+          "number": "4"
+        },
+        {
+          "name": "ALDAIR",
+          "position": "CB",
+          "number": "3"
+        },
+        {
+          "name": "CAFU",
+          "position": "RB",
+          "number": "2"
+        }
+      ],
+      [
+        {
+          "name": "RIVALDO",
+          "position": "LM",
+          "number": "10"
+        },
+        {
+          "name": "SAMPAIO",
+          "position": "CM",
+          "number": "5"
+        },
+        {
+          "name": "DUNGA",
+          "position": "CM",
+          "number": "8"
+        },
+        {
+          "name": "LEONARDO",
+          "position": "RM",
+          "number": "18"
+        }
+      ],
+      [
+        {
+          "name": "RONALDO",
+          "position": "ST",
+          "number": "9"
+        },
+        {
+          "name": "BEBETO",
+          "position": "ST",
+          "number": "20"
+        }
+      ]
+    ]
+  }
+]
