@@ -1,0 +1,1121 @@
+'use strict';
+
+(() => {
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function shuffle(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function genCode(len = 6) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function genId() {
+  return 'c_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+}
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+let toastTimer = null;
+function toast(msg, kind = '') {
+  const el = $('#toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'toast show ' + kind;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.className = 'toast ' + kind;
+  }, 2400);
+}
+
+const HAND_CONFIG = {
+  2: { hand: 8, center: 4 },
+  3: { hand: 6, center: 3 },
+  4: { hand: 6, center: 2 },
+  5: { hand: 6, center: 0 },
+  6: { hand: 6, center: 0 },
+  7: { hand: 6, center: 0 },
+  8: { hand: 6, center: 0 }
+};
+
+const CENTER_ATTRS = ['flag', 'position', 'club'];
+const POINTS_LIMIT = { min: 1, max: 9, value: 3 };
+const NUMERIC_THRESHOLD_CACHE = new Map();
+
+function getHandConfig(playerCount) {
+  if (playerCount <= 2) return HAND_CONFIG[2];
+  if (playerCount >= 8) return HAND_CONFIG[8];
+  return HAND_CONFIG[playerCount];
+}
+
+const Net = {
+  channel: null,
+  roomCode: null,
+  clientId: genId(),
+  listeners: [],
+
+  open(roomCode) {
+    this.close();
+    this.roomCode = roomCode;
+    this.channel = new BroadcastChannel('mentiroso:' + roomCode);
+    this.channel.onmessage = (event) => {
+      const msg = event.data;
+      if (!msg || msg.from === this.clientId) return;
+      this.listeners.forEach((listener) => listener(msg));
+    };
+  },
+
+  close() {
+    if (this.channel) {
+      try { this.channel.close(); } catch {}
+    }
+    this.channel = null;
+    this.roomCode = null;
+    this.listeners = [];
+  },
+
+  send(type, payload) {
+    if (!this.channel) return;
+    this.channel.postMessage({
+      from: this.clientId,
+      type,
+      payload: payload || {},
+      ts: Date.now()
+    });
+  },
+
+  on(fn) {
+    this.listeners.push(fn);
+  },
+
+  saveRoom(state) {
+    try {
+      localStorage.setItem('mentiroso:room:' + state.code, JSON.stringify({
+        state,
+        updated: Date.now()
+      }));
+    } catch {}
+  },
+
+  loadRoom(code) {
+    try {
+      const raw = localStorage.getItem('mentiroso:room:' + code);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.updated > 2 * 60 * 60 * 1000) {
+        localStorage.removeItem('mentiroso:room:' + code);
+        return null;
+      }
+      return parsed.state;
+    } catch {
+      return null;
+    }
+  },
+
+  deleteRoom(code) {
+    try { localStorage.removeItem('mentiroso:room:' + code); } catch {}
+  }
+};
+
+const Me = {
+  clientId: Net.clientId,
+  name: '',
+  isHost: false,
+  roomCode: null
+};
+
+let State = null;
+
+function normalizePointsToWin(value) {
+  const parsed = Math.floor(Number(value) || POINTS_LIMIT.value);
+  return Math.max(POINTS_LIMIT.min, Math.min(POINTS_LIMIT.max, parsed));
+}
+
+function totalCardsInPlay(state) {
+  const hands = Object.values(state.hands || {});
+  let total = hands.reduce((sum, hand) => sum + hand.length, 0);
+  total += (state.centerCards || []).length;
+  return total;
+}
+
+function createCardFromPlayer(player) {
+  return {
+    playerId: player.id,
+    playerName: player.name,
+    country: player.country,
+    countryFlag: player.countryFlag,
+    club: player.club,
+    clubBadge: player.clubBadge,
+    position: player.position,
+    stats: { ...player.stats }
+  };
+}
+
+function drawRoundDeck(count) {
+  return shuffle(window.PLAYERS).slice(0, count).map(createCardFromPlayer);
+}
+
+function findStatDefinition(key) {
+  return (window.STAT_DEFINITIONS || []).find((def) => def.key === key) || null;
+}
+
+function buildThresholdOptions(definition) {
+  const text = `${definition.key} ${definition.label} ${definition.unit || ''}`.toLowerCase();
+  const rawValues = window.PLAYERS
+    .map((player) => Number(player.stats?.[definition.key]))
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b);
+
+  if (text.includes('altura') || text.includes('height')) {
+    return [180, 185, 190];
+  }
+  if (text.includes('edad') || text.includes('age')) {
+    return [30, 35];
+  }
+  if (text.includes('rojas') || text.includes('red')) {
+    return [1, 2];
+  }
+  if (text.includes('amarillas') || text.includes('yellow')) {
+    return [5, 10];
+  }
+  if (text.includes('asist')) {
+    return [5, 10];
+  }
+  if (text.includes('partidos') || text.includes('apps') || text.includes('appearances') || text.includes('caps')) {
+    return [15, 20, 25];
+  }
+  if (text.includes('goles') || text.includes('goals')) {
+    return [5, 10, 15, 20, 25];
+  }
+  if (rawValues.length === 0) {
+    return [1, 2, 3];
+  }
+
+  const ratios = [0.2, 0.4, 0.6, 0.8];
+  const set = new Set();
+  ratios.forEach((ratio) => {
+    const idx = Math.max(0, Math.min(rawValues.length - 1, Math.floor(rawValues.length * ratio)));
+    set.add(Math.floor(rawValues[idx]));
+  });
+
+  return Array.from(set)
+    .filter((value) => value > 0)
+    .sort((a, b) => a - b)
+    .slice(0, 5);
+}
+
+function getThresholdOptions(definition) {
+  if (!NUMERIC_THRESHOLD_CACHE.has(definition.key)) {
+    NUMERIC_THRESHOLD_CACHE.set(definition.key, buildThresholdOptions(definition));
+  }
+  const options = NUMERIC_THRESHOLD_CACHE.get(definition.key) || [];
+  return options.length ? options : [1, 2, 3];
+}
+
+function buildRoundCondition() {
+  const definition = pick(window.STAT_DEFINITIONS);
+  if (!definition) {
+    return {
+      stat: { key: 'goals_career', label: 'goles oficiales en su carrera', unit: 'goles oficiales en su carrera', type: 'number' },
+      threshold: 10,
+      promptLabel: 'Mas de 10 goles oficiales en su carrera'
+    };
+  }
+
+  if ((definition.type || 'number') === 'bool') {
+    return {
+      stat: { ...definition, type: 'bool' },
+      threshold: null,
+      promptLabel: definition.label
+    };
+  }
+
+  const options = getThresholdOptions(definition);
+  const threshold = pick(options);
+  return {
+    stat: { ...definition, type: 'number' },
+    threshold,
+    promptLabel: `Mas de ${threshold} ${definition.unit}`
+  };
+}
+
+function cardMatchesRound(card, round) {
+  const rawValue = card.stats?.[round.stat.key];
+  if (round.stat.type === 'bool') {
+    return Boolean(rawValue);
+  }
+  const value = Number(rawValue);
+  return Number.isFinite(value) && value > round.threshold;
+}
+
+function initRound(state, roundNumber, startIdx) {
+  const playerCount = state.players.length;
+  const config = getHandConfig(playerCount);
+  const totalCardsNeeded = config.center + (playerCount * config.hand);
+  const deck = drawRoundDeck(totalCardsNeeded);
+  let index = 0;
+
+  state.hands = {};
+  state.players.forEach((player) => {
+    state.hands[player.id] = deck.slice(index, index + config.hand);
+    player.cardsCount = config.hand;
+    player.lastGuess = null;
+    index += config.hand;
+  });
+
+  state.centerCards = deck.slice(index, index + config.center).map((card) => ({
+    ...card,
+    visibleAttr: pick(CENTER_ATTRS)
+  }));
+
+  const condition = buildRoundCondition();
+  state.round = {
+    number: roundNumber,
+    stat: condition.stat,
+    threshold: condition.threshold,
+    promptLabel: condition.promptLabel,
+    guesses: {},
+    turnIdx: startIdx,
+    startIdx
+  };
+  state.reveal = null;
+  state.pendingWinner = null;
+  state.phase = 'playing';
+}
+
+function getNextTurnIdx(state, fromIdx) {
+  for (let step = 1; step <= state.players.length; step++) {
+    const idx = (fromIdx + step) % state.players.length;
+    const player = state.players[idx];
+    if (player && state.round.guesses[player.id] === undefined) {
+      return idx;
+    }
+  }
+  return -1;
+}
+
+function maybeResolveWinner(state) {
+  const topScore = Math.max(...state.players.map((player) => player.score));
+  if (topScore < state.pointsToWin) return null;
+  const leaders = state.players.filter((player) => player.score === topScore);
+  if (leaders.length !== 1) return null;
+  return { id: leaders[0].id, name: leaders[0].name, score: leaders[0].score };
+}
+
+function resolveRound(state) {
+  const revealCards = [];
+  state.players.forEach((player) => {
+    (state.hands[player.id] || []).forEach((card) => {
+      revealCards.push({
+        ...card,
+        ownerId: player.id,
+        ownerName: player.name,
+        matches: cardMatchesRound(card, state.round)
+      });
+    });
+  });
+
+  state.centerCards.forEach((card) => {
+    revealCards.push({
+      ...card,
+      ownerId: '__center__',
+      ownerName: 'Centro',
+      matches: cardMatchesRound(card, state.round)
+    });
+  });
+
+  const actualTotal = revealCards.filter((card) => card.matches).length;
+  const guesses = state.players.map((player) => ({
+    id: player.id,
+    name: player.name,
+    guess: state.round.guesses[player.id]
+  }));
+  const winners = guesses.filter((entry) => entry.guess === actualTotal);
+
+  winners.forEach((entry) => {
+    const player = state.players.find((candidate) => candidate.id === entry.id);
+    if (player) player.score += 1;
+  });
+
+  state.reveal = {
+    stat: deepClone(state.round.stat),
+    promptLabel: state.round.promptLabel,
+    threshold: state.round.threshold,
+    actualTotal,
+    guesses,
+    winnerIds: winners.map((entry) => entry.id),
+    winnerNames: winners.map((entry) => entry.name),
+    cards: revealCards
+  };
+  state.phase = 'reveal';
+  state.pendingWinner = maybeResolveWinner(state);
+}
+
+function submitGuess(state, clientId, guess) {
+  if (state.phase !== 'playing') {
+    return { ok: false, reason: 'La ronda no esta aceptando apuestas.' };
+  }
+
+  const currentPlayer = state.players[state.round.turnIdx];
+  if (!currentPlayer || currentPlayer.id !== clientId) {
+    return { ok: false, reason: 'No es tu turno.' };
+  }
+
+  const parsedGuess = Math.floor(Number(guess));
+  if (!Number.isFinite(parsedGuess) || parsedGuess < 0) {
+    return { ok: false, reason: 'La apuesta debe ser 0 o mayor.' };
+  }
+
+  const maxGuess = totalCardsInPlay(state);
+  if (parsedGuess > maxGuess) {
+    return { ok: false, reason: `No puede ser mayor que ${maxGuess}.` };
+  }
+
+  state.round.guesses[clientId] = parsedGuess;
+  currentPlayer.lastGuess = parsedGuess;
+
+  const nextIdx = getNextTurnIdx(state, state.round.turnIdx);
+  if (nextIdx === -1) {
+    resolveRound(state);
+  } else {
+    state.round.turnIdx = nextIdx;
+  }
+
+  return { ok: true };
+}
+
+function continueAfterReveal(state) {
+  if (state.phase !== 'reveal') return;
+  if (state.pendingWinner) {
+    state.phase = 'gameover';
+    state.winner = { ...state.pendingWinner };
+    return;
+  }
+
+  const nextStartIdx = (state.round.startIdx + 1) % state.players.length;
+  initRound(state, state.round.number + 1, nextStartIdx);
+}
+
+function removePlayerFromState(state, clientId) {
+  const idx = state.players.findIndex((player) => player.id === clientId);
+  if (idx < 0) return;
+
+  state.players.splice(idx, 1);
+  delete state.hands[clientId];
+
+  if (state.players.length === 0) {
+    state.phase = 'lobby';
+    state.round = null;
+    state.reveal = null;
+    return;
+  }
+
+  if (state.hostId === clientId) {
+    const nextHost = state.players[0];
+    state.hostId = nextHost.id;
+    nextHost.isHost = true;
+  }
+
+  state.players.forEach((player) => {
+    player.isHost = player.id === state.hostId;
+  });
+
+  if (state.phase === 'playing' && state.round) {
+    delete state.round.guesses[clientId];
+    if (state.players.length < 2) {
+      state.phase = 'gameover';
+      state.winner = { id: state.players[0].id, name: state.players[0].name, score: state.players[0].score };
+      return;
+    }
+
+    state.round.startIdx = state.round.startIdx % state.players.length;
+    state.round.turnIdx = state.round.turnIdx % state.players.length;
+    if (getNextTurnIdx(state, state.round.turnIdx - 1) === -1) {
+      resolveRound(state);
+      return;
+    }
+    if (!state.players[state.round.turnIdx] || state.round.guesses[state.players[state.round.turnIdx].id] !== undefined) {
+      state.round.turnIdx = getNextTurnIdx(state, state.round.turnIdx - 1);
+    }
+  }
+
+  if (state.phase === 'reveal' && state.players.length < 2) {
+    state.pendingWinner = { id: state.players[0].id, name: state.players[0].name, score: state.players[0].score };
+  }
+}
+
+function hostBroadcastState() {
+  Net.saveRoom(State);
+  Net.send('state', State);
+  render();
+}
+
+function hostHandleMessage(msg) {
+  if (!Me.isHost || !State) return;
+
+  switch (msg.type) {
+    case 'joinRequest': {
+      if (State.phase !== 'lobby') {
+        Net.send('joinDenied', { toId: msg.from, reason: 'La partida ya ha empezado.' });
+        return;
+      }
+      if (State.players.length >= 8) {
+        Net.send('joinDenied', { toId: msg.from, reason: 'Sala llena.' });
+        return;
+      }
+      if (State.players.some((player) => player.id === msg.from)) {
+        hostBroadcastState();
+        return;
+      }
+      State.players.push({
+        id: msg.from,
+        name: (msg.payload.name || 'Jugador').slice(0, 16),
+        isHost: false,
+        score: 0,
+        lastGuess: null,
+        cardsCount: 0
+      });
+      hostBroadcastState();
+      return;
+    }
+
+    case 'leaveRoom': {
+      removePlayerFromState(State, msg.from);
+      if (State.players.length === 0) {
+        Net.deleteRoom(State.code);
+        State = null;
+        leaveToMenu(false);
+        return;
+      }
+      hostBroadcastState();
+      return;
+    }
+
+    case 'updateSettings': {
+      if (State.phase !== 'lobby' || msg.from !== State.hostId) return;
+      State.pointsToWin = normalizePointsToWin(msg.payload.pointsToWin);
+      hostBroadcastState();
+      return;
+    }
+
+    case 'startGame': {
+      if (State.phase !== 'lobby') return;
+      if (State.players.length < 2) {
+        toast('Se necesitan al menos 2 jugadores', 'error');
+        return;
+      }
+      State.players.forEach((player) => {
+        player.score = 0;
+        player.lastGuess = null;
+      });
+      State.winner = null;
+      State.pendingWinner = null;
+      initRound(State, 1, 0);
+      hostBroadcastState();
+      return;
+    }
+
+    case 'guess': {
+      const result = submitGuess(State, msg.from, msg.payload.guess);
+      if (!result.ok && msg.from === Me.clientId) toast(result.reason, 'error');
+      hostBroadcastState();
+      return;
+    }
+
+    case 'continue': {
+      if (State.hostId !== msg.from) return;
+      continueAfterReveal(State);
+      hostBroadcastState();
+      return;
+    }
+  }
+}
+
+function applyIncomingState(nextState) {
+  State = deepClone(nextState);
+  if (State) {
+    State.players.forEach((player) => {
+      player.score = Number(player.score || 0);
+      player.cardsCount = Number(player.cardsCount || 0);
+      if (player.lastGuess === undefined) player.lastGuess = null;
+    });
+    State.pointsToWin = normalizePointsToWin(State.pointsToWin);
+  }
+  render();
+}
+
+function clientHandleMessage(msg) {
+  switch (msg.type) {
+    case 'state':
+      applyIncomingState(msg.payload || msg);
+      return;
+    case 'joinDenied':
+      if (msg.payload.toId !== Me.clientId) return;
+      $('#join-error').textContent = msg.payload.reason || 'No se pudo entrar.';
+      $('#join-error').classList.remove('hidden');
+      return;
+  }
+}
+
+function showScreen(selector) {
+  $$('.screen').forEach((screen) => screen.classList.remove('active'));
+  const target = $(selector);
+  if (target) target.classList.add('active');
+}
+
+function render() {
+  if (!State) {
+    showScreen('#screen-menu');
+    return;
+  }
+
+  if (State.phase === 'lobby') {
+    renderLobby();
+    return;
+  }
+  if (State.phase === 'playing') {
+    renderGame();
+    return;
+  }
+  if (State.phase === 'reveal') {
+    renderGameWithReveal();
+    return;
+  }
+  if (State.phase === 'gameover') {
+    renderGameOver();
+  }
+}
+
+function setPointsDraft(value) {
+  const nextValue = normalizePointsToWin(value);
+  POINTS_LIMIT.value = nextValue;
+  const createValue = $('#create-points-value');
+  if (createValue) createValue.textContent = String(nextValue);
+}
+
+function updateLobbyPointsControls() {
+  if (!State) return;
+  $('#lobby-points-value').textContent = String(State.pointsToWin);
+  $('#lobby-points-value-readonly').textContent = String(State.pointsToWin);
+  const hostControls = $('#lobby-points-controls');
+  const hostReadonly = $('#lobby-points-readonly');
+
+  if (Me.isHost && State.phase === 'lobby') {
+    hostControls.classList.remove('hidden');
+    hostReadonly.classList.add('hidden');
+  } else {
+    hostControls.classList.add('hidden');
+    hostReadonly.classList.remove('hidden');
+  }
+}
+
+function renderLobby() {
+  showScreen('#screen-lobby');
+  $('#overlay-reveal').classList.add('hidden');
+  $('#overlay-gameover').classList.add('hidden');
+
+  $('#lobby-code').textContent = State.code;
+  $('#lobby-mode-pill').textContent = State.mode === 'easy' ? 'FACIL' : 'DIFICIL';
+  $('#lobby-count').textContent = `(${State.players.length})`;
+
+  const playersEl = $('#lobby-players');
+  playersEl.innerHTML = '';
+  State.players.forEach((player) => {
+    const row = document.createElement('div');
+    row.className = 'lobby-player-row' + (player.id === Me.clientId ? ' me' : '');
+    row.innerHTML = `
+      <div class="lobby-player-avatar">${escapeHtml(player.name.slice(0, 1).toUpperCase())}</div>
+      <div class="lobby-player-name">${escapeHtml(player.name)}${player.id === Me.clientId ? ' (tu)' : ''}</div>
+      ${player.isHost ? '<div class="lobby-player-host">HOST</div>' : ''}
+    `;
+    playersEl.appendChild(row);
+  });
+
+  updateLobbyPointsControls();
+
+  const startBtn = $('#btn-start');
+  startBtn.disabled = !(Me.isHost && State.players.length >= 2);
+  const hint = $('#lobby-hint');
+  if (!Me.isHost) {
+    hint.textContent = 'Esperando a que el host inicie la partida.';
+  } else if (State.players.length < 2) {
+    hint.textContent = 'Se necesitan al menos 2 jugadores.';
+  } else {
+    hint.textContent = `La partida se gana al llegar a ${State.pointsToWin} rondas acertadas.`;
+  }
+}
+
+function renderGuessSummary() {
+  const list = State.players
+    .map((player) => {
+      const guess = State.round.guesses[player.id];
+      if (guess === undefined) {
+        return `<div class="guess-row waiting"><span>${escapeHtml(player.name)}</span><span>...</span></div>`;
+      }
+      return `<div class="guess-row"><span>${escapeHtml(player.name)}</span><span>${guess}</span></div>`;
+    })
+    .join('');
+
+  return list || '<div class="guess-row waiting"><span>Sin apuestas aun</span><span>...</span></div>';
+}
+
+function renderGame() {
+  showScreen('#screen-game');
+  $('#overlay-reveal').classList.add('hidden');
+  $('#overlay-gameover').classList.add('hidden');
+  renderGameCommon();
+  renderActionBar();
+}
+
+function renderGameWithReveal() {
+  showScreen('#screen-game');
+  renderGameCommon();
+  renderActionBar();
+  renderRevealOverlay();
+}
+
+function renderGameCommon() {
+  $('#game-round').textContent = String(State.round.number);
+  $('#game-round-stat').textContent = State.round.promptLabel.toUpperCase();
+  $('#game-code').textContent = State.code;
+
+  const ring = $('#turn-ring');
+  ring.innerHTML = '';
+  State.players.forEach((player, index) => {
+    const chip = document.createElement('div');
+    const classes = ['turn-chip'];
+    if (State.phase === 'playing' && index === State.round.turnIdx) classes.push('active');
+    if (player.id === Me.clientId) classes.push('me');
+    chip.className = classes.join(' ');
+    const guessed = State.round.guesses[player.id];
+    chip.innerHTML = `
+      <span>${escapeHtml(player.name)}${player.id === Me.clientId ? ' (tu)' : ''}</span>
+      <span class="tc-count">${player.score} pt</span>
+      <span class="tc-guess">${guessed === undefined ? 'sin apuesta' : `dice ${guessed}`}</span>
+    `;
+    ring.appendChild(chip);
+  });
+
+  const centerEl = $('#center-cards');
+  centerEl.innerHTML = '';
+  if (State.centerCards.length === 0) {
+    centerEl.innerHTML = '<div class="empty-inline">Sin cartas en el centro</div>';
+  } else {
+    State.centerCards.forEach((card) => centerEl.appendChild(renderCard(card, { mode: 'center' })));
+  }
+
+  $('#bet-round-note').textContent = `Objetivo: ${State.pointsToWin} puntos`;
+  $('#bet-current').innerHTML = renderGuessSummary();
+
+  const myHandEl = $('#my-hand');
+  myHandEl.innerHTML = '';
+  const myHand = State.hands[Me.clientId] || [];
+  myHand.forEach((card) => {
+    myHandEl.appendChild(renderCard(card, {
+      mode: State.mode === 'easy' ? 'own-easy' : 'own-hard',
+      round: State.round
+    }));
+  });
+  $('#my-hand-note').textContent = State.mode === 'easy'
+    ? 'Verde = esta carta cumple la condicion de la ronda'
+    : 'Solo ves el nombre y los rasgos visibles';
+}
+
+function renderActionBar() {
+  const panel = $('#action-panel');
+  const waiting = $('#action-waiting');
+  const me = State.players.find((player) => player.id === Me.clientId);
+  const isMyTurn = State.phase === 'playing' && State.players[State.round.turnIdx]?.id === Me.clientId;
+
+  if (!isMyTurn) {
+    panel.classList.add('hidden');
+    waiting.classList.remove('hidden');
+    const label = waiting.querySelector('.action-panel-label');
+    if (State.phase === 'reveal') {
+      label.textContent = 'REVELANDO RESULTADOS...';
+    } else if (State.phase === 'gameover') {
+      label.textContent = 'PARTIDA TERMINADA';
+    } else {
+      const current = State.players[State.round.turnIdx];
+      label.textContent = current ? `ESPERANDO A ${current.name.toUpperCase()}...` : 'ESPERANDO...';
+    }
+    return;
+  }
+
+  panel.classList.remove('hidden');
+  waiting.classList.add('hidden');
+
+  const maxGuess = totalCardsInPlay(State);
+  if (window.__guessDraftRound !== State.round.number) {
+    window.__guessDraftRound = State.round.number;
+    window.__guessDraft = 0;
+  }
+  window.__guessDraft = Math.max(0, Math.min(maxGuess, Number(window.__guessDraft || 0)));
+
+  $('#step-guess').textContent = String(window.__guessDraft);
+  $('#guess-max').textContent = String(maxGuess);
+  $('#guess-minus').disabled = window.__guessDraft <= 0;
+  $('#guess-plus').disabled = window.__guessDraft >= maxGuess;
+  $('#action-panel-label').textContent = `${escapeHtml(me.name).toUpperCase()} · ADIVINA EL TOTAL EXACTO`;
+}
+
+function renderCard(card, opts) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  const { mode, round } = opts;
+
+  let heroContent = '';
+  let heroLabel = '';
+  if (mode === 'center') {
+    el.classList.add('center');
+    if (card.visibleAttr === 'flag') {
+      heroContent = card.countryFlag;
+      heroLabel = card.country;
+    } else if (card.visibleAttr === 'position') {
+      heroContent = card.position;
+      heroLabel = 'posicion';
+    } else {
+      heroContent = card.clubBadge;
+      heroLabel = card.club;
+    }
+  } else {
+    heroContent = card.countryFlag;
+    heroLabel = card.position;
+  }
+
+  const nameHtml = mode === 'center' ? '' : `<div class="card-name">${escapeHtml(card.playerName)}</div>`;
+
+  let statHtml = '';
+  if (mode === 'own-easy') {
+    const rawValue = card.stats[round.stat.key];
+    const displayValue = round.stat.type === 'bool' ? (rawValue ? 'SI' : 'NO') : rawValue;
+    statHtml = `
+      <div class="card-stat">
+        <span>${escapeHtml(round.stat.type === 'bool' ? round.stat.label : round.stat.unit)}</span>
+        <span class="card-stat-val">${escapeHtml(displayValue)}</span>
+      </div>
+    `;
+    const badge = document.createElement('div');
+    badge.className = 'card-badge ' + (cardMatchesRound(card, round) ? 'ok' : 'ko');
+    badge.textContent = cardMatchesRound(card, round) ? 'OK' : 'NO';
+    el.appendChild(badge);
+  } else if (mode === 'own-hard' || mode === 'center') {
+    statHtml = '<div class="card-stat hidden-stat">oculto</div>';
+  } else if (mode === 'reveal') {
+    const rawValue = card.stats[round.stat.key];
+    const displayValue = round.stat.type === 'bool' ? (rawValue ? 'SI' : 'NO') : rawValue;
+    statHtml = `
+      <div class="card-stat">
+        <span>${escapeHtml(round.stat.type === 'bool' ? round.stat.label : round.stat.unit)}</span>
+        <span class="card-stat-val">${escapeHtml(displayValue)}</span>
+      </div>
+    `;
+    el.classList.add('revealed');
+    el.classList.add(card.matches ? 'match' : 'nomatch');
+  }
+
+  el.innerHTML += `
+    <div class="card-kicker">${escapeHtml(mode === 'center' ? 'CENTRO' : card.position)}</div>
+    ${nameHtml}
+    <div class="card-hero">${heroContent}</div>
+    <div class="card-hero-label">${escapeHtml(heroLabel)}</div>
+    ${statHtml}
+  `;
+  return el;
+}
+
+function renderRevealOverlay() {
+  const reveal = State.reveal;
+  if (!reveal) return;
+
+  const overlay = $('#overlay-reveal');
+  overlay.classList.remove('hidden');
+  $('#reveal-tag').textContent = reveal.winnerNames.length ? 'ACIERTO EXACTO' : 'SIN PUNTO';
+  $('#reveal-headline').textContent = reveal.promptLabel;
+  $('#reveal-sub').textContent = reveal.winnerNames.length
+    ? `Puntuan: ${reveal.winnerNames.join(', ')}`
+    : 'Nadie ha clavado el total exacto.';
+  $('#reveal-count').textContent = String(reveal.actualTotal);
+
+  const guessesEl = $('#reveal-guesses');
+  guessesEl.innerHTML = reveal.guesses.map((entry) => {
+    const hit = entry.guess === reveal.actualTotal;
+    return `
+      <div class="reveal-guess ${hit ? 'hit' : ''}">
+        <span>${escapeHtml(entry.name)}</span>
+        <strong>${entry.guess}</strong>
+      </div>
+    `;
+  }).join('');
+
+  const cardsEl = $('#reveal-cards');
+  cardsEl.innerHTML = '';
+  reveal.cards.forEach((card, index) => {
+    const el = renderCard(card, { mode: 'reveal', round: reveal });
+    el.style.animationDelay = `${index * 0.04}s`;
+    cardsEl.appendChild(el);
+  });
+
+  const verdict = $('#reveal-verdict');
+  if (reveal.winnerNames.length) {
+    verdict.className = 'reveal-verdict win';
+    verdict.textContent = reveal.winnerIds.includes(Me.clientId)
+      ? 'Has acertado exacto y sumas 1 punto.'
+      : `${reveal.winnerNames.join(', ')} suma 1 punto.`;
+  } else {
+    verdict.className = 'reveal-verdict neutral';
+    verdict.textContent = 'Nadie suma en esta ronda.';
+  }
+
+  const continueBtn = $('#btn-continue');
+  continueBtn.classList.remove('hidden');
+  continueBtn.disabled = !Me.isHost;
+  continueBtn.textContent = Me.isHost ? 'SIGUIENTE RONDA' : 'ESPERANDO AL HOST...';
+}
+
+function renderGameOver() {
+  showScreen('#screen-game');
+  renderGameCommon();
+  $('#overlay-reveal').classList.add('hidden');
+  $('#action-panel').classList.add('hidden');
+  $('#action-waiting').classList.remove('hidden');
+  $('#action-waiting .action-panel-label').textContent = 'PARTIDA TERMINADA';
+
+  const overlay = $('#overlay-gameover');
+  overlay.classList.remove('hidden');
+  $('#winner-name').textContent = State.winner ? `${State.winner.name.toUpperCase()} · ${State.winner.score} PT` : '-';
+  $('#winner-scoreboard').innerHTML = State.players
+    .slice()
+    .sort((a, b) => b.score - a.score)
+    .map((player) => `
+      <div class="reveal-guess ${player.id === State.winner?.id ? 'hit' : ''}">
+        <span>${escapeHtml(player.name)}</span>
+        <strong>${player.score}</strong>
+      </div>
+    `)
+    .join('');
+}
+
+function updateHostPointsSetting(nextValue) {
+  if (!State || !Me.isHost) return;
+  const safeValue = normalizePointsToWin(nextValue);
+  if (Me.isHost) {
+    hostHandleMessage({ from: Me.clientId, type: 'updateSettings', payload: { pointsToWin: safeValue } });
+  } else {
+    Net.send('updateSettings', { pointsToWin: safeValue });
+  }
+}
+
+$$('.menu-tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    $$('.menu-tab').forEach((item) => item.classList.remove('active'));
+    $$('.menu-panel').forEach((item) => item.classList.remove('active'));
+    tab.classList.add('active');
+    $(`[data-panel="${tab.dataset.tab}"]`).classList.add('active');
+    $('#join-error').classList.add('hidden');
+  });
+});
+
+$$('.mode-opt').forEach((option) => {
+  option.addEventListener('click', () => {
+    $$('.mode-opt').forEach((item) => item.classList.remove('active'));
+    option.classList.add('active');
+  });
+});
+
+$('#btn-points-minus').addEventListener('click', () => setPointsDraft(POINTS_LIMIT.value - 1));
+$('#btn-points-plus').addEventListener('click', () => setPointsDraft(POINTS_LIMIT.value + 1));
+
+$('#btn-lobby-points-minus').addEventListener('click', () => updateHostPointsSetting(State.pointsToWin - 1));
+$('#btn-lobby-points-plus').addEventListener('click', () => updateHostPointsSetting(State.pointsToWin + 1));
+
+$('#btn-create').addEventListener('click', () => {
+  const name = ($('#create-name').value || '').trim();
+  if (!name) {
+    toast('Escribe tu nombre', 'error');
+    return;
+  }
+
+  const selected = $('.mode-opt.active');
+  const mode = selected ? selected.dataset.mode : 'easy';
+  const code = genCode();
+
+  Me.name = name.slice(0, 16);
+  Me.isHost = true;
+  Me.roomCode = code;
+
+  State = {
+    code,
+    phase: 'lobby',
+    mode,
+    pointsToWin: normalizePointsToWin(POINTS_LIMIT.value),
+    hostId: Me.clientId,
+    players: [{
+      id: Me.clientId,
+      name: Me.name,
+      isHost: true,
+      score: 0,
+      lastGuess: null,
+      cardsCount: 0
+    }],
+    hands: {},
+    centerCards: [],
+    round: null,
+    reveal: null,
+    pendingWinner: null,
+    winner: null
+  };
+
+  Net.open(code);
+  Net.on(hostHandleMessage);
+  Net.on(clientHandleMessage);
+  hostBroadcastState();
+  render();
+});
+
+$('#btn-join').addEventListener('click', () => {
+  const name = ($('#join-name').value || '').trim();
+  const code = ($('#join-code').value || '').trim().toUpperCase();
+
+  if (!name) {
+    toast('Escribe tu nombre', 'error');
+    return;
+  }
+  if (code.length < 4) {
+    toast('Codigo invalido', 'error');
+    return;
+  }
+
+  const existing = Net.loadRoom(code);
+  if (!existing) {
+    $('#join-error').textContent = 'Sala no encontrada.';
+    $('#join-error').classList.remove('hidden');
+    return;
+  }
+  if (existing.phase !== 'lobby') {
+    $('#join-error').textContent = 'La partida ya ha empezado.';
+    $('#join-error').classList.remove('hidden');
+    return;
+  }
+
+  Me.name = name.slice(0, 16);
+  Me.isHost = false;
+  Me.roomCode = code;
+
+  Net.open(code);
+  Net.on(clientHandleMessage);
+  applyIncomingState(existing);
+  Net.send('joinRequest', { name: Me.name });
+});
+
+$('#btn-copy-code').addEventListener('click', async () => {
+  if (!State) return;
+  try {
+    await navigator.clipboard.writeText(State.code);
+    toast('Codigo copiado', 'success');
+  } catch {
+    toast(State.code, 'success');
+  }
+});
+
+$('#btn-start').addEventListener('click', () => {
+  if (!State || !Me.isHost) return;
+  hostHandleMessage({ from: Me.clientId, type: 'startGame', payload: {} });
+});
+
+$$('[data-action="leave-lobby"]').forEach((button) => {
+  button.addEventListener('click', () => leaveToMenu(true));
+});
+
+function leaveToMenu(announceLeave) {
+  if (State) {
+    if (Me.isHost) {
+      Net.deleteRoom(State.code);
+    } else if (announceLeave) {
+      Net.send('leaveRoom', {});
+    }
+  }
+  Net.close();
+  State = null;
+  Me.isHost = false;
+  Me.roomCode = null;
+  window.__guessDraft = 0;
+  window.__guessDraftRound = null;
+  $('#overlay-reveal').classList.add('hidden');
+  $('#overlay-gameover').classList.add('hidden');
+  showScreen('#screen-menu');
+}
+
+$('#guess-minus').addEventListener('click', () => {
+  if (!State || State.phase !== 'playing') return;
+  window.__guessDraft = Math.max(0, Number(window.__guessDraft || 0) - 1);
+  renderActionBar();
+});
+
+$('#guess-plus').addEventListener('click', () => {
+  if (!State || State.phase !== 'playing') return;
+  window.__guessDraft = Math.min(totalCardsInPlay(State), Number(window.__guessDraft || 0) + 1);
+  renderActionBar();
+});
+
+$('#btn-guess').addEventListener('click', () => {
+  if (!State) return;
+  const guess = Number(window.__guessDraft || 0);
+  if (Me.isHost) {
+    hostHandleMessage({ from: Me.clientId, type: 'guess', payload: { guess } });
+  } else {
+    Net.send('guess', { guess });
+  }
+});
+
+$('#btn-continue').addEventListener('click', () => {
+  if (!State || !Me.isHost) return;
+  hostHandleMessage({ from: Me.clientId, type: 'continue', payload: {} });
+});
+
+$('#btn-menu').addEventListener('click', () => leaveToMenu(true));
+
+window.addEventListener('beforeunload', () => {
+  if (State && !Me.isHost) {
+    try { Net.send('leaveRoom', {}); } catch {}
+  }
+  if (State && Me.isHost) {
+    try { Net.deleteRoom(State.code); } catch {}
+  }
+});
+
+function boot() {
+  if (!window.PLAYERS || !Array.isArray(window.PLAYERS) || window.PLAYERS.length < 3) {
+    toast('Faltan datos de jugadores', 'error');
+  }
+  setPointsDraft(POINTS_LIMIT.value);
+  showScreen('#screen-menu');
+}
+
+boot();
+})();
