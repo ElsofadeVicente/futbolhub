@@ -1,6 +1,19 @@
-'use strict';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-(() => {
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM',
+  authDomain: 'futbolhub-9d0a4.firebaseapp.com',
+  databaseURL: 'https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId: 'futbolhub-9d0a4',
+  storageBucket: 'futbolhub-9d0a4.firebasestorage.app',
+  messagingSenderId: '179751773212',
+  appId: '1:179751773212:web:9acfe3d5b8c344c51a2bd9'
+};
+
+const firebaseApp = initializeApp(FIREBASE_CONFIG);
+const db = getDatabase(firebaseApp);
+
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
@@ -66,94 +79,35 @@ const HAND_CONFIG = {
 const CENTER_ATTRS = ['flag', 'position', 'club'];
 const POINTS_LIMIT = { min: 1, max: 9, value: 3 };
 const NUMERIC_THRESHOLD_CACHE = new Map();
-
-function getHandConfig(playerCount) {
-  if (playerCount <= 2) return HAND_CONFIG[2];
-  if (playerCount >= 8) return HAND_CONFIG[8];
-  return HAND_CONFIG[playerCount];
-}
-
-const Net = {
-  channel: null,
-  roomCode: null,
-  clientId: genId(),
-  listeners: [],
-
-  open(roomCode) {
-    this.close();
-    this.roomCode = roomCode;
-    this.channel = new BroadcastChannel('mentiroso:' + roomCode);
-    this.channel.onmessage = (event) => {
-      const msg = event.data;
-      if (!msg || msg.from === this.clientId) return;
-      this.listeners.forEach((listener) => listener(msg));
-    };
-  },
-
-  close() {
-    if (this.channel) {
-      try { this.channel.close(); } catch {}
-    }
-    this.channel = null;
-    this.roomCode = null;
-    this.listeners = [];
-  },
-
-  send(type, payload) {
-    if (!this.channel) return;
-    this.channel.postMessage({
-      from: this.clientId,
-      type,
-      payload: payload || {},
-      ts: Date.now()
-    });
-  },
-
-  on(fn) {
-    this.listeners.push(fn);
-  },
-
-  saveRoom(state) {
-    try {
-      localStorage.setItem('mentiroso:room:' + state.code, JSON.stringify({
-        state,
-        updated: Date.now()
-      }));
-    } catch {}
-  },
-
-  loadRoom(code) {
-    try {
-      const raw = localStorage.getItem('mentiroso:room:' + code);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (Date.now() - parsed.updated > 2 * 60 * 60 * 1000) {
-        localStorage.removeItem('mentiroso:room:' + code);
-        return null;
-      }
-      return parsed.state;
-    } catch {
-      return null;
-    }
-  },
-
-  deleteRoom(code) {
-    try { localStorage.removeItem('mentiroso:room:' + code); } catch {}
-  }
-};
+const ROOM_ROOT = 'mentiroso/rooms';
 
 const Me = {
-  clientId: Net.clientId,
+  clientId: genId(),
   name: '',
   isHost: false,
   roomCode: null
 };
 
 let State = null;
+let unsubscribeRoom = null;
+
+function roomRef(code) {
+  return ref(db, `${ROOM_ROOT}/${code}`);
+}
+
+function showScreen(selector) {
+  $$('.screen').forEach((screen) => screen.classList.remove('active'));
+  const target = $(selector);
+  if (target) target.classList.add('active');
+}
 
 function normalizePointsToWin(value) {
   const parsed = Math.floor(Number(value) || POINTS_LIMIT.value);
   return Math.max(POINTS_LIMIT.min, Math.min(POINTS_LIMIT.max, parsed));
+}
+
+function stampState(state) {
+  state.updatedAt = Date.now();
 }
 
 function totalCardsInPlay(state) {
@@ -180,10 +134,6 @@ function drawRoundDeck(count) {
   return shuffle(window.PLAYERS).slice(0, count).map(createCardFromPlayer);
 }
 
-function findStatDefinition(key) {
-  return (window.STAT_DEFINITIONS || []).find((def) => def.key === key) || null;
-}
-
 function buildThresholdOptions(definition) {
   const text = `${definition.key} ${definition.label} ${definition.unit || ''}`.toLowerCase();
   const rawValues = window.PLAYERS
@@ -191,30 +141,14 @@ function buildThresholdOptions(definition) {
     .filter((value) => Number.isFinite(value) && value > 0)
     .sort((a, b) => a - b);
 
-  if (text.includes('altura') || text.includes('height')) {
-    return [180, 185, 190];
-  }
-  if (text.includes('edad') || text.includes('age')) {
-    return [30, 35];
-  }
-  if (text.includes('rojas') || text.includes('red')) {
-    return [1, 2];
-  }
-  if (text.includes('amarillas') || text.includes('yellow')) {
-    return [5, 10];
-  }
-  if (text.includes('asist')) {
-    return [5, 10];
-  }
-  if (text.includes('partidos') || text.includes('apps') || text.includes('appearances') || text.includes('caps')) {
-    return [15, 20, 25];
-  }
-  if (text.includes('goles') || text.includes('goals')) {
-    return [5, 10, 15, 20, 25];
-  }
-  if (rawValues.length === 0) {
-    return [1, 2, 3];
-  }
+  if (text.includes('altura') || text.includes('height')) return [180, 185, 190];
+  if (text.includes('edad') || text.includes('age')) return [30, 35];
+  if (text.includes('rojas') || text.includes('red')) return [1, 2];
+  if (text.includes('amarillas') || text.includes('yellow')) return [5, 10];
+  if (text.includes('asist')) return [5, 10];
+  if (text.includes('partidos') || text.includes('apps') || text.includes('appearances') || text.includes('caps')) return [15, 20, 25];
+  if (text.includes('goles') || text.includes('goals')) return [5, 10, 15, 20, 25];
+  if (rawValues.length === 0) return [1, 2, 3];
 
   const ratios = [0.2, 0.4, 0.6, 0.8];
   const set = new Set();
@@ -266,9 +200,7 @@ function buildRoundCondition() {
 
 function cardMatchesRound(card, round) {
   const rawValue = card.stats?.[round.stat.key];
-  if (round.stat.type === 'bool') {
-    return Boolean(rawValue);
-  }
+  if (round.stat.type === 'bool') return Boolean(rawValue);
   const value = Number(rawValue);
   return Number.isFinite(value) && value > round.threshold;
 }
@@ -308,13 +240,17 @@ function initRound(state, roundNumber, startIdx) {
   state.phase = 'playing';
 }
 
+function getHandConfig(playerCount) {
+  if (playerCount <= 2) return HAND_CONFIG[2];
+  if (playerCount >= 8) return HAND_CONFIG[8];
+  return HAND_CONFIG[playerCount];
+}
+
 function getNextTurnIdx(state, fromIdx) {
   for (let step = 1; step <= state.players.length; step++) {
     const idx = (fromIdx + step) % state.players.length;
     const player = state.players[idx];
-    if (player && state.round.guesses[player.id] === undefined) {
-      return idx;
-    }
+    if (player && state.round.guesses[player.id] === undefined) return idx;
   }
   return -1;
 }
@@ -429,9 +365,6 @@ function removePlayerFromState(state, clientId) {
   delete state.hands[clientId];
 
   if (state.players.length === 0) {
-    state.phase = 'lobby';
-    state.round = null;
-    state.reveal = null;
     return;
   }
 
@@ -469,123 +402,244 @@ function removePlayerFromState(state, clientId) {
   }
 }
 
-function hostBroadcastState() {
-  Net.saveRoom(State);
-  Net.send('state', State);
-  render();
-}
-
-function hostHandleMessage(msg) {
-  if (!Me.isHost || !State) return;
-
-  switch (msg.type) {
-    case 'joinRequest': {
-      if (State.phase !== 'lobby') {
-        Net.send('joinDenied', { toId: msg.from, reason: 'La partida ya ha empezado.' });
-        return;
-      }
-      if (State.players.length >= 8) {
-        Net.send('joinDenied', { toId: msg.from, reason: 'Sala llena.' });
-        return;
-      }
-      if (State.players.some((player) => player.id === msg.from)) {
-        hostBroadcastState();
-        return;
-      }
-      State.players.push({
-        id: msg.from,
-        name: (msg.payload.name || 'Jugador').slice(0, 16),
-        isHost: false,
-        score: 0,
-        lastGuess: null,
-        cardsCount: 0
-      });
-      hostBroadcastState();
-      return;
-    }
-
-    case 'leaveRoom': {
-      removePlayerFromState(State, msg.from);
-      if (State.players.length === 0) {
-        Net.deleteRoom(State.code);
-        State = null;
-        leaveToMenu(false);
-        return;
-      }
-      hostBroadcastState();
-      return;
-    }
-
-    case 'updateSettings': {
-      if (State.phase !== 'lobby' || msg.from !== State.hostId) return;
-      State.pointsToWin = normalizePointsToWin(msg.payload.pointsToWin);
-      hostBroadcastState();
-      return;
-    }
-
-    case 'startGame': {
-      if (State.phase !== 'lobby') return;
-      if (State.players.length < 2) {
-        toast('Se necesitan al menos 2 jugadores', 'error');
-        return;
-      }
-      State.players.forEach((player) => {
-        player.score = 0;
-        player.lastGuess = null;
-      });
-      State.winner = null;
-      State.pendingWinner = null;
-      initRound(State, 1, 0);
-      hostBroadcastState();
-      return;
-    }
-
-    case 'guess': {
-      const result = submitGuess(State, msg.from, msg.payload.guess);
-      if (!result.ok && msg.from === Me.clientId) toast(result.reason, 'error');
-      hostBroadcastState();
-      return;
-    }
-
-    case 'continue': {
-      if (State.hostId !== msg.from) return;
-      continueAfterReveal(State);
-      hostBroadcastState();
-      return;
-    }
-  }
+function createInitialState(code, mode, name) {
+  return {
+    code,
+    phase: 'lobby',
+    mode,
+    pointsToWin: normalizePointsToWin(POINTS_LIMIT.value),
+    hostId: Me.clientId,
+    players: [{
+      id: Me.clientId,
+      name,
+      isHost: true,
+      score: 0,
+      lastGuess: null,
+      cardsCount: 0
+    }],
+    hands: {},
+    centerCards: [],
+    round: null,
+    reveal: null,
+    pendingWinner: null,
+    winner: null,
+    updatedAt: Date.now()
+  };
 }
 
 function applyIncomingState(nextState) {
   State = deepClone(nextState);
-  if (State) {
-    State.players.forEach((player) => {
-      player.score = Number(player.score || 0);
-      player.cardsCount = Number(player.cardsCount || 0);
-      if (player.lastGuess === undefined) player.lastGuess = null;
-    });
-    State.pointsToWin = normalizePointsToWin(State.pointsToWin);
+  if (!State) {
+    render();
+    return;
   }
+
+  State.players.forEach((player) => {
+    player.score = Number(player.score || 0);
+    player.cardsCount = Number(player.cardsCount || 0);
+    if (player.lastGuess === undefined) player.lastGuess = null;
+  });
+  State.pointsToWin = normalizePointsToWin(State.pointsToWin);
+  Me.isHost = State.hostId === Me.clientId;
   render();
 }
 
-function clientHandleMessage(msg) {
-  switch (msg.type) {
-    case 'state':
-      applyIncomingState(msg.payload || msg);
+function subscribeToRoom(code) {
+  if (unsubscribeRoom) unsubscribeRoom();
+  unsubscribeRoom = onValue(roomRef(code), (snapshot) => {
+    const room = snapshot.val();
+    if (!room) {
+      const hadRoom = Boolean(State);
+      clearLocalRoom();
+      if (hadRoom) toast('La sala ya no existe.', 'error');
       return;
-    case 'joinDenied':
-      if (msg.payload.toId !== Me.clientId) return;
-      $('#join-error').textContent = msg.payload.reason || 'No se pudo entrar.';
-      $('#join-error').classList.remove('hidden');
-      return;
-  }
+    }
+    applyIncomingState(room);
+  }, () => {
+    toast('Error de conexion con la sala.', 'error');
+  });
 }
 
-function showScreen(selector) {
-  $$('.screen').forEach((screen) => screen.classList.remove('active'));
-  const target = $(selector);
-  if (target) target.classList.add('active');
+function clearLocalRoom() {
+  if (unsubscribeRoom) {
+    unsubscribeRoom();
+    unsubscribeRoom = null;
+  }
+  State = null;
+  Me.isHost = false;
+  Me.roomCode = null;
+  window.__guessDraft = 0;
+  window.__guessDraftRound = null;
+  $('#overlay-reveal').classList.add('hidden');
+  $('#overlay-gameover').classList.add('hidden');
+  showScreen('#screen-menu');
+}
+
+async function mutateRoom(code, mutator) {
+  let failureReason = null;
+  const result = await runTransaction(roomRef(code), (current) => {
+    if (!current) {
+      failureReason = 'La sala no existe.';
+      return;
+    }
+    const next = deepClone(current);
+    const outcome = mutator(next);
+    if (outcome && outcome.ok === false) {
+      failureReason = outcome.reason || 'No se pudo aplicar el cambio.';
+      return;
+    }
+    stampState(next);
+    return next;
+  }, { applyLocally: false });
+
+  if (!result.committed) {
+    return { ok: false, reason: failureReason || 'No se pudo guardar el cambio.' };
+  }
+  return { ok: true, state: result.snapshot.val() };
+}
+
+async function createRoomOnline() {
+  const name = ($('#create-name').value || '').trim();
+  if (!name) {
+    toast('Escribe tu nombre', 'error');
+    return;
+  }
+
+  const selected = $('.mode-opt.active');
+  const mode = selected ? selected.dataset.mode : 'easy';
+
+  Me.name = name.slice(0, 16);
+  let code = '';
+  let created = false;
+
+  for (let attempt = 0; attempt < 12 && !created; attempt++) {
+    code = genCode();
+    const existing = await get(roomRef(code));
+    if (existing.exists()) continue;
+    await set(roomRef(code), createInitialState(code, mode, Me.name));
+    created = true;
+  }
+
+  if (!created) {
+    toast('No he podido crear la sala.', 'error');
+    return;
+  }
+
+  Me.roomCode = code;
+  subscribeToRoom(code);
+}
+
+async function joinRoomOnline() {
+  const name = ($('#join-name').value || '').trim();
+  const code = ($('#join-code').value || '').trim().toUpperCase();
+
+  if (!name) {
+    toast('Escribe tu nombre', 'error');
+    return;
+  }
+  if (code.length < 4) {
+    toast('Codigo invalido', 'error');
+    return;
+  }
+
+  const existing = await get(roomRef(code));
+  if (!existing.exists()) {
+    $('#join-error').textContent = 'Sala no encontrada.';
+    $('#join-error').classList.remove('hidden');
+    return;
+  }
+
+  Me.name = name.slice(0, 16);
+  Me.roomCode = code;
+
+  const joined = await mutateRoom(code, (state) => {
+    if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya ha empezado.' };
+    if (state.players.length >= 8) return { ok: false, reason: 'Sala llena.' };
+    if (state.players.some((player) => player.id === Me.clientId)) return { ok: false, reason: 'Ya estas dentro.' };
+    state.players.push({
+      id: Me.clientId,
+      name: Me.name,
+      isHost: false,
+      score: 0,
+      lastGuess: null,
+      cardsCount: 0
+    });
+    return { ok: true };
+  });
+
+  if (!joined.ok) {
+    Me.roomCode = null;
+    $('#join-error').textContent = joined.reason;
+    $('#join-error').classList.remove('hidden');
+    return;
+  }
+
+  subscribeToRoom(code);
+}
+
+async function updateHostPointsSetting(nextValue) {
+  if (!State || !Me.isHost) return;
+  const safeValue = normalizePointsToWin(nextValue);
+  const result = await mutateRoom(State.code, (state) => {
+    if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya ha empezado.' };
+    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede cambiarlo.' };
+    state.pointsToWin = safeValue;
+    return { ok: true };
+  });
+  if (!result.ok) toast(result.reason, 'error');
+}
+
+async function startGameOnline() {
+  if (!State || !Me.isHost) return;
+  const result = await mutateRoom(State.code, (state) => {
+    if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya esta empezada.' };
+    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede iniciar.' };
+    if (state.players.length < 2) return { ok: false, reason: 'Se necesitan al menos 2 jugadores.' };
+    state.players.forEach((player) => {
+      player.score = 0;
+      player.lastGuess = null;
+    });
+    state.winner = null;
+    state.pendingWinner = null;
+    initRound(state, 1, 0);
+    return { ok: true };
+  });
+  if (!result.ok) toast(result.reason, 'error');
+}
+
+async function submitGuessOnline(guess) {
+  if (!State) return;
+  const result = await mutateRoom(State.code, (state) => submitGuess(state, Me.clientId, guess));
+  if (!result.ok) toast(result.reason, 'error');
+}
+
+async function continueRoundOnline() {
+  if (!State || !Me.isHost) return;
+  const result = await mutateRoom(State.code, (state) => {
+    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede continuar.' };
+    continueAfterReveal(state);
+    return { ok: true };
+  });
+  if (!result.ok) toast(result.reason, 'error');
+}
+
+async function leaveRoomOnline() {
+  if (!Me.roomCode) {
+    clearLocalRoom();
+    return;
+  }
+
+  const currentCode = Me.roomCode;
+  await runTransaction(roomRef(currentCode), (current) => {
+    if (!current) return current;
+    const next = deepClone(current);
+    removePlayerFromState(next, Me.clientId);
+    if (next.players.length === 0) return null;
+    stampState(next);
+    return next;
+  }, { applyLocally: false }).catch(() => {});
+
+  clearLocalRoom();
 }
 
 function render() {
@@ -594,43 +648,29 @@ function render() {
     return;
   }
 
-  if (State.phase === 'lobby') {
-    renderLobby();
-    return;
-  }
-  if (State.phase === 'playing') {
-    renderGame();
-    return;
-  }
-  if (State.phase === 'reveal') {
-    renderGameWithReveal();
-    return;
-  }
-  if (State.phase === 'gameover') {
-    renderGameOver();
-  }
+  if (State.phase === 'lobby') return renderLobby();
+  if (State.phase === 'playing') return renderGame();
+  if (State.phase === 'reveal') return renderGameWithReveal();
+  if (State.phase === 'gameover') return renderGameOver();
 }
 
 function setPointsDraft(value) {
   const nextValue = normalizePointsToWin(value);
   POINTS_LIMIT.value = nextValue;
-  const createValue = $('#create-points-value');
-  if (createValue) createValue.textContent = String(nextValue);
+  $('#create-points-value').textContent = String(nextValue);
 }
 
 function updateLobbyPointsControls() {
   if (!State) return;
   $('#lobby-points-value').textContent = String(State.pointsToWin);
   $('#lobby-points-value-readonly').textContent = String(State.pointsToWin);
-  const hostControls = $('#lobby-points-controls');
-  const hostReadonly = $('#lobby-points-readonly');
 
   if (Me.isHost && State.phase === 'lobby') {
-    hostControls.classList.remove('hidden');
-    hostReadonly.classList.add('hidden');
+    $('#lobby-points-controls').classList.remove('hidden');
+    $('#lobby-points-readonly').classList.add('hidden');
   } else {
-    hostControls.classList.add('hidden');
-    hostReadonly.classList.remove('hidden');
+    $('#lobby-points-controls').classList.add('hidden');
+    $('#lobby-points-readonly').classList.remove('hidden');
   }
 }
 
@@ -657,9 +697,8 @@ function renderLobby() {
   });
 
   updateLobbyPointsControls();
+  $('#btn-start').disabled = !(Me.isHost && State.players.length >= 2);
 
-  const startBtn = $('#btn-start');
-  startBtn.disabled = !(Me.isHost && State.players.length >= 2);
   const hint = $('#lobby-hint');
   if (!Me.isHost) {
     hint.textContent = 'Esperando a que el host inicie la partida.';
@@ -853,8 +892,7 @@ function renderRevealOverlay() {
   const reveal = State.reveal;
   if (!reveal) return;
 
-  const overlay = $('#overlay-reveal');
-  overlay.classList.remove('hidden');
+  $('#overlay-reveal').classList.remove('hidden');
   $('#reveal-tag').textContent = reveal.winnerNames.length ? 'ACIERTO EXACTO' : 'SIN PUNTO';
   $('#reveal-headline').textContent = reveal.promptLabel;
   $('#reveal-sub').textContent = reveal.winnerNames.length
@@ -862,8 +900,7 @@ function renderRevealOverlay() {
     : 'Nadie ha clavado el total exacto.';
   $('#reveal-count').textContent = String(reveal.actualTotal);
 
-  const guessesEl = $('#reveal-guesses');
-  guessesEl.innerHTML = reveal.guesses.map((entry) => {
+  $('#reveal-guesses').innerHTML = reveal.guesses.map((entry) => {
     const hit = entry.guess === reveal.actualTotal;
     return `
       <div class="reveal-guess ${hit ? 'hit' : ''}">
@@ -906,8 +943,7 @@ function renderGameOver() {
   $('#action-waiting').classList.remove('hidden');
   $('#action-waiting .action-panel-label').textContent = 'PARTIDA TERMINADA';
 
-  const overlay = $('#overlay-gameover');
-  overlay.classList.remove('hidden');
+  $('#overlay-gameover').classList.remove('hidden');
   $('#winner-name').textContent = State.winner ? `${State.winner.name.toUpperCase()} · ${State.winner.score} PT` : '-';
   $('#winner-scoreboard').innerHTML = State.players
     .slice()
@@ -919,16 +955,6 @@ function renderGameOver() {
       </div>
     `)
     .join('');
-}
-
-function updateHostPointsSetting(nextValue) {
-  if (!State || !Me.isHost) return;
-  const safeValue = normalizePointsToWin(nextValue);
-  if (Me.isHost) {
-    hostHandleMessage({ from: Me.clientId, type: 'updateSettings', payload: { pointsToWin: safeValue } });
-  } else {
-    Net.send('updateSettings', { pointsToWin: safeValue });
-  }
 }
 
 $$('.menu-tab').forEach((tab) => {
@@ -950,88 +976,10 @@ $$('.mode-opt').forEach((option) => {
 
 $('#btn-points-minus').addEventListener('click', () => setPointsDraft(POINTS_LIMIT.value - 1));
 $('#btn-points-plus').addEventListener('click', () => setPointsDraft(POINTS_LIMIT.value + 1));
-
 $('#btn-lobby-points-minus').addEventListener('click', () => updateHostPointsSetting(State.pointsToWin - 1));
 $('#btn-lobby-points-plus').addEventListener('click', () => updateHostPointsSetting(State.pointsToWin + 1));
-
-$('#btn-create').addEventListener('click', () => {
-  const name = ($('#create-name').value || '').trim();
-  if (!name) {
-    toast('Escribe tu nombre', 'error');
-    return;
-  }
-
-  const selected = $('.mode-opt.active');
-  const mode = selected ? selected.dataset.mode : 'easy';
-  const code = genCode();
-
-  Me.name = name.slice(0, 16);
-  Me.isHost = true;
-  Me.roomCode = code;
-
-  State = {
-    code,
-    phase: 'lobby',
-    mode,
-    pointsToWin: normalizePointsToWin(POINTS_LIMIT.value),
-    hostId: Me.clientId,
-    players: [{
-      id: Me.clientId,
-      name: Me.name,
-      isHost: true,
-      score: 0,
-      lastGuess: null,
-      cardsCount: 0
-    }],
-    hands: {},
-    centerCards: [],
-    round: null,
-    reveal: null,
-    pendingWinner: null,
-    winner: null
-  };
-
-  Net.open(code);
-  Net.on(hostHandleMessage);
-  Net.on(clientHandleMessage);
-  hostBroadcastState();
-  render();
-});
-
-$('#btn-join').addEventListener('click', () => {
-  const name = ($('#join-name').value || '').trim();
-  const code = ($('#join-code').value || '').trim().toUpperCase();
-
-  if (!name) {
-    toast('Escribe tu nombre', 'error');
-    return;
-  }
-  if (code.length < 4) {
-    toast('Codigo invalido', 'error');
-    return;
-  }
-
-  const existing = Net.loadRoom(code);
-  if (!existing) {
-    $('#join-error').textContent = 'Sala no encontrada.';
-    $('#join-error').classList.remove('hidden');
-    return;
-  }
-  if (existing.phase !== 'lobby') {
-    $('#join-error').textContent = 'La partida ya ha empezado.';
-    $('#join-error').classList.remove('hidden');
-    return;
-  }
-
-  Me.name = name.slice(0, 16);
-  Me.isHost = false;
-  Me.roomCode = code;
-
-  Net.open(code);
-  Net.on(clientHandleMessage);
-  applyIncomingState(existing);
-  Net.send('joinRequest', { name: Me.name });
-});
+$('#btn-create').addEventListener('click', () => createRoomOnline());
+$('#btn-join').addEventListener('click', () => joinRoomOnline());
 
 $('#btn-copy-code').addEventListener('click', async () => {
   if (!State) return;
@@ -1043,33 +991,12 @@ $('#btn-copy-code').addEventListener('click', async () => {
   }
 });
 
-$('#btn-start').addEventListener('click', () => {
-  if (!State || !Me.isHost) return;
-  hostHandleMessage({ from: Me.clientId, type: 'startGame', payload: {} });
-});
-
+$('#btn-start').addEventListener('click', () => startGameOnline());
 $$('[data-action="leave-lobby"]').forEach((button) => {
-  button.addEventListener('click', () => leaveToMenu(true));
+  button.addEventListener('click', async () => {
+    await leaveRoomOnline();
+  });
 });
-
-function leaveToMenu(announceLeave) {
-  if (State) {
-    if (Me.isHost) {
-      Net.deleteRoom(State.code);
-    } else if (announceLeave) {
-      Net.send('leaveRoom', {});
-    }
-  }
-  Net.close();
-  State = null;
-  Me.isHost = false;
-  Me.roomCode = null;
-  window.__guessDraft = 0;
-  window.__guessDraftRound = null;
-  $('#overlay-reveal').classList.add('hidden');
-  $('#overlay-gameover').classList.add('hidden');
-  showScreen('#screen-menu');
-}
 
 $('#guess-minus').addEventListener('click', () => {
   if (!State || State.phase !== 'playing') return;
@@ -1085,28 +1012,24 @@ $('#guess-plus').addEventListener('click', () => {
 
 $('#btn-guess').addEventListener('click', () => {
   if (!State) return;
-  const guess = Number(window.__guessDraft || 0);
-  if (Me.isHost) {
-    hostHandleMessage({ from: Me.clientId, type: 'guess', payload: { guess } });
-  } else {
-    Net.send('guess', { guess });
-  }
+  submitGuessOnline(Number(window.__guessDraft || 0));
 });
 
-$('#btn-continue').addEventListener('click', () => {
-  if (!State || !Me.isHost) return;
-  hostHandleMessage({ from: Me.clientId, type: 'continue', payload: {} });
+$('#btn-continue').addEventListener('click', () => continueRoundOnline());
+$('#btn-menu').addEventListener('click', async () => {
+  await leaveRoomOnline();
 });
-
-$('#btn-menu').addEventListener('click', () => leaveToMenu(true));
 
 window.addEventListener('beforeunload', () => {
-  if (State && !Me.isHost) {
-    try { Net.send('leaveRoom', {}); } catch {}
-  }
-  if (State && Me.isHost) {
-    try { Net.deleteRoom(State.code); } catch {}
-  }
+  if (!State || !Me.roomCode) return;
+  runTransaction(roomRef(Me.roomCode), (current) => {
+    if (!current) return current;
+    const next = deepClone(current);
+    removePlayerFromState(next, Me.clientId);
+    if (next.players.length === 0) return null;
+    stampState(next);
+    return next;
+  }, { applyLocally: false }).catch(() => {});
 });
 
 function boot() {
@@ -1118,4 +1041,3 @@ function boot() {
 }
 
 boot();
-})();
