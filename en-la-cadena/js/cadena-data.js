@@ -219,7 +219,19 @@ const CadenaData = (() => {
       });
 
       // Excluir jugadores que SOLO tienen equipos filiales (no tendrían salida válida)
-      const playableItems = itemsWithData.filter(item => filterTeams(item.data?.teams).length > 0);
+      // y deduplicar por huella única para evitar duplicados reales en la base de datos
+      // (mismo jugador indexado dos veces con IDs distintos pero datos idénticos)
+      const seenFingerprints = new Set();
+      const playableItems = itemsWithData.filter(item => {
+        if (!filterTeams(item.data?.teams).length) return false;
+        const d = item.data;
+        const fingerprint = d
+          ? `${norm(item.name)}|${d.b || ''}|${d.nat || ''}|${Math.round(d.h || 0)}`
+          : String(item.id);
+        if (seenFingerprints.has(fingerprint)) return false;
+        seenFingerprints.add(fingerprint);
+        return true;
+      });
       results = playableItems.slice(0, 8);
 
       const finalItems = results.map((item, _, arr) => {

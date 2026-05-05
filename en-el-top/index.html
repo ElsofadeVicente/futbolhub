@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>En el Top</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── Loading ─────────────────────────────────────────────── -->
+  <div id="loading-screen">
+    <div class="spin"></div>
+    <p>Cargando…</p>
+  </div>
+
+  <!-- ── Juego ────────────────────────────────────────────────── -->
+  <div id="game-screen" class="hidden">
+
+    <!-- Barra de timer (top) -->
+    <div id="timer-track"><div id="timer-fill"></div></div>
+
+    <main id="game-main">
+
+      <!-- Cabecera -->
+      <div id="top-bar">
+        <span id="score-badge">0/10</span>
+        <span id="timer-num">60</span>
+      </div>
+
+      <!-- Título pregunta -->
+      <h1 id="question-title"></h1>
+
+      <!-- Filas del top 10 -->
+      <div id="rows-wrap"></div>
+
+      <!-- Input + autocomplete -->
+      <div id="input-area">
+        <div id="input-wrap">
+          <input id="ans-input" type="text"
+                 placeholder="Escribe el nombre del futbolista…"
+                 autocomplete="off" spellcheck="false" />
+          <div id="sug-box"></div>
+        </div>
+        <button id="giveup-btn" title="Rendirse">🏳️</button>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── Pantalla final ────────────────────────────────────────── -->
+  <div id="end-screen" class="hidden">
+    <div id="end-box">
+      <div id="end-emoji"></div>
+      <h2 id="end-title"></h2>
+      <p  id="end-sub"></p>
+      <h3 id="end-q"></h3>
+      <div id="end-rows"></div>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+</body>
+</html>

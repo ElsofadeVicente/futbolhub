@@ -182,15 +182,20 @@ const BlackjackSync = (() => {
 
   /* ═══════════════════════════════════════════
      REPORTAR DECISIÓN COMPLETA
+     FIX: playerActivity fusionado en el mismo update atómico
+     para evitar la race condition con playAgain que expulsaba
+     jugadores que sí habían jugado.
      ═══════════════════════════════════════════ */
   async function reportDone(code, playerId, handData) {
     const { update, runTransaction } = FB();
 
-    await update(_ref(`blackjack/rooms/${code}/decisions/${playerId}`), {
-      picked:   handData.picked,
-      bust:     handData.bust,
-      standing: handData.standing,
-      doneAt:   Date.now(),
+    // Update atómico: decisions + playerActivity en un solo roundtrip
+    await update(_ref(`blackjack/rooms/${code}`), {
+      [`decisions/${playerId}/picked`]:   handData.picked,
+      [`decisions/${playerId}/bust`]:     handData.bust,
+      [`decisions/${playerId}/standing`]: handData.standing,
+      [`decisions/${playerId}/doneAt`]:   Date.now(),
+      [`playerActivity/${playerId}`]:     true,   // ← antes era llamada separada sin await
     });
 
     const result = await runTransaction(_ref(`blackjack/rooms/${code}/doneCount`), current => {
@@ -208,6 +213,9 @@ const BlackjackSync = (() => {
 
     let triggered = false;
     await runTransaction(_ref(`blackjack/rooms/${code}/status`), current => {
+      // FIX: resetear en cada invocación del callback (Firebase puede reintentar
+      // si hay conflicto, y triggered quedaría stale-true de un intento previo)
+      triggered = false;
       if (current === 'playing') { triggered = true; return 'reveal'; }
       return;
     });
@@ -428,9 +436,11 @@ const BlackjackSync = (() => {
       revealStarted:  false,
       scores:         null,
       playAgain:      null,
+      autoStartLock:  null,   // FIX: limpiar lock del auto-arranque anterior para que
+                               // funcione de nuevo si el lobby público vuelve a expirar
       resetAt:        Date.now(),
-      lobbyAt:        Date.now(),   // reiniciar timer de 3 min al volver al lobby
-      playerActivity: {},           // resetear actividad para la próxima partida
+      lobbyAt:        Date.now(),
+      playerActivity: {},
       players:        resetPlayers,
     });
 
@@ -510,8 +520,9 @@ const BlackjackSync = (() => {
 
   /* ═══════════════════════════════════════════
      MARCAR JUGADOR COMO ACTIVO EN ESTA PARTIDA
-     Se llama cada vez que un jugador envía su decisión.
-     Persiste entre rondas; se resetea al arrancar partida nueva.
+     NOTA: ahora se llama internamente desde reportDone
+     (fusionado en el mismo update atómico).
+     Se mantiene en la API por si se necesita externamente.
      ═══════════════════════════════════════════ */
   async function markPlayerActive(code, playerId) {
     const { update } = FB();

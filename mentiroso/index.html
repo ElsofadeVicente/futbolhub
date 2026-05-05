@@ -65,7 +65,7 @@
       <ol>
         <li>En cada ronda sale una condicion fija. Ejemplo: <em>Mas de 10 goles en Premier 24/25</em> o <em>han pasado por el Chelsea</em>.</li>
         <li>Cada jugador mira sus cartas y las del centro para estimar cuantas cartas de toda la mesa cumplen esa condicion.</li>
-        <li>Por turnos, cada uno dice un numero exacto. No se sube apuesta ni se canta mentiroso.</li>
+        <li>Por turnos, cada uno dice un numero exacto.</li>
         <li>Cuando todos han apostado, se revela el total real.</li>
         <li>Solo puntua quien acierta exacto. Si nadie acierta, no suma nadie.</li>
         <li>Gana quien llegue antes al numero de rondas acertadas configurado.</li>
@@ -210,6 +210,30 @@
 <div id="toast" class="toast"></div>
 
 <script src="./js/data.js"></script>
-<script type="module" src="./js/game.js"></script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, get, onValue, runTransaction }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM',
+    authDomain: 'futbolhub-9d0a4.firebaseapp.com',
+    databaseURL: 'https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app',
+    projectId: 'futbolhub-9d0a4',
+    storageBucket: 'futbolhub-9d0a4.firebasestorage.app',
+    messagingSenderId: '179751773212',
+    appId: '1:179751773212:web:9acfe3d5b8c344c51a2bd9'
+  };
+
+  const app = initializeApp(FIREBASE_CONFIG);
+  const db = getDatabase(app);
+
+  window._FB = { db, ref, set, get, onValue, runTransaction };
+
+  const script = document.createElement('script');
+  script.src = './js/game.js';
+  script.onerror = () => console.warn('No se pudo cargar mentiroso/js/game.js');
+  document.body.appendChild(script);
+</script>
 </body>
 </html>

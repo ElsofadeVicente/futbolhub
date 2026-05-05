@@ -567,7 +567,7 @@
         {
           "name": "LUIS FIGO",
           "number": "10",
-          "position": "LW"
+          "position": "LM"
         },
         {
           "name": "ZINÉDINE ZIDANE",
@@ -582,7 +582,7 @@
         {
           "name": "STEVE McMANAMAN",
           "number": "8",
-          "position": "RW"
+          "position": "RM"
         }
       ],
       [
@@ -1414,7 +1414,7 @@
         {
           "name": "CRISTIANO RONALDO",
           "number": "7",
-          "position": "LW"
+          "position": "ST"
         },
         {
           "name": "KARIM BENZEMA",
@@ -1707,7 +1707,7 @@
       ],
       [
         {
-          "name": "TIMO WERNER",
+          "name": "KAI HAVERTZ",
           "number": "11",
           "position": "LW"
         },
@@ -1717,7 +1717,7 @@
           "position": "CAM"
         },
         {
-          "name": "KAI HAVERTZ",
+          "name": "TIMO WERNER",
           "number": "29",
           "position": "ST"
         }

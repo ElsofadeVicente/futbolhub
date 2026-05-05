@@ -22,6 +22,7 @@ let _TROPHY_MAP         = {};  // id → [trophyName, ...]
 let _COACH_MAP          = {};  // id → [coachName, ...]
 let _TEAMMATE_MAP       = {};  // id → [playerName, ...]
 let _REVERSE_TEAMMATE   = {};  // normalizedName → Set<normalizedName> (relación inversa)
+let _REVERSE_TEAMMATE_IDS = {}; // normalizedName(famoso) → Set<id_string> (check por ID)
 
 let _acItems         = [];
 let _acIndex         = -1;
@@ -172,7 +173,7 @@ async function _loadData() {
   const CHUNKS_BASE = '../data/players/chunks/';
 
   const [
-    companeros, entrenados, clubInt, seleccion, ligaCopa, premios, nameIdx, leagueData,
+    companeros, entrenados, clubInt, seleccion, ligaCopa, premios, nameIdx, leagueData, miniData,
   ] = await Promise.all([
     fetch(BASE + 'compa%C3%B1eros_principal.json').then(r => r.json()),
     fetch(BASE + 'entrenados_por.json').then(r => r.json()),
@@ -182,6 +183,7 @@ async function _loadData() {
     fetch(BASE + 'premios_individuales.json').then(r => r.json()),
     fetch('../data/players/name-index.json').then(r => r.json()).catch(() => []),
     fetch('../data/teams/league-teams.json').then(r => r.json()).catch(() => null),
+    fetch(BASE + 'players-mini.json').then(r => r.json()).catch(() => ({})),
   ]);
 
   NAME_INDEX = Array.isArray(nameIdx) ? nameIdx : [];
@@ -205,27 +207,16 @@ async function _loadData() {
     ...Object.values(entrenados).flatMap(e => (e.players || []).map(String)),
   ]);
 
-  const chunkGroups = {};
-  for (const id of neededIds) {
-    const cf = _chunkFileForId(id);
-    if (cf) {
-      if (!chunkGroups[cf]) chunkGroups[cf] = [];
-      chunkGroups[cf].push(id);
-    }
-  }
-
+  /* chunkData: miniData es la fuente principal (sin fetches extra).
+     Para IDs no cubiertos por mini, usar caché de background si está disponible. */
   const chunkData = {};
-  await Promise.all(Object.entries(chunkGroups).map(async ([cf, ids]) => {
-    try {
-      const r = await fetch(cf);
-      if (!r.ok) return;
-      const fullChunk = await r.json();
-      const partial = { __full: false };
-      for (const id of ids) { if (fullChunk[id]) partial[id] = fullChunk[id]; }
-      _chunkCache[cf] = partial;
-      for (const id of ids) { if (fullChunk[id]) chunkData[id] = fullChunk[id]; }
-    } catch { }
-  }));
+  for (const id of neededIds) {
+    if (miniData[id]) { chunkData[id] = miniData[id]; continue; }
+    const cf = _chunkFileForId(id);
+    if (!cf) continue;
+    const cached = _chunkCache[cf];
+    if (cached && cached[id]) chunkData[id] = cached[id];
+  }
 
   /* nameMap: id → nombre. Primero desde name-index (cubre TODOS los jugadores),
      luego sobreescribir con companeros_principal (fuente de verdad para los famosos).
@@ -295,15 +286,29 @@ async function _loadData() {
   }
   _REVERSE_TEAMMATE = reverseMap;
 
+  /* Mapa inverso por ID: normName(famoso) → Set<id_string> de sus compañeros.
+     Evita fallos de resolución de nombres (prefijos #N, etc.) */
+  const reverseIdMap = {};
+  for (const [id, pd] of Object.entries(companeros)) {
+    const ownerName = nameMap[id];
+    if (!ownerName) continue;
+    const ownerNorm = _norm(ownerName);
+    if (!reverseIdMap[ownerNorm]) reverseIdMap[ownerNorm] = new Set();
+    for (const tid of pd.teammates || []) {
+      reverseIdMap[ownerNorm].add(String(tid));
+    }
+  }
+  _REVERSE_TEAMMATE_IDS = reverseIdMap;
+
   /* Máxima transferencia en €  */
   function _maxFee(transfers) {
     if (!transfers || !transfers.length) return 0;
     return Math.max(...transfers.map(t => parseInt(t.fee || '0', 10) || 0));
   }
 
-  /* PLAYERS_DB incluye los datos del chunk para que generate() pueda validar
-     restricciones correctamente. findPlayerAsync siempre refresca desde chunk
-     al validar respuestas del usuario (garantizando img y datos actualizados). */
+  /* PLAYERS_DB = solo compañeros_principal, enriquecidos con players-mini.json.
+     Pequeño (~300-500 jugadores) → generate() es rápido.
+     findPlayerAsync usa chunks on-demand para validar respuestas del usuario. */
   return Object.entries(companeros).map(([id, pd]) => {
     const chunk = chunkData[id] || {};
     return {
@@ -324,7 +329,7 @@ async function _loadData() {
       apps:         typeof chunk.apps  === 'number' ? chunk.apps  : null,
       position:     chunk.p  || null,
       caps:         chunk.nt ? (parseInt((chunk.nt.c !== undefined ? chunk.nt.c : chunk.nt) || '0', 10) || 0) : 0,
-      maxFee:       _maxFee(chunk.tr),
+      maxFee:       chunk.maxFee ?? _maxFee(chunk.tr ?? []),
     };
   });
 }
@@ -387,8 +392,8 @@ const Restrictions = (() => {
     { tmName:'SSC Napoli',           display:'Napoli',         league:'Serie A' },
     { tmName:'SS Lazio',             display:'Lazio',          league:'Serie A' },
     { tmName:'Ajax Amsterdam',       display:'Ajax',           league:'Eredivisie' },
-    { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Argentina' },
-    { tmName:'CA River Plate',       display:'River Plate',    league:'Argentina' },
+    { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Argentina',  region:'sudamerica' },
+    { tmName:'CA River Plate',       display:'River Plate',    league:'Argentina',  region:'sudamerica' },
     { tmName:'SL Benfica',           display:'Benfica',        league:'Primeira Liga' },
     { tmName:'FC Porto',             display:'Porto',          league:'Primeira Liga' },
     { tmName:'Sporting CP',          display:'Sporting CP',    league:'Primeira Liga' },
@@ -461,13 +466,13 @@ const Restrictions = (() => {
   /* ────────── NACIONALIDADES ────────── */
   /* tmNat = valor en chunk.nat (inglés)   */
   const NATIONALITIES = [
-    { tmNat:'Spain',       display:'España',    flag:'🇪🇸', flagImg:'data/flags/es.png' },
-    { tmNat:'England',     display:'Inglaterra', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagImg:'data/flags/eng.png' },
-    { tmNat:'France',      display:'Francia',   flag:'🇫🇷', flagImg:'data/flags/fr.png' },
-    { tmNat:'Argentina',   display:'Argentina', flag:'🇦🇷', flagImg:'data/flags/ar.png' },
-    { tmNat:'Germany',     display:'Alemania',  flag:'🇩🇪', flagImg:'data/flags/de.png' },
-    { tmNat:'Brazil',      display:'Brasil',    flag:'🇧🇷', flagImg:'data/flags/br.png' },
-    { tmNat:'Netherlands', display:'Holanda',   flag:'🇳🇱', flagImg:'data/flags/nl.png' },
+    { tmNat:'Spain',       display:'España',    adj:'Español',    flag:'🇪🇸', flagImg:'data/flags/es.png' },
+    { tmNat:'England',     display:'Inglaterra', adj:'Inglés',    flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagImg:'data/flags/eng.png' },
+    { tmNat:'France',      display:'Francia',   adj:'Francés',   flag:'🇫🇷', flagImg:'data/flags/fr.png' },
+    { tmNat:'Argentina',   display:'Argentina', adj:'Argentino', flag:'🇦🇷', flagImg:'data/flags/ar.png' },
+    { tmNat:'Germany',     display:'Alemania',  adj:'Alemán',    flag:'🇩🇪', flagImg:'data/flags/de.png' },
+    { tmNat:'Brazil',      display:'Brasil',    adj:'Brasileño', flag:'🇧🇷', flagImg:'data/flags/br.png' },
+    { tmNat:'Netherlands', display:'Holanda',   adj:'Holandés',  flag:'🇳🇱', flagImg:'data/flags/nl.png' },
   ];
 
   /* ────────── CONTINENTES ────────── */
@@ -508,14 +513,19 @@ const Restrictions = (() => {
                    'liga de quito','dep quito','deportivo cali','junior','medellin'],
     usa_mexico:   ['galaxy','red bulls','new york city','fc dallas','toronto','seattle',
                    'portland','atlanta united','inter miami','chicago fire','columbus',
-                   'new england','real salt lake','colorado','houston','dc united',
+                   'new england','real salt lake','colorado','houston',
+                   'dc united','d.c. united',
+                   'los angeles fc','lafc','san jose','sporting kansas',
+                   'vancouver whitecaps','montreal','philadelphia union',
+                   'orlando city','nashville sc','minnesota united',
+                   'fc cincinnati','austin fc','charlotte fc','st. louis city',
                    'chivas','america','cruz azul','pumas','toluca','monterrey','tigres',
                    'leon','guadalajara','pachuca','necaxa','veracruz','atlas','santos lag'],
     oriente_medio:['al-nassr','al-hilal','al-ittihad','al-ahli','al-qadsia',
                    'al-sadd','al-rayyan','al-duhail','al-ain','al-wahda',
                    'al-shabab','al-raed','al-taawoun','al-faisaly','al-fateh',
                    'al-jazira','al-wasl','al-najma','al-kharaitiyat',
-                   'al-wehda','al-ettifaq','al ain sc','al ain fc',
+                   'al-wehda','al-ettifaq','al-gharafa','al ain sc','al ain fc',
                    'riyadh','jeddah','sharjah','dubai','abu dhabi','kuwait',
                    'esteghlal','persepolis','tractors','sepahan',
                    'umm salal','pakhtakor','lokomotiv tashkent'],
@@ -578,45 +588,44 @@ const Restrictions = (() => {
   /* ────────── COMPAÑEROS ────────── */
   /* IDs de jugadores "famosos" para generar restricción compañero-de     */
   const TEAMMATES_LIST = [
-    { name:'Messi',            id:'28003',  icon:'⚽' },
-    { name:'Cristiano Ronaldo',id:'8198',   icon:'⚽' },
-    { name:'Kane',             id:'132098', icon:'⚽' },
-    { name:'Casillas',         id:'3979',   icon:'⚽' },
-    { name:'Mbappé',           id:'342229', icon:'⚽' },
-    { name:'Pepe',             id:'14132',  icon:'⚽' },
-    { name:'Neymar',           id:'68290',  icon:'⚽' },
-    { name:'Ronaldinho',       id:'3373',   icon:'⚽' },
-    { name:'Di María',         id:'44352',  icon:'⚽' },
-    { name:'Cavani',           id:'48280',  icon:'⚽' },
-    { name:'Xavi',             id:'7607',   icon:'⚽' },
-    { name:'Llorente',         id:'7349',   icon:'⚽' },
-    { name:'Reina',            id:'7825',   icon:'⚽' },
-    { name:'Neuer',            id:'17259',  icon:'⚽' },
-    { name:'Müller',           id:'38253',  icon:'⚽' },
-    { name:'Reus',             id:'35624',  icon:'⚽' },
-    { name:'Pirlo',            id:'5817',   icon:'⚽' },
-    { name:'Lautaro Martínez', id:'406625', icon:'⚽' },
-    { name:'Sneijder',         id:'4673',   icon:'⚽' },
-    { name:'Dembélé',          id:'288230', icon:'⚽' },
-    { name:'Kaká',             id:'3366',   icon:'⚽' },
-    { name:'Modric',           id:'44853',  icon:'⚽' },
-    { name:'Agüero',           id:'26476',  icon:'⚽' },
-    { name:'David Villa',      id:'7980',   icon:'⚽' },
-    { name:'Mertens',          id:'55735',  icon:'⚽' },
-    { name:'De Bruyne',        id:'88755',  icon:'⚽' },
-    { name:'Ibrahimovic',      id:'3455',   icon:'⚽' },
-    { name:'Buffon',           id:'5023',   icon:'⚽' },
-    { name:'Sergio Ramos',     id:'25557',  icon:'⚽' },
-    { name:'Zidane',           id:'3111',   icon:'⚽' },
-    { name:'Xabi Alonso',      id:'7476',   icon:'⚽' },
-    { name:'Varane',           id:'99843',  icon:'⚽' },
-    { name:'Salah',            id:'148455', icon:'⚽' },
-    { name:'Kanté',            id:'129084', icon:'⚽' },
-    { name:'Alexis Sánchez',   id:'55726',  icon:'⚽' },
-    { name:'Robben',           id:'4360',   icon:'⚽' },
-    { name:'Torres',           id:'7767',   icon:'⚽' },
-    { name:'Joaquín',          id:'7663',   icon:'⚽' },
-    { name:'Totti',            id:'5958',   icon:'⚽' },
+    { name:'Lionel Messi',       display:'Messi',            id:'28003',  icon:'⚽' },
+    { name:'Cristiano Ronaldo',  display:'Cristiano Ronaldo',id:'8198',   icon:'⚽' },
+    { name:'Harry Kane',         display:'Kane',             id:'132098', icon:'⚽' },
+    { name:'Iker Casillas',      display:'Casillas',         id:'3979',   icon:'⚽' },
+    { name:'Kylian Mbappé',      display:'Mbappé',           id:'342229', icon:'⚽' },
+    { name:'Pepe',               display:'Pepe',             id:'14132',  icon:'⚽' },
+    { name:'Neymar',             display:'Neymar',           id:'68290',  icon:'⚽' },
+    { name:'Ronaldinho',         display:'Ronaldinho',       id:'3373',   icon:'⚽' },
+    { name:'Ángel Di María',     display:'Di María',         id:'45320',  icon:'⚽' },
+    { name:'Edinson Cavani',     display:'Cavani',           id:'48280',  icon:'⚽' },
+    { name:'Xavi',               display:'Xavi',             id:'7607',   icon:'⚽' },
+    { name:'Fernando Llorente',  display:'Llorente',         id:'35564',  icon:'⚽' },
+    { name:'Pepe Reina',         display:'Reina',            id:'7825',   icon:'⚽' },
+    { name:'Manuel Neuer',       display:'Neuer',            id:'17259',  icon:'⚽' },
+    { name:'Thomas Müller',      display:'Müller',           id:'58358',  icon:'⚽' },
+    { name:'Marco Reus',         display:'Reus',             id:'35207',  icon:'⚽' },
+    { name:'Andrea Pirlo',       display:'Pirlo',            id:'5817',   icon:'⚽' },
+    { name:'Lautaro Martínez',   display:'Lautaro',          id:'406625', icon:'⚽' },
+    { name:'Wesley Sneijder',    display:'Sneijder',         id:'4673',   icon:'⚽' },
+    { name:'Ousmane Dembélé',    display:'Dembélé',          id:'288230', icon:'⚽' },
+    { name:'Kaká',               display:'Kaká',             id:'3366',   icon:'⚽' },
+    { name:'Luka Modrić',        display:'Modric',           id:'27992',  icon:'⚽' },
+    { name:'Sergio Agüero',      display:'Agüero',           id:'26399',  icon:'⚽' },
+    { name:'David Villa',        display:'David Villa',      id:'7980',   icon:'⚽' },
+    { name:'Kevin De Bruyne',    display:'De Bruyne',        id:'88755',  icon:'⚽' },
+    { name:'Zlatan Ibrahimović', display:'Ibrahimovic',      id:'3455',   icon:'⚽' },
+    { name:'Gianluigi Buffon',   display:'Buffon',           id:'5023',   icon:'⚽' },
+    { name:'Sergio Ramos',       display:'Sergio Ramos',     id:'25557',  icon:'⚽' },
+    { name:'Zinédine Zidane',    display:'Zidane',           id:'3111',   icon:'⚽' },
+    { name:'Xabi Alonso',        display:'Xabi Alonso',      id:'7476',   icon:'⚽' },
+    { name:'Raphaël Varane',     display:'Varane',           id:'164770', icon:'⚽' },
+    { name:'Mohamed Salah',      display:'Salah',            id:'148455', icon:'⚽' },
+    { name:"N'Golo Kanté",      display:'Kanté',            id:'225083', icon:'⚽' },
+    { name:'Alexis Sánchez',     display:'Alexis Sánchez',   id:'40433',  icon:'⚽' },
+    { name:'Arjen Robben',       display:'Robben',           id:'4360',   icon:'⚽' },
+    { name:'Fernando Torres',    display:'Torres',           id:'7767',   icon:'⚽' },
+    { name:'Joaquín',            display:'Joaquín',          id:'7663',   icon:'⚽' },
+    { name:'Francesco Totti',    display:'Totti',            id:'5958',   icon:'⚽' },
   ];
 
   /* ────────── Contar jugadores válidos ────────── */
@@ -624,42 +633,14 @@ const Restrictions = (() => {
     return db.filter(p => validate(p, restriction)).length;
   }
 
-  /* ────────── Generar restricciones ────────── */
-  function generate(seed, db) {
-    const rng = _mulberry32(seed);
-
-    /* ══ PASO 1: Elegir 2 clubes obligatorios ══ */
-    const shuffledClubs = _shuffle(CLUBS_LIST, rng);
-    const clubRestrictions = [];
-    for (const club of shuffledClubs) {
-      if (clubRestrictions.length >= 2) break;
-      const r = {
-        type:    'club',
-        value:   club.tmName,
-        label:   `Ha jugado en ${club.display}`,
-        imgUrl:  club.logoUrl,
-        icon:    '🏟️',
-        family:  'club',
-      };
-      /* solo añadir si al menos 1 jugador lo cumple */
-      if (_matching(r, db) >= 1) clubRestrictions.push(r);
-    }
-    /* Fallback: rellenar si hay menos de 2 */
-    if (clubRestrictions.length < 2) {
-      for (const club of CLUBS_LIST) {
-        if (clubRestrictions.length >= 2) break;
-        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-        if (!clubRestrictions.find(c => c.value === r.value)) clubRestrictions.push(r);
-      }
-    }
-
-    /* ══ PASO 2: Pool de candidatos para las 3 restantes ══ */
+  /* ────────── Construye el pool completo de candidatos mezclados con rng ────────── */
+  function _buildCandidates(rng) {
     const candidates = [];
 
     /* Nacionalidades */
     for (const nat of _shuffle(NATIONALITIES, rng)) {
       candidates.push({
-        type:'nationality', value:nat.tmNat, label:`Internacional ${nat.display}`,
+        type:'nationality', value:nat.tmNat, label:nat.adj,
         imgUrl: nat.flagImg, icon: nat.flag, family:'nationality',
       });
     }
@@ -699,11 +680,11 @@ const Restrictions = (() => {
 
     /* Compañeros de */
     for (const p of _shuffle(TEAMMATES_LIST, rng)) {
-      candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.name}`, imgUrl:`data/players/photos/${p.id}.jpg`, icon:p.icon, family:'teammate' });
+      candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display || p.name}`, imgUrl:`data/players/photos/${p.id}.jpg`, icon:p.icon, family:'teammate' });
     }
 
     /* Continent */
-    for (const [cont, label] of [['europeo','Europeo'],['americano','Americano'],['africano','Africano'],['asiatico','Asiático']]) {
+    for (const [cont, label] of [['europeo','Europeo'],['americano','Continente Americano'],['africano','Africano'],['asiatico','Asiático']]) {
       candidates.push({ type:'continent', value:cont, label, imgUrl:null, icon:'🌍', family:'continent' });
     }
 
@@ -754,11 +735,53 @@ const Restrictions = (() => {
     });
     candidates.push({
       type:'trophy_any', value:['Champions League','Europa League','Copa Libertadores'],
-      label:'Ganador título continental', imgUrl:null, icon:'⭐', family:'trophy_general',
+      label:'Ganador título continental (clubes)', imgUrl:null, icon:'⭐', family:'trophy_general',
     });
 
-    /* ══ PASO 3: Filtrar jugables (mínimo 2 jugadores) ══ */
-    const playable = candidates.filter(r => _matching(r, db) >= 2);
+    return candidates;
+  }
+
+  /* ────────── Generar restricciones ────────── */
+  function generate(seed, db) {
+    const rng = _mulberry32(seed);
+
+    /* ══ PASO 1: Elegir 2 clubes obligatorios ══ */
+    const shuffledClubs = _shuffle(CLUBS_LIST, rng);
+    const clubRestrictions = [];
+    for (const club of shuffledClubs) {
+      if (clubRestrictions.length >= 2) break;
+      const r = {
+        type:    'club',
+        value:   club.tmName,
+        label:   `Ha jugado en ${club.display}`,
+        imgUrl:  club.logoUrl,
+        icon:    '🏟️',
+        family:  'club',
+      };
+      if (_matching(r, db) < 1) continue;
+      /* Si ya tenemos 1 club, verificar que ≥1 jugador haya estado en AMBOS */
+      if (clubRestrictions.length === 1) {
+        if (!db.some(p => validate(p, clubRestrictions[0]) && validate(p, r))) continue;
+      }
+      clubRestrictions.push(r);
+    }
+    /* Fallback: rellenar si hay menos de 2 */
+    if (clubRestrictions.length < 2) {
+      for (const club of CLUBS_LIST) {
+        if (clubRestrictions.length >= 2) break;
+        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+        if (!clubRestrictions.find(c => c.value === r.value)) clubRestrictions.push(r);
+      }
+    }
+
+    /* ══ PASO 2: Pool de candidatos ══ */
+    const candidates = _buildCandidates(rng);
+
+    /* ══ PASO 3: Filtrar jugables (mín 1 para compañeros, mín 2 para el resto) ══ */
+    const playable = candidates.filter(r => {
+      const min = r.type === 'teammate' ? 1 : 2;
+      return _matching(r, db) >= min;
+    });
     const shuffled = _shuffle(playable, rng);
 
     /* ══ PASO 4: Elegir 3 variadas (máx 1 por familia) ══ */
@@ -777,7 +800,200 @@ const Restrictions = (() => {
       if (!chosen.includes(r)) chosen.push(r);
     }
 
-    return [...clubRestrictions, ...chosen.slice(0, 3)];
+    let result = [...clubRestrictions, ...chosen.slice(0, 3)];
+
+    /* ══ PASO 5: Eliminar redundancias (siempre sustituyendo, nunca eliminando) ══ */
+    result = _removeRedundancies(result, shuffled, db);
+
+    /* ══ PASO 6: Garantizar que ≥1 jugador cumple las 5 restricciones a la vez ══ */
+    /* Solo el 70% de las veces — el 30% restante puede no tener solución exacta */
+    if (rng() < 0.7) {
+      result = _ensureSolution(result, shuffled, db);
+    }
+
+    return result;
+  }
+
+  /* ────────── Detecta si rA hace redundante/imposible a rB ────────── */
+  function _isRedundant(rA, rB) {
+    /* Club de una liga concreta → la restricción de esa liga es redundante
+       Ej: "Ha jugado en Tottenham" implica "Ha jugado en Premier League"  */
+    if (rA.type === 'club' && rB.type === 'league') {
+      const clubObj = CLUBS_LIST.find(c => c.tmName === rA.value);
+      if (clubObj && clubObj.league === rB.value) return true;
+    }
+    /* Club de una región concreta → la restricción de esa región es redundante
+       Ej: "Ha jugado en Boca Juniors" implica "Ha jugado en Sudamérica"   */
+    if (rA.type === 'club' && rB.type === 'region') {
+      const clubObj = CLUBS_LIST.find(c => c.tmName === rA.value);
+      if (clubObj && clubObj.region === rB.value) return true;
+    }
+    /* Trofeo específico → trophy_any que lo incluye es redundante
+       Ej: "Ganador Champions" implica "Ganador título continental"        */
+    if (rA.type === 'trophy' && rB.type === 'trophy_any') {
+      if ((rB.value || []).includes(rA.value)) return true;
+    }
+    /* trophy_any → trofeo específico que ya está cubierto (sentido inverso) */
+    if (rA.type === 'trophy_any' && rB.type === 'trophy') {
+      if ((rA.value || []).includes(rB.value)) return true;
+    }
+    /* Nacionalidad vs continente:
+       - Si la nat NO está en el continente → imposible (incompatible)
+       - Si la nat SÍ está en el continente → el continente es redundante
+         Ej: "Alemán" implica "Europeo", por lo que "Europeo" sobra */
+    if (rA.type === 'nationality' && rB.type === 'continent') {
+      return true; /* siempre: o incompatible, o redundante — en cualquier caso rB sobra */
+    }
+    if (rA.type === 'continent' && rB.type === 'nationality') {
+      return true; /* siempre: rA (continente) queda cubierto/descartado por rB (nat) */
+    }
+    /* caps_ge(N) hace redundante a caps_ge(M) si N > M (ej: ≥50 implica ≥1) */
+    if (rA.type === 'caps_ge' && rB.type === 'caps_ge' && rA.value > rB.value) return true;
+    /* caps_0 y caps_ge(≥1) son incompatibles entre sí */
+    if (rA.type === 'caps_0' && rB.type === 'caps_ge') return true;
+    if (rA.type === 'caps_ge' && rA.value >= 1 && rB.type === 'caps_0') return true;
+    /* caps_le(N) hace redundante a caps_le(M) si N < M (ej: ≤30 implica ≤50) */
+    if (rA.type === 'caps_le' && rB.type === 'caps_le' && rA.value < rB.value) return true;
+
+    /* Portero incompatible con trofeos de goleador */
+    const SCORER_TROPHIES = new Set([
+      'Pichichi La Liga','Bota de Oro Premier League','Capocannoniere Serie A',
+      'Maximo Goleador Bundesliga','Maximo Goleador Ligue 1',
+      'Bota de Oro Mundial','Bota de Oro Europea',
+    ]);
+    if (rA.type === 'position_gk' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
+    if (rB.type === 'position_gk' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
+
+    /* Sin internacionalidades (caps_0) es incompatible con trofeos de selección nacional */
+    const NATIONAL_TROPHIES = new Set(['Eurocopa','Mundial','Copa America']);
+    if (rA.type === 'caps_0' && rB.type === 'trophy' && NATIONAL_TROPHIES.has(rB.value)) return true;
+    if (rB.type === 'caps_0' && rA.type === 'trophy' && NATIONAL_TROPHIES.has(rA.value)) return true;
+    if (rA.type === 'caps_0' && rB.type === 'trophy_any') {
+      const vals = rB.value || [];
+      if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
+    }
+    if (rB.type === 'caps_0' && rA.type === 'trophy_any') {
+      const vals = rA.value || [];
+      if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
+    }
+
+    return false;
+  }
+
+  /* ────────── Sustituye restricciones redundantes por otras del pool ────────── */
+  function _removeRedundancies(restrictions, shuffledPool, db) {
+    let result = [...restrictions];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      outer: for (let i = 0; i < result.length; i++) {
+        for (let j = 0; j < result.length; j++) {
+          if (i === j) continue;
+          if (_isRedundant(result[i], result[j])) {
+            /* result[j] es redundante respecto a result[i] — buscar sustituto */
+            const usedFamilies = new Set(
+              result.filter((_, k) => k !== j).map(r => r.family || r.type)
+            );
+            const replacement = shuffledPool.find(r =>
+              !result.includes(r) &&
+              !usedFamilies.has(r.family || r.type) &&
+              /* el sustituto no debe ser redundante con ninguna restricción que quede */
+              !result.some((existing, k) => k !== j && (_isRedundant(existing, r) || _isRedundant(r, existing))) &&
+              _matching(r, db) >= 2
+            );
+            if (replacement) {
+              result[j] = replacement;
+              changed = true;
+              break outer;
+            }
+            /* Si no hay sustituto disponible sin solapar familias, intentar
+               cualquier candidato aunque repita familia (menos malo que dejar redundancia) */
+            const relaxed = shuffledPool.find(r =>
+              !result.includes(r) &&
+              !result.some((existing, k) => k !== j && (_isRedundant(existing, r) || _isRedundant(r, existing))) &&
+              _matching(r, db) >= 2
+            );
+            if (relaxed) {
+              result[j] = relaxed;
+              changed = true;
+              break outer;
+            }
+            /* Sin candidatos en absoluto: dejar como está y salir del bucle
+               (no se elimina — se mantienen las 5) */
+            break outer;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  /* ────────── Garantiza que ≥1 jugador cumple todas las restricciones ────────── */
+  function _ensureSolution(restrictions, shuffledPool, db) {
+    const hasSolution = (rs) => db.some(p => rs.every(r => validate(p, r)));
+    if (hasSolution(restrictions)) return restrictions;
+
+    const result = [...restrictions];
+    /* Intentar sustituir restricciones no-club de una en una */
+    const swappableIdx = result.map((_, i) => i).filter(i => result[i].type !== 'club');
+
+    for (const idx of swappableIdx) {
+      const original = result[idx];
+      for (const candidate of shuffledPool) {
+        if (result.includes(candidate)) continue;
+        /* Evitar redundancias también con el candidato nuevo */
+        const wouldBeRedundant = result.some((r, i) =>
+          i !== idx && (_isRedundant(r, candidate) || _isRedundant(candidate, r))
+        );
+        if (wouldBeRedundant) continue;
+        result[idx] = candidate;
+        if (hasSolution(result)) return result;
+      }
+      /* Ningún candidato funcionó en esta posición — restaurar */
+      result[idx] = original;
+    }
+
+    /* Último recurso: sustituir también clubs si es necesario */
+    for (let idx = 0; idx < result.length; idx++) {
+      if (swappableIdx.includes(idx)) continue; // ya probados
+      const original = result[idx];
+      for (const candidate of shuffledPool) {
+        if (result.includes(candidate)) continue;
+        result[idx] = candidate;
+        if (hasSolution(result)) return result;
+      }
+      result[idx] = original;
+    }
+
+    /* ── Nuclear fallback: mantener los clubs y reconstruir las 3 no-club desde cero ── */
+    const clubs = result.filter(r => r.type === 'club');
+    const nonClubPool = shuffledPool.filter(r => r.type !== 'club');
+    const nuclear = [...clubs];
+    const usedFamilies = {};
+    for (const candidate of nonClubPool) {
+      if (nuclear.length >= 5) break;
+      const fam = candidate.family || candidate.type;
+      if ((usedFamilies[fam] || 0) >= 1) continue;
+      if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
+      nuclear.push(candidate);
+      if (hasSolution(nuclear)) {
+        usedFamilies[fam] = (usedFamilies[fam] || 0) + 1;
+      } else {
+        nuclear.pop();
+      }
+    }
+    /* Rellenar hasta 5 si quedaron pocas (sin restricción de familia) */
+    for (const candidate of nonClubPool) {
+      if (nuclear.length >= 5) break;
+      if (nuclear.includes(candidate)) continue;
+      if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
+      nuclear.push(candidate);
+      if (!hasSolution(nuclear)) nuclear.pop();
+    }
+    if (hasSolution(nuclear) && nuclear.length === 5) return nuclear;
+
+    /* Si absolutamente todo falla (no debería), devolver con clubs al menos correctos */
+    return nuclear.length >= 2 ? nuclear : result;
   }
 
   /* ────────── Validar un jugador contra una restricción ────────── */
@@ -815,7 +1031,9 @@ const Restrictions = (() => {
         const targetNorm = normalize(r.value);
         // Directo: el jugador tiene al famoso en su lista de compañeros
         if ((player.teammates || []).some(t => normalize(t) === targetNorm)) return true;
-        // Inverso: el famoso tiene al jugador en su lista (jugador no es clave en compañeros_principal)
+        // Inverso por ID: el famoso tiene el ID del jugador en su lista (más fiable)
+        if (_REVERSE_TEAMMATE_IDS[targetNorm]?.has(player.id)) return true;
+        // Inverso por nombre: fallback
         const playerNorm = normalize(player.name);
         return !!(_REVERSE_TEAMMATE[targetNorm]?.has(playerNorm));
       }
@@ -1040,18 +1258,24 @@ const Sync = (() => {
 
   async function nextRound(code, roundNum, roundData, updatedPlayers) {
     const {update}=FB();
-    await update(_ref(`${ROOMS_PATH}/${code}`),{
-      status:'playing', round:roundNum,
-      roundSeed:roundData.seed, restrictions:roundData.restrictions,
-      roundStartAt:Date.now(), submissions:{}, lockedPlayers:{}, doneCount:0, results:null,
-      pointsToWin: roundData.pointsToWin ?? 7,
-      roundSecs:   roundData.roundSecs   ?? 60,
-      isSuddenDeath:      roundData.isSuddenDeath      ?? false,
-      suddenDeathPlayers: roundData.suddenDeathPlayers ?? [],
-    });
+    const batch = {};
+    batch[`${ROOMS_PATH}/${code}/status`]             = 'playing';
+    batch[`${ROOMS_PATH}/${code}/round`]              = roundNum;
+    batch[`${ROOMS_PATH}/${code}/roundSeed`]          = roundData.seed;
+    batch[`${ROOMS_PATH}/${code}/restrictions`]       = roundData.restrictions;
+    batch[`${ROOMS_PATH}/${code}/roundStartAt`]       = Date.now();
+    batch[`${ROOMS_PATH}/${code}/submissions`]        = {};
+    batch[`${ROOMS_PATH}/${code}/lockedPlayers`]      = {};
+    batch[`${ROOMS_PATH}/${code}/doneCount`]          = 0;
+    batch[`${ROOMS_PATH}/${code}/results`]            = null;
+    batch[`${ROOMS_PATH}/${code}/pointsToWin`]        = roundData.pointsToWin ?? 7;
+    batch[`${ROOMS_PATH}/${code}/roundSecs`]          = roundData.roundSecs   ?? 60;
+    batch[`${ROOMS_PATH}/${code}/isSuddenDeath`]      = roundData.isSuddenDeath      ?? false;
+    batch[`${ROOMS_PATH}/${code}/suddenDeathPlayers`] = roundData.suddenDeathPlayers ?? [];
     for (const p of updatedPlayers) {
-      await update(_ref(`${ROOMS_PATH}/${code}/players/${p.id}`),{score:p.score});
+      batch[`${ROOMS_PATH}/${code}/players/${p.id}/score`] = p.score;
     }
+    await update(_ref('/'), batch);
   }
 
   async function submitAnswer(code, playerId, footballerName) {
@@ -1085,12 +1309,13 @@ const Sync = (() => {
 
     /* Escribir resultados y puntuaciones ANTES de cambiar el status.
        Asi cuando el listener reciba status='reveal', los resultados ya estan disponibles. */
-    const scores = {};
-    updatedPlayers.forEach(p=>{ scores[p.id]=p.score; });
-    await update(_ref(`${ROOMS_PATH}/${code}`),{results, revealStart:Date.now(), scores});
-    for (const p of updatedPlayers) {
-      await update(_ref(`${ROOMS_PATH}/${code}/players/${p.id}`),{score:p.score});
-    }
+    const batch = {};
+    batch[`${ROOMS_PATH}/${code}/results`]     = results;
+    batch[`${ROOMS_PATH}/${code}/revealStart`] = Date.now();
+    updatedPlayers.forEach(p=>{
+      batch[`${ROOMS_PATH}/${code}/players/${p.id}/score`] = p.score;
+    });
+    await update(_ref('/'), batch);
 
     /* Ahora si cambiar el status a 'reveal' — los clientes veran results ya disponibles */
     await runTransaction(_ref(`${ROOMS_PATH}/${code}/status`), current => {
@@ -1101,10 +1326,11 @@ const Sync = (() => {
 
   async function setFinished(code, winnerId, updatedPlayers) {
     const {update}=FB();
+    const batch = { [`${ROOMS_PATH}/${code}/status`]:'finished', [`${ROOMS_PATH}/${code}/winnerId`]:winnerId };
     for (const p of updatedPlayers) {
-      await update(_ref(`${ROOMS_PATH}/${code}/players/${p.id}`),{score:p.score});
+      batch[`${ROOMS_PATH}/${code}/players/${p.id}/score`] = p.score;
     }
-    await update(_ref(`${ROOMS_PATH}/${code}`),{status:'finished', winnerId});
+    await update(_ref('/'), batch);
   }
 
   async function resetToLobby(code, players, newHostId) {
@@ -1231,6 +1457,37 @@ const App = (() => {
 
   let _toastTimeout = null;
 
+  /* Cache de restricciones pregeneradas para la siguiente ronda */
+  let _nextRestrictionsCache = null;
+
+  /* ── Genera restricciones en un Web Worker (hilo separado).
+     Devuelve una Promise con el array de restricciones.
+     Si el navegador no soporta Worker, cae en sincrónico. ── */
+  function _generateAsync(seed, db) {
+    return new Promise((resolve, reject) => {
+      if (typeof Worker === 'undefined') {
+        try { resolve(Restrictions.generate(seed, db)); } catch(e) { reject(e); }
+        return;
+      }
+      const worker = new Worker('js/restrictions-worker.js');
+      worker.onmessage = ({ data }) => {
+        worker.terminate();
+        if (data.ok) resolve(data.restrictions);
+        else reject(new Error(data.error || 'Worker error'));
+      };
+      worker.onerror = (e) => {
+        worker.terminate();
+        /* Fallback sincrónico si el worker falla (p.ej. file:// sin CORS) */
+        try { resolve(Restrictions.generate(seed, db)); } catch(err) { reject(err); }
+      };
+      worker.postMessage({
+        seed,
+        db,
+        reverseTeammate:    _REVERSE_TEAMMATE,
+        reverseTeammateIds: _REVERSE_TEAMMATE_IDS,
+      });
+    });
+  }
 
   /* ════════════════════════════════════════
      CARGA DE DATOS — patrón Blackjack
@@ -1281,9 +1538,8 @@ const App = (() => {
      si todavía faltan datos, extiende la carga
      hasta que todo esté realmente preparado.
      ════════════════════════════════════════ */
-  function _showPreloadCountdown(onDone) {
+  function _showPreloadCountdown(seed, onDone) {
     const MIN_PRELOAD_SECONDS = 10;
-    /* Usar el overlay del HTML (ya existe con las clases de Cadena) o crearlo */
     let overlay = document.getElementById('countdown-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -1291,7 +1547,6 @@ const App = (() => {
       overlay.className = 'countdown-overlay hidden';
       document.body.appendChild(overlay);
     }
-    /* Siempre resetear el contenido y quitar hidden para que sea visible */
     overlay.innerHTML = `
       <div class="countdown-inner">
         <div class="countdown-label">CARGANDO JUGADORES</div>
@@ -1300,14 +1555,15 @@ const App = (() => {
     overlay.classList.remove('hidden');
 
     const numEl = document.getElementById('countdown-number');
-    let dataReady = false;
-    let countdownDone = false;
-    let doneCalled = false;
+    let dataReady        = false;
+    let countdownDone    = false;
+    let generationDone   = false;
+    let doneCalled       = false;
     let iv = null;
 
     function _tryDone() {
       if (doneCalled) return;
-      if (dataReady && countdownDone) {
+      if (dataReady && countdownDone && generationDone) {
         doneCalled = true;
         if (iv) clearInterval(iv);
         overlay.classList.add('hidden');
@@ -1315,7 +1571,7 @@ const App = (() => {
       }
     }
 
-    /* Cargar todos los chunks con reintentos (hasta 3) si alguno falla — igual que Cadena */
+    /* Cargar chunks */
     async function _ensureAllChunksLoaded() {
       for (let attempt = 0; attempt < 3; attempt++) {
         const results = await Promise.all(ALL_CHUNKS_LIST.map(async c => {
@@ -1344,12 +1600,27 @@ const App = (() => {
     }
     _ensureAllChunksLoaded();
 
-    /* También asegurarse de que PLAYERS_DB está listo */
+    /* Cargar datos y luego lanzar generación en el worker */
     _loadGameData()
-      .then(() => { dataReady = true; _tryDone(); })
-      .catch(() => { dataReady = true; _tryDone(); });
+      .then(db => {
+        dataReady = true;
+        _tryDone();
+        /* Lanzar generación en worker en cuanto tengamos datos — corre en paralelo con el countdown */
+        return _generateAsync(seed, db);
+      })
+      .then(restrictions => {
+        _nextRestrictionsCache = restrictions;
+        generationDone = true;
+        console.log('[App] Restricciones generadas en worker ✓');
+        _tryDone();
+      })
+      .catch(() => {
+        dataReady      = true;
+        generationDone = true;  /* fallback: _startLocalRound generará sincrónicamente */
+        _tryDone();
+      });
 
-    /* Cuenta atrás basada en Date.now() — inmune al drift de setInterval bajo carga de red */
+    /* Countdown basado en Date.now() — inmune al drift */
     const startAt = Date.now();
     iv = setInterval(() => {
       const elapsed   = Math.floor((Date.now() - startAt) / 1000);
@@ -1357,8 +1628,7 @@ const App = (() => {
 
       if (remaining > 0) {
         if (numEl) numEl.textContent = String(remaining);
-      } else if (!countdownDone && !dataReady) {
-        /* Datos aún no listos — mostrar ⏳ igual que Cadena, más claro que "+3" */
+      } else if (!countdownDone && !(dataReady && generationDone)) {
         if (numEl) numEl.textContent = '⏳';
       }
 
@@ -1366,7 +1636,7 @@ const App = (() => {
         countdownDone = true;
         _tryDone();
       }
-    }, 200); /* Tick cada 200ms para precisión visual sin coste notable */
+    }, 200);
   }
 
   /* ════════════════════════════════════════
@@ -1390,8 +1660,16 @@ const App = (() => {
 
       if (btn) { btn.disabled = false; btn.textContent = 'JUGAR SOLO ▶'; }
 
-      /* Mostrar cuenta atrás mínima mientras terminan de precargar todos los chunks */
-      _showPreloadCountdown(() => _startLocalRound());
+      /* Transicionar a screen-round primero (igual que Cadena), para que el countdown
+         aparezca sobre la pantalla de juego y no sobre el menú */
+      _showScreen('screen-round');
+      _renderTopbar(1, _players);
+      _renderSubmissions(_players, {});
+
+      /* Mostrar cuenta atrás mínima mientras terminan de precargar todos los chunks
+         y se generan las restricciones de la primera ronda en el worker */
+      const firstSeed = Date.now() + 1 * 7919;
+      _showPreloadCountdown(firstSeed, () => _startLocalRound());
 
     } catch(e) {
       console.error('[App] startLocalGame error:', e);
@@ -1410,19 +1688,42 @@ const App = (() => {
     }
   }
 
-  /* ── También necesitamos un _runCountdownThenLoad para la ronda online ── */
-  /* (el countdown ya no se usa para local, pero online lo sigue necesitando) */
+  /* ── Cuenta atrás visual para la primera ronda online ── */
   function _runCountdownThenLoad(onDone) {
-    /* Para online: simplemente ejecutar onDone cuando los datos estén listos */
-    /* Los datos ya fueron cargados en el startGame del host */
-    if (PLAYERS_DB.length > 0) { onDone(); return; }
-    /* Si por alguna razón no están, cargar y luego ejecutar */
-    _loadGameData()
-      .then(() => onDone())
-      .catch(e => {
-        console.error('[App] _runCountdownThenLoad error:', e);
-        showToast('❌ Error cargando datos para la ronda', 'error');
-      });
+    const ONLINE_COUNTDOWN_SECS = 10;
+    let overlay = document.getElementById('countdown-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'countdown-overlay';
+      overlay.className = 'countdown-overlay hidden';
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+      <div class="countdown-inner">
+        <div class="countdown-label">\u00a1EMPIEZA EN!</div>
+        <div id="countdown-number" class="countdown-number">${ONLINE_COUNTDOWN_SECS}</div>
+      </div>`;
+    overlay.classList.remove('hidden');
+    const numEl = document.getElementById('countdown-number');
+    const startAt = Date.now();
+    let doneCalled = false;
+    const iv = setInterval(() => {
+      const elapsed   = Math.floor((Date.now() - startAt) / 1000);
+      const remaining = Math.max(0, ONLINE_COUNTDOWN_SECS - elapsed);
+      if (numEl) numEl.textContent = remaining > 0 ? String(remaining) : '\u00a1YA!';
+      if (remaining <= 0 && !doneCalled) {
+        doneCalled = true;
+        clearInterval(iv);
+        overlay.classList.add('hidden');
+        if (PLAYERS_DB.length > 0) { onDone(); return; }
+        _loadGameData()
+          .then(() => onDone())
+          .catch(e => {
+            console.error('[App] _runCountdownThenLoad error:', e);
+            showToast('\u274c Error cargando datos para la ronda', 'error');
+          });
+      }
+    }, 200);
   }
   /* ════════════════════════════════════════
      INIT
@@ -1567,10 +1868,9 @@ const App = (() => {
       await _loadGameData();
       const seed         = Date.now();
       const restrictions = Restrictions.generate(seed, PLAYERS_DB);
-      /* Leer ajustes actuales de la sala */
-      const freshRoom = await Sync.getRoom(_roomCode);
-      if (freshRoom?.pointsToWin != null) _onlinePointsToWin = freshRoom.pointsToWin;
-      if (freshRoom?.roundSecs   != null) _onlineRoundSecs   = freshRoom.roundSecs;
+      /* Usar ajustes de _lastRoom (ya sincronizados por el listener) — sin round-trip extra */
+      if (_lastRoom?.pointsToWin != null) _onlinePointsToWin = _lastRoom.pointsToWin;
+      if (_lastRoom?.roundSecs   != null) _onlineRoundSecs   = _lastRoom.roundSecs;
       await Sync.startGame(_roomCode, {seed, restrictions, pointsToWin:_onlinePointsToWin, roundSecs:_onlineRoundSecs});
       _clearPublicLobbyTimer();
     } catch(e) {
@@ -1613,13 +1913,17 @@ const App = (() => {
 
   function _startLocalRound() {
     _localRound++;
-    _round        = _localRound;
-    _restrictions = Restrictions.generate(Date.now()+_localRound*7919, PLAYERS_DB);
+    _round = _localRound;
     _submitted=false; _mySubmission=null; _revealTriggered=false;
     _showScreen('screen-round');
     _renderTopbar(_localRound, _players);
     _renderSubmissions(_players, {});
     const secs = _isSuddenDeath ? SUDDEN_DEATH_SECS : (_localRoundSecs || ROUND_SECS);
+    /* Resetear display del timer inmediatamente para no mostrar el valor de la ronda anterior */
+    const _timerEl = document.getElementById('round-timer');
+    const _barEl   = document.getElementById('round-timer-bar');
+    if (_timerEl) { _timerEl.textContent = secs; _timerEl.classList.remove('urgent'); }
+    if (_barEl)   { _barEl.style.width = '100%';  _barEl.classList.remove('urgent'); }
     /* Banner muerte súbita local */
     let sdBanner = document.getElementById('sudden-death-banner');
     if (_isSuddenDeath) {
@@ -1637,11 +1941,42 @@ const App = (() => {
     if (pi) { pi.value=''; pi.disabled=true; _acClose(); }
     const sb=document.getElementById('submit-btn');
     if (sb) sb.disabled=true;
-    _animateRestrictions(_restrictions, () => {
-      if (pi) pi.disabled = false;
-      if (sb) sb.disabled = false;
-      _startTimer(Date.now(), secs);
-    });
+
+    /* Usar cache pregenerada si está disponible; si no, generar ahora.
+       En ambos casos el cálculo pesado queda fuera del hilo de pintura. */
+    const _doAnimate = (restrictions) => {
+      _restrictions = restrictions;
+      _nextRestrictionsCache = null;
+      _animateRestrictions(_restrictions, () => {
+        if (pi) pi.disabled = false;
+        if (sb) sb.disabled = false;
+        _startTimer(Date.now(), secs);
+      });
+    };
+
+    if (_nextRestrictionsCache) {
+      _doAnimate(_nextRestrictionsCache);
+    } else {
+      /* Sin cache: defer al siguiente frame para que la UI renderice primero */
+      setTimeout(() => {
+        _doAnimate(Restrictions.generate(Date.now() + _localRound * 7919, PLAYERS_DB));
+      }, 0);
+    }
+  }
+
+  /* Pregeneración silenciosa de la siguiente ronda.
+     Se llama desde la pantalla de resultados, cuando el usuario
+     está leyendo y el hilo principal tiene tiempo libre. */
+  function _preGenerateNextRestrictions() {
+    if (!PLAYERS_DB.length) return;
+    const nextRoundNum = _isLocal ? (_localRound + 1) : (_round + 1);
+    const seed = Date.now() + nextRoundNum * 7919;
+    _generateAsync(seed, PLAYERS_DB)
+      .then(restrictions => {
+        _nextRestrictionsCache = restrictions;
+        console.log('[App] Siguiente ronda pregenerada en worker ✓');
+      })
+      .catch(() => { _nextRestrictionsCache = null; });
   }
 
   /* ════════════════════════════════════════
@@ -1706,7 +2041,11 @@ const App = (() => {
         }
         break;
       case 'reveal':
-        if (_currentScreen()!=='screen-results') _showResultsScreen(room);
+        if (_currentScreen()!=='screen-results' || room.round !== _round) {
+          _round = room.round;
+          _restrictions = room.restrictions || _restrictions;
+          _showResultsScreen(room);
+        }
         break;
       case 'finished':
         _showFinishedScreen(room);
@@ -1862,12 +2201,22 @@ const App = (() => {
      RONDA ONLINE
      ════════════════════════════════════════ */
   function _startOnlineRound(room) {
-    if (room.round === 1) _runCountdownThenLoad(() => _doStartOnlineRound(room));
-    else _doStartOnlineRound(room);
+    if (room.round === 1) {
+      /* Transicionar a screen-round PRIMERO para que el overlay
+         aparezca sobre ella (igual que hace startLocalGame) */
+      _showScreen('screen-round');
+      _renderTopbar(room.round, _players);
+      _renderSubmissions(_players, {});
+      _runCountdownThenLoad(() => _doStartOnlineRound(room));
+    } else {
+      _doStartOnlineRound(room);
+    }
   }
 
   function _doStartOnlineRound(room) {
-    _showScreen('screen-round');
+    /* En ronda 1 la pantalla ya fue mostrada antes del countdown;
+       en rondas posteriores la mostramos aquí */
+    if (room.round > 1) _showScreen('screen-round');
     _renderTopbar(room.round, _players);
     _renderSubmissions(_players, {});
     const secs = _isSuddenDeath ? SUDDEN_DEATH_SECS : (_onlineRoundSecs || ROUND_SECS);
@@ -1890,6 +2239,11 @@ const App = (() => {
         if (rg) rg.parentNode.insertBefore(sdBanner, rg);
       }
     } else if (sdBanner) { sdBanner.remove(); }
+    /* Limpiar grid inmediatamente para que no se vean las restricciones de la ronda anterior
+       mientras arranca la animación de las nuevas */
+    const grid = document.getElementById('restrictions-grid');
+    if (grid) grid.innerHTML = '';
+
     /* El timer y el input arrancan DESPUÉS de que se muestran todas las restricciones.
        Usamos Date.now() como referencia para que todos los jugadores tengan
        el mismo tiempo disponible independientemente del lag de red. */
@@ -2142,6 +2496,9 @@ const App = (() => {
     _showScreen('screen-results');
     const nxt=document.getElementById('btn-next-round');
     if (nxt) nxt.classList.remove('hidden');
+    /* Aprovechar que el usuario está leyendo resultados para precalcular
+       las restricciones de la siguiente ronda en background */
+    _preGenerateNextRestrictions();
   }
 
   /* ════════════════════════════════════════
@@ -2166,6 +2523,10 @@ const App = (() => {
     _renderResultsUI(room.round, room.restrictions||_restrictions, results, _players);
     _showScreen('screen-results');
 
+    /* Aprovechar que el host está leyendo los resultados para precalcular
+       las restricciones de la siguiente ronda en background (igual que en local) */
+    if (_isHost) _preGenerateNextRestrictions();
+
     /* Banner muerte súbita en pantalla de resultados */
     const existingBanner = document.getElementById('sd-results-banner');
     if (_isSuddenDeath && !existingBanner) {
@@ -2178,7 +2539,10 @@ const App = (() => {
     } else if (!_isSuddenDeath && existingBanner) { existingBanner.remove(); }
 
     const nxt=document.getElementById('btn-next-round');
-    if (nxt) nxt.classList.toggle('hidden', !_isHost);
+    if (nxt) {
+      nxt.classList.toggle('hidden', !_isHost);
+      if (_isHost) nxt.disabled = false;
+    }
   }
 
   /* ════════════════════════════════════════
@@ -2206,27 +2570,41 @@ const App = (() => {
       _startLocalRound(); return;
     }
     if (!_isHost||!_roomCode) return;
+
+    /* Guard: evitar doble llamada mientras se procesa la petición a Firebase */
+    const nxtBtn = document.getElementById('btn-next-round');
+    if (nxtBtn) {
+      if (nxtBtn.disabled) return;
+      nxtBtn.disabled = true;
+      nxtBtn.classList.add('hidden');
+    }
+    const _reenableBtn = () => {
+      if (nxtBtn) { nxtBtn.disabled = false; nxtBtn.classList.remove('hidden'); }
+    };
     const ptw = _onlinePointsToWin || POINTS_WIN;
 
-    /* Detectar muerte súbita */
+    /* Muerte súbita online */
     if (!_isSuddenDeath) {
       const reached = _players.filter(p=>p.score>=ptw);
       if (reached.length >= 2) {
-        /* Empate → iniciar muerte súbita */
         _isSuddenDeath = true;
         _suddenDeathPlayers = reached.map(p=>p.id);
+        showToast('💀 ¡MUERTE SÚBITA! Rondas express de 20 segundos', 'error');
         const seed = Date.now()+(_round*3137);
-        const restrictions = Restrictions.generate(seed, PLAYERS_DB);
-        try {
-          await Sync.nextRound(_roomCode, _round+1, {
-            seed, restrictions,
-            pointsToWin: _onlinePointsToWin, roundSecs: _onlineRoundSecs,
-            isSuddenDeath: true, suddenDeathPlayers: _suddenDeathPlayers,
-          }, _players);
-        } catch(e) { showToast('Error al iniciar muerte súbita', 'error'); }
+        /* La muerte súbita siempre genera nuevas restricciones (seed diferente al cache) */
+        _nextRestrictionsCache = null;
+        _generateAsync(seed, PLAYERS_DB).then(async restrictions => {
+          try {
+            await Sync.nextRound(_roomCode, _round+1, {
+              seed, restrictions,
+              pointsToWin: _onlinePointsToWin, roundSecs: _onlineRoundSecs,
+              isSuddenDeath: true, suddenDeathPlayers: _suddenDeathPlayers,
+            }, _players);
+          } catch(e) { showToast('Error al iniciar muerte súbita', 'error'); _reenableBtn(); }
+        }).catch(() => { showToast('Error al generar restricciones', 'error'); _reenableBtn(); });
         return;
       } else if (reached.length === 1) {
-        try { await Sync.setFinished(_roomCode, reached[0].id, _players); } catch(e) {}
+        try { await Sync.setFinished(_roomCode, reached[0].id, _players); } catch(e) { _reenableBtn(); }
         return;
       }
     } else {
@@ -2235,14 +2613,22 @@ const App = (() => {
     }
 
     const seed = Date.now()+(_round*3137);
-    const restrictions = Restrictions.generate(seed, PLAYERS_DB);
-    try {
-      await Sync.nextRound(_roomCode, _round+1, {
-        seed, restrictions,
-        pointsToWin: _onlinePointsToWin, roundSecs: _onlineRoundSecs,
-        isSuddenDeath: _isSuddenDeath, suddenDeathPlayers: _suddenDeathPlayers,
-      }, _players);
-    } catch(e) { showToast('Error al iniciar la siguiente ronda', 'error'); }
+    /* Usar cache pregenerada si está disponible → sin espera */
+    const cached = _nextRestrictionsCache;
+    _nextRestrictionsCache = null;
+    const restrictionsPromise = cached
+      ? Promise.resolve(cached)
+      : _generateAsync(seed, PLAYERS_DB);
+
+    restrictionsPromise.then(async restrictions => {
+      try {
+        await Sync.nextRound(_roomCode, _round+1, {
+          seed, restrictions,
+          pointsToWin: _onlinePointsToWin, roundSecs: _onlineRoundSecs,
+          isSuddenDeath: _isSuddenDeath, suddenDeathPlayers: _suddenDeathPlayers,
+        }, _players);
+      } catch(e) { showToast('Error al iniciar la siguiente ronda', 'error'); _reenableBtn(); }
+    }).catch(() => { showToast('Error al generar restricciones', 'error'); _reenableBtn(); });
   }
 
   /* ════════════════════════════════════════
@@ -2289,10 +2675,10 @@ const App = (() => {
       if (footer) footer.insertBefore(cdEl, footer.firstChild);
     }
     if (nxt) nxt.style.display = 'none';
-    let remaining = secs;
-    cdEl.textContent = '🏆 GANADOR EN ' + remaining + 's…';
+    const endAt = Date.now() + secs * 1000;
+    cdEl.textContent = '🏆 GANADOR EN ' + secs + 's…';
     _finishedDelayTimer = setInterval(() => {
-      remaining--;
+      const remaining = Math.ceil((endAt - Date.now()) / 1000);
       if (remaining <= 0) {
         clearInterval(_finishedDelayTimer);
         _finishedDelayTimer = null;
@@ -2303,7 +2689,7 @@ const App = (() => {
       } else {
         cdEl.textContent = '🏆 GANADOR EN ' + remaining + 's…';
       }
-    }, 1000);
+    }, 200);
   }
 
   function _showFinishedScreen(room) {
@@ -2352,6 +2738,7 @@ const App = (() => {
     if (_isLocal) {
       _players=[{..._players[0],score:0}]; _localRound=0;
       _isSuddenDeath=false; _suddenDeathPlayers=[];
+      _nextRestrictionsCache=null;
       _acClose(); _startLocalRound(); return;
     }
     if (!_roomCode||!_lastRoom?.players) { showMenu(); return; }
@@ -2390,14 +2777,17 @@ const App = (() => {
      ════════════════════════════════════════ */
   async function _computeResults(submissions, restrictions, players) {
     const results = {};
-    for (const p of players) {
+    /* Lanzar todos los findPlayerAsync en paralelo en lugar de uno a uno */
+    const lookups = await Promise.all(players.map(p => {
       const sub = submissions[p.id];
-      if (!sub||!sub.playerName) {
+      if (!sub || !sub.playerName) return Promise.resolve({ p, sub: null, player: null });
+      return findPlayerAsync(sub.playerName).then(player => ({ p, sub, player })).catch(() => ({ p, sub, player: null }));
+    }));
+    for (const { p, sub, player } of lookups) {
+      if (!sub || !sub.playerName) {
         results[p.id]={playerName:null,valid:false,matchCount:0,matches:restrictions.map(()=>false),footballer:null,points:0,isWinner:false};
         continue;
       }
-      /* Buscar jugador: primero PLAYERS_DB, luego chunks (como Cadena) */
-      const player = await findPlayerAsync(sub.playerName);
       if (!player) {
         results[p.id]={playerName:sub.playerName,valid:false,matchCount:0,matches:restrictions.map(()=>false),footballer:null,points:0,isWinner:false};
         continue;
@@ -2657,10 +3047,12 @@ const App = (() => {
         const d = dataList[i];
         return {
           ...t,
-          teams: d?.teams || [],
-          apps:  d?.apps  || 0,
-          pos:   d?.p     || '',
-          nat:   d?.nat   || '',
+          teams:     d?.teams || [],
+          apps:      d?.apps  || 0,
+          pos:       d?.p     || '',
+          nat:       d?.nat   || '',
+          birthYear: d?.b ? parseInt(d.b, 10) : null,
+          h:         d?.h ? Math.round(parseFloat(d.h)) : 0,
         };
       });
 
@@ -2673,26 +3065,36 @@ const App = (() => {
         return (b.apps || 0) - (a.apps || 0);
       });
 
-      /* ── Eliminar duplicados de nombre normalizado post-sort ──
-         Quedarse con el de mejor posición (que tiene mejores datos) */
-      const seenNorms = new Set();
+      /* ── Deduplicar por huella única (nombre + año nac + nación + altura redondeada) ──
+         Elimina el mismo jugador indexado dos veces con IDs distintos pero datos idénticos
+         (ej. dos Fernando Llorente con mismo año/nación/altura → uno solo).
+         Si la huella es diferente (mismo nombre pero distintos datos reales) ambos pasan. */
+      const seenFingerprints = new Set();
       const deduped = [];
       for (const item of withData) {
-        const key = _acNorm(item.name);
-        if (seenNorms.has(key)) continue;
-        seenNorms.add(key);
+        const fp = `${_acNorm(item.name)}|${item.birthYear||''}|${item.nat||''}|${item.h||0}`;
+        if (seenFingerprints.has(fp)) continue;
+        seenFingerprints.add(fp);
         deduped.push(item);
         if (deduped.length >= 8) break;
       }
 
-      /* ── Desambiguación para nombres iguales ── */
+      /* ── Desambiguación en cascada para nombres iguales ──
+         Posición → Nacionalidad → Año de nacimiento (igual que Cadena) */
       const POS_LABEL = { GK:'Portero', DEF:'Defensa', MID:'Centrocampista', FWD:'Delantero' };
       const finalItems = deduped.map((item, _, arr) => {
         const sameName = arr.filter(o => _acNorm(o.name) === _acNorm(item.name));
         const tags = [];
         const posLabel = POS_LABEL[item.pos] || item.pos || '';
         if (posLabel) tags.push(posLabel);
-        if (sameName.length > 1 && item.nat) tags.push(item.nat);
+        if (sameName.length > 1) {
+          const samePos = sameName.filter(o => o.pos === item.pos);
+          if (samePos.length > 1 && item.nat) {
+            tags.push(item.nat);
+            const sameNat = samePos.filter(o => o.nat === item.nat);
+            if (sameNat.length > 1 && item.birthYear) tags.push('n. ' + item.birthYear);
+          }
+        }
         return { ...item, disambig: tags.join(' · ') };
       });
 
@@ -2786,8 +3188,11 @@ const App = (() => {
     _lastRoom=null;
     _isSuddenDeath=false; _suddenDeathPlayers=[];
     _onlinePointsToWin=7; _onlineRoundSecs=60;
+    _nextRestrictionsCache=null;
     _stopTimer();
     _acClose();
+    if (_finishedDelayTimer) { clearInterval(_finishedDelayTimer); _finishedDelayTimer=null; }
+    _pendingFinishedRoom=null;
   }
 
   function _saveSession() {

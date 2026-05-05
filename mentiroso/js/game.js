@@ -1,18 +1,12 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, get, onValue, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+'use strict';
 
-const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM',
-  authDomain: 'futbolhub-9d0a4.firebaseapp.com',
-  databaseURL: 'https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app',
-  projectId: 'futbolhub-9d0a4',
-  storageBucket: 'futbolhub-9d0a4.firebasestorage.app',
-  messagingSenderId: '179751773212',
-  appId: '1:179751773212:web:9acfe3d5b8c344c51a2bd9'
-};
-
-const firebaseApp = initializeApp(FIREBASE_CONFIG);
-const db = getDatabase(firebaseApp);
+const FB = window._FB || {};
+const db = FB.db;
+const ref = FB.ref;
+const set = FB.set;
+const get = FB.get;
+const onValue = FB.onValue;
+const runTransaction = FB.runTransaction;
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -79,7 +73,7 @@ const HAND_CONFIG = {
 const CENTER_ATTRS = ['flag', 'position', 'club'];
 const POINTS_LIMIT = { min: 1, max: 9, value: 3 };
 const NUMERIC_THRESHOLD_CACHE = new Map();
-const ROOM_ROOT = 'mentiroso/rooms';
+const ROOM_ROOT = 'restricciones/rooms';
 
 const Me = {
   clientId: genId(),
@@ -93,6 +87,53 @@ let unsubscribeRoom = null;
 
 function roomRef(code) {
   return ref(db, `${ROOM_ROOT}/${code}`);
+}
+
+function hasFirebase() {
+  return Boolean(db && ref && set && get && onValue && runTransaction);
+}
+
+function serializePlayers(state) {
+  const playersMap = {};
+  state.players.forEach((player) => {
+    playersMap[player.id] = {
+      name: player.name,
+      isHost: Boolean(player.isHost),
+      score: Number(player.score || 0),
+      lastGuess: player.lastGuess ?? null,
+      cardsCount: Number(player.cardsCount || 0)
+    };
+  });
+  return playersMap;
+}
+
+function normalizePlayers(rawState) {
+  if (Array.isArray(rawState.players)) return rawState.players;
+  const playersMap = rawState.players || {};
+  const order = Array.isArray(rawState.playerOrder) ? rawState.playerOrder : Object.keys(playersMap);
+  return order
+    .filter((id) => playersMap[id])
+    .map((id) => ({
+      id,
+      name: playersMap[id].name,
+      isHost: Boolean(playersMap[id].isHost),
+      score: Number(playersMap[id].score || 0),
+      lastGuess: playersMap[id].lastGuess ?? null,
+      cardsCount: Number(playersMap[id].cardsCount || 0)
+    }));
+}
+
+function serializeStateForFirebase(state) {
+  const next = deepClone(state);
+  next.playerOrder = next.players.map((player) => player.id);
+  next.players = serializePlayers(next);
+  return next;
+}
+
+function normalizeStateFromFirebase(rawState) {
+  const next = deepClone(rawState);
+  next.players = normalizePlayers(rawState);
+  return next;
 }
 
 function showScreen(selector) {
@@ -238,6 +279,7 @@ function initRound(state, roundNumber, startIdx) {
   state.reveal = null;
   state.pendingWinner = null;
   state.phase = 'playing';
+  state.status = 'playing';
 }
 
 function getHandConfig(playerCount) {
@@ -309,6 +351,7 @@ function resolveRound(state) {
     cards: revealCards
   };
   state.phase = 'reveal';
+  state.status = 'reveal';
   state.pendingWinner = maybeResolveWinner(state);
 }
 
@@ -349,6 +392,7 @@ function continueAfterReveal(state) {
   if (state.phase !== 'reveal') return;
   if (state.pendingWinner) {
     state.phase = 'gameover';
+    state.status = 'finished';
     state.winner = { ...state.pendingWinner };
     return;
   }
@@ -362,6 +406,9 @@ function removePlayerFromState(state, clientId) {
   if (idx < 0) return;
 
   state.players.splice(idx, 1);
+  if (Array.isArray(state.playerOrder)) {
+    state.playerOrder = state.playerOrder.filter((id) => id !== clientId);
+  }
   delete state.hands[clientId];
 
   if (state.players.length === 0) {
@@ -382,6 +429,7 @@ function removePlayerFromState(state, clientId) {
     delete state.round.guesses[clientId];
     if (state.players.length < 2) {
       state.phase = 'gameover';
+      state.status = 'finished';
       state.winner = { id: state.players[0].id, name: state.players[0].name, score: state.players[0].score };
       return;
     }
@@ -404,19 +452,23 @@ function removePlayerFromState(state, clientId) {
 
 function createInitialState(code, mode, name) {
   return {
+    game: 'mentiroso',
     code,
+    status: 'waiting',
     phase: 'lobby',
     mode,
     pointsToWin: normalizePointsToWin(POINTS_LIMIT.value),
     hostId: Me.clientId,
-    players: [{
-      id: Me.clientId,
-      name,
-      isHost: true,
-      score: 0,
-      lastGuess: null,
-      cardsCount: 0
-    }],
+    playerOrder: [Me.clientId],
+    players: {
+      [Me.clientId]: {
+        name,
+        isHost: true,
+        score: 0,
+        lastGuess: null,
+        cardsCount: 0
+      }
+    },
     hands: {},
     centerCards: [],
     round: null,
@@ -428,7 +480,7 @@ function createInitialState(code, mode, name) {
 }
 
 function applyIncomingState(nextState) {
-  State = deepClone(nextState);
+  State = normalizeStateFromFirebase(nextState);
   if (!State) {
     render();
     return;
@@ -439,6 +491,10 @@ function applyIncomingState(nextState) {
     player.cardsCount = Number(player.cardsCount || 0);
     if (player.lastGuess === undefined) player.lastGuess = null;
   });
+  if (!State.phase && State.status === 'waiting') State.phase = 'lobby';
+  if (!State.phase && State.status === 'playing') State.phase = 'playing';
+  if (!State.phase && State.status === 'reveal') State.phase = 'reveal';
+  if (!State.phase && State.status === 'finished') State.phase = 'gameover';
   State.pointsToWin = normalizePointsToWin(State.pointsToWin);
   Me.isHost = State.hostId === Me.clientId;
   render();
@@ -476,21 +532,30 @@ function clearLocalRoom() {
 }
 
 async function mutateRoom(code, mutator) {
+  if (!hasFirebase()) {
+    return { ok: false, reason: 'Firebase no esta disponible.' };
+  }
   let failureReason = null;
-  const result = await runTransaction(roomRef(code), (current) => {
-    if (!current) {
-      failureReason = 'La sala no existe.';
-      return;
-    }
-    const next = deepClone(current);
-    const outcome = mutator(next);
-    if (outcome && outcome.ok === false) {
-      failureReason = outcome.reason || 'No se pudo aplicar el cambio.';
-      return;
-    }
-    stampState(next);
-    return next;
-  }, { applyLocally: false });
+  let result;
+  try {
+    result = await runTransaction(roomRef(code), (current) => {
+      if (!current) {
+        failureReason = 'La sala no existe.';
+        return;
+      }
+      const next = normalizeStateFromFirebase(current);
+      const outcome = mutator(next);
+      if (outcome && outcome.ok === false) {
+        failureReason = outcome.reason || 'No se pudo aplicar el cambio.';
+        return;
+      }
+      stampState(next);
+      return serializeStateForFirebase(next);
+    }, { applyLocally: false });
+  } catch (error) {
+    console.warn('Mentiroso mutateRoom error', error);
+    return { ok: false, reason: 'Error al guardar la sala.' };
+  }
 
   if (!result.committed) {
     return { ok: false, reason: failureReason || 'No se pudo guardar el cambio.' };
@@ -499,6 +564,10 @@ async function mutateRoom(code, mutator) {
 }
 
 async function createRoomOnline() {
+  if (!hasFirebase()) {
+    toast('Firebase no se ha cargado bien.', 'error');
+    return;
+  }
   const name = ($('#create-name').value || '').trim();
   if (!name) {
     toast('Escribe tu nombre', 'error');
@@ -512,12 +581,18 @@ async function createRoomOnline() {
   let code = '';
   let created = false;
 
-  for (let attempt = 0; attempt < 12 && !created; attempt++) {
-    code = genCode();
-    const existing = await get(roomRef(code));
-    if (existing.exists()) continue;
-    await set(roomRef(code), createInitialState(code, mode, Me.name));
-    created = true;
+  try {
+    for (let attempt = 0; attempt < 12 && !created; attempt++) {
+      code = genCode();
+      const existing = await get(roomRef(code));
+      if (existing.exists()) continue;
+      await set(roomRef(code), createInitialState(code, mode, Me.name));
+      created = true;
+    }
+  } catch (error) {
+    console.warn('Mentiroso createRoomOnline error', error);
+    toast(error?.message || 'No se pudo crear la sala.', 'error');
+    return;
   }
 
   if (!created) {
@@ -530,6 +605,10 @@ async function createRoomOnline() {
 }
 
 async function joinRoomOnline() {
+  if (!hasFirebase()) {
+    toast('Firebase no se ha cargado bien.', 'error');
+    return;
+  }
   const name = ($('#join-name').value || '').trim();
   const code = ($('#join-code').value || '').trim().toUpperCase();
 
@@ -542,9 +621,22 @@ async function joinRoomOnline() {
     return;
   }
 
-  const existing = await get(roomRef(code));
+  let existing;
+  try {
+    existing = await get(roomRef(code));
+  } catch (error) {
+    console.warn('Mentiroso joinRoomOnline error', error);
+    $('#join-error').textContent = 'Error conectando con la sala.';
+    $('#join-error').classList.remove('hidden');
+    return;
+  }
   if (!existing.exists()) {
     $('#join-error').textContent = 'Sala no encontrada.';
+    $('#join-error').classList.remove('hidden');
+    return;
+  }
+  if (existing.val()?.game !== 'mentiroso') {
+    $('#join-error').textContent = 'Ese codigo pertenece a otro juego.';
     $('#join-error').classList.remove('hidden');
     return;
   }
@@ -556,6 +648,7 @@ async function joinRoomOnline() {
     if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya ha empezado.' };
     if (state.players.length >= 8) return { ok: false, reason: 'Sala llena.' };
     if (state.players.some((player) => player.id === Me.clientId)) return { ok: false, reason: 'Ya estas dentro.' };
+    if (!Array.isArray(state.playerOrder)) state.playerOrder = state.players.map((player) => player.id);
     state.players.push({
       id: Me.clientId,
       name: Me.name,
@@ -564,6 +657,7 @@ async function joinRoomOnline() {
       lastGuess: null,
       cardsCount: 0
     });
+    state.playerOrder.push(Me.clientId);
     return { ok: true };
   });
 
@@ -637,7 +731,9 @@ async function leaveRoomOnline() {
     if (next.players.length === 0) return null;
     stampState(next);
     return next;
-  }, { applyLocally: false }).catch(() => {});
+  }, { applyLocally: false }).catch((error) => {
+    console.warn('Mentiroso leaveRoomOnline error', error);
+  });
 
   clearLocalRoom();
 }
@@ -1033,6 +1129,9 @@ window.addEventListener('beforeunload', () => {
 });
 
 function boot() {
+  if (!hasFirebase()) {
+    console.warn('Mentiroso Firebase bootstrap missing', window._FB);
+  }
   if (!window.PLAYERS || !Array.isArray(window.PLAYERS) || window.PLAYERS.length < 3) {
     toast('Faltan datos de jugadores', 'error');
   }

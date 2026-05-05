@@ -477,10 +477,24 @@ function renderFormation() {
 
     // 3. Renderizar en orden ascendente de grupo
     // column-reverse del contenedor invierte la visual: grupo 1 (GK) queda abajo, grupo 5 (delanteros) arriba
+    const LEFT_POS  = new Set(['LM','LW','LWB','ML']);
+    const RIGHT_POS = new Set(['RM','RW','RWB','MR']);
+
     [...groups.keys()].sort((a, b) => a - b).forEach(group => {
         const lineDiv = document.createElement('div');
         lineDiv.className = 'line';
-        groups.get(group).forEach(({ player, globalIndex }) => {
+
+        const players = groups.get(group);
+
+        // Ordenar: izquierdas primero, derechas al final, centro en medio
+        const left   = players.filter(({ player }) => LEFT_POS.has((player.position || '').toUpperCase().trim()));
+        const right  = players.filter(({ player }) => RIGHT_POS.has((player.position || '').toUpperCase().trim()));
+        const center = players.filter(({ player }) => {
+            const pos = (player.position || '').toUpperCase().trim();
+            return !LEFT_POS.has(pos) && !RIGHT_POS.has(pos);
+        });
+
+        [...left, ...center, ...right].forEach(({ player, globalIndex }) => {
             lineDiv.appendChild(buildPlayerCard(player, globalIndex));
         });
         formationContainer.appendChild(lineDiv);
@@ -611,7 +625,11 @@ function getKnownName(fullName) {
         'ADRIAN LOPEZ': 'ADRIAN',
         'JUANFRAN TORRES': 'JUANFRAN', 'JUAN FRANCISCO TORRES': 'JUANFRAN',
         'ABDE EZZALZOULI': 'ABDE',
-        'GIORGI MAMARDASHVILI': 'MAMARDASHVILI', 'MAMARDASHVILI': 'MAMARDASHVILI'
+        'GIORGI MAMARDASHVILI': 'MAMARDASHVILI', 'MAMARDASHVILI': 'MAMARDASHVILI',
+        'GIOVANNI LO CELSO': 'LO CELSO', 'LO CELSO': 'LO CELSO',
+        'DAVID LUIZ': 'DAVID LUIZ', 'DAVID LUIZ MOREIRA MARINHO': 'DAVID LUIZ',
+        'STEPHAN EL SHAARAWY': 'EL SHAARAWY', 'EL SHAARAWY': 'EL SHAARAWY',
+        'RAUL GONZALEZ': 'RAUL', 'RAUL GONZALEZ BLANCO': 'RAUL'
     };
     const nameNorm = normalizeText(name);
     if (exceptions[nameNorm]) return exceptions[nameNorm];

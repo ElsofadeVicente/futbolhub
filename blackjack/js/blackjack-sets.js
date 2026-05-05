@@ -189,6 +189,15 @@ const BlackjackSets = (() => {
     if (selected.length < SET_SIZE) return null;
     selected = selected.slice(0, SET_SIZE);
 
+    // Dedup defensivo: elimina IDs repetidos que pudieran colarse por edge cases del pool
+    const seenIds = new Set();
+    selected = selected.filter(p => {
+      if (seenIds.has(p.id)) { console.warn('[BlackjackSets] Duplicado eliminado:', p.id); return false; }
+      seenIds.add(p.id);
+      return true;
+    });
+    if (selected.length < SET_SIZE) return null;
+
     const totalSum = selected.reduce((s, p) => s + p._value, 0);
 
     // Invariante 1: suma total >= 2× objetivo

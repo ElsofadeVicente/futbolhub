@@ -1,0 +1,314 @@
+[
+  {
+    "id": "jugadores-con-mas-partidos-junto-a-lionel-messi-moq45wfq",
+    "q": "Jugadores con mas partidos junto a Lionel Messi",
+    "unit": "partidos",
+    "hint": "nat",
+    "top10": [
+      {
+        "r": 1,
+        "n": "Sergio Busquets",
+        "nat": "",
+        "id": "65230",
+        "v": 651
+      },
+      {
+        "r": 2,
+        "n": "Gerard Piqué",
+        "nat": "",
+        "id": "18944",
+        "v": 506
+      },
+      {
+        "r": 3,
+        "n": "Andrés Iniesta",
+        "nat": "",
+        "id": "7600",
+        "v": 489
+      },
+      {
+        "r": 4,
+        "n": "Jordi Alba",
+        "nat": "",
+        "id": "69751",
+        "v": 421
+      },
+      {
+        "r": 5,
+        "n": "Javier Mascherano",
+        "nat": "",
+        "id": "19981",
+        "v": 414
+      },
+      {
+        "r": 6,
+        "n": "Xavi",
+        "nat": "",
+        "id": "7607",
+        "v": 399
+      },
+      {
+        "r": 7,
+        "n": "Víctor Valdés",
+        "nat": "",
+        "id": "7589",
+        "v": 353
+      },
+      {
+        "r": 8,
+        "n": "Dani Alves",
+        "nat": "",
+        "id": "15951",
+        "v": 349
+      },
+      {
+        "r": 9,
+        "n": "Luis Suárez",
+        "nat": "",
+        "id": "44352",
+        "v": 330
+      },
+      {
+        "r": 10,
+        "n": "Ivan Rakitic",
+        "nat": "",
+        "id": "32467",
+        "v": 277
+      }
+    ]
+  },
+  {
+    "id": "jugadores-que-mas-se-han-enfrentado-a-cristiano-ronaldo-moq46hck",
+    "q": "Jugadores que mas se han enfrentado a Cristiano Ronaldo",
+    "unit": "partidos",
+    "hint": "nat",
+    "top10": [
+      {
+        "r": 1,
+        "n": "Sergio Busquets",
+        "nat": "",
+        "id": "65230",
+        "v": 38
+      },
+      {
+        "r": 2,
+        "n": "Lionel Messi",
+        "nat": "",
+        "id": "28003",
+        "v": 36
+      },
+      {
+        "r": 3,
+        "n": "Andrés Iniesta",
+        "nat": "",
+        "id": "7600",
+        "v": 36
+      },
+      {
+        "r": 4,
+        "n": "Diego Godín",
+        "nat": "",
+        "id": "54928",
+        "v": 34
+      },
+      {
+        "r": 5,
+        "n": "Koke",
+        "nat": "",
+        "id": "74229",
+        "v": 34
+      },
+      {
+        "r": 6,
+        "n": "Antoine Griezmann",
+        "nat": "",
+        "id": "125781",
+        "v": 34
+      },
+      {
+        "r": 7,
+        "n": "Gerard Piqué",
+        "nat": "",
+        "id": "18944",
+        "v": 33
+      },
+      {
+        "r": 8,
+        "n": "Dani Alves",
+        "nat": "",
+        "id": "15951",
+        "v": 30
+      },
+      {
+        "r": 9,
+        "n": "Juanfran Torres",
+        "nat": "",
+        "id": "16635",
+        "v": 29
+      },
+      {
+        "r": 10,
+        "n": "Xavi",
+        "nat": "",
+        "id": "7607",
+        "v": 28
+      }
+    ]
+  },
+  {
+    "id": "maximos-goleadores-de-la-champions-2013-14-moq473av",
+    "q": "Maximos goleadores de la Champions 2013/14",
+    "unit": "goles",
+    "hint": "nat",
+    "top10": [
+      {
+        "r": 1,
+        "n": "Cristiano Ronaldo",
+        "nat": "PT",
+        "id": "8198",
+        "v": 17
+      },
+      {
+        "r": 2,
+        "n": "Zlatan Ibrahimović",
+        "nat": "SE",
+        "id": "3455",
+        "v": 10
+      },
+      {
+        "r": 3,
+        "n": "Diego Costa",
+        "nat": "ES",
+        "id": "44779",
+        "v": 8
+      },
+      {
+        "r": 4,
+        "n": "Lionel Messi",
+        "nat": "AR",
+        "id": "28003",
+        "v": 8
+      },
+      {
+        "r": 5,
+        "n": "Gareth Bale",
+        "nat": "GB-WLS",
+        "id": "39381",
+        "v": 6
+      },
+      {
+        "r": 6,
+        "n": "Robert Lewandowski",
+        "nat": "PL",
+        "id": "38253",
+        "v": 6
+      },
+      {
+        "r": 7,
+        "n": "Sergio Agüero",
+        "nat": "AR",
+        "id": "26399",
+        "v": 6
+      },
+      {
+        "r": 8,
+        "n": "Karim Benzema",
+        "nat": "FR",
+        "id": "18922",
+        "v": 5
+      },
+      {
+        "r": 9,
+        "n": "Marco Reus",
+        "nat": "DE",
+        "id": "35207",
+        "v": 5
+      },
+      {
+        "r": 10,
+        "n": "Álvaro Negredo",
+        "nat": "ES",
+        "id": "18644",
+        "v": 5
+      }
+    ]
+  },
+  {
+    "id": "maximos-asistentes-de-es1-2021-22-moq47k2p",
+    "q": "Maximos asistentes de ES1 2021/22",
+    "unit": "asistencias",
+    "hint": "nat",
+    "top10": [
+      {
+        "r": 1,
+        "n": "Ousmane Dembélé",
+        "nat": "FR",
+        "id": "288230",
+        "v": 13
+      },
+      {
+        "r": 2,
+        "n": "Karim Benzema",
+        "nat": "FR",
+        "id": "18922",
+        "v": 12
+      },
+      {
+        "r": 3,
+        "n": "Iker Muniain",
+        "nat": "ES",
+        "id": "54235",
+        "v": 11
+      },
+      {
+        "r": 4,
+        "n": "Vinicius Junior",
+        "nat": "BR",
+        "id": "371998",
+        "v": 11
+      },
+      {
+        "r": 5,
+        "n": "Jordi Alba",
+        "nat": "ES",
+        "id": "69751",
+        "v": 10
+      },
+      {
+        "r": 6,
+        "n": "Dani Parejo",
+        "nat": "ES",
+        "id": "59561",
+        "v": 10
+      },
+      {
+        "r": 7,
+        "n": "Sergi Darder",
+        "nat": "ES",
+        "id": "142021",
+        "v": 10
+      },
+      {
+        "r": 8,
+        "n": "Óscar Trejo",
+        "nat": "AR",
+        "id": "30321",
+        "v": 9
+      },
+      {
+        "r": 9,
+        "n": "Luka Modrić",
+        "nat": "HR",
+        "id": "27992",
+        "v": 8
+      },
+      {
+        "r": 10,
+        "n": "Sergio Canales",
+        "nat": "ES",
+        "id": "66106",
+        "v": 8
+      }
+    ]
+  }
+]

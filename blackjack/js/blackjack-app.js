@@ -453,7 +453,9 @@ const App = (() => {
       _updateOpponentsFromDecisions(room.decisions || {});
 
       if (_isHost) {
-        const totalPlayers = Object.keys(room.players || {}).length;
+        // FIX: contar solo jugadores conectados. Si un jugador se cae mid-round
+        // (connected: false), nunca reporta done y el reveal quedaba bloqueado.
+        const totalPlayers = Object.values(room.players || {}).filter(p => p.connected !== false).length;
         const doneCount    = room.doneCount || 0;
         console.log(`[App] doneCount: ${doneCount} / ${totalPlayers}`);
         if (totalPlayers >= 2 && doneCount >= totalPlayers) {
@@ -883,7 +885,11 @@ const App = (() => {
      ══════════════════════════════════════════ */
   function _onRoundStart(room) {
     const state = BlackjackGame.getState();
-    if (state && state.round === room.round && state.phase === 'selecting') return;
+    // FIX: cubrir todas las fases activas, no solo 'selecting'.
+    // Si el jugador está en waiting-reveal o reveal, los updates de Firebase
+    // (ej. doneCount de otro jugador) no deben reinicializar la ronda desde cero,
+    // lo que causaba que el jugador volviera a la carta 0 repetidamente.
+    if (state && state.round === room.round && state.phase !== 'waiting') return;
 
     if (_pendingRoomRef) {
       _pendingRoomRef(room);
@@ -982,8 +988,7 @@ const App = (() => {
 
     try {
       await BlackjackSync.reportDone(_roomCode, _playerId, handData);
-      // Marcar al jugador como activo en esta partida (para el control de AFK)
-      BlackjackSync.markPlayerActive(_roomCode, _playerId).catch(() => {});
+      // playerActivity ya se actualiza dentro de reportDone (update atómico)
       console.log('[App] reportDone OK, esperando reveal...');
 
       if (_isHost) {
@@ -995,7 +1000,9 @@ const App = (() => {
             if (!snap.exists()) return;
             const room = snap.val();
             if (room.status === 'playing') {
-              const totalPlayers = Object.keys(room.players || {}).length;
+              // FIX: misma corrección que en _onRoomUpdate — no contar jugadores
+              // con connected: false (se caerían sin reportar done)
+              const totalPlayers = Object.values(room.players || {}).filter(p => p.connected !== false).length;
               const doneCount = room.doneCount || 0;
               console.log(`[App] Fallback check: ${doneCount}/${totalPlayers}`);
               if (doneCount >= totalPlayers) {
@@ -1186,8 +1193,10 @@ const App = (() => {
   let _autoTimerInterval = null;  // tick cada segundo (UI + lógica)
 
   function _startPublicLobbyTimer(room) {
-    // Si ya hay un timer corriendo, no lanzar otro
-    if (_publicLobbyTimer) return;
+    // FIX: comprobar _autoTimerInterval además de _publicLobbyTimer.
+    // _publicLobbyTimer se auto-anula tras su setTimeout, por lo que un update
+    // de Firebase posterior podía lanzar un segundo _autoTimerInterval en paralelo.
+    if (_autoTimerInterval || _publicLobbyTimer) return;
 
     const lobbyAt = room.lobbyAt || 0;
     if (!lobbyAt) return;

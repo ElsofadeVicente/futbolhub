@@ -1,0 +1,569 @@
+'use strict';
+/* ═══════════════════════════════════════════════════════════════
+   RESTRICTIONS WORKER
+   Ejecuta Restrictions.generate() en un hilo separado para no
+   bloquear el hilo principal (countdown, UI, animaciones).
+   Recibe: { seed, db, reverseTeammate, reverseTeammateIds }
+   Emite:  array de restricciones generadas
+   ═══════════════════════════════════════════════════════════════ */
+
+let _REVERSE_TEAMMATE     = {};
+let _REVERSE_TEAMMATE_IDS = {};
+
+/* ── Helpers ── */
+function _mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function _shuffle(arr, rng) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function normalize(str) {
+  if (!str) return '';
+  return String(str).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+function _logoUrl(tmName) {
+  return 'data/logos/' + tmName.replace(/ /g, '_') + '.png';
+}
+
+/* ── Constantes (deben ser idénticas a las de Restrictions en script.js) ── */
+const CLUBS_LIST = [
+  { tmName:'Arsenal FC',           display:'Arsenal',        league:'Premier League' },
+  { tmName:'Manchester City',      display:'Man. City',      league:'Premier League' },
+  { tmName:'Manchester United',    display:'Man. United',    league:'Premier League' },
+  { tmName:'Aston Villa',          display:'Aston Villa',    league:'Premier League' },
+  { tmName:'Liverpool FC',         display:'Liverpool',      league:'Premier League' },
+  { tmName:'Chelsea FC',           display:'Chelsea',        league:'Premier League' },
+  { tmName:'Tottenham Hotspur',    display:'Tottenham',      league:'Premier League' },
+  { tmName:'Paris Saint-Germain',  display:'PSG',            league:'Ligue 1' },
+  { tmName:'AS Monaco',            display:'Monaco',         league:'Ligue 1' },
+  { tmName:'Olympique Lyon',       display:'Lyon',           league:'Ligue 1' },
+  { tmName:'Olympique Marseille',  display:'Marseille',      league:'Ligue 1' },
+  { tmName:'Bayern Munich',        display:'Bayern',         league:'Bundesliga' },
+  { tmName:'Borussia Dortmund',    display:'Dortmund',       league:'Bundesliga' },
+  { tmName:'Juventus FC',          display:'Juventus',       league:'Serie A' },
+  { tmName:'AS Roma',              display:'Roma',           league:'Serie A' },
+  { tmName:'AC Milan',             display:'AC Milan',       league:'Serie A' },
+  { tmName:'Inter Milan',          display:'Inter',          league:'Serie A' },
+  { tmName:'SSC Napoli',           display:'Napoli',         league:'Serie A' },
+  { tmName:'SS Lazio',             display:'Lazio',          league:'Serie A' },
+  { tmName:'Ajax Amsterdam',       display:'Ajax',           league:'Eredivisie' },
+  { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Argentina',  region:'sudamerica' },
+  { tmName:'CA River Plate',       display:'River Plate',    league:'Argentina',  region:'sudamerica' },
+  { tmName:'SL Benfica',           display:'Benfica',        league:'Primeira Liga' },
+  { tmName:'FC Porto',             display:'Porto',          league:'Primeira Liga' },
+  { tmName:'Sporting CP',          display:'Sporting CP',    league:'Primeira Liga' },
+  { tmName:'PSV Eindhoven',        display:'PSV',            league:'Eredivisie' },
+  { tmName:'FC Barcelona',         display:'Barcelona',      league:'La Liga' },
+  { tmName:'Atlético de Madrid',   display:'Atlético',       league:'La Liga' },
+  { tmName:'Real Madrid',          display:'Real Madrid',    league:'La Liga' },
+  { tmName:'Valencia CF',          display:'Valencia',       league:'La Liga' },
+  { tmName:'Sevilla FC',           display:'Sevilla',        league:'La Liga' },
+  { tmName:'Real Betis Balompié',  display:'Betis',          league:'La Liga' },
+  { tmName:'Villarreal CF',        display:'Villarreal',     league:'La Liga' },
+  { tmName:'Athletic Bilbao',      display:'Athletic',       league:'La Liga' },
+].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
+
+const LEAGUE_TEAMS = {
+  'La Liga': [
+    'FC Barcelona','Real Madrid','Atlético de Madrid','Valencia CF','Sevilla FC',
+    'Real Betis Balompié','Villarreal CF','Athletic Bilbao','CA Osasuna','Celta de Vigo',
+    'RCD Espanyol Barcelona','RCD Mallorca','Rayo Vallecano','Getafe CF','Girona FC',
+    'Levante UD','Real Sociedad','Deportivo Alavés','Elche CF','Real Oviedo',
+    'Málaga CF','Deportivo de La Coruña','Real Zaragoza','Cádiz CF','UD Almería',
+    'Granada CF','SD Eibar','CD Leganés','SD Huesca','Real Valladolid CF',
+    'UD Las Palmas','Sporting Gijón','CD Castellón','FC Cartagena','SD Ponferradina',
+  ],
+  'Premier League': [
+    'Arsenal FC','Manchester City','Manchester United','Liverpool FC','Chelsea FC',
+    'Tottenham Hotspur','Aston Villa','West Ham United','Everton FC','Leicester City',
+    'Newcastle United','Wolverhampton Wanderers','Brighton & Hove Albion','Crystal Palace',
+    'Fulham FC','Brentford FC','Nottingham Forest','AFC Bournemouth',
+    'Leeds United','Burnley FC','Blackburn Rovers','Bolton Wanderers','Stoke City',
+    'Swansea City','Norwich City','Sunderland AFC','Middlesbrough FC','Birmingham City',
+    'Hull City','Southampton FC','Ipswich Town','Luton Town','Sheffield United','Derby County',
+  ],
+  'Serie A': [
+    'Juventus FC','AC Milan','Inter Milan','SSC Napoli','AS Roma','SS Lazio',
+    'Atalanta BC','ACF Fiorentina','Torino FC','Udinese Calcio','Bologna FC 1909',
+    'Cagliari Calcio','Genoa CFC','Hellas Verona','US Sassuolo','US Lecce',
+    'US Cremonese','Parma Calcio 1913','Como 1907','Sampdoria','Empoli FC',
+    'Venezia FC','AC Monza','Spezia Calcio','Benevento Calcio','FC Crotone','Frosinone Calcio',
+  ],
+  'Bundesliga': [
+    'Bayern Munich','Borussia Dortmund','RB Leipzig','Bayer 04 Leverkusen',
+    'Borussia Mönchengladbach','TSG 1899 Hoffenheim','Eintracht Frankfurt','VfL Wolfsburg',
+    'SV Werder Bremen','1.FSV Mainz 05','FC Augsburg','SC Freiburg','1.FC Köln',
+    '1.FC Union Berlin','VfB Stuttgart','1.FC Heidenheim 1846','Hamburger SV',
+    'FC Schalke 04','Hertha BSC','VfL Bochum 1848','1.FC Nürnberg',
+  ],
+  'Ligue 1': [
+    'Paris Saint-Germain','AS Monaco','Olympique Lyon','Olympique Marseille','LOSC Lille',
+    'Stade Rennais FC','OGC Nice','RC Lens','RC Strasbourg Alsace','FC Nantes',
+    'Angers SCO','FC Toulouse','Stade Brestois 29','AJ Auxerre','FC Lorient',
+    'Le Havre AC','FC Metz','Paris FC','Girondins de Bordeaux','AS Saint-Étienne','Montpellier HSC',
+  ],
+};
+
+const LEAGUE_LOGOS = {
+  'La Liga':        'data/logos/leagues/LaLiga.png',
+  'Premier League': 'data/logos/leagues/PremierLeague.png',
+  'Serie A':        'data/logos/leagues/SerieA.png',
+  'Bundesliga':     'data/logos/leagues/Bundesliga.png',
+  'Ligue 1':        'data/logos/leagues/Ligue1.png',
+};
+
+const NATIONALITIES = [
+  { tmNat:'Spain',       display:'España',     adj:'Español',    flag:'🇪🇸', flagImg:'data/flags/es.png' },
+  { tmNat:'England',     display:'Inglaterra', adj:'Inglés',     flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagImg:'data/flags/eng.png' },
+  { tmNat:'France',      display:'Francia',    adj:'Francés',    flag:'🇫🇷', flagImg:'data/flags/fr.png' },
+  { tmNat:'Argentina',   display:'Argentina',  adj:'Argentino',  flag:'🇦🇷', flagImg:'data/flags/ar.png' },
+  { tmNat:'Germany',     display:'Alemania',   adj:'Alemán',     flag:'🇩🇪', flagImg:'data/flags/de.png' },
+  { tmNat:'Brazil',      display:'Brasil',     adj:'Brasileño',  flag:'🇧🇷', flagImg:'data/flags/br.png' },
+  { tmNat:'Netherlands', display:'Holanda',    adj:'Holandés',   flag:'🇳🇱', flagImg:'data/flags/nl.png' },
+];
+
+const CONTINENT_NAT = {
+  europeo:   ['Spain','England','France','Germany','Netherlands','Portugal','Italy',
+               'Belgium','Croatia','Serbia','Denmark','Sweden','Norway','Poland',
+               'Czech Republic','Switzerland','Austria','Turkey','Greece','Hungary',
+               'Slovakia','Romania','Ukraine','Russia','Scotland','Wales','Northern Ireland',
+               'Finland','Albania','Slovenia','Bosnia-Herzegovina','Montenegro','Iceland',
+               'Ireland','Georgia','Kosovo','North Macedonia','Bulgaria','Cyprus','Latvia',
+               'Lithuania','Estonia','Azerbaijan','Armenia','Luxembourg','Gibraltar'],
+  americano: ['Argentina','Brazil','Colombia','Uruguay','Chile','Mexico','Paraguay',
+               'Bolivia','Peru','Venezuela','Ecuador','United States','Jamaica',
+               'Trinidad and Tobago','Honduras','Costa Rica','Panama','Guatemala',
+               'El Salvador','Cuba','Dominican Republic','Canada','Haiti'],
+  africano:  ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cameroon',
+               'Morocco','Egypt','Algeria','Tunisia','South Africa','Mali','Guinea',
+               'Burkina Faso','DR Congo','Congo','Republic of the Congo','Togo','Gabon',
+               'Equatorial Guinea','Zimbabwe','Kenya','Cape Verde','Sierra Leone',
+               'Liberia','Gambia','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
+               'Zambia','Uganda','Angola','Mauritius','Mozambique','Madagascar',
+               'Benin','Niger','Chad','Sudan','South Sudan','Somalia','Eritrea',
+               'Djibouti','Comoros','Lesotho','Botswana','Namibia','Malawi',
+               'Eswatini','Libya','Mauritania','Central African Republic'],
+  asiatico:  ['Japan','South Korea','Iran','Saudi Arabia','Qatar','UAE','Australia',
+               'China','Iraq','Jordan','Bahrain','Kuwait','Uzbekistan','Vietnam',
+               'Thailand','Indonesia','Philippines','India','Pakistan','Bangladesh',
+               'North Korea','Malaysia','Oman','Lebanon','Palestine','Syria'],
+};
+
+const REGION_PATTERNS = {
+  sudamerica:    ['boca','river','flamengo','santos','corinthians','sao paulo','gremio',
+                  'palmeiras','atletico mineiro','vasco','fluminense','cruzeiro','sport',
+                  'internacional','nacional','penarol','estudiantes','independiente',
+                  'racing','san lorenzo','newells','rosario','tigre','colo-colo',
+                  'u de chile','universidad','alianza','universitario','barcelona guay',
+                  'liga de quito','dep quito','deportivo cali','junior','medellin'],
+  usa_mexico:    ['galaxy','red bulls','new york city','fc dallas','toronto','seattle',
+                  'portland','atlanta united','inter miami','chicago fire','columbus',
+                  'new england','real salt lake','colorado','houston',
+                  'dc united','d.c. united','los angeles fc','lafc','san jose','sporting kansas',
+                  'vancouver whitecaps','montreal','philadelphia union',
+                  'orlando city','nashville sc','minnesota united',
+                  'fc cincinnati','austin fc','charlotte fc','st. louis city',
+                  'chivas','america','cruz azul','pumas','toluca','monterrey','tigres',
+                  'leon','guadalajara','pachuca','necaxa','veracruz','atlas','santos lag'],
+  oriente_medio: ['al-nassr','al-hilal','al-ittihad','al-ahli','al-qadsia',
+                  'al-sadd','al-rayyan','al-duhail','al-ain','al-wahda',
+                  'al-shabab','al-raed','al-taawoun','al-faisaly','al-fateh',
+                  'al-jazira','al-wasl','al-najma','al-kharaitiyat',
+                  'al-wehda','al-ettifaq','al-gharafa','al ain sc','al ain fc',
+                  'riyadh','jeddah','sharjah','dubai','abu dhabi','kuwait',
+                  'esteghlal','persepolis','tractors','sepahan',
+                  'umm salal','pakhtakor','lokomotiv tashkent'],
+};
+
+const TROPHIES = {
+  individual: [
+    { key:'Pichichi La Liga',          display:'Pichichi',            icon:'⚽', imgUrl:'data/trofeos/pichichi.png' },
+    { key:'Bota de Oro Premier League',display:'Bota de Oro Premier', icon:'⚽', imgUrl:'data/trofeos/bota_oro_premier.png' },
+    { key:'Capocannoniere Serie A',    display:'Capocannoniere',      icon:'⚽', imgUrl:'data/trofeos/capocannoniere.png' },
+    { key:'Maximo Goleador Bundesliga',display:'Goleador Bundesliga', icon:'⚽', imgUrl:'data/trofeos/goleador_bundesliga.png' },
+    { key:'Maximo Goleador Ligue 1',   display:'Goleador Ligue 1',    icon:'⚽', imgUrl:'data/trofeos/goleador_ligue1.png' },
+    { key:'Balon de Oro',              display:'Balón de Oro',        icon:'🏅', imgUrl:'data/trofeos/balon_oro.png' },
+    { key:'Bota de Oro Mundial',       display:'Bota de Oro Mundial', icon:'🏅', imgUrl:'data/trofeos/bota_oro_mundial.png' },
+    { key:'Bota de Oro Europea',       display:'Bota de Oro Europea', icon:'🏅', imgUrl:'data/trofeos/bota_oro_europea.png' },
+  ],
+  domestic: [
+    { key:'Liga España',    display:'Ganador Liga Española', icon:'🏆', imgUrl:'data/trofeos/liga_espana.png' },
+    { key:'Liga Inglaterra',display:'Ganador Premier League',icon:'🏆', imgUrl:'data/trofeos/liga_inglaterra.png' },
+    { key:'Liga Italia',    display:'Ganador Serie A',       icon:'🏆', imgUrl:'data/trofeos/liga_italia.png' },
+    { key:'Liga Francia',   display:'Ganador Ligue 1',       icon:'🏆', imgUrl:'data/trofeos/liga_francia.png' },
+    { key:'Liga Alemania',  display:'Ganador Bundesliga',    icon:'🏆', imgUrl:'data/trofeos/liga_alemania.png' },
+    { key:'Copa España',    display:'Copa del Rey',          icon:'🏆', imgUrl:'data/trofeos/copa_espana.png' },
+    { key:'Copa Inglaterra',display:'FA Cup',                icon:'🏆', imgUrl:'data/trofeos/copa_inglaterra.png' },
+    { key:'Copa Italia',    display:'Coppa Italia',          icon:'🏆', imgUrl:'data/trofeos/copa_italia.png' },
+    { key:'Copa Francia',   display:'Coupe de France',       icon:'🏆', imgUrl:'data/trofeos/copa_francia.png' },
+    { key:'Copa Alemania',  display:'DFB-Pokal',             icon:'🏆', imgUrl:'data/trofeos/copa_alemania.png' },
+  ],
+  international_club: [
+    { key:'Champions League',  display:'Champions League',  icon:'⭐', imgUrl:'data/trofeos/champions.png' },
+    { key:'Europa League',     display:'Europa League',     icon:'⭐', imgUrl:'data/trofeos/europa_league.png' },
+    { key:'Copa Libertadores', display:'Copa Libertadores', icon:'⭐', imgUrl:'data/trofeos/copa_libertadores.png' },
+    { key:'Conference League', display:'Conference League', icon:'⭐', imgUrl:'data/trofeos/conference_league.png' },
+  ],
+  national: [
+    { key:'Eurocopa',    display:'Eurocopa',    icon:'🌍', imgUrl:'data/trofeos/eurocopa.png' },
+    { key:'Mundial',     display:'Mundial',     icon:'🌍', imgUrl:'data/trofeos/mundial.png' },
+    { key:'Copa America',display:'Copa América', icon:'🌍', imgUrl:'data/trofeos/copa_america.png' },
+  ],
+};
+
+const COACHES_LIST = [
+  { name:'Hansi Flick',     id:'67',    icon:'🎽' },
+  { name:'Jürgen Klopp',    id:'118',   icon:'🎽' },
+  { name:'Arsène Wenger',   id:'280',   icon:'🎽' },
+  { name:'Carlo Ancelotti', id:'523',   icon:'🎽' },
+  { name:'José Mourinho',   id:'781',   icon:'🎽' },
+  { name:'Rafael Benítez',  id:'1522',  icon:'🎽' },
+  { name:'Diego Simeone',   id:'2868',  icon:'🎽' },
+  { name:'Antonio Conte',   id:'3517',  icon:'🎽' },
+  { name:'Unai Emery',      id:'5075',  icon:'🎽' },
+  { name:'Pep Guardiola',   id:'5672',  icon:'🎽' },
+  { name:'Luis Enrique',    id:'6499',  icon:'🎽' },
+  { name:'Zinédine Zidane', id:'21284', icon:'🎽' },
+];
+
+const TEAMMATES_LIST = [
+  { name:'Lionel Messi',       display:'Messi',            id:'28003',  icon:'⚽' },
+  { name:'Cristiano Ronaldo',  display:'Cristiano Ronaldo',id:'8198',   icon:'⚽' },
+  { name:'Harry Kane',         display:'Kane',             id:'132098', icon:'⚽' },
+  { name:'Iker Casillas',      display:'Casillas',         id:'3979',   icon:'⚽' },
+  { name:'Kylian Mbappé',      display:'Mbappé',           id:'342229', icon:'⚽' },
+  { name:'Pepe',               display:'Pepe',             id:'14132',  icon:'⚽' },
+  { name:'Neymar',             display:'Neymar',           id:'68290',  icon:'⚽' },
+  { name:'Ronaldinho',         display:'Ronaldinho',       id:'3373',   icon:'⚽' },
+  { name:'Ángel Di María',     display:'Di María',         id:'45320',  icon:'⚽' },
+  { name:'Edinson Cavani',     display:'Cavani',           id:'48280',  icon:'⚽' },
+  { name:'Xavi',               display:'Xavi',             id:'7607',   icon:'⚽' },
+  { name:'Fernando Llorente',  display:'Llorente',         id:'35564',  icon:'⚽' },
+  { name:'Pepe Reina',         display:'Reina',            id:'7825',   icon:'⚽' },
+  { name:'Manuel Neuer',       display:'Neuer',            id:'17259',  icon:'⚽' },
+  { name:'Thomas Müller',      display:'Müller',           id:'58358',  icon:'⚽' },
+  { name:'Marco Reus',         display:'Reus',             id:'35207',  icon:'⚽' },
+  { name:'Andrea Pirlo',       display:'Pirlo',            id:'5817',   icon:'⚽' },
+  { name:'Lautaro Martínez',   display:'Lautaro',          id:'406625', icon:'⚽' },
+  { name:'Wesley Sneijder',    display:'Sneijder',         id:'4673',   icon:'⚽' },
+  { name:'Ousmane Dembélé',    display:'Dembélé',          id:'288230', icon:'⚽' },
+  { name:'Kaká',               display:'Kaká',             id:'3366',   icon:'⚽' },
+  { name:'Luka Modrić',        display:'Modric',           id:'27992',  icon:'⚽' },
+  { name:'Sergio Agüero',      display:'Agüero',           id:'26399',  icon:'⚽' },
+  { name:'David Villa',        display:'David Villa',      id:'7980',   icon:'⚽' },
+  { name:'Kevin De Bruyne',    display:'De Bruyne',        id:'88755',  icon:'⚽' },
+  { name:'Zlatan Ibrahimović', display:'Ibrahimovic',      id:'3455',   icon:'⚽' },
+  { name:'Gianluigi Buffon',   display:'Buffon',           id:'5023',   icon:'⚽' },
+  { name:'Sergio Ramos',       display:'Sergio Ramos',     id:'25557',  icon:'⚽' },
+  { name:'Zinédine Zidane',    display:'Zidane',           id:'3111',   icon:'⚽' },
+  { name:'Xabi Alonso',        display:'Xabi Alonso',      id:'7476',   icon:'⚽' },
+  { name:'Raphaël Varane',     display:'Varane',           id:'164770', icon:'⚽' },
+  { name:'Mohamed Salah',      display:'Salah',            id:'148455', icon:'⚽' },
+  { name:"N'Golo Kanté",       display:'Kanté',            id:'225083', icon:'⚽' },
+  { name:'Alexis Sánchez',     display:'Alexis Sánchez',   id:'40433',  icon:'⚽' },
+  { name:'Arjen Robben',       display:'Robben',           id:'4360',   icon:'⚽' },
+  { name:'Fernando Torres',    display:'Torres',           id:'7767',   icon:'⚽' },
+  { name:'Joaquín',            display:'Joaquín',          id:'7663',   icon:'⚽' },
+  { name:'Francesco Totti',    display:'Totti',            id:'5958',   icon:'⚽' },
+];
+
+/* ── validate ── */
+function validate(player, r) {
+  if (!player || !r) return false;
+  switch (r.type) {
+    case 'club':
+      return (player.teams || []).some(c => normalize(c) === normalize(r.value));
+    case 'nationality':
+      return normalize(player.nationalTeam || '') === normalize(r.value);
+    case 'league':
+      return (player.teams || []).some(t => (r.teams || []).some(lt => normalize(lt) === normalize(t)));
+    case 'trophy':
+      return (player.trophies || []).includes(r.value);
+    case 'trophy_any':
+      return (r.value || []).some(tv => (player.trophies || []).includes(tv));
+    case 'coach':
+      return (player.coaches || []).some(c => normalize(c) === normalize(r.value));
+    case 'teammate': {
+      const targetNorm = normalize(r.value);
+      if ((player.teammates || []).some(t => normalize(t) === targetNorm)) return true;
+      if (_REVERSE_TEAMMATE_IDS[targetNorm]?.has(player.id)) return true;
+      return !!(_REVERSE_TEAMMATE[targetNorm]?.has(normalize(player.name)));
+    }
+    case 'continent':
+      return (CONTINENT_NAT[r.value] || []).includes(player.nationalTeam || '');
+    case 'height_le': return typeof player.heightCm === 'number' && player.heightCm <= r.value;
+    case 'height_ge': return typeof player.heightCm === 'number' && player.heightCm >= r.value;
+    case 'height_lt': return typeof player.heightCm === 'number' && player.heightCm < r.value;
+    case 'height_gt': return typeof player.heightCm === 'number' && player.heightCm > r.value;
+    case 'position_gk':
+      return player.position === 'GK' || (player.position || '').toUpperCase().includes('GK');
+    case 'birthDecade': {
+      const y = player.birthYear;
+      if (typeof y !== 'number') return false;
+      if (r.value === '1980s') return y >= 1980 && y <= 1989;
+      if (r.value === '1990s') return y >= 1990 && y <= 1999;
+      if (r.value === '2000s') return y >= 2000 && y <= 2009;
+      return false;
+    }
+    case 'caps_ge': return (player.caps || 0) >= r.value;
+    case 'caps_le': return (player.caps || 0) <= r.value;
+    case 'caps_0':  return (player.caps || 0) === 0;
+    case 'clubs_ge': return (player.teams || []).length >= r.value;
+    case 'clubs_le': return (player.teams || []).length <= r.value;
+    case 'fee_gt': return (player.maxFee || 0) > r.value;
+    case 'fee_lt': return (player.maxFee || 0) < r.value;
+    case 'region': {
+      const patterns = REGION_PATTERNS[r.value] || [];
+      return (player.teams || []).some(t => patterns.some(p => normalize(t).includes(p)));
+    }
+    case 'team':
+      return (player.teams || player.clubs || []).some(c => normalize(c) === normalize(r.value));
+    case 'nationalTeam':
+      return normalize(player.nationalTeam || '') === normalize(r.value);
+    case 'foot':
+      return player.foot === 'both' || player.foot === r.value;
+    case 'goals_gt': return typeof player.goals === 'number' && player.goals > r.value;
+    case 'goals_lt': return typeof player.goals === 'number' && player.goals < r.value;
+    case 'apps_gt':  return typeof player.apps  === 'number' && player.apps  > r.value;
+    case 'apps_lt':  return typeof player.apps  === 'number' && player.apps  < r.value;
+    default: return false;
+  }
+}
+
+function _matching(restriction, db) {
+  return db.filter(p => validate(p, restriction)).length;
+}
+
+function _buildCandidates(rng) {
+  const candidates = [];
+  for (const nat of _shuffle(NATIONALITIES, rng)) {
+    candidates.push({ type:'nationality', value:nat.tmNat, label:nat.adj, imgUrl:nat.flagImg, icon:nat.flag, family:'nationality' });
+  }
+  for (const [liga, teams] of Object.entries(LEAGUE_TEAMS)) {
+    candidates.push({ type:'league', value:liga, teams, label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' });
+  }
+  for (const t of _shuffle(TROPHIES.individual, rng)) {
+    candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_individual' });
+  }
+  for (const t of _shuffle(TROPHIES.domestic, rng)) {
+    candidates.push({ type:'trophy', value:t.key, label:t.display, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_domestic' });
+  }
+  for (const t of _shuffle(TROPHIES.international_club, rng)) {
+    candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_intl' });
+  }
+  for (const t of _shuffle(TROPHIES.national, rng)) {
+    candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_national' });
+  }
+  for (const c of _shuffle(COACHES_LIST, rng)) {
+    candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:`data/coaches/${c.id}.png`, icon:c.icon, family:'coach' });
+  }
+  for (const p of _shuffle(TEAMMATES_LIST, rng)) {
+    candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display||p.name}`, imgUrl:`data/players/photos/${p.id}.jpg`, icon:p.icon, family:'teammate' });
+  }
+  for (const [cont, label] of [['europeo','Europeo'],['americano','Continente Americano'],['africano','Africano'],['asiatico','Asiático']]) {
+    candidates.push({ type:'continent', value:cont, label, imgUrl:null, icon:'🌍', family:'continent' });
+  }
+  for (const [dec, label] of [['1980s','Nacido en los 80'],['1990s','Nacido en los 90'],['2000s','Nacido en los 2000']]) {
+    candidates.push({ type:'birthDecade', value:dec, label, imgUrl:null, icon:'🎂', family:'birth' });
+  }
+  candidates.push({ type:'height_le', value:180, label:'Mide 180 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
+  candidates.push({ type:'height_ge', value:180, label:'Mide 180 cm o más',    imgUrl:null, icon:'📏', family:'height' });
+  candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
+  candidates.push({ type:'position_gk', label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
+  candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
+  candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades',imgUrl:null, icon:'🌍', family:'caps' });
+  candidates.push({ type:'caps_0',              label:'Sin internacionalidades',        imgUrl:null, icon:'🌍', family:'caps' });
+  candidates.push({ type:'caps_ge', value:1,   label:'Internacional (≥1 partido)',     imgUrl:null, icon:'🌍', family:'caps' });
+  candidates.push({ type:'clubs_ge', value:3, label:'Ha jugado en 3 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
+  candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
+  candidates.push({ type:'fee_gt', value:70000000, label:'Traspaso de más de 70M €',   imgUrl:null, icon:'💰', family:'fee' });
+  candidates.push({ type:'fee_lt', value:70000000, label:'Traspaso de menos de 70M €', imgUrl:null, icon:'💰', family:'fee' });
+  candidates.push({ type:'region', value:'sudamerica',   label:'Ha jugado en Sudamérica',    imgUrl:null, icon:'🌎', family:'region' });
+  candidates.push({ type:'region', value:'usa_mexico',   label:'Ha jugado en EE.UU./México', imgUrl:null, icon:'🌎', family:'region' });
+  candidates.push({ type:'region', value:'oriente_medio',label:'Ha jugado en Oriente Medio', imgUrl:null, icon:'🌎', family:'region' });
+  candidates.push({ type:'trophy_any', value:['Liga España','Liga Inglaterra','Liga Italia','Liga Francia','Liga Alemania'], label:'Ganador Liga Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general' });
+  candidates.push({ type:'trophy_any', value:['Copa España','Copa Inglaterra','Copa Italia','Copa Francia','Copa Alemania'], label:'Ganador Copa Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general' });
+  candidates.push({ type:'trophy_any', value:['Eurocopa','Mundial','Copa America'], label:'Ganador con Selección', imgUrl:null, icon:'🌍', family:'trophy_general' });
+  candidates.push({ type:'trophy_any', value:['Champions League','Europa League','Copa Libertadores'], label:'Ganador título continental (clubes)', imgUrl:null, icon:'⭐', family:'trophy_general' });
+  return candidates;
+}
+
+function _isRedundant(rA, rB) {
+  if (rA.type === 'club' && rB.type === 'league') {
+    const c = CLUBS_LIST.find(c => c.tmName === rA.value);
+    if (c && c.league === rB.value) return true;
+  }
+  if (rA.type === 'club' && rB.type === 'region') {
+    const c = CLUBS_LIST.find(c => c.tmName === rA.value);
+    if (c && c.region === rB.value) return true;
+  }
+  if (rA.type === 'trophy' && rB.type === 'trophy_any' && (rB.value||[]).includes(rA.value)) return true;
+  if (rA.type === 'trophy_any' && rB.type === 'trophy' && (rA.value||[]).includes(rB.value)) return true;
+  if (rA.type === 'nationality' && rB.type === 'continent') return true;
+  if (rA.type === 'continent' && rB.type === 'nationality') return true;
+  if (rA.type === 'caps_ge' && rB.type === 'caps_ge' && rA.value > rB.value) return true;
+  if (rA.type === 'caps_0' && rB.type === 'caps_ge') return true;
+  if (rA.type === 'caps_ge' && rA.value >= 1 && rB.type === 'caps_0') return true;
+  if (rA.type === 'caps_le' && rB.type === 'caps_le' && rA.value < rB.value) return true;
+  const SCORER_TROPHIES = new Set(['Pichichi La Liga','Bota de Oro Premier League','Capocannoniere Serie A','Maximo Goleador Bundesliga','Maximo Goleador Ligue 1','Bota de Oro Mundial','Bota de Oro Europea']);
+  if (rA.type === 'position_gk' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
+  if (rB.type === 'position_gk' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
+
+  const NATIONAL_TROPHIES = new Set(['Eurocopa','Mundial','Copa America']);
+  if (rA.type === 'caps_0' && rB.type === 'trophy' && NATIONAL_TROPHIES.has(rB.value)) return true;
+  if (rB.type === 'caps_0' && rA.type === 'trophy' && NATIONAL_TROPHIES.has(rA.value)) return true;
+  if (rA.type === 'caps_0' && rB.type === 'trophy_any') {
+    const vals = rB.value || [];
+    if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
+  }
+  if (rB.type === 'caps_0' && rA.type === 'trophy_any') {
+    const vals = rA.value || [];
+    if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
+  }
+
+  return false;
+}
+
+function _removeRedundancies(restrictions, shuffledPool, db) {
+  let result = [...restrictions];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    outer: for (let i = 0; i < result.length; i++) {
+      for (let j = 0; j < result.length; j++) {
+        if (i === j) continue;
+        if (_isRedundant(result[i], result[j])) {
+          const usedFamilies = new Set(result.filter((_, k) => k !== j).map(r => r.family || r.type));
+          const replacement = shuffledPool.find(r =>
+            !result.includes(r) && !usedFamilies.has(r.family || r.type) &&
+            !result.some((e, k) => k !== j && (_isRedundant(e, r) || _isRedundant(r, e))) &&
+            _matching(r, db) >= 2
+          );
+          if (replacement) { result[j] = replacement; changed = true; break outer; }
+          const relaxed = shuffledPool.find(r =>
+            !result.includes(r) &&
+            !result.some((e, k) => k !== j && (_isRedundant(e, r) || _isRedundant(r, e))) &&
+            _matching(r, db) >= 2
+          );
+          if (relaxed) { result[j] = relaxed; changed = true; break outer; }
+          break outer;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function _ensureSolution(restrictions, shuffledPool, db) {
+  const hasSolution = (rs) => db.some(p => rs.every(r => validate(p, r)));
+  if (hasSolution(restrictions)) return restrictions;
+  const result = [...restrictions];
+  const swappableIdx = result.map((_, i) => i).filter(i => result[i].type !== 'club');
+  for (const idx of swappableIdx) {
+    const original = result[idx];
+    for (const candidate of shuffledPool) {
+      if (result.includes(candidate)) continue;
+      const wouldBeRedundant = result.some((r, i) => i !== idx && (_isRedundant(r, candidate) || _isRedundant(candidate, r)));
+      if (wouldBeRedundant) continue;
+      result[idx] = candidate;
+      if (hasSolution(result)) return result;
+    }
+    result[idx] = original;
+  }
+  for (let idx = 0; idx < result.length; idx++) {
+    if (swappableIdx.includes(idx)) continue;
+    const original = result[idx];
+    for (const candidate of shuffledPool) {
+      if (result.includes(candidate)) continue;
+      result[idx] = candidate;
+      if (hasSolution(result)) return result;
+    }
+    result[idx] = original;
+  }
+  const clubs = result.filter(r => r.type === 'club');
+  const nonClubPool = shuffledPool.filter(r => r.type !== 'club');
+  const nuclear = [...clubs];
+  const usedFamilies = {};
+  for (const candidate of nonClubPool) {
+    if (nuclear.length >= 5) break;
+    const fam = candidate.family || candidate.type;
+    if ((usedFamilies[fam] || 0) >= 1) continue;
+    if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
+    nuclear.push(candidate);
+    if (hasSolution(nuclear)) { usedFamilies[fam] = (usedFamilies[fam] || 0) + 1; }
+    else { nuclear.pop(); }
+  }
+  for (const candidate of nonClubPool) {
+    if (nuclear.length >= 5) break;
+    if (nuclear.includes(candidate)) continue;
+    if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
+    nuclear.push(candidate);
+    if (!hasSolution(nuclear)) nuclear.pop();
+  }
+  if (hasSolution(nuclear) && nuclear.length === 5) return nuclear;
+  return nuclear.length >= 2 ? nuclear : result;
+}
+
+function generate(seed, db) {
+  const rng = _mulberry32(seed);
+  const shuffledClubs = _shuffle(CLUBS_LIST, rng);
+  const clubRestrictions = [];
+  for (const club of shuffledClubs) {
+    if (clubRestrictions.length >= 2) break;
+    const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+    if (_matching(r, db) < 1) continue;
+    if (clubRestrictions.length === 1) {
+      if (!db.some(p => validate(p, clubRestrictions[0]) && validate(p, r))) continue;
+    }
+    clubRestrictions.push(r);
+  }
+  if (clubRestrictions.length < 2) {
+    for (const club of CLUBS_LIST) {
+      if (clubRestrictions.length >= 2) break;
+      const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+      if (!clubRestrictions.find(c => c.value === r.value)) clubRestrictions.push(r);
+    }
+  }
+  const candidates = _buildCandidates(rng);
+  const playable = candidates.filter(r => _matching(r, db) >= (r.type === 'teammate' ? 1 : 2));
+  const shuffled = _shuffle(playable, rng);
+  const chosen = []; const families = {};
+  for (const r of shuffled) {
+    if (chosen.length >= 3) break;
+    const fam = r.family || r.type;
+    if ((families[fam] || 0) >= 1) continue;
+    chosen.push(r); families[fam] = (families[fam] || 0) + 1;
+  }
+  for (const r of shuffled) {
+    if (chosen.length >= 3) break;
+    if (!chosen.includes(r)) chosen.push(r);
+  }
+  let result = [...clubRestrictions, ...chosen.slice(0, 3)];
+  result = _removeRedundancies(result, shuffled, db);
+  if (rng() < 0.7) result = _ensureSolution(result, shuffled, db);
+  return result;
+}
+
+/* ── Entrada del worker ── */
+self.onmessage = function({ data }) {
+  _REVERSE_TEAMMATE     = data.reverseTeammate     || {};
+  _REVERSE_TEAMMATE_IDS = data.reverseTeammateIds  || {};
+  try {
+    const restrictions = generate(data.seed, data.db);
+    self.postMessage({ ok: true, restrictions });
+  } catch(e) {
+    self.postMessage({ ok: false, error: e.message });
+  }
+};
