@@ -3,38 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>En el Top</title>
+  <title>En el Top — FutbolHUB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+  <!-- Textura de papel (SVG inline) -->
+  <div id="paper-overlay" aria-hidden="true"></div>
+
   <!-- ── Loading ─────────────────────────────────────────────── -->
   <div id="loading-screen">
     <div class="spin"></div>
-    <p>Cargando…</p>
+    <p>Cargando edición de hoy…</p>
+  </div>
+
+  <!-- ── Selección de modo ─────────────────────────────────── -->
+  <div id="mode-screen" class="hidden">
+    <div id="mode-box">
+
+      <!-- Banner imagen editorial -->
+      <div id="mode-art">
+        <img src="../img/hub/top.jpg" alt="En el Top"
+             onerror="this.parentElement.classList.add('mode-art--fallback')">
+        <div id="mode-art-overlay">
+          <span class="eyebrow">
+            <span class="eyebrow-num">№ 02</span>
+            <span class="eyebrow-sep">·</span>
+            <span class="eyebrow-cat">Diario</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Cuerpo -->
+      <div id="mode-body">
+        <a href="../" id="mode-back">← Volver al Hub</a>
+
+        <h1 id="mode-title">En el Top</h1>
+        <p id="mode-desc">Adivina los 10 futbolistas de la lista. Solo la bandera como pista.</p>
+
+        <div class="mode-rule"></div>
+
+        <div id="mode-label">Selecciona el modo:</div>
+        <div id="mode-toggle">
+          <button class="mode-opt selected" data-mode="normal">Normal</button>
+          <button class="mode-opt" data-mode="timed">⏱ 2 minutos</button>
+        </div>
+
+        <button id="start-game-btn">Jugar →</button>
+
+        <button id="stats-open-btn" class="stats-link-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
+          </svg>
+          Ver mis estadísticas
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ── Juego ────────────────────────────────────────────────── -->
   <div id="game-screen" class="hidden">
 
-    <!-- Barra de timer (top) -->
     <div id="timer-track"><div id="timer-fill"></div></div>
 
     <main id="game-main">
 
-      <!-- Cabecera -->
       <div id="top-bar">
+        <a href="../" id="game-back">← Hub</a>
         <span id="score-badge">0/10</span>
-        <span id="timer-num">60</span>
+        <span id="timer-num">2:00</span>
       </div>
 
-      <!-- Título pregunta -->
       <h1 id="question-title"></h1>
 
-      <!-- Filas del top 10 -->
       <div id="rows-wrap"></div>
 
-      <!-- Input + autocomplete -->
       <div id="input-area">
         <div id="input-wrap">
           <input id="ans-input" type="text"
@@ -42,7 +88,7 @@
                  autocomplete="off" spellcheck="false" />
           <div id="sug-box"></div>
         </div>
-        <button id="giveup-btn" title="Rendirse">🏳️</button>
+        <button id="giveup-btn" title="Rendirse">🏳</button>
       </div>
 
     </main>
@@ -51,11 +97,54 @@
   <!-- ── Pantalla final ────────────────────────────────────────── -->
   <div id="end-screen" class="hidden">
     <div id="end-box">
+      <div class="eyebrow">
+        <span class="eyebrow-num">№ 02</span>
+        <span class="eyebrow-sep">·</span>
+        <span class="eyebrow-cat">Resultado del día</span>
+      </div>
       <div id="end-emoji"></div>
       <h2 id="end-title"></h2>
-      <p  id="end-sub"></p>
+      <p id="end-sub"></p>
       <h3 id="end-q"></h3>
       <div id="end-rows"></div>
+      <div id="end-actions">
+        <button id="end-stats-btn" class="btn-ink">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
+          </svg>
+          Estadísticas
+        </button>
+        <a href="../" class="btn-ghost">← Volver al Hub</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Confirmar rendición ───────────────────────────── -->
+  <div id="giveup-overlay" class="overlay hidden">
+    <div class="np-modal">
+      <p class="modal-question">¿Seguro que quieres rendirte?</p>
+      <div class="modal-btns">
+        <button id="giveup-yes-btn" class="btn-danger">Sí, rendirme</button>
+        <button id="giveup-no-btn" class="btn-ghost">No, seguir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Estadísticas ───────────────────────────────────── -->
+  <div id="stats-overlay" class="overlay hidden">
+    <div class="np-modal np-modal--wide">
+      <button id="stats-close-btn" class="close-btn">✕</button>
+      <div class="eyebrow" style="margin-bottom:6px;">
+        <span class="eyebrow-num">EN EL TOP</span>
+        <span class="eyebrow-sep">·</span>
+        <span class="eyebrow-cat">Historial</span>
+      </div>
+      <h2 id="stats-heading">Estadísticas</h2>
+      <div id="stats-nums"></div>
+      <div id="stats-hist-wrap">
+        <div id="stats-hist-bars"></div>
+        <div id="stats-hist-labels"></div>
+      </div>
     </div>
   </div>
 
