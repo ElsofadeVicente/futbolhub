@@ -74,19 +74,31 @@ const CENTER_ATTRS = ['flag', 'position', 'club'];
 const POINTS_LIMIT = { min: 1, max: 9, value: 3 };
 const NUMERIC_THRESHOLD_CACHE = new Map();
 const ROOM_ROOT = 'restricciones/rooms';
+const ROOM_ROOT_CANDIDATES = [
+  'restricciones/rooms',
+  'rooms',
+  'mentiroso_rooms',
+  'rooms/mentiroso',
+  'mentiroso/rooms'
+];
 
 const Me = {
   clientId: genId(),
   name: '',
   isHost: false,
-  roomCode: null
+  roomCode: null,
+  roomRoot: ROOM_ROOT
 };
 
 let State = null;
 let unsubscribeRoom = null;
 
 function roomRef(code) {
-  return ref(db, `${ROOM_ROOT}/${code}`);
+  return ref(db, `${Me.roomRoot || ROOM_ROOT}/${code}`);
+}
+
+function roomRefAt(root, code) {
+  return ref(db, `${root}/${code}`);
 }
 
 function hasFirebase() {
@@ -524,11 +536,26 @@ function clearLocalRoom() {
   State = null;
   Me.isHost = false;
   Me.roomCode = null;
+  Me.roomRoot = ROOM_ROOT;
   window.__guessDraft = 0;
   window.__guessDraftRound = null;
   $('#overlay-reveal').classList.add('hidden');
   $('#overlay-gameover').classList.add('hidden');
   showScreen('#screen-menu');
+}
+
+async function findExistingRoom(code) {
+  for (const root of ROOM_ROOT_CANDIDATES) {
+    try {
+      const snapshot = await get(roomRefAt(root, code));
+      if (snapshot.exists()) {
+        return { root, snapshot };
+      }
+    } catch (error) {
+      console.warn('Mentiroso findExistingRoom error', root, error);
+    }
+  }
+  return null;
 }
 
 async function mutateRoom(code, mutator) {
@@ -578,15 +605,16 @@ async function createRoomOnline() {
   const mode = selected ? selected.dataset.mode : 'easy';
 
   Me.name = name.slice(0, 16);
+  Me.roomRoot = ROOM_ROOT;
   let code = '';
   let created = false;
 
   try {
     for (let attempt = 0; attempt < 12 && !created; attempt++) {
       code = genCode();
-      const existing = await get(roomRef(code));
+      const existing = await get(roomRefAt(ROOM_ROOT, code));
       if (existing.exists()) continue;
-      await set(roomRef(code), createInitialState(code, mode, Me.name));
+      await set(roomRefAt(ROOM_ROOT, code), createInitialState(code, mode, Me.name));
       created = true;
     }
   } catch (error) {
@@ -623,19 +651,19 @@ async function joinRoomOnline() {
 
   let existing;
   try {
-    existing = await get(roomRef(code));
+    existing = await findExistingRoom(code);
   } catch (error) {
     console.warn('Mentiroso joinRoomOnline error', error);
     $('#join-error').textContent = 'Error conectando con la sala.';
     $('#join-error').classList.remove('hidden');
     return;
   }
-  if (!existing.exists()) {
+  if (!existing || !existing.snapshot.exists()) {
     $('#join-error').textContent = 'Sala no encontrada.';
     $('#join-error').classList.remove('hidden');
     return;
   }
-  if (existing.val()?.game !== 'mentiroso') {
+  if (existing.snapshot.val()?.game !== 'mentiroso') {
     $('#join-error').textContent = 'Ese codigo pertenece a otro juego.';
     $('#join-error').classList.remove('hidden');
     return;
@@ -643,6 +671,7 @@ async function joinRoomOnline() {
 
   Me.name = name.slice(0, 16);
   Me.roomCode = code;
+  Me.roomRoot = existing.root;
 
   const joined = await mutateRoom(code, (state) => {
     if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya ha empezado.' };
