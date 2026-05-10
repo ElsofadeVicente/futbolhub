@@ -102,7 +102,7 @@ function roomRefAt(root, code) {
 }
 
 function hasFirebase() {
-  return Boolean(db && ref && set && get && onValue && runTransaction);
+  return Boolean(window._FB?.configured && db && ref && set && get && onValue && runTransaction);
 }
 
 function serializePlayers(state) {
