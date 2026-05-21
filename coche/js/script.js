@@ -173,7 +173,7 @@ async function _loadData() {
   const CHUNKS_BASE = '../data/players/chunks/';
 
   const [
-    companeros, entrenados, clubInt, seleccion, ligaCopa, premios, nameIdx, leagueData, miniData,
+    companeros, entrenados, clubInt, seleccion, ligaCopa, premios, nameIdx, leagueData, compData,
   ] = await Promise.all([
     fetch(BASE + 'compa%C3%B1eros_principal.json').then(r => r.json()),
     fetch(BASE + 'entrenados_por.json').then(r => r.json()),
@@ -183,7 +183,7 @@ async function _loadData() {
     fetch(BASE + 'premios_individuales.json').then(r => r.json()),
     fetch('../data/players/name-index.json').then(r => r.json()).catch(() => []),
     fetch('../data/teams/league-teams.json').then(r => r.json()).catch(() => null),
-    fetch(BASE + 'players-mini.json').then(r => r.json()).catch(() => ({})),
+    fetch(BASE + 'companeros-data.json').then(r => r.json()).catch(() => ({})),
   ]);
 
   NAME_INDEX = Array.isArray(nameIdx) ? nameIdx : [];
@@ -200,18 +200,12 @@ async function _loadData() {
     }
   }
 
-  const neededIds = new Set([
-    ...Object.keys(companeros),
-    ...Object.values({ ...clubInt, ...seleccion, ...ligaCopa, ...premios })
-      .flat().map(id => String(id)),
-    ...Object.values(entrenados).flatMap(e => (e.players || []).map(String)),
-  ]);
-
-  /* chunkData: miniData es la fuente principal (sin fetches extra).
-     Para IDs no cubiertos por mini, usar caché de background si está disponible. */
+  /* chunkData: companeros-data.json es la fuente principal (datos completos de chunk
+     para los ~227 compañeros, solo 127KB). Ya NO se usa players-mini.json. */
   const chunkData = {};
-  for (const id of neededIds) {
-    if (miniData[id]) { chunkData[id] = miniData[id]; continue; }
+  for (const id of Object.keys(companeros)) {
+    if (compData[id]) { chunkData[id] = compData[id]; continue; }
+    /* Fallback: caché de chunks de background por si algún ID falta en companeros-data */
     const cf = _chunkFileForId(id);
     if (!cf) continue;
     const cached = _chunkCache[cf];
@@ -306,8 +300,9 @@ async function _loadData() {
     return Math.max(...transfers.map(t => parseInt(t.fee || '0', 10) || 0));
   }
 
-  /* PLAYERS_DB = solo compañeros_principal, enriquecidos con players-mini.json.
-     Pequeño (~300-500 jugadores) → generate() es rápido.
+  /* PLAYERS_DB = solo compañeros_principal, enriquecidos con companeros-data.json
+     (datos completos de chunk: img, apps, goals, nt, tr, etc.).
+     Pequeño (~227 jugadores) → generate() es rápido.
      findPlayerAsync usa chunks on-demand para validar respuestas del usuario. */
   return Object.entries(companeros).map(([id, pd]) => {
     const chunk = chunkData[id] || {};
@@ -479,28 +474,30 @@ const Restrictions = (() => {
   const CONTINENT_NAT = {
     europeo:    ['Spain','England','France','Germany','Netherlands','Portugal','Italy',
                  'Belgium','Croatia','Serbia','Denmark','Sweden','Norway','Poland',
-                 'Czech Republic','Switzerland','Austria','Turkey','Greece','Hungary',
+                 'Czech Republic','Czech','Switzerland','Austria','Turkey','Türkiye','Greece','Hungary',
                  'Slovakia','Romania','Ukraine','Russia','Scotland','Wales','Northern Ireland',
                  'Finland','Albania','Slovenia','Bosnia-Herzegovina','Montenegro','Iceland',
-                 'Ireland','Georgia','Kosovo','North Macedonia','Bulgaria','Cyprus','Latvia',
-                 'Lithuania','Estonia','Azerbaijan','Armenia','Luxembourg','Gibraltar'],
+                 'Ireland','Georgia','Kosovo','North Macedonia','North','Bulgaria','Cyprus','Latvia',
+                 'Lithuania','Estonia','Azerbaijan','Armenia','Luxembourg','Gibraltar',
+                 'Faroe','Faroe Islands'],
     americano:  ['Argentina','Brazil','Colombia','Uruguay','Chile','Mexico','Paraguay',
                  'Bolivia','Peru','Venezuela','Ecuador','United States','Jamaica',
-                 'Trinidad and Tobago','Honduras','Costa Rica','Panama','Guatemala',
+                 'Trinidad and Tobago','Honduras','Costa Rica','Costa','Panama','Guatemala',
                  'El Salvador','Cuba','Dominican Republic','Canada','Haiti'],
-    africano:   ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cameroon',
-                 'Morocco','Egypt','Algeria','Tunisia','South Africa','Mali','Guinea',
-                 'Burkina Faso','DR Congo','Congo','Republic of the Congo','Togo','Gabon',
-                 'Equatorial Guinea','Zimbabwe','Kenya','Cape Verde','Sierra Leone',
-                 'Liberia','Gambia','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
+    africano:   ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cote','Cameroon',
+                 'Morocco','Egypt','Algeria','Tunisia','South Africa','South','Mali','Guinea',
+                 'Burkina Faso','DR Congo','DR','Congo','Republic of the Congo','Togo','Gabon',
+                 'Equatorial Guinea','Zimbabwe','Kenya','Cape Verde','Cape','Sierra Leone',
+                 'Liberia','Gambia','The','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
                  'Zambia','Uganda','Angola','Mauritius','Mozambique','Madagascar',
                  'Benin','Niger','Chad','Sudan','South Sudan','Somalia','Eritrea',
                  'Djibouti','Comoros','Lesotho','Botswana','Namibia','Malawi',
                  'Eswatini','Libya','Mauritania','Central African Republic'],
-    asiatico:   ['Japan','South Korea','Iran','Saudi Arabia','Qatar','UAE','Australia',
+    asiatico:   ['Japan','South Korea','Iran','Saudi Arabia','Saudi','Qatar','UAE','Australia',
                  'China','Iraq','Jordan','Bahrain','Kuwait','Uzbekistan','Vietnam',
                  'Thailand','Indonesia','Philippines','India','Pakistan','Bangladesh',
-                 'North Korea','Malaysia','Oman','Lebanon','Palestine','Syria'],
+                 'North Korea','Malaysia','Oman','Lebanon','Palestine','Syria',
+                 'New','New Zealand'],
   };
 
   /* ────────── REGIONES ────────── */
@@ -628,9 +625,17 @@ const Restrictions = (() => {
     { name:'Francesco Totti',    display:'Totti',            id:'5958',   icon:'⚽' },
   ];
 
-  /* ────────── Contar jugadores válidos ────────── */
-  function _matching(restriction, db) {
-    return db.filter(p => validate(p, restriction)).length;
+  /* ────────── Contar jugadores válidos (con early-exit) ────────── */
+  function _matching(restriction, db, minNeeded) {
+    const min = minNeeded || 2;
+    let count = 0;
+    for (let i = 0; i < db.length; i++) {
+      if (validate(db[i], restriction)) {
+        count++;
+        if (count >= min) return count;   /* early exit — no necesitamos contar más */
+      }
+    }
+    return count;
   }
 
   /* ────────── Construye el pool completo de candidatos mezclados con rng ────────── */
@@ -697,6 +702,11 @@ const Restrictions = (() => {
     candidates.push({ type:'height_le', value:180, label:'Mide 180 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
     candidates.push({ type:'height_ge', value:180, label:'Mide 180 cm o más',    imgUrl:null, icon:'📏', family:'height' });
     candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
+
+    /* Pie */
+    candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
+    candidates.push({ type:'foot', value:'right', label:'Diestro',     imgUrl:null, icon:'🦶', family:'foot' });
+    candidates.push({ type:'foot', value:'both',  label:'Ambidiestro', imgUrl:null, icon:'🦶', family:'foot' });
 
     /* Posición portero */
     candidates.push({ type:'position_gk', label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
@@ -877,6 +887,16 @@ const Restrictions = (() => {
       if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
     }
 
+    /* Pie: dos restricciones de foot distintas no pueden coexistir */
+    if (rA.type === 'foot' && rB.type === 'foot') return true;
+
+    /* Altura: height_le y height_ge con mismo valor son incompatibles
+       (solo jugadores de exactamente ese valor cumplirían ambas) */
+    if (rA.type === 'height_le' && rB.type === 'height_ge') return true;
+    if (rA.type === 'height_ge' && rB.type === 'height_le') return true;
+    /* Dos height_ge: el mayor hace redundante al menor */
+    if (rA.type === 'height_ge' && rB.type === 'height_ge' && rA.value > rB.value) return true;
+
     return false;
   }
 
@@ -930,7 +950,18 @@ const Restrictions = (() => {
 
   /* ────────── Garantiza que ≥1 jugador cumple todas las restricciones ────────── */
   function _ensureSolution(restrictions, shuffledPool, db) {
-    const hasSolution = (rs) => db.some(p => rs.every(r => validate(p, r)));
+    /* Pre-filtrar DB a jugadores que cumplen los clubs fijos (índices 0-1).
+       Esto reduce db de ~8000 a ~50-200, acelerando hasSolution 40-100x. */
+    const clubRestrictions = restrictions.filter(r => r.type === 'club');
+    const filteredDB = clubRestrictions.length > 0
+      ? db.filter(p => clubRestrictions.every(cr => validate(p, cr)))
+      : db;
+
+    const hasSolution = (rs) => {
+      /* Solo comprobar las restricciones no-club contra la DB pre-filtrada */
+      const nonClub = rs.filter(r => r.type !== 'club');
+      return filteredDB.some(p => nonClub.every(r => validate(p, r)));
+    };
     if (hasSolution(restrictions)) return restrictions;
 
     const result = [...restrictions];
@@ -1516,6 +1547,9 @@ const App = (() => {
         }
         PLAYERS_DB = db;
         console.log(`✅ PLAYERS_DB: ${db.length} jugadores`);
+        /* Si los chunks ya se cargaron antes de que el usuario empezara,
+           enriquecer ahora que PLAYERS_DB ya existe */
+        _enrichPlayersDBFromChunks();
         return PLAYERS_DB;
       })
       .catch(e => {
@@ -1530,6 +1564,44 @@ const App = (() => {
   function _preloadDataInBackground() {
     if (PLAYERS_DB.length > 0 || _dataPromise) return;
     _loadGameData().catch(() => {});
+  }
+
+  /* ════════════════════════════════════════
+     ENRIQUECER PLAYERS_DB CON TODOS LOS CHUNKS
+     Cuando los chunks terminan de cargarse en background,
+     añade TODOS los jugadores de chunks que no estén ya
+     en PLAYERS_DB. Esto amplía el pool de generate/validate/findPlayer
+     de ~227 a ~8000+ jugadores.
+     generate() ahora es rápido con 8000+ gracias a _matching con early-exit
+     y _ensureSolution con DB pre-filtrada por clubs.
+     ════════════════════════════════════════ */
+  let _dbEnriched = false;
+  function _enrichPlayersDBFromChunks() {
+    if (_dbEnriched || PLAYERS_DB.length === 0) return false;
+    const hasChunks = Object.values(_chunkCache).some(c => c && c.__full);
+    if (!hasChunks) return false;
+    _dbEnriched = true;
+
+    const existingIds = new Set(PLAYERS_DB.map(p => p.id));
+    let added = 0;
+
+    for (const [cf, chunkObj] of Object.entries(_chunkCache)) {
+      if (!chunkObj || !chunkObj.__full) continue;
+      for (const [id, chunk] of Object.entries(chunkObj)) {
+        if (id === '__full') continue;
+        if (existingIds.has(id)) continue;
+        const player = _buildPlayerFromChunk(id, chunk);
+        if (player && player.name !== '?') {
+          PLAYERS_DB.push(player);
+          existingIds.add(id);
+          added++;
+        }
+      }
+    }
+    if (added > 0) {
+      console.log(`✅ PLAYERS_DB enriquecido: +${added} jugadores → ${PLAYERS_DB.length} total`);
+    }
+    return true;
   }
 
   /* ════════════════════════════════════════
@@ -1598,7 +1670,7 @@ const App = (() => {
       _chunksPreloaded = true;
       if (!_chunksPromise) _chunksPromise = Promise.resolve();
     }
-    _ensureAllChunksLoaded();
+    _ensureAllChunksLoaded().then(() => _enrichPlayersDBFromChunks());
 
     /* Cargar datos y luego lanzar generación en el worker */
     _loadGameData()
@@ -1867,7 +1939,7 @@ const App = (() => {
     try {
       await _loadGameData();
       const seed         = Date.now();
-      const restrictions = Restrictions.generate(seed, PLAYERS_DB);
+      const restrictions = await _generateAsync(seed, PLAYERS_DB);
       /* Usar ajustes de _lastRoom (ya sincronizados por el listener) — sin round-trip extra */
       if (_lastRoom?.pointsToWin != null) _onlinePointsToWin = _lastRoom.pointsToWin;
       if (_lastRoom?.roundSecs   != null) _onlineRoundSecs   = _lastRoom.roundSecs;
@@ -1957,10 +2029,14 @@ const App = (() => {
     if (_nextRestrictionsCache) {
       _doAnimate(_nextRestrictionsCache);
     } else {
-      /* Sin cache: defer al siguiente frame para que la UI renderice primero */
-      setTimeout(() => {
-        _doAnimate(Restrictions.generate(Date.now() + _localRound * 7919, PLAYERS_DB));
-      }, 0);
+      /* Sin cache: generar en worker para no bloquear el hilo principal */
+      const seed = Date.now() + _localRound * 7919;
+      _generateAsync(seed, PLAYERS_DB)
+        .then(restrictions => _doAnimate(restrictions))
+        .catch(() => {
+          /* Último recurso: sincrónico si el worker falla */
+          _doAnimate(Restrictions.generate(seed, PLAYERS_DB));
+        });
     }
   }
 
@@ -3210,6 +3286,7 @@ const App = (() => {
     leaveRoom, startGame, nextRound,
     submitAnswer, selectAutocomplete, selectAndSubmit,
     playAgain, showMenu, showToast, copyLink,
+    _enrichPlayersDBFromChunks,
     _continueLocalGame: null, /* se asigna dinámicamente desde _runCountdownThenLoad */
   };
 })();
@@ -3228,15 +3305,21 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Empezar a descargar todos los chunks en background nada más abrir la página,
      mientras el usuario está en el menú eligiendo nombre — igual que Cadena.
      (Los datos de PLAYERS_DB los carga App.init() → _preloadDataInBackground) */
-  [
+  const chunkPromises = [
     '0-99999','100000-199999','200000-299999','300000-399999','400000-499999',
     '500000-599999','600000-699999','700000-799999','800000-899999','900000-999999',
     '1000000-1099999','1100000-1199999','1200000-1299999','1300000-1399999','1400000-1499999',
-  ].forEach(c => {
+  ].map(c => {
     const cf = `../data/players/chunks/${c}.json`;
-    if (_chunkCache[cf]?.__full) return;
-    fetch(cf).then(r => r.ok ? r.json() : null).then(data => {
+    if (_chunkCache[cf]?.__full) return Promise.resolve();
+    return fetch(cf).then(r => r.ok ? r.json() : null).then(data => {
       if (data) { data.__full = true; _chunkCache[cf] = data; }
     }).catch(() => {});
+  });
+  /* Cuando todos los chunks estén en caché, enriquecer PLAYERS_DB */
+  Promise.all(chunkPromises).then(() => {
+    if (typeof App !== 'undefined' && App._enrichPlayersDBFromChunks) {
+      App._enrichPlayersDBFromChunks();
+    }
   });
 });

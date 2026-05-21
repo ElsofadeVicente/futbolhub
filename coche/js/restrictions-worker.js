@@ -137,28 +137,30 @@ const NATIONALITIES = [
 const CONTINENT_NAT = {
   europeo:   ['Spain','England','France','Germany','Netherlands','Portugal','Italy',
                'Belgium','Croatia','Serbia','Denmark','Sweden','Norway','Poland',
-               'Czech Republic','Switzerland','Austria','Turkey','Greece','Hungary',
+               'Czech Republic','Czech','Switzerland','Austria','Turkey','Türkiye','Greece','Hungary',
                'Slovakia','Romania','Ukraine','Russia','Scotland','Wales','Northern Ireland',
                'Finland','Albania','Slovenia','Bosnia-Herzegovina','Montenegro','Iceland',
-               'Ireland','Georgia','Kosovo','North Macedonia','Bulgaria','Cyprus','Latvia',
-               'Lithuania','Estonia','Azerbaijan','Armenia','Luxembourg','Gibraltar'],
+               'Ireland','Georgia','Kosovo','North Macedonia','North','Bulgaria','Cyprus','Latvia',
+               'Lithuania','Estonia','Azerbaijan','Armenia','Luxembourg','Gibraltar',
+               'Faroe','Faroe Islands'],
   americano: ['Argentina','Brazil','Colombia','Uruguay','Chile','Mexico','Paraguay',
                'Bolivia','Peru','Venezuela','Ecuador','United States','Jamaica',
-               'Trinidad and Tobago','Honduras','Costa Rica','Panama','Guatemala',
+               'Trinidad and Tobago','Honduras','Costa Rica','Costa','Panama','Guatemala',
                'El Salvador','Cuba','Dominican Republic','Canada','Haiti'],
-  africano:  ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cameroon',
-               'Morocco','Egypt','Algeria','Tunisia','South Africa','Mali','Guinea',
-               'Burkina Faso','DR Congo','Congo','Republic of the Congo','Togo','Gabon',
-               'Equatorial Guinea','Zimbabwe','Kenya','Cape Verde','Sierra Leone',
-               'Liberia','Gambia','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
+  africano:  ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cote','Cameroon',
+               'Morocco','Egypt','Algeria','Tunisia','South Africa','South','Mali','Guinea',
+               'Burkina Faso','DR Congo','DR','Congo','Republic of the Congo','Togo','Gabon',
+               'Equatorial Guinea','Zimbabwe','Kenya','Cape Verde','Cape','Sierra Leone',
+               'Liberia','Gambia','The','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
                'Zambia','Uganda','Angola','Mauritius','Mozambique','Madagascar',
                'Benin','Niger','Chad','Sudan','South Sudan','Somalia','Eritrea',
                'Djibouti','Comoros','Lesotho','Botswana','Namibia','Malawi',
                'Eswatini','Libya','Mauritania','Central African Republic'],
-  asiatico:  ['Japan','South Korea','Iran','Saudi Arabia','Qatar','UAE','Australia',
+  asiatico:  ['Japan','South Korea','Iran','Saudi Arabia','Saudi','Qatar','UAE','Australia',
                'China','Iraq','Jordan','Bahrain','Kuwait','Uzbekistan','Vietnam',
                'Thailand','Indonesia','Philippines','India','Pakistan','Bangladesh',
-               'North Korea','Malaysia','Oman','Lebanon','Palestine','Syria'],
+               'North Korea','Malaysia','Oman','Lebanon','Palestine','Syria',
+               'New','New Zealand'],
 };
 
 const REGION_PATTERNS = {
@@ -342,8 +344,16 @@ function validate(player, r) {
   }
 }
 
-function _matching(restriction, db) {
-  return db.filter(p => validate(p, restriction)).length;
+function _matching(restriction, db, minNeeded) {
+  const min = minNeeded || 2;
+  let count = 0;
+  for (let i = 0; i < db.length; i++) {
+    if (validate(db[i], restriction)) {
+      count++;
+      if (count >= min) return count;
+    }
+  }
+  return count;
 }
 
 function _buildCandidates(rng) {
@@ -381,6 +391,9 @@ function _buildCandidates(rng) {
   candidates.push({ type:'height_le', value:180, label:'Mide 180 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
   candidates.push({ type:'height_ge', value:180, label:'Mide 180 cm o más',    imgUrl:null, icon:'📏', family:'height' });
   candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
+  candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
+  candidates.push({ type:'foot', value:'right', label:'Diestro',     imgUrl:null, icon:'🦶', family:'foot' });
+  candidates.push({ type:'foot', value:'both',  label:'Ambidiestro', imgUrl:null, icon:'🦶', family:'foot' });
   candidates.push({ type:'position_gk', label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
   candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades',imgUrl:null, icon:'🌍', family:'caps' });
@@ -433,6 +446,14 @@ function _isRedundant(rA, rB) {
     if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
   }
 
+  /* Pie: dos restricciones de foot distintas no pueden coexistir */
+  if (rA.type === 'foot' && rB.type === 'foot') return true;
+
+  /* Altura: incompatibilidades */
+  if (rA.type === 'height_le' && rB.type === 'height_ge') return true;
+  if (rA.type === 'height_ge' && rB.type === 'height_le') return true;
+  if (rA.type === 'height_ge' && rB.type === 'height_ge' && rA.value > rB.value) return true;
+
   return false;
 }
 
@@ -467,7 +488,16 @@ function _removeRedundancies(restrictions, shuffledPool, db) {
 }
 
 function _ensureSolution(restrictions, shuffledPool, db) {
-  const hasSolution = (rs) => db.some(p => rs.every(r => validate(p, r)));
+  /* Pre-filtrar DB a jugadores que cumplen los clubs fijos.
+     Reduce db de ~8000 a ~50-200, acelerando hasSolution 40-100x. */
+  const clubRestrictions = restrictions.filter(r => r.type === 'club');
+  const filteredDB = clubRestrictions.length > 0
+    ? db.filter(p => clubRestrictions.every(cr => validate(p, cr)))
+    : db;
+  const hasSolution = (rs) => {
+    const nonClub = rs.filter(r => r.type !== 'club');
+    return filteredDB.some(p => nonClub.every(r => validate(p, r)));
+  };
   if (hasSolution(restrictions)) return restrictions;
   const result = [...restrictions];
   const swappableIdx = result.map((_, i) => i).filter(i => result[i].type !== 'club');
