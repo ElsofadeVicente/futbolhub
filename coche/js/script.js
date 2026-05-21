@@ -115,10 +115,14 @@ async function findPlayerAsync(inputName) {
   const n = norm(inputName);
   if (!n) return null;
 
-  /* 1. Buscar en PLAYERS_DB */
-  const inDB = PLAYERS_DB.find(p =>
+  /* 1. Buscar en PLAYERS_DB — puede haber duplicados por nombre */
+  const matches = PLAYERS_DB.filter(p =>
     norm(p.name) === n || (p.aliases||[]).some(a => norm(a) === n)
   );
+  /* Si hay un solo match, usarlo; si hay varios, preferir el que tiene teammates (companeros_principal) */
+  const inDB = matches.length === 1 ? matches[0]
+    : matches.length > 1 ? (matches.find(p => (p.teammates||[]).length > 0) || matches[0])
+    : null;
 
   const playerId = inDB ? inDB.id : null;
   let chunkId    = playerId;
@@ -1309,21 +1313,37 @@ const Sync = (() => {
     await update(_ref('/'), batch);
   }
 
-  async function submitAnswer(code, playerId, footballerName) {
-    const {update,runTransaction}=FB();
+  async function submitAnswer(code, playerId, footballerName, footballerId) {
+    const {update,runTransaction,get}=FB();
     const lockKey = Restrictions.normalize(footballerName)
       .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/,'');
     if (!lockKey) throw new Error('Nombre inválido');
 
-    let locked = false;
-    await runTransaction(_ref(`${ROOMS_PATH}/${code}/lockedPlayers/${lockKey}`), current => {
-      if (current !== null && current !== undefined) return undefined;
-      locked = true; return playerId;
-    });
-    if (!locked) throw new Error('Este futbolista ya fue elegido por otro jugador');
+    /* runTransaction puede reintentar el callback varias veces ante conflictos.
+       La variable 'locked' debe reflejar el resultado del ÚLTIMO intento,
+       no del primero. Además, al retornar undefined para abortar,
+       Firebase no lanza error — hay que verificar post-transacción. */
+    const result = await runTransaction(
+      _ref(`${ROOMS_PATH}/${code}/lockedPlayers/${lockKey}`),
+      current => {
+        if (current !== null && current !== undefined) return;  /* abortar: ya ocupado */
+        return playerId;
+      }
+    );
+
+    /* result.committed === false cuando la transacción se abortó (retornó undefined).
+       Doble verificación: leer el valor final para confirmar que ESTE jugador lo bloqueó,
+       ya que en condiciones de alta concurrencia el committed puede ser ambiguo. */
+    if (!result.committed) {
+      throw new Error('Este futbolista ya fue elegido por otro jugador');
+    }
+    const finalVal = result.snapshot.val();
+    if (finalVal !== playerId) {
+      throw new Error('Este futbolista ya fue elegido por otro jugador');
+    }
 
     await update(_ref(`${ROOMS_PATH}/${code}/submissions/${playerId}`),{
-      playerName:footballerName, submittedAt:Date.now(),
+      playerName:footballerName, footballerId:footballerId||null, submittedAt:Date.now(),
     });
     const res = await runTransaction(
       _ref(`${ROOMS_PATH}/${code}/doneCount`), cur => (cur||0)+1
@@ -1463,6 +1483,7 @@ const App = (() => {
   let _restrictions    = [];
   let _submitted       = false;
   let _mySubmission    = null;
+  let _mySubmissionId  = null;
   let _revealTriggered = false;
 
   let _timerInterval  = null;
@@ -1610,6 +1631,8 @@ const App = (() => {
      si todavía faltan datos, extiende la carga
      hasta que todo esté realmente preparado.
      ════════════════════════════════════════ */
+  let _preloadCountdownIv = null;
+
   function _showPreloadCountdown(seed, onDone) {
     const MIN_PRELOAD_SECONDS = 10;
     let overlay = document.getElementById('countdown-overlay');
@@ -1631,13 +1654,12 @@ const App = (() => {
     let countdownDone    = false;
     let generationDone   = false;
     let doneCalled       = false;
-    let iv = null;
 
     function _tryDone() {
       if (doneCalled) return;
       if (dataReady && countdownDone && generationDone) {
         doneCalled = true;
-        if (iv) clearInterval(iv);
+        if (_preloadCountdownIv) { clearInterval(_preloadCountdownIv); _preloadCountdownIv=null; }
         overlay.classList.add('hidden');
         onDone();
       }
@@ -1694,7 +1716,8 @@ const App = (() => {
 
     /* Countdown basado en Date.now() — inmune al drift */
     const startAt = Date.now();
-    iv = setInterval(() => {
+    if (_preloadCountdownIv) clearInterval(_preloadCountdownIv);
+    _preloadCountdownIv = setInterval(() => {
       const elapsed   = Math.floor((Date.now() - startAt) / 1000);
       const remaining = Math.max(0, MIN_PRELOAD_SECONDS - elapsed);
 
@@ -1760,6 +1783,8 @@ const App = (() => {
     }
   }
 
+  let _onlineCountdownIv = null;
+
   /* ── Cuenta atrás visual para la primera ronda online ── */
   function _runCountdownThenLoad(onDone) {
     const ONLINE_COUNTDOWN_SECS = 10;
@@ -1779,13 +1804,14 @@ const App = (() => {
     const numEl = document.getElementById('countdown-number');
     const startAt = Date.now();
     let doneCalled = false;
-    const iv = setInterval(() => {
+    if (_onlineCountdownIv) clearInterval(_onlineCountdownIv);
+    _onlineCountdownIv = setInterval(() => {
       const elapsed   = Math.floor((Date.now() - startAt) / 1000);
       const remaining = Math.max(0, ONLINE_COUNTDOWN_SECS - elapsed);
       if (numEl) numEl.textContent = remaining > 0 ? String(remaining) : '\u00a1YA!';
       if (remaining <= 0 && !doneCalled) {
         doneCalled = true;
-        clearInterval(iv);
+        clearInterval(_onlineCountdownIv); _onlineCountdownIv = null;
         overlay.classList.add('hidden');
         if (PLAYERS_DB.length > 0) { onDone(); return; }
         _loadGameData()
@@ -1986,7 +2012,7 @@ const App = (() => {
   function _startLocalRound() {
     _localRound++;
     _round = _localRound;
-    _submitted=false; _mySubmission=null; _revealTriggered=false;
+    _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
     _showScreen('screen-round');
     _renderTopbar(_localRound, _players);
     _renderSubmissions(_players, {});
@@ -2093,7 +2119,7 @@ const App = (() => {
       case 'playing':
         if (room.round !== _round) {
           _round=room.round; _restrictions=room.restrictions||[];
-          _submitted=false; _mySubmission=null; _revealTriggered=false;
+          _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
           /* Leer ajustes de partida desde la sala — SIEMPRE, en cada ronda */
           if (room.pointsToWin != null) _onlinePointsToWin = room.pointsToWin;
           if (room.roundSecs   != null) _onlineRoundSecs   = room.roundSecs;
@@ -2217,6 +2243,7 @@ const App = (() => {
   }
 
   /* Timer lobby público */
+  let _lobbyRenderTimerIv = null;
   function _renderPublicLobbyTimer(lobbyAt) {
     const timerEl = document.getElementById('lobby-autotimer');
     const barEl   = document.getElementById('lobby-autotimer-bar');
@@ -2234,11 +2261,13 @@ const App = (() => {
       if (countEl) { countEl.textContent = `${mins}:${s}`; countEl.classList.toggle('urgent', secs < 30); }
     };
     tick();
-    /* Actualizar cada segundo (el original solo llamaba tick() una vez y se quedaba congelado) */
-    const iv = setInterval(() => {
+    /* Limpiar intervalo anterior antes de crear uno nuevo — _updateLobbyUI se llama
+       en cada actualización de Firebase, así que sin esto se acumulan intervalos */
+    if (_lobbyRenderTimerIv) clearInterval(_lobbyRenderTimerIv);
+    _lobbyRenderTimerIv = setInterval(() => {
       const remaining = Math.max(0, PUBLIC_LOBBY_TIMEOUT - (Date.now() - lobbyAt));
       tick();
-      if (remaining <= 0) clearInterval(iv);
+      if (remaining <= 0) { clearInterval(_lobbyRenderTimerIv); _lobbyRenderTimerIv = null; }
     }, 1000);
   }
 
@@ -2411,10 +2440,32 @@ const App = (() => {
     if (sb)  sb.disabled  = true;
     if (pi2) pi2.disabled = true;
 
+    /* Capturar y consumir _acSelected antes de cualquier await */
+    const selectedItem = _acSelected;
+    _acSelected = null;
+
     let player;
     try {
-      /* Busca en PLAYERS_DB primero, luego en chunks (igual que Cadena) */
-      player = await findPlayerAsync(name);
+      /* Si el usuario seleccionó una sugerencia concreta, buscar por ID
+         para evitar ambigüedades entre jugadores con el mismo nombre
+         (ej. varios "Rafinha" con posiciones distintas) */
+      if (selectedItem?.id) {
+        const chunk = await _getChunkData(selectedItem.id);
+        player = _buildPlayerFromChunk(selectedItem.id, chunk);
+        /* Enriquecer con mapas globales igual que findPlayerAsync */
+        if (player) {
+          const sid = String(selectedItem.id);
+          const mapTrophies = _TROPHY_MAP[sid] || [];
+          if (mapTrophies.length > 0) {
+            player.trophies = [...new Set([...(player.trophies || []), ...mapTrophies])];
+          }
+          player.teammates = _TEAMMATE_MAP[sid] || player.teammates || [];
+          player.coaches   = _COACH_MAP[sid]    || player.coaches   || [];
+        }
+      } else {
+        /* Sin selección de autocomplete: buscar por nombre (comportamiento original) */
+        player = await findPlayerAsync(name);
+      }
     } catch(e) {
       console.error('[submitAnswer] Error buscando jugador:', e);
       player = null;
@@ -2427,7 +2478,7 @@ const App = (() => {
       return;
     }
 
-    _submitted=true; _mySubmission=player.name;
+    _submitted=true; _mySubmission=player.name; _mySubmissionId=player.id||null;
     if (sb)  sb.disabled  = true;
     if (pi2) pi2.disabled = true;
     showToast(`✓ ${player.name} enviado`, 'success');
@@ -2435,11 +2486,11 @@ const App = (() => {
     if (_isLocal) { _stopTimer(); _localReveal(); return; }
 
     try {
-      const doneCount = await Sync.submitAnswer(_roomCode, _playerId, player.name);
+      const doneCount = await Sync.submitAnswer(_roomCode, _playerId, player.name, player.id||null);
       const connected = _players.filter(p=>p.connected!==false).length;
       if (_isHost && !_revealTriggered && doneCount>=connected) _triggerReveal(_lastRoom);
     } catch(e) {
-      _submitted=false; _mySubmission=null;
+      _submitted=false; _mySubmission=null; _mySubmissionId=null;
       if (sb)  sb.disabled=false;
       if (pi2) { pi2.disabled=false; pi2.value=''; }
       showToast(e.message||'Error al enviar', 'error');
@@ -2525,7 +2576,7 @@ const App = (() => {
      ════════════════════════════════════════ */
   async function _localReveal() {
     _stopTimer();
-    const subs    = _mySubmission ? {[_playerId]:{playerName:_mySubmission}} : {};
+    const subs    = _mySubmission ? {[_playerId]:{playerName:_mySubmission, footballerId:_mySubmissionId}} : {};
     const results = await _computeResults(subs, _restrictions, _players);
     _players      = _applyPoints(_players, results);
     const ptw     = _localPointsToWin || POINTS_WIN;
@@ -2815,6 +2866,8 @@ const App = (() => {
       _players=[{..._players[0],score:0}]; _localRound=0;
       _isSuddenDeath=false; _suddenDeathPlayers=[];
       _nextRestrictionsCache=null;
+      /* Limpiar banners y elementos residuales de la partida anterior */
+      _cleanupRoundDOM();
       _acClose(); _startLocalRound(); return;
     }
     if (!_roomCode||!_lastRoom?.players) { showMenu(); return; }
@@ -2853,11 +2906,26 @@ const App = (() => {
      ════════════════════════════════════════ */
   async function _computeResults(submissions, restrictions, players) {
     const results = {};
-    /* Lanzar todos los findPlayerAsync en paralelo en lugar de uno a uno */
+    /* Lanzar todos los lookups en paralelo en lugar de uno a uno */
     const lookups = await Promise.all(players.map(p => {
       const sub = submissions[p.id];
       if (!sub || !sub.playerName) return Promise.resolve({ p, sub: null, player: null });
-      return findPlayerAsync(sub.playerName).then(player => ({ p, sub, player })).catch(() => ({ p, sub, player: null }));
+      /* Si hay ID almacenado, buscar por ID directamente para evitar colisiones de nombre */
+      const fid = sub.footballerId || null;
+      const lookupFn = fid
+        ? _getChunkData(fid).then(chunk => {
+            let built = _buildPlayerFromChunk(fid, chunk);
+            if (built) {
+              const sid = String(fid);
+              const mapTrophies = _TROPHY_MAP[sid] || [];
+              if (mapTrophies.length > 0) built.trophies = [...new Set([...(built.trophies||[]), ...mapTrophies])];
+              built.teammates = _TEAMMATE_MAP[sid] || built.teammates || [];
+              built.coaches   = _COACH_MAP[sid]    || built.coaches   || [];
+            }
+            return built;
+          })
+        : findPlayerAsync(sub.playerName);
+      return lookupFn.then(player => ({ p, sub, player })).catch(() => ({ p, sub, player: null }));
     }));
     for (const { p, sub, player } of lookups) {
       if (!sub || !sub.playerName) {
@@ -3256,11 +3324,29 @@ const App = (() => {
   function _btnLoad(btn,txt)  { if (btn){btn.disabled=true;btn.textContent=txt;} }
   function _btnReset(btn,txt) { if (btn){btn.disabled=false;btn.textContent=txt;} }
 
+  /* Limpia todos los elementos DOM residuales de partida/ronda anterior */
+  function _cleanupRoundDOM() {
+    const sdBanner = document.getElementById('sudden-death-banner');
+    if (sdBanner) sdBanner.remove();
+    const sdResults = document.getElementById('sd-results-banner');
+    if (sdResults) sdResults.remove();
+    const finishedCd = document.getElementById('_finished-cd');
+    if (finishedCd) finishedCd.remove();
+    /* Ocultar overlay de countdown por si quedó visible */
+    const overlay = document.getElementById('countdown-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    /* Limpiar grid de restricciones y submissions */
+    const rg = document.getElementById('restrictions-grid');
+    if (rg) rg.innerHTML = '';
+    const sg = document.getElementById('submissions-grid');
+    if (sg) sg.innerHTML = '';
+  }
+
   function _resetState() {
     _roomCode=null; _playerId=null; _isHost=false; _isPublic=false;
     _isLocal=false; _localName=''; _localRound=0;
     _round=0; _players=[]; _restrictions=[];
-    _submitted=false; _mySubmission=null; _revealTriggered=false;
+    _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
     _lastRoom=null;
     _isSuddenDeath=false; _suddenDeathPlayers=[];
     _onlinePointsToWin=7; _onlineRoundSecs=60;
@@ -3269,6 +3355,14 @@ const App = (() => {
     _acClose();
     if (_finishedDelayTimer) { clearInterval(_finishedDelayTimer); _finishedDelayTimer=null; }
     _pendingFinishedRoom=null;
+    /* Limpiar intervalo del timer de lobby público */
+    if (_lobbyRenderTimerIv) { clearInterval(_lobbyRenderTimerIv); _lobbyRenderTimerIv=null; }
+    /* Limpiar countdown de precarga */
+    if (_preloadCountdownIv) { clearInterval(_preloadCountdownIv); _preloadCountdownIv=null; }
+    /* Limpiar countdown online */
+    if (_onlineCountdownIv) { clearInterval(_onlineCountdownIv); _onlineCountdownIv=null; }
+    /* Limpiar DOM residual */
+    _cleanupRoundDOM();
   }
 
   function _saveSession() {
