@@ -252,7 +252,7 @@ const TEAMMATES_LIST = [
   { name:'Ángel Di María',     display:'Di María',         id:'45320',  icon:'⚽' },
   { name:'Edinson Cavani',     display:'Cavani',           id:'48280',  icon:'⚽' },
   { name:'Xavi',               display:'Xavi',             id:'7607',   icon:'⚽' },
-  { name:'Fernando Llorente',  display:'Llorente',         id:'35564',  icon:'⚽' },
+  { name:'Fernando Llorente',  display:'Fernando Llorente',         id:'35564',  icon:'⚽' },
   { name:'Pepe Reina',         display:'Reina',            id:'7825',   icon:'⚽' },
   { name:'Manuel Neuer',       display:'Neuer',            id:'17259',  icon:'⚽' },
   { name:'Thomas Müller',      display:'Müller',           id:'58358',  icon:'⚽' },
@@ -582,7 +582,7 @@ function generate(seed, db) {
   }
   let result = [...clubRestrictions, ...chosen.slice(0, 3)];
   result = _removeRedundancies(result, shuffled, db);
-  if (rng() < 0.7) result = _ensureSolution(result, shuffled, db);
+  if (rng() < 0.75) result = _ensureSolution(result, shuffled, db);
   return result;
 }
 
