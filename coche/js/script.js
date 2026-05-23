@@ -600,7 +600,7 @@ const Restrictions = (() => {
     { name:'Ángel Di María',     display:'Di María',         id:'45320',  icon:'⚽' },
     { name:'Edinson Cavani',     display:'Cavani',           id:'48280',  icon:'⚽' },
     { name:'Xavi',               display:'Xavi',             id:'7607',   icon:'⚽' },
-    { name:'Fernando Llorente',  display:'Llorente',         id:'35564',  icon:'⚽' },
+    { name:'Fernando Llorente',  display:'Fernando Llorente',         id:'35564',  icon:'⚽' },
     { name:'Pepe Reina',         display:'Reina',            id:'7825',   icon:'⚽' },
     { name:'Manuel Neuer',       display:'Neuer',            id:'17259',  icon:'⚽' },
     { name:'Thomas Müller',      display:'Müller',           id:'58358',  icon:'⚽' },
@@ -821,7 +821,7 @@ const Restrictions = (() => {
 
     /* ══ PASO 6: Garantizar que ≥1 jugador cumple las 5 restricciones a la vez ══ */
     /* Solo el 70% de las veces — el 30% restante puede no tener solución exacta */
-    if (rng() < 0.7) {
+    if (rng() < 0.75) {
       result = _ensureSolution(result, shuffled, db);
     }
 
@@ -2115,7 +2115,21 @@ const App = (() => {
       }));
     }
     switch(room.status) {
-      case 'waiting': _updateLobbyUI(room); break;
+      case 'waiting':
+        /* Resetear estado interno de ronda al volver al lobby (playAgain / resetToLobby).
+           Sin esto, _round podría quedarse en su valor anterior y
+           la condición room.round !== _round fallaría al empezar nueva partida. */
+        _round=0; _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
+        _isSuddenDeath=false; _suddenDeathPlayers=[];
+        _nextRestrictionsCache=null;
+        _stopTimer();
+        if (_finishedDelayTimer) { clearInterval(_finishedDelayTimer); _finishedDelayTimer=null; }
+        if (_onlineCountdownIv) { clearInterval(_onlineCountdownIv); _onlineCountdownIv=null; }
+        if (_preloadCountdownIv) { clearInterval(_preloadCountdownIv); _preloadCountdownIv=null; }
+        _pendingFinishedRoom=null;
+        _cleanupRoundDOM();
+        _updateLobbyUI(room);
+        break;
       case 'playing':
         if (room.round !== _round) {
           _round=room.round; _restrictions=room.restrictions||[];
@@ -2210,7 +2224,7 @@ const App = (() => {
     const count    = players.length;
     const startBtn = document.getElementById('btn-start-game');
     const hintEl   = document.getElementById('lobby-hint');
-    if (_isHost && startBtn) { startBtn.style.display='block'; startBtn.disabled=count<2; }
+    if (_isHost && startBtn) { startBtn.style.display='block'; startBtn.disabled=count<2; startBtn.textContent='EMPEZAR ▶'; }
     else if (startBtn) { startBtn.style.display='none'; }
     if (hintEl) {
       if (_isPublic && !_isHost) hintEl.textContent = 'Esperando a que el host empiece…';
@@ -2325,6 +2339,11 @@ const App = (() => {
     _renderTopbar(room.round, _players);
     _renderSubmissions(_players, {});
     const secs = _isSuddenDeath ? SUDDEN_DEATH_SECS : (_onlineRoundSecs || ROUND_SECS);
+    /* Resetear display del timer inmediatamente para no mostrar el valor de la ronda anterior */
+    const _timerEl = document.getElementById('round-timer');
+    const _barEl   = document.getElementById('round-timer-bar');
+    if (_timerEl) { _timerEl.textContent = secs; _timerEl.classList.remove('urgent'); }
+    if (_barEl)   { _barEl.style.width = '100%';  _barEl.classList.remove('urgent'); }
     const pi=document.getElementById('player-input');
     const sb=document.getElementById('submit-btn');
     /* En muerte súbita, solo participan los jugadores empatados */
@@ -3416,4 +3435,18 @@ document.addEventListener('DOMContentLoaded', () => {
       App._enrichPlayersDBFromChunks();
     }
   });
+
+  /* Precargar imágenes de restricciones (entrenadores, compañeros, logos, trofeos, banderas)
+     en background con baja prioridad para que estén en caché del navegador
+     cuando la ronda empiece y las tarjetas se revelen */
+  const _preloadImg = (src) => { const img = new Image(); img.src = src; };
+  /* Entrenadores (12 fotos) */
+  ['67','118','280','523','781','1522','2868','3517','5075','5672','6499','21284']
+    .forEach(id => _preloadImg(`data/coaches/${id}.png`));
+  /* Compañeros (38 fotos) */
+  ['28003','8198','132098','3979','342229','14132','68290','3373','45320','48280',
+   '7607','35564','7825','17259','58358','35207','5817','406625','4673','288230',
+   '3366','27992','26399','7980','88755','3455','5023','25557','3111','7476',
+   '164770','148455','225083','40433','4360','7767','7663','5958']
+    .forEach(id => _preloadImg(`data/players/photos/${id}.jpg`));
 });
