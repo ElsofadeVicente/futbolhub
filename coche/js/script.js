@@ -31,6 +31,8 @@ let _acDebounce      = null;
 let _teamLeaguePrio  = null;
 let _chunkCache      = {};
 let _playerDataCache = {};
+let _chunksPreloaded = false;
+let _chunksPromise   = null;
 
 /* ═══════════════════════════════════════════════════════════════
    1a. LOOKUP INDIVIDUAL POR ID (igual que Cadena)
@@ -176,9 +178,14 @@ async function _loadData() {
   const BASE        = 'data/';
   const CHUNKS_BASE = '../data/players/chunks/';
 
-  const [
-    companeros, entrenados, clubInt, seleccion, ligaCopa, premios, nameIdx, leagueData, compData,
-  ] = await Promise.all([
+  /* ── A: Cargar TODOS los chunks en paralelo junto con los demás JSON ── */
+  const CHUNK_NAMES = [
+    '0-99999','100000-199999','200000-299999','300000-399999','400000-499999',
+    '500000-599999','600000-699999','700000-799999','800000-899999','900000-999999',
+    '1000000-1099999','1100000-1199999','1200000-1299999','1300000-1399999','1400000-1499999',
+  ];
+
+  const metaPromises = [
     fetch(BASE + 'compa%C3%B1eros_principal.json').then(r => r.json()),
     fetch(BASE + 'entrenados_por.json').then(r => r.json()),
     fetch(BASE + 'ganadores_clubes_internacional.json').then(r => r.json()),
@@ -187,8 +194,39 @@ async function _loadData() {
     fetch(BASE + 'premios_individuales.json').then(r => r.json()),
     fetch('../data/players/name-index.json').then(r => r.json()).catch(() => []),
     fetch('../data/teams/league-teams.json').then(r => r.json()).catch(() => null),
-    fetch(BASE + 'companeros-data.json').then(r => r.json()).catch(() => ({})),
+  ];
+
+  const chunkPromises = CHUNK_NAMES.map(c => {
+    const cf = `${CHUNKS_BASE}${c}.json`;
+    /* Si ya está en caché (precarga de DOMContentLoaded), reusar */
+    if (_chunkCache[cf]?.__full) return Promise.resolve({ path: cf, data: _chunkCache[cf] });
+    return fetch(cf).then(r => r.ok ? r.json() : null)
+      .then(data => ({ path: cf, data }))
+      .catch(() => ({ path: cf, data: null }));
+  });
+
+  const [metaResults, chunkResults] = await Promise.all([
+    Promise.all(metaPromises),
+    Promise.all(chunkPromises),
   ]);
+
+  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, nameIdx, leagueData] = metaResults;
+
+  /* Poblar _chunkCache y fusionar todos los chunks */
+  const allChunkData = {};
+  for (const { path: cf, data } of chunkResults) {
+    if (!data) continue;
+    data.__full = true;
+    _chunkCache[cf] = data;
+    for (const [id, pdata] of Object.entries(data)) {
+      if (id === '__full') continue;
+      allChunkData[id] = pdata;
+    }
+  }
+  _chunksPreloaded = true;
+  if (!_chunksPromise) _chunksPromise = Promise.resolve();
+
+  console.log(`✅ Chunks cargados: ${Object.keys(allChunkData).length} jugadores`);
 
   NAME_INDEX = Array.isArray(nameIdx) ? nameIdx : [];
 
@@ -204,22 +242,8 @@ async function _loadData() {
     }
   }
 
-  /* chunkData: companeros-data.json es la fuente principal (datos completos de chunk
-     para los ~227 compañeros, solo 127KB). Ya NO se usa players-mini.json. */
-  const chunkData = {};
-  for (const id of Object.keys(companeros)) {
-    if (compData[id]) { chunkData[id] = compData[id]; continue; }
-    /* Fallback: caché de chunks de background por si algún ID falta en companeros-data */
-    const cf = _chunkFileForId(id);
-    if (!cf) continue;
-    const cached = _chunkCache[cf];
-    if (cached && cached[id]) chunkData[id] = cached[id];
-  }
-
   /* nameMap: id → nombre. Primero desde name-index (cubre TODOS los jugadores),
-     luego sobreescribir con companeros_principal (fuente de verdad para los famosos).
-     Esto garantiza que IDs de compañeros que no son clave del JSON (p.ej. Inigo Martinez
-     en el array de Sergio Ramos) se resuelven correctamente a su nombre. */
+     luego sobreescribir con companeros_principal (fuente de verdad para los famosos). */
   const nameMap = {};
   for (const [id, name] of NAME_INDEX) {
     nameMap[String(id)] = name;
@@ -309,7 +333,7 @@ async function _loadData() {
      Pequeño (~227 jugadores) → generate() es rápido.
      findPlayerAsync usa chunks on-demand para validar respuestas del usuario. */
   return Object.entries(companeros).map(([id, pd]) => {
-    const chunk = chunkData[id] || {};
+    const chunk = allChunkData[id] || {};
     return {
       id,
       idNum:        parseInt(id, 10),
@@ -405,6 +429,20 @@ const Restrictions = (() => {
     { tmName:'Real Betis Balompié',  display:'Betis',          league:'La Liga' },
     { tmName:'Villarreal CF',        display:'Villarreal',     league:'La Liga' },
     { tmName:'Athletic Bilbao',      display:'Athletic',       league:'La Liga' },
+  { tmName:'Real Sociedad',        display:'Real Sociedad',  league:'La Liga' },
+  { tmName:'West Ham United',      display:'West Ham',       league:'Premier League' },
+  { tmName:'Leicester City',       display:'Leicester',      league:'Premier League' },
+  { tmName:'Bayer 04 Leverkusen',  display:'Leverkusen',     league:'Bundesliga' },
+  { tmName:'FC Schalke 04',        display:'Schalke',        league:'Bundesliga' },
+  { tmName:'ACF Fiorentina',       display:'Fiorentina',     league:'Serie A' },
+  { tmName:'Atalanta BC',          display:'Atalanta',       league:'Serie A' },
+  { tmName:'Galatasaray',          display:'Galatasaray',    league:'Süper Lig' },
+  { tmName:'Besiktas JK',          display:'Beşiktaş',       league:'Süper Lig' },
+  { tmName:'Fenerbahçe',           display:'Fenerbahçe',     league:'Süper Lig' },
+  { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
+  { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
+  { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
+  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
   ].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
 
   /* ────────── EQUIPOS POR LIGA ────────── */
@@ -491,7 +529,7 @@ const Restrictions = (() => {
     africano:   ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cote','Cameroon',
                  'Morocco','Egypt','Algeria','Tunisia','South Africa','South','Mali','Guinea',
                  'Burkina Faso','DR Congo','DR','Congo','Republic of the Congo','Togo','Gabon',
-                 'Equatorial Guinea','Zimbabwe','Kenya','Cape Verde','Cape','Sierra Leone',
+                 'Equatorial Guinea','Equatorial','Zimbabwe','Kenya','Cape Verde','Cape','Sierra Leone',
                  'Liberia','Gambia','The','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
                  'Zambia','Uganda','Angola','Mauritius','Mozambique','Madagascar',
                  'Benin','Niger','Chad','Sudan','South Sudan','Somalia','Eritrea',
@@ -710,7 +748,6 @@ const Restrictions = (() => {
     /* Pie */
     candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
     candidates.push({ type:'foot', value:'right', label:'Diestro',     imgUrl:null, icon:'🦶', family:'foot' });
-    candidates.push({ type:'foot', value:'both',  label:'Ambidiestro', imgUrl:null, icon:'🦶', family:'foot' });
 
     /* Posición portero */
     candidates.push({ type:'position_gk', label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
@@ -759,32 +796,72 @@ const Restrictions = (() => {
   function generate(seed, db) {
     const rng = _mulberry32(seed);
 
-    /* ══ PASO 1: Elegir 2 clubes obligatorios ══ */
+    /* ══ PASO 1: Elegir restricciones de club ══ */
     const shuffledClubs = _shuffle(CLUBS_LIST, rng);
+
+    /* ── B: Pre-filtrar pares de clubs por intersección mínima ── */
+    const MIN_PAIR = Math.min(4, Math.max(2, Math.floor(db.length / 100)));
     const clubRestrictions = [];
+
+    /* Club 1 */
+    let club1 = null;
     for (const club of shuffledClubs) {
-      if (clubRestrictions.length >= 2) break;
-      const r = {
-        type:    'club',
-        value:   club.tmName,
-        label:   `Ha jugado en ${club.display}`,
-        imgUrl:  club.logoUrl,
-        icon:    '🏟️',
-        family:  'club',
-      };
-      if (_matching(r, db) < 1) continue;
-      /* Si ya tenemos 1 club, verificar que ≥1 jugador haya estado en AMBOS */
-      if (clubRestrictions.length === 1) {
-        if (!db.some(p => validate(p, clubRestrictions[0]) && validate(p, r))) continue;
-      }
-      clubRestrictions.push(r);
+      const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+      if (_matching(r, db, 1) >= 1) { club1 = { r, meta: club }; break; }
     }
-    /* Fallback: rellenar si hay menos de 2 */
+    if (!club1) {
+      club1 = { r:{ type:'club', value:shuffledClubs[0].tmName, label:`Ha jugado en ${shuffledClubs[0].display}`, imgUrl:shuffledClubs[0].logoUrl, icon:'🏟️', family:'club' }, meta:shuffledClubs[0] };
+    }
+    clubRestrictions.push(club1.r);
+
+    /* ── C: ~15% → sustituir club2 por una liga distinta a la del club1 ── */
+    const useLeagueAsSecond = rng() < 0.15;
+
+    if (useLeagueAsSecond) {
+      const club1League = club1.meta.league;
+      const otherLeagues = Object.entries(LEAGUE_TEAMS).filter(([lg]) => lg !== club1League);
+      if (otherLeagues.length > 0) {
+        const shuffledLeagues = _shuffle(otherLeagues, rng);
+        for (const [liga, teams] of shuffledLeagues) {
+          const lr = { type:'league', value:liga, teams, label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
+          if (db.some(p => validate(p, club1.r) && validate(p, lr))) {
+            clubRestrictions.push(lr); break;
+          }
+        }
+      }
+    }
+
+    /* Club 2 (si no se usó liga) — B: intersección ≥ MIN_PAIR */
+    if (clubRestrictions.length < 2) {
+      for (const club of shuffledClubs) {
+        if (club.tmName === club1.meta.tmName) continue;
+        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+        let pairCount = 0;
+        for (const p of db) {
+          if (validate(p, club1.r) && validate(p, r)) {
+            pairCount++;
+            if (pairCount >= MIN_PAIR) break;
+          }
+        }
+        if (pairCount >= MIN_PAIR) { clubRestrictions.push(r); break; }
+      }
+    }
+    /* Fallback: relajar a ≥ 1 */
+    if (clubRestrictions.length < 2) {
+      for (const club of shuffledClubs) {
+        if (club.tmName === club1.meta.tmName) continue;
+        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+        if (db.some(p => validate(p, club1.r) && validate(p, r))) {
+          clubRestrictions.push(r); break;
+        }
+      }
+    }
     if (clubRestrictions.length < 2) {
       for (const club of CLUBS_LIST) {
-        if (clubRestrictions.length >= 2) break;
-        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-        if (!clubRestrictions.find(c => c.value === r.value)) clubRestrictions.push(r);
+        if (club.tmName !== club1.meta.tmName) {
+          clubRestrictions.push({ type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' });
+          break;
+        }
       }
     }
 
@@ -796,32 +873,45 @@ const Restrictions = (() => {
       const min = r.type === 'teammate' ? 1 : 2;
       return _matching(r, db) >= min;
     });
-    const shuffled = _shuffle(playable, rng);
 
-    /* ══ PASO 4: Elegir 3 variadas (máx 1 por familia) ══ */
-    const chosen   = [];
-    const families = {};
-    for (const r of shuffled) {
-      if (chosen.length >= 3) break;
+    /* ══ PASO 4: D — Selección ponderada por familia ══
+       Elegir primero una FAMILIA al azar (probabilidad uniforme),
+       luego un candidato de esa familia. */
+    const familyGroups = {};
+    for (const r of playable) {
       const fam = r.family || r.type;
-      if ((families[fam] || 0) >= 1) continue;
-      chosen.push(r);
-      families[fam] = (families[fam] || 0) + 1;
+      if (!familyGroups[fam]) familyGroups[fam] = [];
+      familyGroups[fam].push(r);
     }
-    /* Fallback si no hay suficiente variedad */
-    for (const r of shuffled) {
+    /* No repetir la familia del slot 2 si fue liga (C) */
+    const usedFamilies = new Set();
+    if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'league') {
+      usedFamilies.add('league');
+    }
+
+    const familyNames = _shuffle(Object.keys(familyGroups).filter(f => !usedFamilies.has(f)), rng);
+    const chosen = [];
+    for (const fam of familyNames) {
       if (chosen.length >= 3) break;
-      if (!chosen.includes(r)) chosen.push(r);
+      const group = _shuffle(familyGroups[fam], rng);
+      if (group[0]) { chosen.push(group[0]); usedFamilies.add(fam); }
+    }
+    if (chosen.length < 3) {
+      const remaining = _shuffle(playable.filter(r => !chosen.includes(r)), rng);
+      for (const r of remaining) {
+        if (chosen.length >= 3) break;
+        chosen.push(r);
+      }
     }
 
     let result = [...clubRestrictions, ...chosen.slice(0, 3)];
 
     /* ══ PASO 5: Eliminar redundancias (siempre sustituyendo, nunca eliminando) ══ */
+    const shuffled = _shuffle(playable, rng);
     result = _removeRedundancies(result, shuffled, db);
 
     /* ══ PASO 6: Garantizar que ≥1 jugador cumple las 5 restricciones a la vez ══ */
-    /* Solo el 70% de las veces — el 30% restante puede no tener solución exacta */
-    if (rng() < 0.75) {
+    if (rng() < 0.70) {
       result = _ensureSolution(result, shuffled, db);
     }
 
@@ -1546,8 +1636,6 @@ const App = (() => {
      Una sola promesa, errores visibles inmediatamente.
      ════════════════════════════════════════ */
   let _dataPromise    = null;
-  let _chunksPreloaded = false;
-  let _chunksPromise  = null;
 
   /* Todos los chunks del servidor */
   const ALL_CHUNKS_LIST = [

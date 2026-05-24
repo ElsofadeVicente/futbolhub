@@ -73,6 +73,20 @@ const CLUBS_LIST = [
   { tmName:'Real Betis Balompié',  display:'Betis',          league:'La Liga' },
   { tmName:'Villarreal CF',        display:'Villarreal',     league:'La Liga' },
   { tmName:'Athletic Bilbao',      display:'Athletic',       league:'La Liga' },
+  { tmName:'Real Sociedad',        display:'Real Sociedad',  league:'La Liga' },
+  { tmName:'West Ham United',      display:'West Ham',       league:'Premier League' },
+  { tmName:'Leicester City',       display:'Leicester',      league:'Premier League' },
+  { tmName:'Bayer 04 Leverkusen',  display:'Leverkusen',     league:'Bundesliga' },
+  { tmName:'FC Schalke 04',        display:'Schalke',        league:'Bundesliga' },
+  { tmName:'ACF Fiorentina',       display:'Fiorentina',     league:'Serie A' },
+  { tmName:'Atalanta BC',          display:'Atalanta',       league:'Serie A' },
+  { tmName:'Galatasaray',          display:'Galatasaray',    league:'Süper Lig' },
+  { tmName:'Besiktas JK',          display:'Beşiktaş',       league:'Süper Lig' },
+  { tmName:'Fenerbahçe',           display:'Fenerbahçe',     league:'Süper Lig' },
+  { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
+  { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
+  { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
+  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
 ].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
 
 const LEAGUE_TEAMS = {
@@ -393,7 +407,6 @@ function _buildCandidates(rng) {
   candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
   candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
   candidates.push({ type:'foot', value:'right', label:'Diestro',     imgUrl:null, icon:'🦶', family:'foot' });
-  candidates.push({ type:'foot', value:'both',  label:'Ambidiestro', imgUrl:null, icon:'🦶', family:'foot' });
   candidates.push({ type:'position_gk', label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
   candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades',imgUrl:null, icon:'🌍', family:'caps' });
@@ -549,38 +562,123 @@ function _ensureSolution(restrictions, shuffledPool, db) {
 function generate(seed, db) {
   const rng = _mulberry32(seed);
   const shuffledClubs = _shuffle(CLUBS_LIST, rng);
+
+  /* ── B: Pre-filtrar pares de clubs por intersección mínima ──
+     Elegir club1 y luego buscar club2 que tenga ≥ MIN_PAIR jugadores
+     en común con club1 en la DB. */
+  const MIN_PAIR = Math.min(4, Math.max(2, Math.floor(db.length / 100)));
   const clubRestrictions = [];
+
+  /* Club 1 — el primero que tenga al menos 1 jugador */
+  let club1 = null;
   for (const club of shuffledClubs) {
-    if (clubRestrictions.length >= 2) break;
     const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-    if (_matching(r, db) < 1) continue;
-    if (clubRestrictions.length === 1) {
-      if (!db.some(p => validate(p, clubRestrictions[0]) && validate(p, r))) continue;
-    }
-    clubRestrictions.push(r);
+    if (_matching(r, db, 1) >= 1) { club1 = { r, meta: club }; break; }
   }
+  if (!club1) {
+    club1 = { r:{ type:'club', value:shuffledClubs[0].tmName, label:`Ha jugado en ${shuffledClubs[0].display}`, imgUrl:shuffledClubs[0].logoUrl, icon:'🏟️', family:'club' }, meta:shuffledClubs[0] };
+  }
+  clubRestrictions.push(club1.r);
+
+  /* ── C: Con ~15% de probabilidad, sustituir el segundo club por una liga
+     (siempre de una liga DISTINTA a la del club1) ── */
+  const useLeagueAsSecond = rng() < 0.15;
+
+  if (useLeagueAsSecond) {
+    const club1League = club1.meta.league;
+    const otherLeagues = Object.entries(LEAGUE_TEAMS).filter(([lg]) => lg !== club1League);
+    if (otherLeagues.length > 0) {
+      const shuffledLeagues = _shuffle(otherLeagues, rng);
+      for (const [liga, teams] of shuffledLeagues) {
+        const lr = { type:'league', value:liga, teams, label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
+        /* Comprobar que hay intersección con club1 */
+        if (db.some(p => validate(p, club1.r) && validate(p, lr))) {
+          clubRestrictions.push(lr);
+          break;
+        }
+      }
+    }
+    /* Si no se encontró liga válida, caer en club normal */
+  }
+
+  /* Club 2 (si no se usó liga) — buscar con intersección ≥ MIN_PAIR */
+  if (clubRestrictions.length < 2) {
+    for (const club of shuffledClubs) {
+      if (club.tmName === club1.meta.tmName) continue;
+      const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+      /* B: Contar intersección con club1 */
+      let pairCount = 0;
+      for (const p of db) {
+        if (validate(p, club1.r) && validate(p, r)) {
+          pairCount++;
+          if (pairCount >= MIN_PAIR) break;
+        }
+      }
+      if (pairCount >= MIN_PAIR) { clubRestrictions.push(r); break; }
+    }
+  }
+
+  /* Fallback: si ningún par cumple MIN_PAIR, relajar a ≥ 1 */
+  if (clubRestrictions.length < 2) {
+    for (const club of shuffledClubs) {
+      if (club.tmName === club1.meta.tmName) continue;
+      const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+      if (db.some(p => validate(p, club1.r) && validate(p, r))) {
+        clubRestrictions.push(r); break;
+      }
+    }
+  }
+  /* Último fallback: cualquier club distinto */
   if (clubRestrictions.length < 2) {
     for (const club of CLUBS_LIST) {
-      if (clubRestrictions.length >= 2) break;
-      const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-      if (!clubRestrictions.find(c => c.value === r.value)) clubRestrictions.push(r);
+      if (club.tmName !== club1.meta.tmName) {
+        clubRestrictions.push({ type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' });
+        break;
+      }
     }
   }
+
+  /* ── D: Selección ponderada por familia ──
+     En vez de barajar todo el pool y tomar los primeros,
+     elegir primero una FAMILIA al azar (todas con igual probabilidad)
+     y luego un candidato random de esa familia. */
   const candidates = _buildCandidates(rng);
   const playable = candidates.filter(r => _matching(r, db) >= (r.type === 'teammate' ? 1 : 2));
-  const shuffled = _shuffle(playable, rng);
-  const chosen = []; const families = {};
-  for (const r of shuffled) {
-    if (chosen.length >= 3) break;
+
+  /* Agrupar por familia */
+  const familyGroups = {};
+  for (const r of playable) {
     const fam = r.family || r.type;
-    if ((families[fam] || 0) >= 1) continue;
-    chosen.push(r); families[fam] = (families[fam] || 0) + 1;
+    if (!familyGroups[fam]) familyGroups[fam] = [];
+    familyGroups[fam].push(r);
   }
-  for (const r of shuffled) {
+  /* No incluir la familia del slot 2 si fue liga (C) */
+  const usedFamilies = new Set();
+  if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'league') {
+    usedFamilies.add('league');
+  }
+
+  const familyNames = _shuffle(Object.keys(familyGroups).filter(f => !usedFamilies.has(f)), rng);
+
+  const chosen = [];
+  /* Ronda 1: una restricción de cada familia distinta */
+  for (const fam of familyNames) {
     if (chosen.length >= 3) break;
-    if (!chosen.includes(r)) chosen.push(r);
+    const group = _shuffle(familyGroups[fam], rng);
+    const pick = group[0];
+    if (pick) { chosen.push(pick); usedFamilies.add(fam); }
   }
+  /* Ronda 2: si faltan, repetir familias */
+  if (chosen.length < 3) {
+    const remaining = _shuffle(playable.filter(r => !chosen.includes(r)), rng);
+    for (const r of remaining) {
+      if (chosen.length >= 3) break;
+      chosen.push(r);
+    }
+  }
+
   let result = [...clubRestrictions, ...chosen.slice(0, 3)];
+  const shuffled = _shuffle(playable, rng); /* pool para reemplazos */
   result = _removeRedundancies(result, shuffled, db);
   if (rng() < 0.75) result = _ensureSolution(result, shuffled, db);
   return result;
