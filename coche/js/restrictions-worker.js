@@ -30,6 +30,7 @@ function _shuffle(arr, rng) {
 function normalize(str) {
   if (!str) return '';
   return String(str).toLowerCase()
+    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ').trim();
 }
@@ -86,7 +87,7 @@ const CLUBS_LIST = [
   { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
   { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
   { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
-  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
+  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão',  region:'sudamerica' },
 ].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
 
 const LEAGUE_TEAMS = {
@@ -179,7 +180,7 @@ const CONTINENT_NAT = {
 
 const REGION_PATTERNS = {
   sudamerica:    ['boca','river','flamengo','santos','corinthians','sao paulo','gremio',
-                  'palmeiras','atletico mineiro','vasco','fluminense','cruzeiro','sport',
+                  'palmeiras','atletico mineiro','vasco','fluminense','cruzeiro','sport recife',
                   'internacional','nacional','penarol','estudiantes','independiente',
                   'racing','san lorenzo','newells','rosario','tigre','colo-colo',
                   'u de chile','universidad','alianza','universitario','barcelona guay',
