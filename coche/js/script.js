@@ -7,6 +7,7 @@
 /* ── Normalización de texto compartida entre _loadData y App ── */
 function _acNorm(s) {
   return String(s || '').toLowerCase()
+    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -112,8 +113,9 @@ function _buildPlayerFromChunk(id, chunk) {
    que 'teams' esté completo incluso si _loadData no lo cargó. */
 async function findPlayerAsync(inputName) {
   const norm = s => String(s||'').toLowerCase()
+    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/\s+/g,' ').trim();
+    .replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
   const n = norm(inputName);
   if (!n) return null;
 
@@ -294,6 +296,7 @@ async function _loadData() {
        B) El jugador escrito NO es clave pero figura en el array del famoso → reverseMap lo cubre. */
   const reverseMap = {};
   const _norm = s => String(s||'').toLowerCase()
+    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/\s+/g,' ').trim();
   for (const [id, names] of Object.entries(teammateMap)) {
@@ -382,6 +385,7 @@ const Restrictions = (() => {
   function normalize(str) {
     if (!str) return '';
     return String(str).toLowerCase()
+      .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, ' ').trim();
   }
@@ -442,7 +446,7 @@ const Restrictions = (() => {
   { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
   { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
   { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
-  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
+  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão',  region:'sudamerica' },
   ].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
 
   /* ────────── EQUIPOS POR LIGA ────────── */
@@ -545,7 +549,7 @@ const Restrictions = (() => {
   /* ────────── REGIONES ────────── */
   const REGION_PATTERNS = {
     sudamerica:   ['boca','river','flamengo','santos','corinthians','sao paulo','gremio',
-                   'palmeiras','atletico mineiro','vasco','fluminense','cruzeiro','sport',
+                   'palmeiras','atletico mineiro','vasco','fluminense','cruzeiro','sport recife',
                    'internacional','nacional','penarol','estudiantes','independiente',
                    'racing','san lorenzo','newells','rosario','tigre','colo-colo',
                    'u de chile','universidad','alianza','universitario','barcelona guay',
@@ -1575,6 +1579,7 @@ const App = (() => {
   let _mySubmission    = null;
   let _mySubmissionId  = null;
   let _revealTriggered = false;
+  let _wantReplay      = false;   /* Bug 2: solo vuelves al lobby si pulsas "Jugar de nuevo" */
 
   let _timerInterval  = null;
   const ROUND_SECS    = 60;
@@ -2216,7 +2221,11 @@ const App = (() => {
         if (_preloadCountdownIv) { clearInterval(_preloadCountdownIv); _preloadCountdownIv=null; }
         _pendingFinishedRoom=null;
         _cleanupRoundDOM();
-        _updateLobbyUI(room);
+        /* Bug 2: Solo ir al lobby si el jugador ha pulsado "Jugar de nuevo".
+           Si no, quedarse en pantalla de fin de partida. */
+        if (_wantReplay) {
+          _updateLobbyUI(room);
+        }
         break;
       case 'playing':
         if (room.round !== _round) {
@@ -2238,7 +2247,11 @@ const App = (() => {
           _renderSubmissions(_players, room.submissions||{});
           if (_isHost && !_revealTriggered) {
             const connected = _players.filter(p=>p.connected!==false);
-            if (connected.length>0 && (room.doneCount||0)>=connected.length) {
+            /* Bug 3: En muerte súbita solo contar submissions de los jugadores empatados */
+            const expected = _isSuddenDeath
+              ? connected.filter(p => _suddenDeathPlayers.includes(p.id)).length
+              : connected.length;
+            if (expected>0 && (room.doneCount||0)>=expected) {
               _triggerReveal(room);
             }
           }
@@ -2312,12 +2325,29 @@ const App = (() => {
     const count    = players.length;
     const startBtn = document.getElementById('btn-start-game');
     const hintEl   = document.getElementById('lobby-hint');
-    if (_isHost && startBtn) { startBtn.style.display='block'; startBtn.disabled=count<2; startBtn.textContent='EMPEZAR ▶'; }
+
+    /* Bug 2: Cooldown de 10s tras volver al lobby para dar tiempo a que se unan todos */
+    const lobbyAge = room.lobbyAt ? Math.floor((Date.now() - room.lobbyAt) / 1000) : 999;
+    const MIN_LOBBY_WAIT = 10;
+    const cooldownActive = room.resetAt && lobbyAge < MIN_LOBBY_WAIT;
+
+    if (_isHost && startBtn) {
+      startBtn.style.display='block';
+      startBtn.disabled = count < 2 || cooldownActive;
+      startBtn.textContent = cooldownActive
+        ? `ESPERA ${MIN_LOBBY_WAIT - lobbyAge}s…`
+        : 'EMPEZAR ▶';
+    }
     else if (startBtn) { startBtn.style.display='none'; }
     if (hintEl) {
-      if (_isPublic && !_isHost) hintEl.textContent = 'Esperando a que el host empiece…';
+      if (cooldownActive) hintEl.textContent = 'Esperando a que se unan todos…';
+      else if (_isPublic && !_isHost) hintEl.textContent = 'Esperando a que el host empiece…';
       else if (count < 2) hintEl.textContent = _isPublic ? 'Buscando más jugadores…' : 'Esperando jugadores… (mínimo 2)';
       else hintEl.textContent = `${count} jugadores listos — ¡empieza cuando quieras!`;
+    }
+    /* Re-render durante el cooldown para actualizar el contador */
+    if (cooldownActive && _isHost) {
+      setTimeout(() => { if (_lastRoom) _updateLobbyUI(_lastRoom); }, 1000);
     }
 
     /* Panel de ajustes online — solo visible en sala privada */
@@ -2703,6 +2733,24 @@ const App = (() => {
         _showFinishedCountdown(null, 10, () => _showLocalFinished(roundWinner, true));
         return;
       }
+      /* Bug 3: Narrowing — eliminar a los que sacaron menos puntos */
+      const sdScores = _suddenDeathPlayers.map(id => ({id, pts: results[id]?.points||0}));
+      const maxPts = Math.max(...sdScores.map(r=>r.pts));
+      const stillTied = sdScores.filter(r=>r.pts===maxPts).map(r=>r.id);
+      if (stillTied.length < _suddenDeathPlayers.length && stillTied.length >= 2) {
+        _suddenDeathPlayers = stillTied;
+      }
+      /* Si solo queda 1, ese gana */
+      if (stillTied.length === 1) {
+        const winner = _players.find(p=>p.id===stillTied[0]);
+        _isSuddenDeath=false; _suddenDeathPlayers=[];
+        _renderResultsUI(_localRound, _restrictions, results, _players);
+        _showScreen('screen-results');
+        const nxt=document.getElementById('btn-next-round');
+        if (nxt) nxt.classList.add('hidden');
+        _showFinishedCountdown(null, 10, () => _showLocalFinished(winner, true));
+        return;
+      }
     } else {
       const reached = _players.filter(p=>p.score>=ptw);
       if (reached.length >= 2) {
@@ -2750,6 +2798,21 @@ const App = (() => {
       if (roundWinner) {
         _isSuddenDeath=false; _suddenDeathPlayers=[];
         Sync.setFinished(_roomCode, roundWinner.id, _players).catch(()=>{});
+        return;
+      }
+      /* Bug 3: No hay ganador claro → eliminar a los que sacaron menos puntos.
+         Si de 3 empatados, 2 sacan más que el tercero, la siguiente ronda
+         de muerte súbita la juegan solo esos 2. */
+      const sdScores = _suddenDeathPlayers.map(id => ({id, pts: results[id]?.points||0}));
+      const maxPts = Math.max(...sdScores.map(r=>r.pts));
+      const stillTied = sdScores.filter(r=>r.pts===maxPts).map(r=>r.id);
+      if (stillTied.length < _suddenDeathPlayers.length && stillTied.length >= 2) {
+        _suddenDeathPlayers = stillTied;
+        console.log('[App] Muerte súbita: eliminados los peores, quedan', stillTied.length);
+      } else if (stillTied.length === 1) {
+        /* Solo queda 1 → gana la partida */
+        _isSuddenDeath=false; _suddenDeathPlayers=[];
+        Sync.setFinished(_roomCode, stillTied[0], _players).catch(()=>{});
         return;
       }
     }
@@ -2969,6 +3032,7 @@ const App = (() => {
      JUGAR DE NUEVO / MENÚ
      ════════════════════════════════════════ */
   async function playAgain() {
+    _wantReplay = true;
     if (_isLocal) {
       _players=[{..._players[0],score:0}]; _localRound=0;
       _isSuddenDeath=false; _suddenDeathPlayers=[];
@@ -3454,7 +3518,7 @@ const App = (() => {
     _isLocal=false; _localName=''; _localRound=0;
     _round=0; _players=[]; _restrictions=[];
     _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
-    _lastRoom=null;
+    _lastRoom=null; _wantReplay=false;
     _isSuddenDeath=false; _suddenDeathPlayers=[];
     _onlinePointsToWin=7; _onlineRoundSecs=60;
     _nextRestrictionsCache=null;
