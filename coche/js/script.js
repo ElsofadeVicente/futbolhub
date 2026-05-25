@@ -2239,7 +2239,12 @@ const App = (() => {
         break;
       case 'playing':
         if (room.round !== _round) {
-          _round=room.round; _restrictions=room.restrictions||[];
+          _round=room.round;
+          /* Firebase puede devolver el array de restricciones como objeto {0:{…},1:{…},…} */
+          const rawR = room.restrictions;
+          _restrictions = Array.isArray(rawR) ? rawR
+            : rawR && typeof rawR === 'object' ? Object.values(rawR)
+            : [];
           _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
           /* Leer ajustes de partida desde la sala — SIEMPRE, en cada ronda */
           if (room.pointsToWin != null) _onlinePointsToWin = room.pointsToWin;
@@ -2270,7 +2275,10 @@ const App = (() => {
       case 'reveal':
         if (_currentScreen()!=='screen-results' || room.round !== _round) {
           _round = room.round;
-          _restrictions = room.restrictions || _restrictions;
+          const rawRev = room.restrictions;
+          _restrictions = Array.isArray(rawRev) ? rawRev
+            : rawRev && typeof rawRev === 'object' ? Object.values(rawRev)
+            : _restrictions;
           _showResultsScreen(room);
         }
         break;
@@ -2514,6 +2522,12 @@ const App = (() => {
   function _animateRestrictions(restrictions, onComplete) {
     const grid = document.getElementById('restrictions-grid');
     if (!grid) { onComplete?.(); return; }
+    /* Safety: Firebase puede devolver objeto en vez de array */
+    if (!Array.isArray(restrictions)) {
+      restrictions = restrictions && typeof restrictions === 'object'
+        ? Object.values(restrictions) : [];
+    }
+    if (restrictions.length === 0) { onComplete?.(); return; }
 
     grid.innerHTML = restrictions.map(r => {
       /* Contenido visual: imagen con fallback a emoji */
@@ -2665,7 +2679,10 @@ const App = (() => {
     }
 
     const submissions  = freshRoom?.submissions||{};
-    const restrictions = freshRoom?.restrictions||_restrictions;
+    const rawTR = freshRoom?.restrictions;
+    const restrictions = Array.isArray(rawTR) ? rawTR
+      : rawTR && typeof rawTR === 'object' ? Object.values(rawTR)
+      : _restrictions;
     console.log('[App] _triggerReveal submissions:', JSON.stringify(submissions));
 
     /* En muerte súbita: solo evaluar jugadores participantes */
@@ -2827,7 +2844,11 @@ const App = (() => {
       }
     }
 
-    _renderResultsUI(room.round, room.restrictions||_restrictions, results, _players);
+    const rawRes = room.restrictions;
+    const safeRestrictions = Array.isArray(rawRes) ? rawRes
+      : rawRes && typeof rawRes === 'object' ? Object.values(rawRes)
+      : _restrictions;
+    _renderResultsUI(room.round, safeRestrictions, results, _players);
     _showScreen('screen-results');
 
     /* Aprovechar que el host está leyendo los resultados para precalcular
