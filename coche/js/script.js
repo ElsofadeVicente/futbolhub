@@ -1480,13 +1480,17 @@ const Sync = (() => {
 
   async function resetToLobby(code, players, newHostId) {
     const {update,get}=FB();
-    const resetPlayers = {};
-    for (const [pid, p] of Object.entries(players)) {
-      resetPlayers[pid] = {
-        name:p.name, score:0, connected:p.connected??true,
-        isHost: newHostId ? pid===newHostId : (p.isHost??false),
-      };
-    }
+    /* Solo incluir al jugador que pulsó "Jugar de nuevo" como host.
+       Los demás se re-unirán cuando ellos pulsen el botón. */
+    const hostPlayer = players[newHostId];
+    const resetPlayers = {
+      [newHostId]: {
+        name: hostPlayer?.name || '…',
+        score: 0,
+        connected: true,
+        isHost: true,
+      },
+    };
     await update(_ref(`${ROOMS_PATH}/${code}`),{
       status:'waiting', round:0, roundSeed:0, restrictions:null, roundStartAt:null,
       submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
@@ -1496,10 +1500,24 @@ const Sync = (() => {
       const snap = await get(_ref(`${ROOMS_PATH}/${code}`));
       if (snap.exists() && snap.val().isPublic) {
         await update(_ref(`${MM_PATH}/${code}`),{
-          status:'waiting', playerCount:Object.keys(resetPlayers).length,
+          status:'waiting', playerCount:1,
         });
       }
     } catch(e) {}
+  }
+
+  /* Re-unirse a una sala existente en waiting (para "Jugar de nuevo" de no-hosts) */
+  async function rejoinRoom(code, playerId, playerName) {
+    const {get,update}=FB();
+    const snap = await get(_ref(`${ROOMS_PATH}/${code}`));
+    if (!snap.exists()) throw new Error('Sala no encontrada');
+    const room = snap.val();
+    if (room.status !== 'waiting') throw new Error('La partida ya ha comenzado');
+    const count = Object.keys(room.players||{}).length;
+    if (count >= 5) throw new Error('Sala llena (máx. 5 jugadores)');
+    await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
+      name:playerName, score:0, connected:true, isHost:false,
+    });
   }
 
   async function expirePublicRoom(code) {
@@ -1553,7 +1571,7 @@ const Sync = (() => {
   return {
     createRoom, joinRoom, findOrCreatePublicRoom, listenRoom,
     startGame, nextRound, submitAnswer, startReveal, setFinished,
-    resetToLobby, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
+    resetToLobby, rejoinRoom, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
   };
 })();
 
@@ -2209,6 +2227,9 @@ const App = (() => {
     _lastRoom = room;
     if (room.status === 'expired') { _handleKicked('La sala pública expiró por inactividad ⏱️'); return; }
     if (!_isLocal && _playerId && room.players && !room.players[_playerId]) {
+      /* En status waiting sin nuestro ID: la sala fue reseteada y aún no nos hemos re-unido.
+         No expulsar — el jugador se re-unirá al pulsar "Jugar de nuevo". */
+      if (room.status === 'waiting') return;
       _handleKicked('Has sido expulsado de la sala'); return;
     }
     if (room.players) {
@@ -3073,7 +3094,21 @@ const App = (() => {
       _acClose(); _startLocalRound(); return;
     }
     if (!_roomCode||!_lastRoom?.players) { showMenu(); return; }
-    try { await Sync.resetToLobby(_roomCode, _lastRoom.players, _playerId); }
+    try {
+      /* Comprobar si la sala ya fue reseteada por otro jugador */
+      const current = await Sync.getRoom(_roomCode);
+      if (current && current.status === 'waiting') {
+        /* La sala ya está en waiting → re-unirse como jugador normal */
+        await Sync.rejoinRoom(_roomCode, _playerId, _localName);
+        _isHost = false;
+        _showLobby();
+      } else {
+        /* Somos el primero en pulsar "Jugar de nuevo" → resetear sala.
+           Solo nosotros aparecemos en el lobby; los demás se unirán cuando pulsen. */
+        _isHost = true;
+        await Sync.resetToLobby(_roomCode, _lastRoom.players, _playerId);
+      }
+    }
     catch(e) { console.error('[App] playAgain error:', e); showMenu(); }
   }
 
