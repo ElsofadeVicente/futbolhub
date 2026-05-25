@@ -1996,7 +1996,7 @@ const App = (() => {
     _btnLoad(btn,'CREANDO…');
     try {
       const {code,playerId} = await Sync.createRoom(name);
-      _roomCode=code; _playerId=playerId; _isHost=true; _isPublic=false; _isLocal=false;
+      _roomCode=code; _playerId=playerId; _isHost=true; _isPublic=false; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
     } catch(e) { _showError('error-private', e.message||'Error al crear sala'); }
     finally { _btnReset(btn,'CREAR SALA ▶'); }
@@ -2020,7 +2020,7 @@ const App = (() => {
     _btnLoad(btn,'UNIÉNDOSE…');
     try {
       const result = await Sync.joinRoom(code, name);
-      _roomCode=result.code; _playerId=result.playerId; _isHost=false; _isPublic=false; _isLocal=false;
+      _roomCode=result.code; _playerId=result.playerId; _isHost=false; _isPublic=false; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
     } catch(e) { _showError('error-private', e.message||'Error al unirse'); }
     finally { _btnReset(btn,'UNIRSE A SALA ▶'); }
@@ -2042,7 +2042,7 @@ const App = (() => {
     _btnLoad(btn,'BUSCANDO…');
     try {
       const result = await Sync.findOrCreatePublicRoom(name);
-      _roomCode=result.code; _playerId=result.playerId; _isHost=result.isHost; _isPublic=true; _isLocal=false;
+      _roomCode=result.code; _playerId=result.playerId; _isHost=result.isHost; _isPublic=true; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
     } catch(e) { _showError('error-public', e.message||'Error al buscar partida'); }
     finally { _btnReset(btn,'BUSCAR PARTIDA ▶'); }
@@ -2221,9 +2221,10 @@ const App = (() => {
         if (_preloadCountdownIv) { clearInterval(_preloadCountdownIv); _preloadCountdownIv=null; }
         _pendingFinishedRoom=null;
         _cleanupRoundDOM();
-        /* Bug 2: Solo ir al lobby si el jugador ha pulsado "Jugar de nuevo".
+        /* Bug 2: Solo ir al lobby si el jugador ha pulsado "Jugar de nuevo"
+           o si ya estamos en pantalla de lobby (primera entrada).
            Si no, quedarse en pantalla de fin de partida. */
-        if (_wantReplay) {
+        if (_wantReplay || _currentScreen() === 'screen-lobby') {
           _updateLobbyUI(room);
         }
         break;
