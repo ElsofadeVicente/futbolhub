@@ -1627,11 +1627,20 @@ const App = (() => {
         /* Fallback sincrónico si el worker falla (p.ej. file:// sin CORS) */
         try { resolve(Restrictions.generate(seed, db)); } catch(err) { reject(err); }
       };
+      /* Sets no sobreviven structured clone (postMessage) → convertir a arrays */
+      const rtSerialized = {};
+      for (const [k, v] of Object.entries(_REVERSE_TEAMMATE)) {
+        rtSerialized[k] = v instanceof Set ? [...v] : (Array.isArray(v) ? v : []);
+      }
+      const rtIdsSerialized = {};
+      for (const [k, v] of Object.entries(_REVERSE_TEAMMATE_IDS)) {
+        rtIdsSerialized[k] = v instanceof Set ? [...v] : (Array.isArray(v) ? v : []);
+      }
       worker.postMessage({
         seed,
         db,
-        reverseTeammate:    _REVERSE_TEAMMATE,
-        reverseTeammateIds: _REVERSE_TEAMMATE_IDS,
+        reverseTeammate:    rtSerialized,
+        reverseTeammateIds: rtIdsSerialized,
       });
     });
   }

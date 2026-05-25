@@ -681,14 +681,21 @@ function generate(seed, db) {
   let result = [...clubRestrictions, ...chosen.slice(0, 3)];
   const shuffled = _shuffle(playable, rng); /* pool para reemplazos */
   result = _removeRedundancies(result, shuffled, db);
-  if (rng() < 0.75) result = _ensureSolution(result, shuffled, db);
+  if (rng() < 0.70) result = _ensureSolution(result, shuffled, db);
   return result;
 }
 
 /* ── Entrada del worker ── */
 self.onmessage = function({ data }) {
-  _REVERSE_TEAMMATE     = data.reverseTeammate     || {};
-  _REVERSE_TEAMMATE_IDS = data.reverseTeammateIds  || {};
+  /* Reconstruir Sets desde arrays (structured clone no preserva Set) */
+  _REVERSE_TEAMMATE = {};
+  for (const [k, v] of Object.entries(data.reverseTeammate || {})) {
+    _REVERSE_TEAMMATE[k] = new Set(v);
+  }
+  _REVERSE_TEAMMATE_IDS = {};
+  for (const [k, v] of Object.entries(data.reverseTeammateIds || {})) {
+    _REVERSE_TEAMMATE_IDS[k] = new Set(v);
+  }
   try {
     const restrictions = generate(data.seed, data.db);
     self.postMessage({ ok: true, restrictions });
