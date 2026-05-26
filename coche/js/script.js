@@ -74,8 +74,8 @@ function _normFoot(f) {
   if (!f) return null;
   const fl = f.toLowerCase();
   if (fl.includes('zurdo'))   return 'left';
-  if (fl.includes('diestro')) return 'right';
   if (fl.includes('ambi'))    return 'both';
+  if (fl.includes('diestro')) return 'right';
   return null;
 }
 
