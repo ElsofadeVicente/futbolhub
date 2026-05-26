@@ -319,7 +319,7 @@ function validate(player, r) {
       return !!(_REVERSE_TEAMMATE[targetNorm]?.has(normalize(player.name)));
     }
     case 'continent':
-      return (CONTINENT_NAT[r.value] || []).includes(player.nationalTeam || '');
+      return (CONTINENT_NAT[r.value] || []).includes((player.nationalTeam || '').trim().replace(/[,;]+$/, ''));
     case 'height_le': return typeof player.heightCm === 'number' && player.heightCm <= r.value;
     case 'height_ge': return typeof player.heightCm === 'number' && player.heightCm >= r.value;
     case 'height_lt': return typeof player.heightCm === 'number' && player.heightCm < r.value;

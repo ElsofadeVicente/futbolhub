@@ -1169,7 +1169,7 @@ const Restrictions = (() => {
 
       /* Continente */
       case 'continent': {
-        const nat = player.nationalTeam || '';
+        const nat = (player.nationalTeam || '').trim().replace(/[,;]+$/, '');
         return (CONTINENT_NAT[r.value] || []).includes(nat);
       }
 
