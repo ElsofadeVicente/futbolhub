@@ -62,7 +62,6 @@ const CLUBS_LIST = [
   { tmName:'Ajax Amsterdam',       display:'Ajax',           league:'Eredivisie' },
   { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Argentina',  region:'sudamerica' },
   { tmName:'CA River Plate',       display:'River Plate',    league:'Argentina',  region:'sudamerica' },
-  { tmName:"CA Newell's Old Boys", display:"Newell's",       league:'Argentina',  region:'sudamerica' },
   { tmName:'SL Benfica',           display:'Benfica',        league:'Primeira Liga' },
   { tmName:'FC Porto',             display:'Porto',          league:'Primeira Liga' },
   { tmName:'Sporting CP',          display:'Sporting CP',    league:'Primeira Liga' },
