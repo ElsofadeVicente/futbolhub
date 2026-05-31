@@ -15,13 +15,54 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function shuffle(arr) {
-  const copy = arr.slice();
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
+// Convierte el nombre de pais (incluidas formas truncadas que trae el dato) en
+// una bandera emoji real. Si no se reconoce, se deja la letra original.
+const COUNTRY_ISO = {
+  'Albania': 'AL', 'Algeria': 'DZ', 'Antigua': 'AG', 'Argentina': 'AR', 'Armenia': 'AM',
+  'Australia': 'AU', 'Austria': 'AT', 'Belarus': 'BY', 'Belgium': 'BE', 'Benin': 'BJ',
+  'Bermuda': 'BM', 'Bolivia': 'BO', 'Bosnia-Herzegovina': 'BA', 'Brazil': 'BR', 'Bulgaria': 'BG',
+  'Burkina': 'BF', 'Burundi': 'BI', 'Cameroon': 'CM', 'Canada': 'CA', 'Cape': 'CV',
+  'Central African Republic': 'CF', 'Chile': 'CL', 'China': 'CN', 'Colombia': 'CO',
+  'Congo': 'CG', 'Costa': 'CR', 'Cote': 'CI', "Cote d'Ivoire": 'CI', 'Croatia': 'HR',
+  'Curacao': 'CW', 'Cyprus': 'CY', 'Czech': 'CZ', 'Czech Republic': 'CZ', 'DR': 'CD',
+  'DR Congo': 'CD', 'Denmark': 'DK', 'Ecuador': 'EC', 'Egypt': 'EG', 'Equatorial': 'GQ',
+  'Eritrea': 'ER', 'Estonia': 'EE', 'Faroe': 'FO', 'Finland': 'FI', 'France': 'FR',
+  'French': 'GF', 'Gabon': 'GA', 'Georgia': 'GE', 'Germany': 'DE', 'Ghana': 'GH',
+  'Gibraltar': 'GI', 'Greece': 'GR', 'Guadeloupe': 'GP', 'Guinea': 'GN', 'Guinea-Bissau': 'GW',
+  'Haiti': 'HT', 'Honduras': 'HN', 'Hungary': 'HU', 'Iceland': 'IS', 'Iran': 'IR',
+  'Iraq': 'IQ', 'Ireland': 'IE', 'Israel': 'IL', 'Italy': 'IT', 'Jamaica': 'JM',
+  'Japan': 'JP', 'Kazakhstan': 'KZ', 'Korea,': 'KR', 'Korea, South': 'KR', 'Kosovo': 'XK',
+  'Latvia': 'LV', 'Lebanon': 'LB', 'Liberia': 'LR', 'Liechtenstein': 'LI', 'Lithuania': 'LT',
+  'Luxembourg': 'LU', 'Mali': 'ML', 'Martinique': 'MQ', 'Mexico': 'MX', 'Moldova': 'MD',
+  'Montenegro': 'ME', 'Montserrat': 'MS', 'Morocco': 'MA', 'Netherlands': 'NL', 'New': 'NZ',
+  'Nigeria': 'NG', 'North': 'MK', 'Norway': 'NO', 'Palestine': 'PS', 'Panama': 'PA',
+  'Paraguay': 'PY', 'Peru': 'PE', 'Poland': 'PL', 'Portugal': 'PT', 'Qatar': 'QA',
+  'Romania': 'RO', 'Russia': 'RU', 'Rwanda': 'RW', 'Sao': 'ST', 'Senegal': 'SN',
+  'Serbia': 'RS', 'Sierra': 'SL', 'Slovakia': 'SK', 'Slovenia': 'SI', 'South': 'ZA',
+  'Spain': 'ES', 'Suriname': 'SR', 'Sweden': 'SE', 'Switzerland': 'CH', 'Tanzania': 'TZ',
+  'Thailand': 'TH', 'The': 'GM', 'The Gambia': 'GM', 'Togo': 'TG', 'Trinidad': 'TT',
+  'Tunisia': 'TN', 'Turkmenistan': 'TM', 'Türkiye': 'TR', 'Ukraine': 'UA', 'United': 'US',
+  'United States': 'US', 'Uruguay': 'UY', 'Uzbekistan': 'UZ', 'Venezuela': 'VE',
+  'Zambia': 'ZM', 'Zimbabwe': 'ZW'
+};
+const COUNTRY_SPECIAL = {
+  'England': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
+  'Scotland': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
+  'Wales': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}',
+  'Northern': '\u{1F1EC}\u{1F1E7}',
+  'Northern Ireland': '\u{1F1EC}\u{1F1E7}'
+};
+function isoToFlag(iso) {
+  if (!iso || iso.length !== 2) return '';
+  const base = 0x1F1E6;
+  return String.fromCodePoint(base + (iso.charCodeAt(0) - 65), base + (iso.charCodeAt(1) - 65));
+}
+function countryFlagEmoji(country, fallback) {
+  if (!country) return fallback || '';
+  if (COUNTRY_SPECIAL[country]) return COUNTRY_SPECIAL[country];
+  const iso = COUNTRY_ISO[country];
+  if (iso) return isoToFlag(iso);
+  return fallback || '';
 }
 
 function genCode(len = 6) {
@@ -104,6 +145,44 @@ const Me = {
 
 let State = null;
 let unsubscribeRoom = null;
+
+// --- Sesion persistente para reconectar tras recargar la pagina ---
+function saveSession() {
+  try {
+    if (Me.roomCode) {
+      localStorage.setItem('mentiroso_session', JSON.stringify({
+        code: Me.roomCode,
+        root: Me.roomRoot || ROOM_ROOT,
+        name: Me.name
+      }));
+    }
+  } catch {}
+}
+function clearSession() {
+  try { localStorage.removeItem('mentiroso_session'); } catch {}
+}
+async function tryReconnect() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('mentiroso_session') || 'null'); } catch { saved = null; }
+  if (!saved || !saved.code || !hasFirebase()) return false;
+
+  Me.roomRoot = saved.root || ROOM_ROOT;
+  if (saved.name) Me.name = saved.name;
+  try {
+    const snapshot = await get(roomRefAt(Me.roomRoot, saved.code));
+    if (!snapshot.exists()) { clearSession(); return false; }
+    const room = snapshot.val();
+    const players = room?.players || {};
+    // Solo reconectamos si seguimos formando parte de la sala.
+    if (room?.game !== 'mentiroso' || !players[Me.clientId]) { clearSession(); return false; }
+    Me.roomCode = saved.code;
+    Me.name = players[Me.clientId].name || Me.name;
+    subscribeToRoom(saved.code);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function roomRef(code) {
   return ref(db, `${Me.roomRoot || ROOM_ROOT}/${code}`);
@@ -610,6 +689,7 @@ function primeRoomCache(code) {
 }
 
 function clearLocalRoom() {
+  clearSession();
   if (unsubscribeRoom) {
     unsubscribeRoom();
     unsubscribeRoom = null;
@@ -734,6 +814,7 @@ async function createRoomOnline() {
   }
 
   subscribeToRoom(code);
+  saveSession();
 }
 
 async function joinRoomOnline() {
@@ -822,6 +903,7 @@ async function joinRoomOnline() {
     $('#join-error').classList.remove('hidden');
     return;
   }
+  saveSession();
 }
 
 async function updateHostPointsSetting(nextValue) {
@@ -868,6 +950,22 @@ async function continueRoundOnline() {
     return { ok: true };
   });
   if (!result.ok) toast(result.reason, 'error');
+}
+
+// El host puede expulsar a un jugador (util si alguien se desconecta a mitad
+// de su turno y bloquearia la ronda para siempre).
+async function removePlayerOnline(targetId) {
+  if (!State || !Me.isHost || targetId === Me.clientId) return;
+  const target = State.players.find((player) => player.id === targetId);
+  const label = target ? target.name : 'ese jugador';
+  if (!window.confirm(`Quitar a ${label} de la partida?`)) return;
+  const result = await mutateRoom(State.code, (state) => {
+    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede expulsar.' };
+    removePlayerFromState(state, targetId);
+    return { ok: true };
+  });
+  if (!result.ok) toast(result.reason, 'error');
+  else toast(`${label} fuera de la partida`, 'success');
 }
 
 async function leaveRoomOnline() {
@@ -1001,11 +1099,22 @@ function renderGameCommon() {
     if (player.id === Me.clientId) classes.push('me');
     chip.className = classes.join(' ');
     const guessed = State.round.guesses[player.id];
+    const canKick = Me.isHost && player.id !== Me.clientId && State.phase !== 'gameover';
     chip.innerHTML = `
       <span>${escapeHtml(player.name)}${player.id === Me.clientId ? ' (tu)' : ''}</span>
       <span class="tc-count">${player.score} pt</span>
       <span class="tc-guess">${guessed === undefined ? 'sin apuesta' : `dice ${guessed}`}</span>
+      ${canKick ? '<button class="tc-kick" title="Quitar jugador">×</button>' : ''}
     `;
+    if (canKick) {
+      const kickBtn = chip.querySelector('.tc-kick');
+      if (kickBtn) {
+        kickBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          removePlayerOnline(player.id);
+        });
+      }
+    }
     ring.appendChild(chip);
   });
 
@@ -1082,7 +1191,7 @@ function renderCard(card, opts) {
   if (mode === 'center') {
     el.classList.add('center');
     if (card.visibleAttr === 'flag') {
-      heroContent = card.countryFlag;
+      heroContent = countryFlagEmoji(card.country, card.countryFlag);
       heroLabel = card.country;
     } else if (card.visibleAttr === 'position') {
       heroContent = card.position;
@@ -1092,7 +1201,7 @@ function renderCard(card, opts) {
       heroLabel = card.club;
     }
   } else {
-    heroContent = card.countryFlag;
+    heroContent = countryFlagEmoji(card.country, card.countryFlag);
     heroLabel = card.position;
   }
 
@@ -1271,6 +1380,9 @@ $('#btn-menu').addEventListener('click', async () => {
 
 window.addEventListener('beforeunload', () => {
   if (!State || !Me.roomCode) return;
+  // En partida NO nos auto-eliminamos: una recarga debe poder reconectar.
+  // En el lobby si, para no dejar jugadores fantasma esperando.
+  if (State.phase !== 'lobby') return;
   runTransaction(roomRef(Me.roomCode), (current) => {
     if (!current) return current;
     const next = deepClone(current);
@@ -1281,15 +1393,35 @@ window.addEventListener('beforeunload', () => {
   }, { applyLocally: false }).catch(() => {});
 });
 
-function boot() {
+// Anade condiciones que existen en los datos pero no estaban en las
+// definiciones jugables (combos "ha jugado en X e Y").
+function ensureExtraStatDefinitions() {
+  if (!Array.isArray(window.STAT_DEFINITIONS)) return;
+  const extra = [
+    { key: 'played_barcelona_chelsea', label: 'han pasado por Barcelona y Chelsea', unit: 'SI/NO', type: 'bool' },
+    { key: 'played_real_juventus', label: 'han pasado por Real Madrid y Juventus', unit: 'SI/NO', type: 'bool' },
+    { key: 'played_psg_barcelona', label: 'han pasado por PSG y Barcelona', unit: 'SI/NO', type: 'bool' },
+    { key: 'played_bayern_dortmund', label: 'han pasado por Bayern y Dortmund', unit: 'SI/NO', type: 'bool' }
+  ];
+  const existing = new Set(window.STAT_DEFINITIONS.map((def) => def.key));
+  extra.forEach((def) => {
+    if (!existing.has(def.key)) window.STAT_DEFINITIONS.push(def);
+  });
+}
+
+async function boot() {
   if (!hasFirebase()) {
     console.warn('Mentiroso Firebase bootstrap missing', window._FB);
   }
   if (!window.PLAYERS || !Array.isArray(window.PLAYERS) || window.PLAYERS.length < 3) {
     toast('Faltan datos de jugadores', 'error');
   }
+  ensureExtraStatDefinitions();
   setPointsDraft(POINTS_LIMIT.value);
   showScreen('#screen-menu');
+  // Si veniamos de una sala (recarga accidental, bloqueo de movil...), reentrar.
+  const reconnected = await tryReconnect();
+  if (!reconnected) showScreen('#screen-menu');
 }
 
 boot();
