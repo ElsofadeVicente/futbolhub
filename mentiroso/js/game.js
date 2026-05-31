@@ -82,8 +82,20 @@ const ROOM_ROOT_CANDIDATES = [
   'mentiroso/rooms'
 ];
 
+function loadClientId() {
+  try {
+    const stored = localStorage.getItem('mentiroso_client_id');
+    if (stored) return stored;
+    const fresh = genId();
+    localStorage.setItem('mentiroso_client_id', fresh);
+    return fresh;
+  } catch {
+    return genId();
+  }
+}
+
 const Me = {
-  clientId: genId(),
+  clientId: loadClientId(),
   name: '',
   isHost: false,
   roomCode: null,
@@ -183,8 +195,41 @@ function createCardFromPlayer(player) {
   };
 }
 
+function sampleN(arr, n) {
+  const copy = arr.slice();
+  const limit = Math.min(n, copy.length);
+  const out = [];
+  for (let i = 0; i < limit; i++) {
+    const j = i + Math.floor(Math.random() * (copy.length - i));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+    out.push(copy[i]);
+  }
+  return out;
+}
+
 function drawRoundDeck(count) {
-  return shuffle(window.PLAYERS).slice(0, count).map(createCardFromPlayer);
+  return sampleN(window.PLAYERS, count).map(createCardFromPlayer);
+}
+
+// Cuenta cuantas cartas del mazo cumplen una condicion candidata.
+function countMatchesInDeck(deck, condition) {
+  const round = { stat: condition.stat, threshold: condition.threshold };
+  return deck.reduce((total, card) => total + (cardMatchesRound(card, round) ? 1 : 0), 0);
+}
+
+// Elige una condicion que NO sea degenerada (que no de 0 ni el total entero)
+// para las cartas realmente repartidas, asi cada ronda tiene algo que adivinar.
+function chooseRoundCondition(deck) {
+  let fallback = null;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const candidate = buildRoundCondition();
+    const matches = countMatchesInDeck(deck, candidate);
+    if (matches >= 1 && matches < deck.length) return candidate;
+    if (!fallback || (matches > 0 && fallback.matches === 0)) {
+      fallback = { candidate, matches };
+    }
+  }
+  return fallback ? fallback.candidate : buildRoundCondition();
 }
 
 function buildThresholdOptions(definition) {
@@ -263,22 +308,41 @@ function initRound(state, roundNumber, startIdx) {
   const config = getHandConfig(playerCount);
   const totalCardsNeeded = config.center + (playerCount * config.hand);
   const deck = drawRoundDeck(totalCardsNeeded);
-  let index = 0;
 
+  // La condicion se elige contra el mazo ya repartido para evitar rondas
+  // triviales (resultado 0 o "todas"). El mazo todavia tiene stats completas.
+  const condition = chooseRoundCondition(deck);
+  const key = condition.stat.key;
+  const fallbackValue = condition.stat.type === 'bool' ? false : 0;
+
+  // Guardamos en cada carta SOLO el dato de la stat de esta ronda. El juego
+  // nunca usa otra clave dentro de la ronda, asi que esto reduce el tamaño del
+  // estado en Firebase ~50x (antes se guardaban ~50 stats por carta).
+  const trimCard = (card) => ({
+    playerId: card.playerId,
+    playerName: card.playerName,
+    country: card.country,
+    countryFlag: card.countryFlag,
+    club: card.club,
+    clubBadge: card.clubBadge,
+    position: card.position,
+    stats: { [key]: card.stats?.[key] ?? fallbackValue }
+  });
+
+  let index = 0;
   state.hands = {};
   state.players.forEach((player) => {
-    state.hands[player.id] = deck.slice(index, index + config.hand);
+    state.hands[player.id] = deck.slice(index, index + config.hand).map(trimCard);
     player.cardsCount = config.hand;
     player.lastGuess = null;
     index += config.hand;
   });
 
   state.centerCards = deck.slice(index, index + config.center).map((card) => ({
-    ...card,
+    ...trimCard(card),
     visibleAttr: pick(CENTER_ATTRS)
   }));
 
-  const condition = buildRoundCondition();
   state.round = {
     number: roundNumber,
     stat: condition.stat,
