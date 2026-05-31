@@ -544,7 +544,13 @@ function clearLocalRoom() {
   showScreen('#screen-menu');
 }
 
+function isPermissionError(error) {
+  const msg = String(error?.code || error?.message || error || '').toLowerCase();
+  return msg.includes('permission') || msg.includes('denied') || msg.includes('permission_denied');
+}
+
 async function findExistingRoom(code) {
+  let sawPermissionError = false;
   for (const root of ROOM_ROOT_CANDIDATES) {
     try {
       const snapshot = await get(roomRefAt(root, code));
@@ -552,10 +558,11 @@ async function findExistingRoom(code) {
         return { root, snapshot };
       }
     } catch (error) {
+      if (isPermissionError(error)) sawPermissionError = true;
       console.warn('Mentiroso findExistingRoom error', root, error);
     }
   }
-  return null;
+  return sawPermissionError ? { permissionDenied: true } : null;
 }
 
 async function mutateRoom(code, mutator) {
@@ -629,6 +636,22 @@ async function createRoomOnline() {
   }
 
   Me.roomCode = code;
+
+  // Comprueba que la sala se puede LEER, no solo escribir. Si las reglas de
+  // Firebase permiten escritura pero bloquean lectura, el host veria su propio
+  // lobby (cache local) pero nadie podria unirse. Lo detectamos aqui.
+  try {
+    const check = await get(roomRefAt(ROOM_ROOT, code));
+    if (!check.exists()) {
+      toast('Sala creada pero no se puede leer. Revisa las reglas de Firebase.', 'error');
+    }
+  } catch (error) {
+    if (isPermissionError(error)) {
+      toast('Reglas de Firebase bloquean la lectura: nadie podra unirse.', 'error');
+    }
+    console.warn('Mentiroso readback error', error);
+  }
+
   subscribeToRoom(code);
 }
 
@@ -658,7 +681,12 @@ async function joinRoomOnline() {
     $('#join-error').classList.remove('hidden');
     return;
   }
-  if (!existing || !existing.snapshot.exists()) {
+  if (existing && existing.permissionDenied) {
+    $('#join-error').textContent = 'Permiso denegado por Firebase. Hay que abrir las reglas de lectura de la base de datos.';
+    $('#join-error').classList.remove('hidden');
+    return;
+  }
+  if (!existing || !existing.snapshot || !existing.snapshot.exists()) {
     $('#join-error').textContent = 'Sala no encontrada.';
     $('#join-error').classList.remove('hidden');
     return;
