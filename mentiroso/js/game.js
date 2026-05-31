@@ -592,6 +592,23 @@ function subscribeToRoom(code) {
   });
 }
 
+// Activa un listener real sobre la sala y resuelve cuando llega el PRIMER dato
+// del servidor. Necesario antes de runTransaction: sin un listener activo, la
+// primera pasada de la transaccion ve null (get() no alimenta esa cache) y la
+// union aborta con "La sala no existe" sin reintentar.
+function primeRoomCache(code) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => { if (!settled) { settled = true; resolve(); } };
+    try {
+      const off = onValue(roomRef(code), () => { off(); finish(); }, () => finish());
+    } catch {
+      finish();
+    }
+    setTimeout(finish, 3000);
+  });
+}
+
 function clearLocalRoom() {
   if (unsubscribeRoom) {
     unsubscribeRoom();
@@ -765,7 +782,12 @@ async function joinRoomOnline() {
   Me.roomCode = code;
   Me.roomRoot = existing.root;
 
-  const joined = await mutateRoom(code, (state) => {
+  // Sincroniza la sala y espera el primer dato del servidor ANTES de la
+  // transaccion, para que runTransaction vea la sala real en su primera pasada.
+  subscribeToRoom(code);
+  await primeRoomCache(code);
+
+  const joinMutator = (state) => {
     if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya ha empezado.' };
     if (state.players.length >= 8) return { ok: false, reason: 'Sala llena.' };
     if (state.players.some((player) => player.id === Me.clientId)) return { ok: false, reason: 'Ya estas dentro.' };
@@ -780,16 +802,26 @@ async function joinRoomOnline() {
     });
     state.playerOrder.push(Me.clientId);
     return { ok: true };
-  });
+  };
+
+  let joined = await mutateRoom(code, joinMutator);
+  // Red de seguridad: si la transaccion vio la sala como inexistente por una
+  // lectura aun no sincronizada, reintenta una vez tras un breve respiro.
+  if (!joined.ok && /no existe/i.test(joined.reason || '')) {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    joined = await mutateRoom(code, joinMutator);
+  }
 
   if (!joined.ok) {
+    if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+    State = null;
     Me.roomCode = null;
+    Me.roomRoot = ROOM_ROOT;
+    showScreen('#screen-menu');
     $('#join-error').textContent = joined.reason;
     $('#join-error').classList.remove('hidden');
     return;
   }
-
-  subscribeToRoom(code);
 }
 
 async function updateHostPointsSetting(nextValue) {
