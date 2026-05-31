@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "restricciones": {
+      "rooms": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
