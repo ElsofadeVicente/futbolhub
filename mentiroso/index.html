@@ -232,7 +232,9 @@
     db, ref, set, get, onValue, runTransaction
   };
 
-  const V = '?v=' + Date.now();
+  // Sube este numero SOLO cuando cambies data.js o game.js. Asi el navegador
+  // puede cachear data.js (3.4 MB) en lugar de redescargarlo en cada carga.
+  const V = '?v=2';
   const scripts = [
     './js/data.js' + V,
     './js/game.js' + V
