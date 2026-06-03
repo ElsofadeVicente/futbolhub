@@ -233,9 +233,41 @@ function serializeStateForFirebase(state) {
   return next;
 }
 
+// Convierte un valor que Firebase puede devolver como {0:x,1:y,...} en un
+// array JS real. Si ya es array, lo devuelve tal cual.
+function toArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  // Firebase convierte arrays en objetos con claves numericas cuando hay
+  // valores null o cuando los lee en ciertos contextos. Reconvertimos.
+  const keys = Object.keys(value);
+  if (keys.length === 0) return [];
+  const allNumeric = keys.every((key) => /^\d+$/.test(key));
+  if (allNumeric) {
+    const maxIdx = Math.max(...keys.map(Number));
+    const arr = new Array(maxIdx + 1);
+    keys.forEach((key) => { arr[Number(key)] = value[key]; });
+    return arr.filter((item) => item !== undefined);
+  }
+  return Object.values(value);
+}
+
 function normalizeStateFromFirebase(rawState) {
   const next = deepClone(rawState);
   next.players = normalizePlayers(rawState);
+  // Garantizamos que hands y centerCards son siempre arrays reales, nunca
+  // objetos con claves numericas que rompen .forEach() en resolveRound.
+  if (next.hands) {
+    Object.keys(next.hands).forEach((playerId) => {
+      next.hands[playerId] = toArray(next.hands[playerId]);
+    });
+  } else {
+    next.hands = {};
+  }
+  next.centerCards = toArray(next.centerCards);
+  if (next.round && !Array.isArray(next.round.guesses)) {
+    next.round.guesses = next.round.guesses || {};
+  }
   return next;
 }
 
@@ -738,14 +770,23 @@ async function mutateRoom(code, mutator) {
         failureReason = 'La sala no existe.';
         return;
       }
-      const next = normalizeStateFromFirebase(current);
-      const outcome = mutator(next);
-      if (outcome && outcome.ok === false) {
-        failureReason = outcome.reason || 'No se pudo aplicar el cambio.';
-        return;
+      try {
+        const next = normalizeStateFromFirebase(current);
+        const outcome = mutator(next);
+        if (outcome && outcome.ok === false) {
+          failureReason = outcome.reason || 'No se pudo aplicar el cambio.';
+          return;
+        }
+        stampState(next);
+        return serializeStateForFirebase(next);
+      } catch (innerError) {
+        // Capturamos excepciones dentro del callback para que no se traguen
+        // silenciosamente; las registramos y abortamos con motivo claro.
+        const msg = innerError?.message || String(innerError);
+        failureReason = `Error interno: ${msg}`;
+        console.error('Mentiroso mutateRoom inner error:', innerError);
+        return; // aborta la transaccion
       }
-      stampState(next);
-      return serializeStateForFirebase(next);
     }, { applyLocally: false });
   } catch (error) {
     console.warn('Mentiroso mutateRoom error', error);
