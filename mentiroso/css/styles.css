@@ -549,123 +549,217 @@ input {
   padding: 20px;
 }
 
+/* ═══════════════════════════════════════════════════════
+   CARTAS — diseño con foto real (TM CDN)
+══════════════════════════════════════════════════════ */
 .card {
-  --w: 118px;
-  --h: 170px;
+  --w: 132px;
+  --h: 196px;
   width: var(--w);
   height: var(--h);
   background: linear-gradient(165deg, #18231a 0%, #0d140d 100%);
   border: 1px solid rgba(200, 168, 75, 0.22);
   border-radius: 12px;
   position: relative;
-  padding: 10px 10px 12px;
   display: flex;
   flex-direction: column;
-  font-size: 12px;
+  font-size: 11px;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(0,0,0,0.6); }
+
+/* — Foto — */
+.card-photo-wrap {
+  position: relative;
+  width: 100%;
+  height: 110px;
+  flex-shrink: 0;
+  background: #141e14;
+  overflow: hidden;
+}
+.card-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: opacity 0.3s;
+}
+.card-photo-wrap.no-photo .card-photo-img { display: none; }
+.card-photo-fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 34px;
+  color: var(--gold);
+  opacity: 0.35;
+  background: radial-gradient(circle at 50% 40%, #1f2f21 0%, #0d140d 100%);
+}
+.card-photo-wrap.no-photo .card-photo-fallback { display: flex; }
+
+/* Nombre sobre la foto */
+.card-photo-name {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 20px 8px 6px;
+  background: linear-gradient(to top, rgba(4,8,4,0.95) 0%, transparent 100%);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  line-height: 1.1;
+  letter-spacing: 0.4px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.card-kicker {
-  font-size: 9px;
+/* — Centro: hint sobre foto difuminada — */
+.center-photo .card-photo-img { filter: blur(4px) brightness(0.3) saturate(0.5); }
+.card-hint-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+}
+.card-hint-type {
+  font-size: 8px;
   letter-spacing: 2px;
   color: var(--gold);
-  opacity: 0.75;
+  opacity: 0.8;
   text-transform: uppercase;
   font-weight: 700;
 }
-
-.card-name {
+.hint-flag .fi { width: 38px !important; height: 28px !important; border-radius: 3px; }
+.hint-pos {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 15px;
-  line-height: 1.05;
-  margin: 4px 0 auto;
-  letter-spacing: 0.5px;
-}
-
-.card-hero {
-  text-align: center;
-  font-size: 40px;
-  line-height: 1;
-  padding: 6px 0 2px;
-}
-
-.card-hero-label {
-  font-size: 9px;
-  letter-spacing: 1.5px;
-  text-align: center;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-.card-stat {
-  margin-top: auto;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(200, 168, 75, 0.15);
-  background: rgba(0, 0, 0, 0.25);
-  display: flex;
-  justify-content: space-between;
-  gap: 4px;
-  font-size: 10.5px;
-  color: var(--muted);
-}
-
-.card-stat-val {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+  font-size: 24px;
   color: var(--gold-bright);
 }
+.hint-badge .card-club-logo { width: 36px !important; height: 36px !important; }
+.hint-badge .card-club-initials { font-size: 14px; padding: 4px 10px; }
+.card-hint-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  max-width: 116px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
+/* — Identidad: bandera + escudo — */
+.card-identity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px 0;
+}
+.card-identity .fi {
+  width: 20px;
+  height: 15px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  overflow: hidden;
+  background: #2a3a2c;
+}
+.card-flag-text {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255,255,255,0.08);
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+.card-club-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.card-club-initials {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(200,168,75,0.12);
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* — Estadística — */
+.card-stat {
+  margin: auto 8px 8px;
+  padding: 5px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(200, 168, 75, 0.15);
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.2;
+}
+.card-stat-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  color: var(--gold-bright);
+  white-space: nowrap;
+}
 .card-stat.hidden-stat {
   justify-content: center;
   font-size: 9px;
   letter-spacing: 2.5px;
   text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
 }
 
+/* — Badge OK/NO — */
 .card-badge {
   position: absolute;
   top: 6px;
-  left: 6px;
+  right: 6px;
   min-width: 28px;
-  height: 22px;
+  height: 20px;
   padding: 0 6px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  color: #0c110c;
+  letter-spacing: 1px;
   z-index: 2;
 }
+.card-badge.ok { background: var(--green-ok); color: #0c110c; }
+.card-badge.ko { background: rgba(0,0,0,0.65); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.07); }
 
-.card-badge.ok { background: var(--green-ok); }
-.card-badge.ko { background: var(--red-ko); color: #fff; }
-
-.card.center {
-  background: linear-gradient(165deg, #1d2a1f 0%, #0f160f 100%);
-  border-color: rgba(200, 168, 75, 0.3);
-}
-
-.card.revealed {
-  animation: cardFlip 0.45s ease both;
-}
-
+/* — Match/no-match — */
+.card.revealed { animation: cardFlip 0.45s ease both; }
 .card.match {
   border-color: var(--green-ok);
   box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.25), 0 14px 30px rgba(0, 0, 0, 0.5);
 }
-
 .card.nomatch {
-  opacity: 0.58;
-  filter: grayscale(0.4);
+  opacity: 0.52;
+  filter: grayscale(0.5);
 }
 
 @keyframes cardFlip {
-  from { transform: translateY(6px) scale(0.96); opacity: 0; }
+  from { transform: translateY(8px) scale(0.95); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
@@ -996,6 +1090,8 @@ input {
   .center-cards, .my-hand { gap: 7px; }
   .card { --w: 92px; --h: 136px; padding: 8px 8px 10px; }
   .card-hero { font-size: 28px; }
+  .card-photo-wrap { height: 90px; }
+  .card { --w: 108px; --h: 174px; }
   .turn-chip { font-size: 0.78rem; padding: 6px 10px; }
 }
 
@@ -1021,3 +1117,27 @@ input {
 /* --- Soporte para moviles con notch / barra inferior --- */
 .hub-back-link, .back-btn { margin-top: env(safe-area-inset-top, 0px); }
 .action-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+
+/* Boton de saltar turno bloqueado */
+.tc-skip {
+  margin-left: 4px;
+  padding: 2px 8px;
+  border: 1px solid rgba(200,168,75,0.4);
+  border-radius: 999px;
+  background: rgba(200,168,75,0.12);
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+.tc-skip:hover { background: rgba(200,168,75,0.28); }
+.turn-chip.overdue {
+  border-color: rgba(255,160,50,0.5);
+  animation: pulse-warn 1.5s ease infinite;
+}
+@keyframes pulse-warn {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 0 3px rgba(255,160,50,0.2); }
+}
