@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
   <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
@@ -211,7 +212,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getDatabase, ref, set, get, onValue, runTransaction }
+  import { getDatabase, ref, set, get, update, remove, onValue, runTransaction }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
   const FIREBASE_CONFIG = {
@@ -229,12 +230,10 @@
 
   window._FB = {
     configured: true,
-    db, ref, set, get, onValue, runTransaction
+    db, ref, set, get, update, remove, onValue, runTransaction
   };
 
-  // Sube este numero SOLO cuando cambies data.js o game.js. Asi el navegador
-  // puede cachear data.js (3.4 MB) en lugar de redescargarlo en cada carga.
-  const V = '?v=5';
+  const V = '?v=7';
   const scripts = [
     './js/data.js' + V,
     './js/game.js' + V
