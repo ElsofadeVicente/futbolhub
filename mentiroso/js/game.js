@@ -1,299 +1,85 @@
+/* ═══════════════════════════════════════════════════════════
+   GAME.JS — EL MENTIROSO  (reescrito desde cero v7)
+   Arquitectura copiada del juego "Restricciones" que funciona.
+   - Sync: set/update/remove, runTransaction solo para contadores
+   - Cartas repartidas localmente via seed determinista
+   - Estado flat en Firebase (sin arrays que se corrompan)
+   ═══════════════════════════════════════════════════════════ */
 'use strict';
 
-const FB = window._FB || {};
-const db = FB.db;
-const ref = FB.ref;
-const set = FB.set;
-const get = FB.get;
-const onValue = FB.onValue;
-const runTransaction = FB.runTransaction;
+/* ═══ 1. HELPERS ═══════════════════════════════════════════ */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function escapeHtml(s) { const d=document.createElement('div'); d.textContent=String(s??''); return d.innerHTML; }
 
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+let _toastTimer = null;
+function toast(msg, type) {
+  const el=$('#toast'); if(!el)return;
+  el.textContent=msg; el.className=`toast show ${type||''}`;
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// Convierte el nombre de pais (incluidas formas truncadas que trae el dato) en
-// una bandera emoji real. Si no se reconoce, se deja la letra original.
-const COUNTRY_ISO = {
-  'Albania': 'AL', 'Algeria': 'DZ', 'Antigua': 'AG', 'Argentina': 'AR', 'Armenia': 'AM',
-  'Australia': 'AU', 'Austria': 'AT', 'Belarus': 'BY', 'Belgium': 'BE', 'Benin': 'BJ',
-  'Bermuda': 'BM', 'Bolivia': 'BO', 'Bosnia-Herzegovina': 'BA', 'Brazil': 'BR', 'Bulgaria': 'BG',
-  'Burkina': 'BF', 'Burundi': 'BI', 'Cameroon': 'CM', 'Canada': 'CA', 'Cape': 'CV',
-  'Central African Republic': 'CF', 'Chile': 'CL', 'China': 'CN', 'Colombia': 'CO',
-  'Congo': 'CG', 'Costa': 'CR', 'Cote': 'CI', "Cote d'Ivoire": 'CI', 'Croatia': 'HR',
-  'Curacao': 'CW', 'Cyprus': 'CY', 'Czech': 'CZ', 'Czech Republic': 'CZ', 'DR': 'CD',
-  'DR Congo': 'CD', 'Denmark': 'DK', 'Ecuador': 'EC', 'Egypt': 'EG', 'Equatorial': 'GQ',
-  'Eritrea': 'ER', 'Estonia': 'EE', 'Faroe': 'FO', 'Finland': 'FI', 'France': 'FR',
-  'French': 'GF', 'Gabon': 'GA', 'Georgia': 'GE', 'Germany': 'DE', 'Ghana': 'GH',
-  'Gibraltar': 'GI', 'Greece': 'GR', 'Guadeloupe': 'GP', 'Guinea': 'GN', 'Guinea-Bissau': 'GW',
-  'Haiti': 'HT', 'Honduras': 'HN', 'Hungary': 'HU', 'Iceland': 'IS', 'Iran': 'IR',
-  'Iraq': 'IQ', 'Ireland': 'IE', 'Israel': 'IL', 'Italy': 'IT', 'Jamaica': 'JM',
-  'Japan': 'JP', 'Kazakhstan': 'KZ', 'Korea,': 'KR', 'Korea, South': 'KR', 'Kosovo': 'XK',
-  'Latvia': 'LV', 'Lebanon': 'LB', 'Liberia': 'LR', 'Liechtenstein': 'LI', 'Lithuania': 'LT',
-  'Luxembourg': 'LU', 'Mali': 'ML', 'Martinique': 'MQ', 'Mexico': 'MX', 'Moldova': 'MD',
-  'Montenegro': 'ME', 'Montserrat': 'MS', 'Morocco': 'MA', 'Netherlands': 'NL', 'New': 'NZ',
-  'Nigeria': 'NG', 'North': 'MK', 'Norway': 'NO', 'Palestine': 'PS', 'Panama': 'PA',
-  'Paraguay': 'PY', 'Peru': 'PE', 'Poland': 'PL', 'Portugal': 'PT', 'Qatar': 'QA',
-  'Romania': 'RO', 'Russia': 'RU', 'Rwanda': 'RW', 'Sao': 'ST', 'Senegal': 'SN',
-  'Serbia': 'RS', 'Sierra': 'SL', 'Slovakia': 'SK', 'Slovenia': 'SI', 'South': 'ZA',
-  'Spain': 'ES', 'Suriname': 'SR', 'Sweden': 'SE', 'Switzerland': 'CH', 'Tanzania': 'TZ',
-  'Thailand': 'TH', 'The': 'GM', 'The Gambia': 'GM', 'Togo': 'TG', 'Trinidad': 'TT',
-  'Tunisia': 'TN', 'Turkmenistan': 'TM', 'Türkiye': 'TR', 'Ukraine': 'UA', 'United': 'US',
-  'United States': 'US', 'Uruguay': 'UY', 'Uzbekistan': 'UZ', 'Venezuela': 'VE',
-  'Zambia': 'ZM', 'Zimbabwe': 'ZW'
-};
-const COUNTRY_SPECIAL = {
-  'England': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
-  'Scotland': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
-  'Wales': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}',
-  'Northern': '\u{1F1EC}\u{1F1E7}',
-  'Northern Ireland': '\u{1F1EC}\u{1F1E7}'
-};
-function isoToFlag(iso) {
-  if (!iso || iso.length !== 2) return '';
-  const base = 0x1F1E6;
-  return String.fromCodePoint(base + (iso.charCodeAt(0) - 65), base + (iso.charCodeAt(1) - 65));
-}
-function countryFlagEmoji(country, fallback) {
-  if (!country) return fallback || '';
-  if (COUNTRY_SPECIAL[country]) return COUNTRY_SPECIAL[country];
-  const iso = COUNTRY_ISO[country];
-  if (iso) return isoToFlag(iso);
-  return fallback || '';
+function showScreen(id) {
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  $(id)?.classList.add('active');
 }
 
-function genCode(len = 6) {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let out = '';
-  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
+function genCode(len=6) {
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:len},()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+function genId() { return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+
+/* ═══ 2. DATA MAPS ═════════════════════════════════════════ */
+const COUNTRY_ISO={'Albania':'AL','Algeria':'DZ','Argentina':'AR','Armenia':'AM','Australia':'AU','Austria':'AT','Belarus':'BY','Belgium':'BE','Benin':'BJ','Bolivia':'BO','Bosnia-Herzegovina':'BA','Brazil':'BR','Bulgaria':'BG','Burkina':'BF','Cameroon':'CM','Canada':'CA','Cape':'CV','Chile':'CL','China':'CN','Colombia':'CO','Congo':'CG','Costa':'CR','Cote':'CI',"Cote d'Ivoire":'CI','Croatia':'HR','Curacao':'CW','Cyprus':'CY','Czech':'CZ','Czech Republic':'CZ','DR':'CD','DR Congo':'CD','Denmark':'DK','Ecuador':'EC','Egypt':'EG','Equatorial':'GQ','Eritrea':'ER','Estonia':'EE','Faroe':'FO','Finland':'FI','France':'FR','French':'GF','Gabon':'GA','Georgia':'GE','Germany':'DE','Ghana':'GH','Greece':'GR','Guinea':'GN','Guinea-Bissau':'GW','Haiti':'HT','Honduras':'HN','Hungary':'HU','Iceland':'IS','Iran':'IR','Iraq':'IQ','Ireland':'IE','Israel':'IL','Italy':'IT','Jamaica':'JM','Japan':'JP','Kazakhstan':'KZ','Korea,':'KR','Korea, South':'KR','Kosovo':'XK','Latvia':'LV','Lebanon':'LB','Liberia':'LR','Lithuania':'LT','Luxembourg':'LU','Mali':'ML','Mexico':'MX','Moldova':'MD','Montenegro':'ME','Morocco':'MA','Netherlands':'NL','New':'NZ','Nigeria':'NG','North':'MK','Norway':'NO','Palestine':'PS','Panama':'PA','Paraguay':'PY','Peru':'PE','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO','Russia':'RU','Senegal':'SN','Serbia':'RS','Sierra':'SL','Slovakia':'SK','Slovenia':'SI','South':'ZA','Spain':'ES','Suriname':'SR','Sweden':'SE','Switzerland':'CH','Tanzania':'TZ','Thailand':'TH','The':'GM','The Gambia':'GM','Togo':'TG','Trinidad':'TT','Tunisia':'TN','Türkiye':'TR','Ukraine':'UA','United':'US','United States':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE','Zambia':'ZM','Zimbabwe':'ZW'};
+const COUNTRY_SPECIAL={'England':'fi-gb-eng','Scotland':'fi-gb-sct','Wales':'fi-gb-wls','Northern Ireland':'fi-gb-nir','Northern':'fi-gb-nir'};
+
+function countryFlagHTML(country,fb) {
+  if(!country) return `<span class="card-flag-text">${escapeHtml(fb||'')}</span>`;
+  const sp=COUNTRY_SPECIAL[country];
+  if(sp) return `<span class="fi ${sp}" title="${escapeHtml(country)}"></span>`;
+  const iso=COUNTRY_ISO[country];
+  if(iso) return `<span class="fi fi-${iso.toLowerCase()}" title="${escapeHtml(country)}"></span>`;
+  return `<span class="card-flag-text">${escapeHtml(fb||country.slice(0,2).toUpperCase())}</span>`;
 }
 
-function genId() {
-  return 'c_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const CLUB_TM={'Bayern Munich':27,'Inter Milan':46,'FC Barcelona':131,'AC Milan':5,'Arsenal FC':11,'Real Madrid':418,'Liverpool FC':31,'Manchester City':281,'Aston Villa':405,'SSC Napoli':6195,'Tottenham Hotspur':148,'Newcastle United':762,'CR Flamengo':614,'Besiktas JK':114,'Galatasaray':141,'Manchester United':985,'Man Utd':985,'AS Roma':12,'Atalanta BC':800,'Crystal Palace':873,'Atlético de Madrid':13,'SS Lazio':398,'Juventus FC':506,'Fenerbahce':36,'Santos FC':4843,'Feyenoord Rotterdam':234,'Borussia Dortmund':16,'Chelsea FC':631,'Al-Nassr FC':52908,'Inter Miami CF':53537,'Girona FC':12321,'Bayer 04 Leverkusen':15,'Real Betis Balompié':150,'SL Benfica':294,'Ajax Amsterdam':610,'Celtic FC':371,'West Ham United':379,'Villarreal CF':1050,'ACF Fiorentina':430,'Torino FC':416,'Rangers FC':390,'AFC Bournemouth':989,'Al-Hilal SFC':52918,'Sevilla FC':368,'Paris Saint-Germain':583,'PSV Eindhoven':383,'RB Leipzig':23826,'VfL Wolfsburg':82,'Eintracht Frankfurt':24,'VfB Stuttgart':79,'SC Freiburg':17,'Real Sociedad':681,'Valencia CF':1049,'Athletic Club':621,'Olympique de Marseille':244,'Olympique Lyonnais':1041,'AS Monaco':162,'Sporting CP':336,'FC Porto':720};
+
+function clubBadgeHTML(name,sz) {
+  sz=sz||18; const id=CLUB_TM[name];
+  const ini=((name||'').replace(/\b(FC|CF|SC|AFC|SL|CA|AS|SS|SSC|AC|ACF|CR|VfL|VfB|RCD)\b/gi,'').trim().split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,3).toUpperCase())||'?';
+  const t=escapeHtml(name||'');
+  if(id) return `<img class="card-club-logo" style="width:${sz}px;height:${sz}px" src="https://tmssl.akamaized.net/images/wappen/small/${id}.png" loading="lazy" alt="${t}" title="${t}" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><span class="card-club-initials" title="${t}" style="display:none">${ini}</span>`;
+  return `<span class="card-club-initials" title="${t}">${ini}</span>`;
 }
 
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
+/* ═══ 3. CARD SYSTEM (determinista) ══════════════════════════ */
+function mulberry32(seed) {
+  return function() {
+    seed|=0; seed=seed+0x6D2B79F5|0;
+    let t=Math.imul(seed^(seed>>>15),1|seed);
+    t=t+Math.imul(t^(t>>>7),61|t)^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+function shuffleRng(arr,rng) {
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
 }
 
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-let toastTimer = null;
-function toast(msg, kind = '') {
-  const el = $('#toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.className = 'toast show ' + kind;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    el.className = 'toast ' + kind;
-  }, 2400);
-}
-
-const HAND_CONFIG = {
-  2: { hand: 8, center: 4 },
-  3: { hand: 6, center: 3 },
-  4: { hand: 6, center: 2 },
-  5: { hand: 6, center: 0 },
-  6: { hand: 6, center: 0 },
-  7: { hand: 6, center: 0 },
-  8: { hand: 6, center: 0 }
-};
-
-const CENTER_ATTRS = ['flag', 'position', 'club'];
-const POINTS_LIMIT = { min: 1, max: 9, value: 3 };
-const NUMERIC_THRESHOLD_CACHE = new Map();
-const ROOM_ROOT = 'restricciones/rooms';
-const ROOM_ROOT_CANDIDATES = [
-  'restricciones/rooms',
-  'rooms',
-  'mentiroso_rooms',
-  'rooms/mentiroso',
-  'mentiroso/rooms'
+const HAND_CONFIG=[
+  {min:2,max:2,hand:7,center:4},
+  {min:3,max:3,hand:5,center:4},
+  {min:4,max:4,hand:4,center:4},
+  {min:5,max:5,hand:3,center:3},
+  {min:6,max:8,hand:2,center:0},
 ];
+function getHandConfig(n) { return HAND_CONFIG.find(c=>c.min<=n&&n<=c.max)||HAND_CONFIG[0]; }
+const CENTER_ATTRS=['flag','position','club'];
 
-function loadClientId() {
-  try {
-    const stored = localStorage.getItem('mentiroso_client_id');
-    if (stored) return stored;
-    const fresh = genId();
-    localStorage.setItem('mentiroso_client_id', fresh);
-    return fresh;
-  } catch {
-    return genId();
-  }
-}
-
-const Me = {
-  clientId: loadClientId(),
-  name: '',
-  isHost: false,
-  roomCode: null,
-  roomRoot: ROOM_ROOT
-};
-
-let State = null;
-let unsubscribeRoom = null;
-
-// --- Sesion persistente para reconectar tras recargar la pagina ---
-function saveSession() {
-  try {
-    if (Me.roomCode) {
-      localStorage.setItem('mentiroso_session', JSON.stringify({
-        code: Me.roomCode,
-        root: Me.roomRoot || ROOM_ROOT,
-        name: Me.name
-      }));
-    }
-  } catch {}
-}
-function clearSession() {
-  try { localStorage.removeItem('mentiroso_session'); } catch {}
-}
-async function tryReconnect() {
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem('mentiroso_session') || 'null'); } catch { saved = null; }
-  if (!saved || !saved.code || !hasFirebase()) return false;
-
-  Me.roomRoot = saved.root || ROOM_ROOT;
-  if (saved.name) Me.name = saved.name;
-  try {
-    const snapshot = await get(roomRefAt(Me.roomRoot, saved.code));
-    if (!snapshot.exists()) { clearSession(); return false; }
-    const room = snapshot.val();
-    const players = room?.players || {};
-    // Solo reconectamos si seguimos formando parte de la sala.
-    if (room?.game !== 'mentiroso' || !players[Me.clientId]) { clearSession(); return false; }
-    Me.roomCode = saved.code;
-    Me.name = players[Me.clientId].name || Me.name;
-    subscribeToRoom(saved.code);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function roomRef(code) {
-  return ref(db, `${Me.roomRoot || ROOM_ROOT}/${code}`);
-}
-
-function roomRefAt(root, code) {
-  return ref(db, `${root}/${code}`);
-}
-
-function hasFirebase() {
-  return Boolean(window._FB?.configured && db && ref && set && get && onValue && runTransaction);
-}
-
-function serializePlayers(state) {
-  const playersMap = {};
-  state.players.forEach((player) => {
-    playersMap[player.id] = {
-      name: player.name,
-      isHost: Boolean(player.isHost),
-      score: Number(player.score || 0),
-      lastGuess: player.lastGuess ?? null,
-      cardsCount: Number(player.cardsCount || 0)
-    };
-  });
-  return playersMap;
-}
-
-function normalizePlayers(rawState) {
-  if (Array.isArray(rawState.players)) return rawState.players;
-  const playersMap = rawState.players || {};
-  const order = Array.isArray(rawState.playerOrder) ? rawState.playerOrder : Object.keys(playersMap);
-  return order
-    .filter((id) => playersMap[id])
-    .map((id) => ({
-      id,
-      name: playersMap[id].name,
-      isHost: Boolean(playersMap[id].isHost),
-      score: Number(playersMap[id].score || 0),
-      lastGuess: playersMap[id].lastGuess ?? null,
-      cardsCount: Number(playersMap[id].cardsCount || 0)
-    }));
-}
-
-function serializeStateForFirebase(state) {
-  const next = deepClone(state);
-  next.playerOrder = next.players.map((player) => player.id);
-  next.players = serializePlayers(next);
-  return next;
-}
-
-// Convierte un valor que Firebase puede devolver como {0:x,1:y,...} en un
-// array JS real. Si ya es array, lo devuelve tal cual.
-function toArray(value) {
-  if (!value) return [];
-  if (Array.isArray(value)) return value;
-  // Firebase convierte arrays en objetos con claves numericas cuando hay
-  // valores null o cuando los lee en ciertos contextos. Reconvertimos.
-  const keys = Object.keys(value);
-  if (keys.length === 0) return [];
-  const allNumeric = keys.every((key) => /^\d+$/.test(key));
-  if (allNumeric) {
-    const maxIdx = Math.max(...keys.map(Number));
-    const arr = new Array(maxIdx + 1);
-    keys.forEach((key) => { arr[Number(key)] = value[key]; });
-    return arr.filter((item) => item !== undefined);
-  }
-  return Object.values(value);
-}
-
-function normalizeStateFromFirebase(rawState) {
-  const next = deepClone(rawState);
-  next.players = normalizePlayers(rawState);
-  // Garantizamos que hands y centerCards son siempre arrays reales, nunca
-  // objetos con claves numericas que rompen .forEach() en resolveRound.
-  if (next.hands) {
-    Object.keys(next.hands).forEach((playerId) => {
-      next.hands[playerId] = toArray(next.hands[playerId]);
-    });
-  } else {
-    next.hands = {};
-  }
-  next.centerCards = toArray(next.centerCards);
-  if (next.round && !Array.isArray(next.round.guesses)) {
-    next.round.guesses = next.round.guesses || {};
-  }
-  return next;
-}
-
-function showScreen(selector) {
-  $$('.screen').forEach((screen) => screen.classList.remove('active'));
-  const target = $(selector);
-  if (target) target.classList.add('active');
-}
-
-function normalizePointsToWin(value) {
-  const parsed = Math.floor(Number(value) || POINTS_LIMIT.value);
-  return Math.max(POINTS_LIMIT.min, Math.min(POINTS_LIMIT.max, parsed));
-}
-
-function stampState(state) {
-  state.updatedAt = Date.now();
-}
-
-function totalCardsInPlay(state) {
-  const hands = Object.values(state.hands || {});
-  let total = hands.reduce((sum, hand) => sum + hand.length, 0);
-  total += (state.centerCards || []).length;
-  return total;
-}
-
-function createCardFromPlayer(player) {
+function createCard(player) {
   return {
     playerId: player.id,
     playerName: player.name,
@@ -302,1167 +88,693 @@ function createCardFromPlayer(player) {
     club: player.club,
     clubBadge: player.clubBadge,
     position: player.position,
-    stats: { ...player.stats }
+    stats: {...player.stats},
   };
 }
 
-function sampleN(arr, n) {
-  const copy = arr.slice();
-  const limit = Math.min(n, copy.length);
-  const out = [];
-  for (let i = 0; i < limit; i++) {
-    const j = i + Math.floor(Math.random() * (copy.length - i));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-    out.push(copy[i]);
-  }
-  return out;
+/* Threshold cache para condiciones numéricas */
+const _threshCache = {};
+function getThresholds(key) {
+  if(_threshCache[key]) return _threshCache[key];
+  const vals = window.PLAYERS.map(p=>Number(p.stats[key])||0).filter(v=>v>0);
+  if(!vals.length) return _threshCache[key]=[];
+  vals.sort((a,b)=>a-b);
+  const set=new Set(), pcts=[0.25,0.5,0.75];
+  pcts.forEach(p=>{ const v=vals[Math.floor(p*vals.length)]; if(v>0)set.add(v); });
+  return _threshCache[key]=[...set].sort((a,b)=>a-b);
 }
 
-function drawRoundDeck(count) {
-  return sampleN(window.PLAYERS, count).map(createCardFromPlayer);
+function cardMatchesCond(card, cond) {
+  const val = card.stats[cond.key];
+  if(cond.type==='bool') return Boolean(val);
+  return Number(val||0) > (cond.threshold||0);
 }
 
-// Cuenta cuantas cartas del mazo cumplen una condicion candidata.
-function countMatchesInDeck(deck, condition) {
-  const round = { stat: condition.stat, threshold: condition.threshold };
-  return deck.reduce((total, card) => total + (cardMatchesRound(card, round) ? 1 : 0), 0);
-}
-
-// Elige una condicion que NO sea degenerada (que no de 0 ni el total entero)
-// para las cartas realmente repartidas, asi cada ronda tiene algo que adivinar.
-function chooseRoundCondition(deck) {
-  let fallback = null;
-  for (let attempt = 0; attempt < 30; attempt++) {
-    const candidate = buildRoundCondition();
-    const matches = countMatchesInDeck(deck, candidate);
-    if (matches >= 1 && matches < deck.length) return candidate;
-    if (!fallback || (matches > 0 && fallback.matches === 0)) {
-      fallback = { candidate, matches };
+/* Elige condición no-degenerada contra el deck dado, usando el rng del seed */
+function chooseCondition(deck, rng) {
+  const defs=window.STAT_DEFINITIONS;
+  for(let i=0;i<30;i++){
+    const def=defs[Math.floor(rng()*defs.length)];
+    let threshold=null, label=def.label;
+    if(def.type==='number'){
+      const opts=getThresholds(def.key);
+      if(!opts.length) continue;
+      threshold=opts[Math.floor(rng()*opts.length)];
+      label=`Mas de ${threshold} ${def.unit}`;
     }
+    const cond={key:def.key,type:def.type,label,unit:def.unit||'',threshold};
+    const m=deck.reduce((n,c)=>n+(cardMatchesCond(c,cond)?1:0),0);
+    if(m>=1 && m<deck.length) return cond;
   }
-  return fallback ? fallback.candidate : buildRoundCondition();
+  const def=defs[Math.floor(rng()*defs.length)];
+  return {key:def.key,type:def.type,label:def.label,unit:def.unit||'',threshold:null};
 }
 
-function buildThresholdOptions(definition) {
-  const text = `${definition.key} ${definition.label} ${definition.unit || ''}`.toLowerCase();
-  const rawValues = window.PLAYERS
-    .map((player) => Number(player.stats?.[definition.key]))
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .sort((a, b) => a - b);
+/* Reparto determinista: mismo seed + mismos playerIds = mismas cartas siempre */
+function dealRound(seed, sortedPlayerIds) {
+  const rng=mulberry32(seed);
+  const n=sortedPlayerIds.length;
+  const cfg=getHandConfig(n);
+  const total=cfg.center+(n*cfg.hand);
+  const shuffled=shuffleRng(window.PLAYERS,rng);
+  const deck=shuffled.slice(0,total).map(createCard);
 
-  if (text.includes('altura') || text.includes('height')) return [180, 185, 190];
-  if (text.includes('edad') || text.includes('age')) return [30, 35];
-  if (text.includes('rojas') || text.includes('red')) return [1, 2];
-  if (text.includes('amarillas') || text.includes('yellow')) return [5, 10];
-  if (text.includes('asist')) return [5, 10];
-  if (text.includes('partidos') || text.includes('apps') || text.includes('appearances') || text.includes('caps')) return [15, 20, 25];
-  if (text.includes('goles') || text.includes('goals')) return [5, 10, 15, 20, 25];
-  if (rawValues.length === 0) return [1, 2, 3];
-
-  const ratios = [0.2, 0.4, 0.6, 0.8];
-  const set = new Set();
-  ratios.forEach((ratio) => {
-    const idx = Math.max(0, Math.min(rawValues.length - 1, Math.floor(rawValues.length * ratio)));
-    set.add(Math.floor(rawValues[idx]));
+  let idx=0;
+  const hands={};
+  sortedPlayerIds.forEach(pid=>{
+    hands[pid]=deck.slice(idx,idx+cfg.hand);
+    idx+=cfg.hand;
   });
-
-  return Array.from(set)
-    .filter((value) => value > 0)
-    .sort((a, b) => a - b)
-    .slice(0, 5);
+  const centerCards=deck.slice(idx).map(c=>({...c, visibleAttr:CENTER_ATTRS[Math.floor(rng()*3)]}));
+  const condition=chooseCondition(deck,rng);
+  return {hands,centerCards,condition,deck};
 }
 
-function getThresholdOptions(definition) {
-  if (!NUMERIC_THRESHOLD_CACHE.has(definition.key)) {
-    NUMERIC_THRESHOLD_CACHE.set(definition.key, buildThresholdOptions(definition));
-  }
-  const options = NUMERIC_THRESHOLD_CACHE.get(definition.key) || [];
-  return options.length ? options : [1, 2, 3];
+/* Orden de turno rotado por ronda */
+function getPlayerOrder(room) {
+  const ids=Object.keys(room.players||{}).sort();
+  const shift=((room.round||1)-1)%ids.length;
+  return [...ids.slice(shift),...ids.slice(0,shift)];
+}
+function getCurrentTurnId(room) {
+  const order=getPlayerOrder(room);
+  const guesses=room.guesses||{};
+  return order.find(pid=>guesses[pid]===undefined||guesses[pid]===null)||null;
+}
+function allGuessed(room) {
+  const connected=Object.entries(room.players||{}).filter(([,p])=>p.connected!==false).map(([id])=>id);
+  const guesses=room.guesses||{};
+  return connected.every(pid=>guesses[pid]!==undefined&&guesses[pid]!==null);
 }
 
-function buildRoundCondition() {
-  const definition = pick(window.STAT_DEFINITIONS);
-  if (!definition) {
-    return {
-      stat: { key: 'goals_career', label: 'goles oficiales en su carrera', unit: 'goles oficiales en su carrera', type: 'number' },
-      threshold: 10,
-      promptLabel: 'Mas de 10 goles oficiales en su carrera'
-    };
-  }
+/* ═══ 4. SYNC MODULE ═══════════════════════════════════════ */
+const Sync = (() => {
+  const PATH='restricciones/rooms';
+  const FB=()=>window._FB;
+  const _ref=p=>{const{db,ref}=FB();return ref(db,p);};
 
-  if ((definition.type || 'number') === 'bool') {
-    return {
-      stat: { ...definition, type: 'bool' },
-      threshold: null,
-      promptLabel: definition.label
-    };
-  }
-
-  const options = getThresholdOptions(definition);
-  const threshold = pick(options);
-  return {
-    stat: { ...definition, type: 'number' },
-    threshold,
-    promptLabel: `Mas de ${threshold} ${definition.unit}`
-  };
-}
-
-function cardMatchesRound(card, round) {
-  const rawValue = card.stats?.[round.stat.key];
-  if (round.stat.type === 'bool') return Boolean(rawValue);
-  const value = Number(rawValue);
-  return Number.isFinite(value) && value > round.threshold;
-}
-
-function initRound(state, roundNumber, startIdx) {
-  const playerCount = state.players.length;
-  const config = getHandConfig(playerCount);
-  const totalCardsNeeded = config.center + (playerCount * config.hand);
-  const deck = drawRoundDeck(totalCardsNeeded);
-
-  // La condicion se elige contra el mazo ya repartido para evitar rondas
-  // triviales (resultado 0 o "todas"). El mazo todavia tiene stats completas.
-  const condition = chooseRoundCondition(deck);
-  const key = condition.stat.key;
-  const fallbackValue = condition.stat.type === 'bool' ? false : 0;
-
-  // Guardamos en cada carta SOLO el dato de la stat de esta ronda. El juego
-  // nunca usa otra clave dentro de la ronda, asi que esto reduce el tamaño del
-  // estado en Firebase ~50x (antes se guardaban ~50 stats por carta).
-  const trimCard = (card) => ({
-    playerId: card.playerId,
-    playerName: card.playerName,
-    country: card.country,
-    countryFlag: card.countryFlag,
-    club: card.club,
-    clubBadge: card.clubBadge,
-    position: card.position,
-    stats: { [key]: card.stats?.[key] ?? fallbackValue }
-  });
-
-  let index = 0;
-  state.hands = {};
-  state.players.forEach((player) => {
-    state.hands[player.id] = deck.slice(index, index + config.hand).map(trimCard);
-    player.cardsCount = config.hand;
-    player.lastGuess = null;
-    index += config.hand;
-  });
-
-  state.centerCards = deck.slice(index, index + config.center).map((card) => ({
-    ...trimCard(card),
-    visibleAttr: pick(CENTER_ATTRS)
-  }));
-
-  state.round = {
-    number: roundNumber,
-    stat: condition.stat,
-    threshold: condition.threshold,
-    promptLabel: condition.promptLabel,
-    guesses: {},
-    turnIdx: startIdx,
-    startIdx
-  };
-  state.reveal = null;
-  state.pendingWinner = null;
-  state.phase = 'playing';
-  state.status = 'playing';
-}
-
-function getHandConfig(playerCount) {
-  if (playerCount <= 2) return HAND_CONFIG[2];
-  if (playerCount >= 8) return HAND_CONFIG[8];
-  return HAND_CONFIG[playerCount];
-}
-
-function getNextTurnIdx(state, fromIdx) {
-  for (let step = 1; step <= state.players.length; step++) {
-    const idx = (fromIdx + step) % state.players.length;
-    const player = state.players[idx];
-    if (player && state.round.guesses[player.id] === undefined) return idx;
-  }
-  return -1;
-}
-
-function maybeResolveWinner(state) {
-  const topScore = Math.max(...state.players.map((player) => player.score));
-  if (topScore < state.pointsToWin) return null;
-  const leaders = state.players.filter((player) => player.score === topScore);
-  if (leaders.length !== 1) return null;
-  return { id: leaders[0].id, name: leaders[0].name, score: leaders[0].score };
-}
-
-function resolveRound(state) {
-  const revealCards = [];
-  state.players.forEach((player) => {
-    (state.hands[player.id] || []).forEach((card) => {
-      revealCards.push({
-        ...card,
-        ownerId: player.id,
-        ownerName: player.name,
-        matches: cardMatchesRound(card, state.round)
-      });
+  async function createRoom(hostName,mode,pointsToWin) {
+    const{set}=FB();
+    const code=genCode(), hostId=genId();
+    await set(_ref(`${PATH}/${code}`),{
+      game:'mentiroso', status:'waiting', mode, pointsToWin,
+      round:0, seed:0,
+      condKey:null,condType:null,condLabel:null,condUnit:null,condThreshold:null,
+      guessCount:0, guesses:null, actualTotal:null, winners:null,
+      players:{[hostId]:{name:hostName,score:0,connected:true,isHost:true}},
     });
-  });
+    return {code,playerId:hostId};
+  }
 
-  state.centerCards.forEach((card) => {
-    revealCards.push({
-      ...card,
-      ownerId: '__center__',
-      ownerName: 'Centro',
-      matches: cardMatchesRound(card, state.round)
+  async function joinRoom(code,playerName) {
+    const{get,update}=FB();
+    const snap=await get(_ref(`${PATH}/${code}`));
+    if(!snap.exists()) throw new Error('Sala no encontrada');
+    const room=snap.val();
+    if(room.game!=='mentiroso') throw new Error('Esa sala es de otro juego');
+    if(room.status!=='waiting') throw new Error('La partida ya ha comenzado');
+    const count=Object.keys(room.players||{}).length;
+    if(count>=8) throw new Error('Sala llena');
+    const playerId=genId();
+    await update(_ref(`${PATH}/${code}/players/${playerId}`),{
+      name:playerName,score:0,connected:true,isHost:false,
     });
-  });
-
-  const actualTotal = revealCards.filter((card) => card.matches).length;
-  const guesses = state.players.map((player) => ({
-    id: player.id,
-    name: player.name,
-    guess: state.round.guesses[player.id]
-  }));
-  const winners = guesses.filter((entry) => entry.guess === actualTotal);
-
-  winners.forEach((entry) => {
-    const player = state.players.find((candidate) => candidate.id === entry.id);
-    if (player) player.score += 1;
-  });
-
-  state.reveal = {
-    stat: deepClone(state.round.stat),
-    promptLabel: state.round.promptLabel,
-    threshold: state.round.threshold,
-    actualTotal,
-    guesses,
-    winnerIds: winners.map((entry) => entry.id),
-    winnerNames: winners.map((entry) => entry.name),
-    cards: revealCards
-  };
-  state.phase = 'reveal';
-  state.status = 'reveal';
-  state.pendingWinner = maybeResolveWinner(state);
-}
-
-function submitGuess(state, clientId, guess) {
-  if (state.phase !== 'playing') {
-    return { ok: false, reason: 'La ronda no esta aceptando apuestas.' };
+    return {code,playerId};
   }
 
-  const currentPlayer = state.players[state.round.turnIdx];
-  if (!currentPlayer || currentPlayer.id !== clientId) {
-    return { ok: false, reason: 'No es tu turno.' };
+  function listenRoom(code,cb) {
+    const{onValue}=FB();
+    return onValue(_ref(`${PATH}/${code}`),snap=>{
+      if(!snap.exists()) return;
+      cb(snap.val());
+    });
   }
 
-  const parsedGuess = Math.floor(Number(guess));
-  if (!Number.isFinite(parsedGuess) || parsedGuess < 0) {
-    return { ok: false, reason: 'La apuesta debe ser 0 o mayor.' };
+  async function startRound(code,roundNum,seed,cond,pointsToWin) {
+    const{update}=FB();
+    await update(_ref(`${PATH}/${code}`),{
+      status:'playing', round:roundNum, seed,
+      condKey:cond.key, condType:cond.type, condLabel:cond.label,
+      condUnit:cond.unit||'', condThreshold:cond.threshold??null,
+      guessCount:0, guesses:null, actualTotal:null, winners:null,
+      pointsToWin,
+    });
   }
 
-  const maxGuess = totalCardsInPlay(state);
-  if (parsedGuess > maxGuess) {
-    return { ok: false, reason: `No puede ser mayor que ${maxGuess}.` };
+  async function submitGuess(code,playerId,guess) {
+    const{update,runTransaction}=FB();
+    await update(_ref(`${PATH}/${code}/guesses/${playerId}`),{'.sv':'timestamp'});
+    await update(_ref(`${PATH}/${code}`),{[`guesses/${playerId}`]:guess});
+    const res=await runTransaction(_ref(`${PATH}/${code}/guessCount`),cur=>(cur||0)+1);
+    return res.snapshot.val();
   }
 
-  state.round.guesses[clientId] = parsedGuess;
-  currentPlayer.lastGuess = parsedGuess;
-
-  const nextIdx = getNextTurnIdx(state, state.round.turnIdx);
-  if (nextIdx === -1) {
-    resolveRound(state);
-  } else {
-    state.round.turnIdx = nextIdx;
-  }
-
-  return { ok: true };
-}
-
-function continueAfterReveal(state) {
-  if (state.phase !== 'reveal') return;
-  if (state.pendingWinner) {
-    state.phase = 'gameover';
-    state.status = 'finished';
-    state.winner = { ...state.pendingWinner };
-    return;
-  }
-
-  const nextStartIdx = (state.round.startIdx + 1) % state.players.length;
-  initRound(state, state.round.number + 1, nextStartIdx);
-}
-
-function removePlayerFromState(state, clientId) {
-  const idx = state.players.findIndex((player) => player.id === clientId);
-  if (idx < 0) return;
-
-  state.players.splice(idx, 1);
-  if (Array.isArray(state.playerOrder)) {
-    state.playerOrder = state.playerOrder.filter((id) => id !== clientId);
-  }
-  delete state.hands[clientId];
-
-  if (state.players.length === 0) {
-    return;
-  }
-
-  if (state.hostId === clientId) {
-    const nextHost = state.players[0];
-    state.hostId = nextHost.id;
-    nextHost.isHost = true;
-  }
-
-  state.players.forEach((player) => {
-    player.isHost = player.id === state.hostId;
-  });
-
-  if (state.phase === 'playing' && state.round) {
-    delete state.round.guesses[clientId];
-    if (state.players.length < 2) {
-      state.phase = 'gameover';
-      state.status = 'finished';
-      state.winner = { id: state.players[0].id, name: state.players[0].name, score: state.players[0].score };
-      return;
+  async function triggerReveal(code,actualTotal,winnerNames,updatedScores) {
+    const{update}=FB();
+    const batch={
+      [`${PATH}/${code}/status`]:'reveal',
+      [`${PATH}/${code}/actualTotal`]:actualTotal,
+      [`${PATH}/${code}/winners`]:winnerNames,
+    };
+    for(const[pid,score] of Object.entries(updatedScores)){
+      batch[`${PATH}/${code}/players/${pid}/score`]=score;
     }
-
-    state.round.startIdx = state.round.startIdx % state.players.length;
-    state.round.turnIdx = state.round.turnIdx % state.players.length;
-    if (getNextTurnIdx(state, state.round.turnIdx - 1) === -1) {
-      resolveRound(state);
-      return;
-    }
-    if (!state.players[state.round.turnIdx] || state.round.guesses[state.players[state.round.turnIdx].id] !== undefined) {
-      state.round.turnIdx = getNextTurnIdx(state, state.round.turnIdx - 1);
-    }
+    await update(_ref('/'),batch);
   }
 
-  if (state.phase === 'reveal' && state.players.length < 2) {
-    state.pendingWinner = { id: state.players[0].id, name: state.players[0].name, score: state.players[0].score };
-  }
-}
-
-function createInitialState(code, mode, name) {
-  return {
-    game: 'mentiroso',
-    code,
-    status: 'waiting',
-    phase: 'lobby',
-    mode,
-    pointsToWin: normalizePointsToWin(POINTS_LIMIT.value),
-    hostId: Me.clientId,
-    playerOrder: [Me.clientId],
-    players: {
-      [Me.clientId]: {
-        name,
-        isHost: true,
-        score: 0,
-        lastGuess: null,
-        cardsCount: 0
-      }
-    },
-    hands: {},
-    centerCards: [],
-    round: null,
-    reveal: null,
-    pendingWinner: null,
-    winner: null,
-    updatedAt: Date.now()
-  };
-}
-
-function applyIncomingState(nextState) {
-  State = normalizeStateFromFirebase(nextState);
-  if (!State) {
-    render();
-    return;
+  async function setFinished(code,winnerName,updatedScores) {
+    const{update}=FB();
+    const batch={[`${PATH}/${code}/status`]:'finished',[`${PATH}/${code}/winnerName`]:winnerName};
+    for(const[pid,score] of Object.entries(updatedScores)) batch[`${PATH}/${code}/players/${pid}/score`]=score;
+    await update(_ref('/'),batch);
   }
 
-  State.players.forEach((player) => {
-    player.score = Number(player.score || 0);
-    player.cardsCount = Number(player.cardsCount || 0);
-    if (player.lastGuess === undefined) player.lastGuess = null;
-  });
-  if (!State.phase && State.status === 'waiting') State.phase = 'lobby';
-  if (!State.phase && State.status === 'playing') State.phase = 'playing';
-  if (!State.phase && State.status === 'reveal') State.phase = 'reveal';
-  if (!State.phase && State.status === 'finished') State.phase = 'gameover';
-  State.pointsToWin = normalizePointsToWin(State.pointsToWin);
-  Me.isHost = State.hostId === Me.clientId;
-  render();
-}
-
-function subscribeToRoom(code) {
-  if (unsubscribeRoom) unsubscribeRoom();
-  unsubscribeRoom = onValue(roomRef(code), (snapshot) => {
-    const room = snapshot.val();
-    if (!room) {
-      const hadRoom = Boolean(State);
-      clearLocalRoom();
-      if (hadRoom) toast('La sala ya no existe.', 'error');
-      return;
-    }
-    applyIncomingState(room);
-  }, () => {
-    toast('Error de conexion con la sala.', 'error');
-  });
-}
-
-// Activa un listener real sobre la sala y resuelve cuando llega el PRIMER dato
-// del servidor. Necesario antes de runTransaction: sin un listener activo, la
-// primera pasada de la transaccion ve null (get() no alimenta esa cache) y la
-// union aborta con "La sala no existe" sin reintentar.
-function primeRoomCache(code) {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = () => { if (!settled) { settled = true; resolve(); } };
-    try {
-      const off = onValue(roomRef(code), () => { off(); finish(); }, () => finish());
-    } catch {
-      finish();
-    }
-    setTimeout(finish, 3000);
-  });
-}
-
-function clearLocalRoom() {
-  clearSession();
-  if (unsubscribeRoom) {
-    unsubscribeRoom();
-    unsubscribeRoom = null;
-  }
-  State = null;
-  Me.isHost = false;
-  Me.roomCode = null;
-  Me.roomRoot = ROOM_ROOT;
-  window.__guessDraft = 0;
-  window.__guessDraftRound = null;
-  $('#overlay-reveal').classList.add('hidden');
-  $('#overlay-gameover').classList.add('hidden');
-  showScreen('#screen-menu');
-}
-
-function isPermissionError(error) {
-  const msg = String(error?.code || error?.message || error || '').toLowerCase();
-  return msg.includes('permission') || msg.includes('denied') || msg.includes('permission_denied');
-}
-
-async function findExistingRoom(code) {
-  let sawPermissionError = false;
-  for (const root of ROOM_ROOT_CANDIDATES) {
-    try {
-      const snapshot = await get(roomRefAt(root, code));
-      if (snapshot.exists()) {
-        return { root, snapshot };
-      }
-    } catch (error) {
-      if (isPermissionError(error)) sawPermissionError = true;
-      console.warn('Mentiroso findExistingRoom error', root, error);
-    }
-  }
-  return sawPermissionError ? { permissionDenied: true } : null;
-}
-
-async function mutateRoom(code, mutator) {
-  if (!hasFirebase()) {
-    return { ok: false, reason: 'Firebase no esta disponible.' };
-  }
-  let failureReason = null;
-  let result;
-  try {
-    result = await runTransaction(roomRef(code), (current) => {
-      if (!current) {
-        failureReason = 'La sala no existe.';
-        return;
-      }
-      try {
-        const next = normalizeStateFromFirebase(current);
-        const outcome = mutator(next);
-        if (outcome && outcome.ok === false) {
-          failureReason = outcome.reason || 'No se pudo aplicar el cambio.';
-          return;
+  async function disconnect(code,playerId) {
+    const{get,update,remove:rm}=FB();
+    try{
+      const snap=await get(_ref(`${PATH}/${code}`));
+      if(!snap.exists())return;
+      const room=snap.val();
+      if(room.status==='waiting'){
+        await rm(_ref(`${PATH}/${code}/players/${playerId}`));
+        const remaining=Object.keys(room.players||{}).filter(p=>p!==playerId);
+        if(!remaining.length){ rm(_ref(`${PATH}/${code}`)).catch(()=>{}); return; }
+        if(room.players[playerId]?.isHost){
+          await update(_ref(`${PATH}/${code}/players/${remaining[0]}`),{isHost:true});
         }
-        stampState(next);
-        return serializeStateForFirebase(next);
-      } catch (innerError) {
-        // Capturamos excepciones dentro del callback para que no se traguen
-        // silenciosamente; las registramos y abortamos con motivo claro.
-        const msg = innerError?.message || String(innerError);
-        failureReason = `Error interno: ${msg}`;
-        console.error('Mentiroso mutateRoom inner error:', innerError);
-        return; // aborta la transaccion
+      } else {
+        await update(_ref(`${PATH}/${code}/players/${playerId}`),{connected:false});
       }
-    }, { applyLocally: false });
-  } catch (error) {
-    console.warn('Mentiroso mutateRoom error', error);
-    return { ok: false, reason: 'Error al guardar la sala.' };
+    }catch(e){console.warn('disconnect error',e);}
   }
 
-  if (!result.committed) {
-    return { ok: false, reason: failureReason || 'No se pudo guardar el cambio.' };
+  async function getRoom(code) {
+    const{get}=FB();
+    const snap=await get(_ref(`${PATH}/${code}`));
+    return snap.exists()?snap.val():null;
   }
-  return { ok: true, state: result.snapshot.val() };
+
+  async function updateSettings(code,settings) {
+    const{update}=FB();
+    await update(_ref(`${PATH}/${code}`),settings);
+  }
+
+  async function skipPlayerGuess(code,playerId) {
+    return submitGuess(code,playerId,0);
+  }
+
+  return {createRoom,joinRoom,listenRoom,startRound,submitGuess,triggerReveal,
+          setFinished,disconnect,getRoom,updateSettings,skipPlayerGuess};
+})();
+
+/* ═══ 5. APP ═══════════════════════════════════════════════ */
+let _roomCode=null, _playerId=null, _isHost=false, _unsubRoom=null;
+let _lastRoom=null, _pointsDraft=3, _modeDraft='easy';
+let _submitted=false, _revealTriggered=false;
+let _guessDraft=0, _skipTimer=null;
+
+function _saveSession(){try{sessionStorage.setItem('mentiroso_s',JSON.stringify({code:_roomCode,pid:_playerId}))}catch{}}
+function _clearSession(){try{sessionStorage.removeItem('mentiroso_s')}catch{}}
+
+function _resetState() {
+  _roomCode=null;_playerId=null;_isHost=false;_lastRoom=null;
+  _submitted=false;_revealTriggered=false;_guessDraft=0;
+  clearTimeout(_skipTimer);_skipTimer=null;
+  if(_unsubRoom){_unsubRoom();_unsubRoom=null;}
+  _clearSession();
 }
 
-async function createRoomOnline() {
-  if (!hasFirebase()) {
-    toast('Firebase no se ha cargado bien.', 'error');
-    return;
-  }
-  const name = ($('#create-name').value || '').trim();
-  if (!name) {
-    toast('Escribe tu nombre', 'error');
-    return;
-  }
-
-  const selected = $('.mode-opt.active');
-  const mode = selected ? selected.dataset.mode : 'easy';
-
-  Me.name = name.slice(0, 16);
-  Me.roomRoot = ROOM_ROOT;
-  let code = '';
-  let created = false;
-
-  try {
-    for (let attempt = 0; attempt < 12 && !created; attempt++) {
-      code = genCode();
-      const existing = await get(roomRefAt(ROOM_ROOT, code));
-      if (existing.exists()) continue;
-      await set(roomRefAt(ROOM_ROOT, code), createInitialState(code, mode, Me.name));
-      created = true;
-    }
-  } catch (error) {
-    console.warn('Mentiroso createRoomOnline error', error);
-    toast(error?.message || 'No se pudo crear la sala.', 'error');
-    return;
-  }
-
-  if (!created) {
-    toast('No he podido crear la sala.', 'error');
-    return;
-  }
-
-  Me.roomCode = code;
-
-  // Comprueba que la sala se puede LEER, no solo escribir. Si las reglas de
-  // Firebase permiten escritura pero bloquean lectura, el host veria su propio
-  // lobby (cache local) pero nadie podria unirse. Lo detectamos aqui.
-  try {
-    const check = await get(roomRefAt(ROOM_ROOT, code));
-    if (!check.exists()) {
-      toast('Sala creada pero no se puede leer. Revisa las reglas de Firebase.', 'error');
-    }
-  } catch (error) {
-    if (isPermissionError(error)) {
-      toast('Reglas de Firebase bloquean la lectura: nadie podra unirse.', 'error');
-    }
-    console.warn('Mentiroso readback error', error);
-  }
-
-  subscribeToRoom(code);
-  saveSession();
+/* — Añadir stats extra que están en los datos pero no en las definiciones — */
+function _ensureExtraStats() {
+  if(!Array.isArray(window.STAT_DEFINITIONS))return;
+  const extra=[
+    {key:'played_barcelona_chelsea',label:'han pasado por Barcelona y Chelsea',unit:'SI/NO',type:'bool'},
+    {key:'played_real_juventus',label:'han pasado por Real Madrid y Juventus',unit:'SI/NO',type:'bool'},
+    {key:'played_psg_barcelona',label:'han pasado por PSG y Barcelona',unit:'SI/NO',type:'bool'},
+    {key:'played_bayern_dortmund',label:'han pasado por Bayern y Dortmund',unit:'SI/NO',type:'bool'},
+  ];
+  const has=new Set(window.STAT_DEFINITIONS.map(d=>d.key));
+  extra.forEach(d=>{if(!has.has(d.key))window.STAT_DEFINITIONS.push(d);});
 }
 
-async function joinRoomOnline() {
-  if (!hasFirebase()) {
-    toast('Firebase no se ha cargado bien.', 'error');
-    return;
+/* — Room update callback — */
+function _onRoomUpdate(room) {
+  _lastRoom=room;
+  if(!room||!room.players) return;
+  if(!room.players[_playerId]){
+    toast('Has sido expulsado de la sala','error');
+    _resetState(); showScreen('#screen-menu'); return;
   }
-  const name = ($('#join-name').value || '').trim();
-  const code = ($('#join-code').value || '').trim().toUpperCase();
+  _isHost=room.players[_playerId]?.isHost===true;
 
-  if (!name) {
-    toast('Escribe tu nombre', 'error');
-    return;
-  }
-  if (code.length < 4) {
-    toast('Codigo invalido', 'error');
-    return;
-  }
-
-  let existing;
-  try {
-    existing = await findExistingRoom(code);
-  } catch (error) {
-    console.warn('Mentiroso joinRoomOnline error', error);
-    $('#join-error').textContent = 'Error conectando con la sala.';
-    $('#join-error').classList.remove('hidden');
-    return;
-  }
-  if (existing && existing.permissionDenied) {
-    $('#join-error').textContent = 'Permiso denegado por Firebase. Hay que abrir las reglas de lectura de la base de datos.';
-    $('#join-error').classList.remove('hidden');
-    return;
-  }
-  if (!existing || !existing.snapshot || !existing.snapshot.exists()) {
-    $('#join-error').textContent = 'Sala no encontrada.';
-    $('#join-error').classList.remove('hidden');
-    return;
-  }
-  if (existing.snapshot.val()?.game !== 'mentiroso') {
-    $('#join-error').textContent = 'Ese codigo pertenece a otro juego.';
-    $('#join-error').classList.remove('hidden');
-    return;
-  }
-
-  Me.name = name.slice(0, 16);
-  Me.roomCode = code;
-  Me.roomRoot = existing.root;
-
-  // Sincroniza la sala y espera el primer dato del servidor ANTES de la
-  // transaccion, para que runTransaction vea la sala real en su primera pasada.
-  subscribeToRoom(code);
-  await primeRoomCache(code);
-
-  const joinMutator = (state) => {
-    if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya ha empezado.' };
-    if (state.players.length >= 8) return { ok: false, reason: 'Sala llena.' };
-    if (state.players.some((player) => player.id === Me.clientId)) return { ok: false, reason: 'Ya estas dentro.' };
-    if (!Array.isArray(state.playerOrder)) state.playerOrder = state.players.map((player) => player.id);
-    state.players.push({
-      id: Me.clientId,
-      name: Me.name,
-      isHost: false,
-      score: 0,
-      lastGuess: null,
-      cardsCount: 0
-    });
-    state.playerOrder.push(Me.clientId);
-    return { ok: true };
-  };
-
-  let joined = await mutateRoom(code, joinMutator);
-  // Red de seguridad: si la transaccion vio la sala como inexistente por una
-  // lectura aun no sincronizada, reintenta una vez tras un breve respiro.
-  if (!joined.ok && /no existe/i.test(joined.reason || '')) {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    joined = await mutateRoom(code, joinMutator);
-  }
-
-  if (!joined.ok) {
-    if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
-    State = null;
-    Me.roomCode = null;
-    Me.roomRoot = ROOM_ROOT;
-    showScreen('#screen-menu');
-    $('#join-error').textContent = joined.reason;
-    $('#join-error').classList.remove('hidden');
-    return;
-  }
-  saveSession();
-}
-
-async function updateHostPointsSetting(nextValue) {
-  if (!State || !Me.isHost) return;
-  const safeValue = normalizePointsToWin(nextValue);
-  const result = await mutateRoom(State.code, (state) => {
-    if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya ha empezado.' };
-    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede cambiarlo.' };
-    state.pointsToWin = safeValue;
-    return { ok: true };
-  });
-  if (!result.ok) toast(result.reason, 'error');
-}
-
-async function startGameOnline() {
-  if (!State || !Me.isHost) return;
-  const result = await mutateRoom(State.code, (state) => {
-    if (state.phase !== 'lobby') return { ok: false, reason: 'La partida ya esta empezada.' };
-    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede iniciar.' };
-    if (state.players.length < 2) return { ok: false, reason: 'Se necesitan al menos 2 jugadores.' };
-    state.players.forEach((player) => {
-      player.score = 0;
-      player.lastGuess = null;
-    });
-    state.winner = null;
-    state.pendingWinner = null;
-    initRound(state, 1, 0);
-    return { ok: true };
-  });
-  if (!result.ok) toast(result.reason, 'error');
-}
-
-async function submitGuessOnline(guess) {
-  if (!State) return;
-  const result = await mutateRoom(State.code, (state) => submitGuess(state, Me.clientId, guess));
-  if (!result.ok) toast(result.reason, 'error');
-}
-
-async function continueRoundOnline() {
-  if (!State || !Me.isHost) return;
-  const result = await mutateRoom(State.code, (state) => {
-    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede continuar.' };
-    continueAfterReveal(state);
-    return { ok: true };
-  });
-  if (!result.ok) toast(result.reason, 'error');
-}
-
-// El host puede expulsar a un jugador (util si alguien se desconecta a mitad
-// de su turno y bloquearia la ronda para siempre).
-async function removePlayerOnline(targetId) {
-  if (!State || !Me.isHost || targetId === Me.clientId) return;
-  const target = State.players.find((player) => player.id === targetId);
-  const label = target ? target.name : 'ese jugador';
-  if (!window.confirm(`Quitar a ${label} de la partida?`)) return;
-  const result = await mutateRoom(State.code, (state) => {
-    if (state.hostId !== Me.clientId) return { ok: false, reason: 'Solo el host puede expulsar.' };
-    removePlayerFromState(state, targetId);
-    return { ok: true };
-  });
-  if (!result.ok) toast(result.reason, 'error');
-  else toast(`${label} fuera de la partida`, 'success');
-}
-
-async function leaveRoomOnline() {
-  if (!Me.roomCode) {
-    clearLocalRoom();
-    return;
-  }
-
-  const currentCode = Me.roomCode;
-  await runTransaction(roomRef(currentCode), (current) => {
-    if (!current) return current;
-    const next = deepClone(current);
-    removePlayerFromState(next, Me.clientId);
-    if (next.players.length === 0) return null;
-    stampState(next);
-    return next;
-  }, { applyLocally: false }).catch((error) => {
-    console.warn('Mentiroso leaveRoomOnline error', error);
-  });
-
-  clearLocalRoom();
-}
-
-function render() {
-  if (!State) {
-    showScreen('#screen-menu');
-    return;
-  }
-
-  if (State.phase === 'lobby') return renderLobby();
-  if (State.phase === 'playing') return renderGame();
-  if (State.phase === 'reveal') return renderGameWithReveal();
-  if (State.phase === 'gameover') return renderGameOver();
-}
-
-function setPointsDraft(value) {
-  const nextValue = normalizePointsToWin(value);
-  POINTS_LIMIT.value = nextValue;
-  $('#create-points-value').textContent = String(nextValue);
-}
-
-function updateLobbyPointsControls() {
-  if (!State) return;
-  $('#lobby-points-value').textContent = String(State.pointsToWin);
-  $('#lobby-points-value-readonly').textContent = String(State.pointsToWin);
-
-  if (Me.isHost && State.phase === 'lobby') {
-    $('#lobby-points-controls').classList.remove('hidden');
-    $('#lobby-points-readonly').classList.add('hidden');
-  } else {
-    $('#lobby-points-controls').classList.add('hidden');
-    $('#lobby-points-readonly').classList.remove('hidden');
+  switch(room.status) {
+    case 'waiting': _renderLobby(room); break;
+    case 'playing': _renderGame(room); break;
+    case 'reveal':  _renderReveal(room); break;
+    case 'finished':_renderFinished(room); break;
   }
 }
 
-function renderLobby() {
+/* ═══ RENDER LOBBY ═════════════════════════════════════════ */
+function _renderLobby(room) {
   showScreen('#screen-lobby');
-  $('#overlay-reveal').classList.add('hidden');
-  $('#overlay-gameover').classList.add('hidden');
+  $('#lobby-code').textContent=_roomCode;
+  $('#lobby-mode-pill').textContent=room.mode==='easy'?'FACIL':'DIFICIL';
+  const players=Object.entries(room.players||{});
+  $('#lobby-count').textContent=`(${players.length})`;
 
-  $('#lobby-code').textContent = State.code;
-  $('#lobby-mode-pill').textContent = State.mode === 'easy' ? 'FACIL' : 'DIFICIL';
-  $('#lobby-count').textContent = `(${State.players.length})`;
-
-  const playersEl = $('#lobby-players');
-  playersEl.innerHTML = '';
-  State.players.forEach((player) => {
-    const row = document.createElement('div');
-    row.className = 'lobby-player-row' + (player.id === Me.clientId ? ' me' : '');
-    row.innerHTML = `
-      <div class="lobby-player-avatar">${escapeHtml(player.name.slice(0, 1).toUpperCase())}</div>
-      <div class="lobby-player-name">${escapeHtml(player.name)}${player.id === Me.clientId ? ' (tu)' : ''}</div>
-      ${player.isHost ? '<div class="lobby-player-host">HOST</div>' : ''}
+  const list=$('#lobby-players'); list.innerHTML='';
+  players.forEach(([pid,p])=>{
+    const div=document.createElement('div'); div.className='lobby-player-row';
+    div.innerHTML=`
+      <span class="lp-avatar">${escapeHtml((p.name||'?')[0].toUpperCase())}</span>
+      <span class="lp-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>
+      ${p.isHost?'<span class="lp-host">HOST</span>':''}
     `;
-    playersEl.appendChild(row);
+    list.appendChild(div);
   });
 
-  updateLobbyPointsControls();
-  $('#btn-start').disabled = !(Me.isHost && State.players.length >= 2);
+  const btn=$('#btn-start');
+  btn.disabled=!_isHost||players.length<2;
 
-  const hint = $('#lobby-hint');
-  if (!Me.isHost) {
-    hint.textContent = 'Esperando a que el host inicie la partida.';
-  } else if (State.players.length < 2) {
-    hint.textContent = 'Se necesitan al menos 2 jugadores.';
-  } else {
-    hint.textContent = `La partida se gana al llegar a ${State.pointsToWin} rondas acertadas.`;
-  }
+  /* Points controls */
+  const ctrlHost=$('#lobby-points-controls');
+  const ctrlRead=$('#lobby-points-readonly');
+  if(_isHost){ctrlHost.classList.remove('hidden');ctrlRead.classList.add('hidden');$('#lobby-points-value').textContent=room.pointsToWin;}
+  else{ctrlHost.classList.add('hidden');ctrlRead.classList.remove('hidden');$('#lobby-points-value-readonly').textContent=room.pointsToWin;}
+
+  const hint=$('#lobby-hint');
+  if(players.length<2) hint.textContent='Se necesitan al menos 2 jugadores.';
+  else if(_isHost) hint.textContent=`Gana quien llegue a ${room.pointsToWin} rondas acertadas.`;
+  else hint.textContent='Esperando a que el host inicie la partida.';
 }
 
-function renderGuessSummary() {
-  const list = State.players
-    .map((player) => {
-      const guess = State.round.guesses[player.id];
-      if (guess === undefined) {
-        return `<div class="guess-row waiting"><span>${escapeHtml(player.name)}</span><span>...</span></div>`;
-      }
-      return `<div class="guess-row"><span>${escapeHtml(player.name)}</span><span>${guess}</span></div>`;
-    })
-    .join('');
-
-  return list || '<div class="guess-row waiting"><span>Sin apuestas aun</span><span>...</span></div>';
-}
-
-function renderGame() {
+/* ═══ RENDER GAME ══════════════════════════════════════════ */
+function _renderGame(room) {
   showScreen('#screen-game');
   $('#overlay-reveal').classList.add('hidden');
   $('#overlay-gameover').classList.add('hidden');
-  renderGameCommon();
-  renderActionBar();
-}
+  _revealTriggered=false;
 
-function renderGameWithReveal() {
-  showScreen('#screen-game');
-  renderGameCommon();
-  renderActionBar();
-  renderRevealOverlay();
-}
+  /* Header */
+  const cond=_getCondition(room);
+  $('#game-round').textContent=String(room.round);
+  $('#game-round-stat').textContent=(cond.label||'').toUpperCase();
+  $('#game-code').textContent=_roomCode;
 
-function renderGameCommon() {
-  $('#game-round').textContent = String(State.round.number);
-  $('#game-round-stat').textContent = State.round.promptLabel.toUpperCase();
-  $('#game-code').textContent = State.code;
+  /* Deal determinista */
+  const sortedIds=Object.keys(room.players).sort();
+  const deal=dealRound(room.seed,sortedIds);
+  const myHand=deal.hands[_playerId]||[];
+  const centerCards=deal.centerCards;
 
-  const ring = $('#turn-ring');
-  ring.innerHTML = '';
-  State.players.forEach((player, index) => {
-    const chip = document.createElement('div');
-    const classes = ['turn-chip'];
-    if (State.phase === 'playing' && index === State.round.turnIdx) classes.push('active');
-    if (player.id === Me.clientId) classes.push('me');
-    chip.className = classes.join(' ');
-    const guessed = State.round.guesses[player.id];
-    const canKick = Me.isHost && player.id !== Me.clientId && State.phase !== 'gameover';
-    chip.innerHTML = `
-      <span>${escapeHtml(player.name)}${player.id === Me.clientId ? ' (tu)' : ''}</span>
-      <span class="tc-count">${player.score} pt</span>
-      <span class="tc-guess">${guessed === undefined ? 'sin apuesta' : `dice ${guessed}`}</span>
-      ${canKick ? '<button class="tc-kick" title="Quitar jugador">×</button>' : ''}
+  /* Turn ring */
+  const order=getPlayerOrder(room);
+  const guesses=room.guesses||{};
+  const currentTurnId=getCurrentTurnId(room);
+  const ring=$('#turn-ring'); ring.innerHTML='';
+  order.forEach(pid=>{
+    const p=room.players[pid]; if(!p)return;
+    const chip=document.createElement('div');
+    const isActive=pid===currentTurnId;
+    chip.className=`turn-chip${isActive?' active':''}${pid===_playerId?' me':''}`;
+    const g=guesses[pid];
+    chip.innerHTML=`
+      <span>${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>
+      <span class="tc-count">${p.score||0} pt</span>
+      <span class="tc-guess">${g!==undefined&&g!==null?`dice ${g}`:'...'}</span>
+      ${_isHost&&pid!==_playerId?'<button class="tc-kick" title="Quitar">×</button>':''}
     `;
-    if (canKick) {
-      const kickBtn = chip.querySelector('.tc-kick');
-      if (kickBtn) {
-        kickBtn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          removePlayerOnline(player.id);
-        });
-      }
-    }
+    const kick=chip.querySelector('.tc-kick');
+    if(kick) kick.addEventListener('click',e=>{e.stopPropagation();_kickPlayer(pid,p.name);});
     ring.appendChild(chip);
   });
 
-  const centerEl = $('#center-cards');
-  centerEl.innerHTML = '';
-  if (State.centerCards.length === 0) {
-    centerEl.innerHTML = '<div class="empty-inline">Sin cartas en el centro</div>';
-  } else {
-    State.centerCards.forEach((card) => centerEl.appendChild(renderCard(card, { mode: 'center' })));
-  }
+  /* Center cards */
+  const centerEl=$('#center-cards'); centerEl.innerHTML='';
+  if(!centerCards.length) centerEl.innerHTML='<div class="empty-inline">Sin cartas en el centro</div>';
+  else centerCards.forEach(c=>centerEl.appendChild(renderCard(c,{mode:'center',cond})));
 
-  $('#bet-round-note').textContent = `Objetivo: ${State.pointsToWin} puntos`;
-  $('#bet-current').innerHTML = renderGuessSummary();
-
-  const myHandEl = $('#my-hand');
-  myHandEl.innerHTML = '';
-  const myHand = State.hands[Me.clientId] || [];
-  myHand.forEach((card) => {
-    myHandEl.appendChild(renderCard(card, {
-      mode: State.mode === 'easy' ? 'own-easy' : 'own-hard',
-      round: State.round
-    }));
+  /* Bets */
+  $('#bet-round-note').textContent=`Objetivo: ${room.pointsToWin} puntos`;
+  const betEl=$('#bet-current'); betEl.innerHTML='';
+  order.forEach(pid=>{
+    const p=room.players[pid]||{}; const g=guesses[pid];
+    betEl.innerHTML+=`<div class="guess-row${g===undefined||g===null?' waiting':''}"><span>${escapeHtml(p.name)}</span><span>${g!==undefined&&g!==null?g:'...'}</span></div>`;
   });
-  $('#my-hand-note').textContent = State.mode === 'easy'
-    ? 'Verde = esta carta cumple la condicion de la ronda'
-    : 'Solo ves el nombre y los rasgos visibles';
-}
 
-function renderActionBar() {
-  const panel = $('#action-panel');
-  const waiting = $('#action-waiting');
-  const me = State.players.find((player) => player.id === Me.clientId);
-  const isMyTurn = State.phase === 'playing' && State.players[State.round.turnIdx]?.id === Me.clientId;
+  /* My hand */
+  const handEl=$('#my-hand'); handEl.innerHTML='';
+  myHand.forEach(c=>handEl.appendChild(renderCard(c,{mode:room.mode==='easy'?'own-easy':'own-hard',cond})));
+  $('#my-hand-note').textContent=room.mode==='easy'?'Verde = esta carta cumple la condicion':'Solo ves nombre y rasgos visibles';
 
-  if (!isMyTurn) {
-    panel.classList.add('hidden');
-    waiting.classList.remove('hidden');
-    const label = waiting.querySelector('.action-panel-label');
-    if (State.phase === 'reveal') {
-      label.textContent = 'REVELANDO RESULTADOS...';
-    } else if (State.phase === 'gameover') {
-      label.textContent = 'PARTIDA TERMINADA';
-    } else {
-      const current = State.players[State.round.turnIdx];
-      label.textContent = current ? `ESPERANDO A ${current.name.toUpperCase()}...` : 'ESPERANDO...';
-    }
-    return;
-  }
-
-  panel.classList.remove('hidden');
-  waiting.classList.add('hidden');
-
-  const maxGuess = totalCardsInPlay(State);
-  if (window.__guessDraftRound !== State.round.number) {
-    window.__guessDraftRound = State.round.number;
-    window.__guessDraft = 0;
-  }
-  window.__guessDraft = Math.max(0, Math.min(maxGuess, Number(window.__guessDraft || 0)));
-
-  $('#step-guess').textContent = String(window.__guessDraft);
-  $('#guess-max').textContent = String(maxGuess);
-  $('#guess-minus').disabled = window.__guessDraft <= 0;
-  $('#guess-plus').disabled = window.__guessDraft >= maxGuess;
-  $('#action-panel-label').textContent = `${escapeHtml(me.name).toUpperCase()} · ADIVINA EL TOTAL EXACTO`;
-}
-
-function renderCard(card, opts) {
-  const el = document.createElement('div');
-  el.className = 'card';
-  const { mode, round } = opts;
-
-  let heroContent = '';
-  let heroLabel = '';
-  if (mode === 'center') {
-    el.classList.add('center');
-    if (card.visibleAttr === 'flag') {
-      heroContent = countryFlagEmoji(card.country, card.countryFlag);
-      heroLabel = card.country;
-    } else if (card.visibleAttr === 'position') {
-      heroContent = card.position;
-      heroLabel = 'posicion';
-    } else {
-      heroContent = card.clubBadge;
-      heroLabel = card.club;
-    }
+  /* Action bar */
+  const isMyTurn=currentTurnId===_playerId;
+  const totalCards=myHand.length*sortedIds.length+centerCards.length;
+  if(isMyTurn && !_submitted){
+    $('#action-panel').classList.remove('hidden');
+    $('#action-waiting').classList.add('hidden');
+    _guessDraft=Math.min(_guessDraft,totalCards);
+    $('#step-guess').textContent=_guessDraft;
+    $('#guess-max').textContent=totalCards;
+    $('#action-panel-label').textContent='TU TURNO';
+    clearTimeout(_skipTimer);
   } else {
-    heroContent = countryFlagEmoji(card.country, card.countryFlag);
-    heroLabel = card.position;
+    $('#action-panel').classList.add('hidden');
+    $('#action-waiting').classList.remove('hidden');
+    /* Skip timer para host */
+    if(_isHost && currentTurnId && currentTurnId!==_playerId) _armSkip(currentTurnId);
   }
 
-  const nameHtml = mode === 'center' ? '' : `<div class="card-name">${escapeHtml(card.playerName)}</div>`;
+  /* Check if all guessed → host triggers reveal */
+  if(_isHost && !_revealTriggered && allGuessed(room)){
+    _revealTriggered=true;
+    _doReveal(room);
+  }
+}
 
-  let statHtml = '';
-  if (mode === 'own-easy') {
-    const rawValue = card.stats[round.stat.key];
-    const displayValue = round.stat.type === 'bool' ? (rawValue ? 'SI' : 'NO') : rawValue;
-    statHtml = `
-      <div class="card-stat">
-        <span>${escapeHtml(round.stat.type === 'bool' ? round.stat.label : round.stat.unit)}</span>
-        <span class="card-stat-val">${escapeHtml(displayValue)}</span>
-      </div>
-    `;
-    const badge = document.createElement('div');
-    badge.className = 'card-badge ' + (cardMatchesRound(card, round) ? 'ok' : 'ko');
-    badge.textContent = cardMatchesRound(card, round) ? 'OK' : 'NO';
+function _armSkip(pid) {
+  clearTimeout(_skipTimer);
+  _skipTimer=setTimeout(()=>{
+    $$('.turn-chip.active').forEach(ch=>{
+      ch.classList.add('overdue');
+      if(!ch.querySelector('.tc-skip')){
+        const btn=document.createElement('button');btn.className='tc-skip';btn.textContent='Saltar';
+        btn.addEventListener('click',e=>{e.stopPropagation();_skipTurn(pid);});
+        ch.appendChild(btn);
+      }
+    });
+  },45000);
+}
+
+async function _doReveal(room) {
+  const sortedIds=Object.keys(room.players).sort();
+  const deal=dealRound(room.seed,sortedIds);
+  const cond=_getCondition(room);
+  let actualTotal=0;
+  deal.deck.forEach(c=>{if(cardMatchesCond(c,cond))actualTotal++;});
+  const guesses=room.guesses||{};
+  const winnerNames=[];
+  const scores={};
+  Object.entries(room.players).forEach(([pid,p])=>{
+    let sc=p.score||0;
+    if(guesses[pid]===actualTotal){winnerNames.push(p.name);sc++;}
+    scores[pid]=sc;
+  });
+  /* Check if someone won the game */
+  const maxScore=Math.max(...Object.values(scores));
+  const leaders=Object.entries(scores).filter(([,s])=>s>=room.pointsToWin&&s===maxScore);
+  if(leaders.length===1){
+    const[winnerId]=leaders[0];
+    await Sync.setFinished(_roomCode,room.players[winnerId].name,scores);
+  } else {
+    await Sync.triggerReveal(_roomCode,actualTotal,winnerNames.length?winnerNames:['Nadie acertó'],scores);
+  }
+}
+
+/* ═══ RENDER REVEAL ════════════════════════════════════════ */
+function _renderReveal(room) {
+  showScreen('#screen-game');
+  _submitted=false;
+  const overlay=$('#overlay-reveal'); overlay.classList.remove('hidden');
+
+  const cond=_getCondition(room);
+  const guesses=room.guesses||{};
+  const actual=room.actualTotal;
+  const winners=room.winners||[];
+
+  if(winners.length&&winners[0]!=='Nadie acertó'){
+    $('#reveal-tag').textContent='ACIERTO EXACTO';
+    $('#reveal-headline').textContent=winners.join(', ');
+    $('#reveal-sub').textContent=`${winners.length===1?'Ha':'Han'} clavado el total exacto`;
+  } else {
+    $('#reveal-tag').textContent='NADIE ACERTÓ';
+    $('#reveal-headline').textContent='—';
+    $('#reveal-sub').textContent='Ningún jugador acertó el total exacto';
+  }
+  $('#reveal-count').textContent=actual;
+
+  const guessesEl=$('#reveal-guesses'); guessesEl.innerHTML='';
+  Object.entries(room.players).forEach(([pid,p])=>{
+    const g=guesses[pid]??'—';
+    const hit=Number(g)===actual;
+    guessesEl.innerHTML+=`<div class="guess-row${hit?' hit':''}""><span>${escapeHtml(p.name)}</span><span>${g}${hit?' ✓':''}</span></div>`;
+  });
+
+  /* Reveal cards */
+  const sortedIds=Object.keys(room.players).sort();
+  const deal=dealRound(room.seed,sortedIds);
+  const cardsEl=$('#reveal-cards'); cardsEl.innerHTML='';
+  deal.deck.forEach(c=>{
+    c.matches=cardMatchesCond(c,cond);
+    cardsEl.appendChild(renderCard(c,{mode:'reveal',cond}));
+  });
+
+  $('#reveal-verdict').textContent=cond.label;
+  const contBtn=$('#btn-continue');
+  if(_isHost){contBtn.classList.remove('hidden');}else{contBtn.classList.add('hidden');}
+}
+
+/* ═══ RENDER FINISHED ══════════════════════════════════════ */
+function _renderFinished(room) {
+  showScreen('#screen-game');
+  const overlay=$('#overlay-gameover'); overlay.classList.remove('hidden');
+  $('#winner-name').textContent=room.winnerName||'—';
+  const sb=$('#winner-scoreboard'); sb.innerHTML='';
+  Object.entries(room.players||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0)).forEach(([,p])=>{
+    sb.innerHTML+=`<div class="guess-row"><span>${escapeHtml(p.name)}</span><span>${p.score||0} pt</span></div>`;
+  });
+}
+
+/* ═══ RENDER CARD ══════════════════════════════════════════ */
+function renderCard(card,opts) {
+  const el=document.createElement('div'); el.className='card';
+  const{mode,cond}=opts;
+  const isCenter=mode==='center';
+  const photoUrl=`https://tmssl.akamaized.net/images/foto/small/${card.playerId}.jpg`;
+  const ini=(card.playerName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  let hintHtml='';
+  if(isCenter){
+    let icon,lbl,typ;
+    if(card.visibleAttr==='flag'){typ='País';icon=`<div class="hint-flag">${countryFlagHTML(card.country,card.countryFlag)}</div>`;lbl=card.country;}
+    else if(card.visibleAttr==='position'){typ='Posición';icon=`<div class="hint-pos">${escapeHtml(card.position)}</div>`;lbl=card.position;}
+    else{typ='Club';icon=`<div class="hint-badge">${clubBadgeHTML(card.club,36)}</div>`;lbl=card.club;}
+    hintHtml=`<div class="card-hint-overlay"><span class="card-hint-type">${escapeHtml(typ)}</span>${icon}<span class="card-hint-label">${escapeHtml((lbl||'').toUpperCase())}</span></div>`;
+  }
+
+  const photoHtml=`<div class="card-photo-wrap${isCenter?' center-photo':''}"><img class="card-photo-img" src="${photoUrl}" loading="lazy" alt="" onerror="this.closest('.card-photo-wrap').classList.add('no-photo')"><div class="card-photo-fallback">${escapeHtml(ini)}</div>${isCenter?hintHtml:`<div class="card-photo-name">${escapeHtml(card.playerName)}</div>`}</div>`;
+  const identHtml=isCenter?'':`<div class="card-identity">${countryFlagHTML(card.country,card.countryFlag)}${clubBadgeHTML(card.club)}</div>`;
+
+  let statHtml='';
+  if(mode==='own-easy'){
+    const raw=card.stats[cond.key]; const matches=cardMatchesCond(card,cond);
+    const disp=cond.type==='bool'?(raw?'SI':'NO'):raw;
+    const badge=document.createElement('div');badge.className=`card-badge ${matches?'ok':'ko'}`;badge.textContent=matches?'OK':'NO';
     el.appendChild(badge);
-  } else if (mode === 'own-hard' || mode === 'center') {
-    statHtml = '<div class="card-stat hidden-stat">oculto</div>';
-  } else if (mode === 'reveal') {
-    const rawValue = card.stats[round.stat.key];
-    const displayValue = round.stat.type === 'bool' ? (rawValue ? 'SI' : 'NO') : rawValue;
-    statHtml = `
-      <div class="card-stat">
-        <span>${escapeHtml(round.stat.type === 'bool' ? round.stat.label : round.stat.unit)}</span>
-        <span class="card-stat-val">${escapeHtml(displayValue)}</span>
-      </div>
-    `;
-    el.classList.add('revealed');
-    el.classList.add(card.matches ? 'match' : 'nomatch');
+    statHtml=`<div class="card-stat"><span>${escapeHtml(cond.type==='bool'?cond.label:cond.unit)}</span><span class="card-stat-val">${escapeHtml(String(disp??0))}</span></div>`;
+  } else if(mode==='own-hard'||isCenter){
+    statHtml='<div class="card-stat hidden-stat">OCULTO</div>';
+  } else if(mode==='reveal'){
+    const raw=card.stats[cond.key]; const matches=card.matches;
+    const disp=cond.type==='bool'?(raw?'SI':'NO'):raw;
+    const badge=document.createElement('div');badge.className=`card-badge ${matches?'ok':'ko'}`;badge.textContent=matches?'OK':'NO';
+    el.appendChild(badge);
+    el.classList.add('revealed',matches?'match':'nomatch');
+    statHtml=`<div class="card-stat"><span>${escapeHtml(cond.type==='bool'?cond.label:cond.unit)}</span><span class="card-stat-val">${escapeHtml(String(disp??0))}</span></div>`;
   }
-
-  el.innerHTML += `
-    <div class="card-kicker">${escapeHtml(mode === 'center' ? 'CENTRO' : card.position)}</div>
-    ${nameHtml}
-    <div class="card-hero">${heroContent}</div>
-    <div class="card-hero-label">${escapeHtml(heroLabel)}</div>
-    ${statHtml}
-  `;
+  el.innerHTML+=photoHtml+identHtml+statHtml;
   return el;
 }
 
-function renderRevealOverlay() {
-  const reveal = State.reveal;
-  if (!reveal) return;
-
-  $('#overlay-reveal').classList.remove('hidden');
-  $('#reveal-tag').textContent = reveal.winnerNames.length ? 'ACIERTO EXACTO' : 'SIN PUNTO';
-  $('#reveal-headline').textContent = reveal.promptLabel;
-  $('#reveal-sub').textContent = reveal.winnerNames.length
-    ? `Puntuan: ${reveal.winnerNames.join(', ')}`
-    : 'Nadie ha clavado el total exacto.';
-  $('#reveal-count').textContent = String(reveal.actualTotal);
-
-  $('#reveal-guesses').innerHTML = reveal.guesses.map((entry) => {
-    const hit = entry.guess === reveal.actualTotal;
-    return `
-      <div class="reveal-guess ${hit ? 'hit' : ''}">
-        <span>${escapeHtml(entry.name)}</span>
-        <strong>${entry.guess}</strong>
-      </div>
-    `;
-  }).join('');
-
-  const cardsEl = $('#reveal-cards');
-  cardsEl.innerHTML = '';
-  reveal.cards.forEach((card, index) => {
-    const el = renderCard(card, { mode: 'reveal', round: reveal });
-    el.style.animationDelay = `${index * 0.04}s`;
-    cardsEl.appendChild(el);
-  });
-
-  const verdict = $('#reveal-verdict');
-  if (reveal.winnerNames.length) {
-    verdict.className = 'reveal-verdict win';
-    verdict.textContent = reveal.winnerIds.includes(Me.clientId)
-      ? 'Has acertado exacto y sumas 1 punto.'
-      : `${reveal.winnerNames.join(', ')} suma 1 punto.`;
-  } else {
-    verdict.className = 'reveal-verdict neutral';
-    verdict.textContent = 'Nadie suma en esta ronda.';
-  }
-
-  const continueBtn = $('#btn-continue');
-  continueBtn.classList.remove('hidden');
-  continueBtn.disabled = !Me.isHost;
-  continueBtn.textContent = Me.isHost ? 'SIGUIENTE RONDA' : 'ESPERANDO AL HOST...';
+/* ═══ HELPERS ══════════════════════════════════════════════ */
+function _getCondition(room) {
+  return {key:room.condKey,type:room.condType,label:room.condLabel,unit:room.condUnit||'',threshold:room.condThreshold??null};
 }
 
-function renderGameOver() {
-  showScreen('#screen-game');
-  renderGameCommon();
-  $('#overlay-reveal').classList.add('hidden');
-  $('#action-panel').classList.add('hidden');
-  $('#action-waiting').classList.remove('hidden');
-  $('#action-waiting .action-panel-label').textContent = 'PARTIDA TERMINADA';
-
-  $('#overlay-gameover').classList.remove('hidden');
-  $('#winner-name').textContent = State.winner ? `${State.winner.name.toUpperCase()} · ${State.winner.score} PT` : '-';
-  $('#winner-scoreboard').innerHTML = State.players
-    .slice()
-    .sort((a, b) => b.score - a.score)
-    .map((player) => `
-      <div class="reveal-guess ${player.id === State.winner?.id ? 'hit' : ''}">
-        <span>${escapeHtml(player.name)}</span>
-        <strong>${player.score}</strong>
-      </div>
-    `)
-    .join('');
+async function _kickPlayer(pid,name) {
+  if(!confirm(`¿Quitar a ${name}?`))return;
+  const{remove:rm}=window._FB;
+  try{
+    await rm(window._FB.ref(window._FB.db,`restricciones/rooms/${_roomCode}/players/${pid}`));
+    toast(`${name} eliminado`,'info');
+  }catch(e){toast('Error al expulsar','error');}
 }
 
-$$('.menu-tab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    $$('.menu-tab').forEach((item) => item.classList.remove('active'));
-    $$('.menu-panel').forEach((item) => item.classList.remove('active'));
-    tab.classList.add('active');
-    $(`[data-panel="${tab.dataset.tab}"]`).classList.add('active');
-    $('#join-error').classList.add('hidden');
-  });
-});
-
-$$('.mode-opt').forEach((option) => {
-  option.addEventListener('click', () => {
-    $$('.mode-opt').forEach((item) => item.classList.remove('active'));
-    option.classList.add('active');
-  });
-});
-
-$('#btn-points-minus').addEventListener('click', () => setPointsDraft(POINTS_LIMIT.value - 1));
-$('#btn-points-plus').addEventListener('click', () => setPointsDraft(POINTS_LIMIT.value + 1));
-$('#btn-lobby-points-minus').addEventListener('click', () => updateHostPointsSetting(State.pointsToWin - 1));
-$('#btn-lobby-points-plus').addEventListener('click', () => updateHostPointsSetting(State.pointsToWin + 1));
-$('#btn-create').addEventListener('click', () => createRoomOnline());
-$('#btn-join').addEventListener('click', () => joinRoomOnline());
-
-$('#btn-copy-code').addEventListener('click', async () => {
-  if (!State) return;
-  try {
-    await navigator.clipboard.writeText(State.code);
-    toast('Codigo copiado', 'success');
-  } catch {
-    toast(State.code, 'success');
-  }
-});
-
-$('#btn-start').addEventListener('click', () => startGameOnline());
-$$('[data-action="leave-lobby"]').forEach((button) => {
-  button.addEventListener('click', async () => {
-    await leaveRoomOnline();
-  });
-});
-
-$('#guess-minus').addEventListener('click', () => {
-  if (!State || State.phase !== 'playing') return;
-  window.__guessDraft = Math.max(0, Number(window.__guessDraft || 0) - 1);
-  renderActionBar();
-});
-
-$('#guess-plus').addEventListener('click', () => {
-  if (!State || State.phase !== 'playing') return;
-  window.__guessDraft = Math.min(totalCardsInPlay(State), Number(window.__guessDraft || 0) + 1);
-  renderActionBar();
-});
-
-$('#btn-guess').addEventListener('click', () => {
-  if (!State) return;
-  submitGuessOnline(Number(window.__guessDraft || 0));
-});
-
-$('#btn-continue').addEventListener('click', () => continueRoundOnline());
-$('#btn-menu').addEventListener('click', async () => {
-  await leaveRoomOnline();
-});
-
-window.addEventListener('beforeunload', () => {
-  if (!State || !Me.roomCode) return;
-  // En partida NO nos auto-eliminamos: una recarga debe poder reconectar.
-  // En el lobby si, para no dejar jugadores fantasma esperando.
-  if (State.phase !== 'lobby') return;
-  runTransaction(roomRef(Me.roomCode), (current) => {
-    if (!current) return current;
-    const next = deepClone(current);
-    removePlayerFromState(next, Me.clientId);
-    if (next.players.length === 0) return null;
-    stampState(next);
-    return next;
-  }, { applyLocally: false }).catch(() => {});
-});
-
-// Anade condiciones que existen en los datos pero no estaban en las
-// definiciones jugables (combos "ha jugado en X e Y").
-function ensureExtraStatDefinitions() {
-  if (!Array.isArray(window.STAT_DEFINITIONS)) return;
-  const extra = [
-    { key: 'played_barcelona_chelsea', label: 'han pasado por Barcelona y Chelsea', unit: 'SI/NO', type: 'bool' },
-    { key: 'played_real_juventus', label: 'han pasado por Real Madrid y Juventus', unit: 'SI/NO', type: 'bool' },
-    { key: 'played_psg_barcelona', label: 'han pasado por PSG y Barcelona', unit: 'SI/NO', type: 'bool' },
-    { key: 'played_bayern_dortmund', label: 'han pasado por Bayern y Dortmund', unit: 'SI/NO', type: 'bool' }
-  ];
-  const existing = new Set(window.STAT_DEFINITIONS.map((def) => def.key));
-  extra.forEach((def) => {
-    if (!existing.has(def.key)) window.STAT_DEFINITIONS.push(def);
-  });
+async function _skipTurn(pid) {
+  try{await Sync.skipPlayerGuess(_roomCode,pid);toast('Turno saltado','info');}
+  catch(e){toast('Error al saltar turno','error');}
 }
 
-async function boot() {
-  if (!hasFirebase()) {
-    console.warn('Mentiroso Firebase bootstrap missing', window._FB);
+/* ═══ UI ACTIONS ═══════════════════════════════════════════ */
+async function _createRoom() {
+  if(!window._FB?.configured){toast('Firebase no cargado','error');return;}
+  const name=($('#create-name').value||'').trim();
+  if(!name){toast('Escribe tu nombre','error');return;}
+  try{
+    const{code,playerId}=await Sync.createRoom(name,_modeDraft,_pointsDraft);
+    _roomCode=code;_playerId=playerId;_isHost=true;_submitted=false;
+    _saveSession();
+    _unsubRoom=Sync.listenRoom(code,_onRoomUpdate);
+  }catch(e){toast(e.message,'error');}
+}
+
+async function _joinRoom() {
+  if(!window._FB?.configured){toast('Firebase no cargado','error');return;}
+  const name=($('#join-name').value||'').trim();
+  const code=($('#join-code').value||'').trim().toUpperCase();
+  if(!name){toast('Escribe tu nombre','error');return;}
+  if(code.length<4){toast('Código inválido','error');return;}
+  try{
+    const res=await Sync.joinRoom(code,name);
+    _roomCode=res.code;_playerId=res.playerId;_isHost=false;_submitted=false;
+    _saveSession();
+    _unsubRoom=Sync.listenRoom(code,_onRoomUpdate);
+  }catch(e){
+    $('#join-error').textContent=e.message;$('#join-error').classList.remove('hidden');
   }
-  if (!window.PLAYERS || !Array.isArray(window.PLAYERS) || window.PLAYERS.length < 3) {
-    toast('Faltan datos de jugadores', 'error');
+}
+
+async function _startGame() {
+  if(!_isHost||!_roomCode||!_lastRoom)return;
+  const sortedIds=Object.keys(_lastRoom.players).sort();
+  const seed=Date.now()+Math.floor(Math.random()*100000);
+  const deal=dealRound(seed,sortedIds);
+  try{await Sync.startRound(_roomCode,1,seed,deal.condition,_lastRoom.pointsToWin);}
+  catch(e){toast('Error al iniciar: '+e.message,'error');}
+}
+
+async function _submitGuess() {
+  if(!_roomCode||_submitted)return;
+  const room=_lastRoom; if(!room)return;
+  const currentId=getCurrentTurnId(room);
+  if(currentId!==_playerId){toast('No es tu turno','error');return;}
+  _submitted=true;
+  try{
+    const count=await Sync.submitGuess(_roomCode,_playerId,_guessDraft);
+    /* Host checks if all guessed */
+    const connected=Object.entries(room.players).filter(([,p])=>p.connected!==false).length;
+    if(_isHost&&!_revealTriggered&&count>=connected){
+      _revealTriggered=true;
+      const fresh=await Sync.getRoom(_roomCode);
+      if(fresh) _doReveal(fresh);
+    }
+  }catch(e){toast(e.message,'error');_submitted=false;}
+}
+
+async function _continueRound() {
+  if(!_isHost||!_roomCode||!_lastRoom)return;
+  const room=_lastRoom;
+  const nextRound=(room.round||0)+1;
+  const sortedIds=Object.keys(room.players).sort();
+  const seed=Date.now()+nextRound*7919;
+  const deal=dealRound(seed,sortedIds);
+  try{await Sync.startRound(_roomCode,nextRound,seed,deal.condition,room.pointsToWin);}
+  catch(e){toast('Error: '+e.message,'error');}
+}
+
+async function _leaveRoom() {
+  if(_roomCode&&_playerId){
+    try{await Sync.disconnect(_roomCode,_playerId);}catch{}
   }
-  ensureExtraStatDefinitions();
-  setPointsDraft(POINTS_LIMIT.value);
+  _resetState();
   showScreen('#screen-menu');
-  // Si veniamos de una sala (recarga accidental, bloqueo de movil...), reentrar.
-  const reconnected = await tryReconnect();
-  if (!reconnected) showScreen('#screen-menu');
+}
+
+/* ═══ 6. BOOT ═════════════════════════════════════════════ */
+function boot() {
+  if(!window._FB?.configured) console.warn('Firebase no disponible');
+  if(!window.PLAYERS||!window.PLAYERS.length) { toast('Faltan datos de jugadores','error'); return; }
+  _ensureExtraStats();
+
+  /* Tabs */
+  $$('.menu-tab').forEach(tab=>tab.addEventListener('click',()=>{
+    $$('.menu-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    $$('.menu-panel').forEach(p=>p.classList.remove('active'));
+    $(`.menu-panel[data-panel="${tab.dataset.tab}"]`)?.classList.add('active');
+  }));
+
+  /* Mode toggle */
+  $$('.mode-opt').forEach(btn=>btn.addEventListener('click',()=>{
+    $$('.mode-opt').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    _modeDraft=btn.dataset.mode;
+  }));
+
+  /* Points stepper (menu) */
+  $('#btn-points-minus')?.addEventListener('click',()=>{
+    _pointsDraft=Math.max(1,_pointsDraft-1);
+    $('#create-points-value').textContent=_pointsDraft;
+  });
+  $('#btn-points-plus')?.addEventListener('click',()=>{
+    _pointsDraft=Math.min(10,_pointsDraft+1);
+    $('#create-points-value').textContent=_pointsDraft;
+  });
+  /* Points stepper (lobby, host only) */
+  $('#btn-lobby-points-minus')?.addEventListener('click',async()=>{
+    if(!_isHost||!_roomCode)return;
+    const v=Math.max(1,(_lastRoom?.pointsToWin||3)-1);
+    try{await Sync.updateSettings(_roomCode,{pointsToWin:v});}catch{}
+  });
+  $('#btn-lobby-points-plus')?.addEventListener('click',async()=>{
+    if(!_isHost||!_roomCode)return;
+    const v=Math.min(10,(_lastRoom?.pointsToWin||3)+1);
+    try{await Sync.updateSettings(_roomCode,{pointsToWin:v});}catch{}
+  });
+
+  /* Buttons */
+  $('#btn-create').addEventListener('click',_createRoom);
+  $('#btn-join').addEventListener('click',_joinRoom);
+  $('#btn-start').addEventListener('click',_startGame);
+  $('#btn-guess').addEventListener('click',_submitGuess);
+  $('#btn-continue').addEventListener('click',_continueRound);
+  $('#btn-menu').addEventListener('click',_leaveRoom);
+  $('#btn-copy-code')?.addEventListener('click',()=>{
+    navigator.clipboard?.writeText(_roomCode||'').then(()=>toast('Código copiado','success')).catch(()=>{});
+  });
+
+  /* Guess stepper */
+  $('#guess-minus')?.addEventListener('click',()=>{
+    _guessDraft=Math.max(0,_guessDraft-1); $('#step-guess').textContent=_guessDraft;
+  });
+  $('#guess-plus')?.addEventListener('click',()=>{
+    const max=Number($('#guess-max').textContent)||0;
+    _guessDraft=Math.min(max,_guessDraft+1); $('#step-guess').textContent=_guessDraft;
+  });
+
+  /* Leave lobby */
+  $('[data-action="leave-lobby"]')?.addEventListener('click',_leaveRoom);
+
+  /* Beforeunload — solo en lobby */
+  window.addEventListener('beforeunload',()=>{
+    if(!_roomCode||!_playerId||!_lastRoom)return;
+    if(_lastRoom.status==='waiting') Sync.disconnect(_roomCode,_playerId).catch(()=>{});
+  });
+
+  /* URL param */
+  const params=new URLSearchParams(window.location.search);
+  const salaParam=params.get('sala');
+  if(salaParam){
+    $('#join-code').value=salaParam;
+    $$('.menu-tab').forEach(t=>t.classList.remove('active'));
+    $(`.menu-tab[data-tab="join"]`)?.classList.add('active');
+    $$('.menu-panel').forEach(p=>p.classList.remove('active'));
+    $(`.menu-panel[data-panel="join"]`)?.classList.add('active');
+  }
+
+  /* Session restore */
+  try{
+    const s=JSON.parse(sessionStorage.getItem('mentiroso_s')||'null');
+    if(s&&s.code&&s.pid){
+      _roomCode=s.code;_playerId=s.pid;
+      _unsubRoom=Sync.listenRoom(s.code,_onRoomUpdate);
+      return; /* no mostramos menú, el listener mostrará la pantalla correcta */
+    }
+  }catch{}
+
+  $('#create-points-value').textContent=_pointsDraft;
+  showScreen('#screen-menu');
 }
 
 boot();
