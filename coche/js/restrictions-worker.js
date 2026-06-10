@@ -326,6 +326,8 @@ function validate(player, r) {
     case 'height_gt': return typeof player.heightCm === 'number' && player.heightCm > r.value;
     case 'position_gk':
       return player.position === 'GK' || (player.position || '').toUpperCase().includes('GK');
+    case 'position_def':
+      return player.position === 'DEF';
     case 'birthDecade': {
       const y = player.birthYear;
       if (typeof y !== 'number') return false;
@@ -408,11 +410,13 @@ function _buildCandidates(rng) {
   candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
   candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
   candidates.push({ type:'foot', value:'right', label:'Diestro',     imgUrl:null, icon:'🦶', family:'foot' });
-  candidates.push({ type:'position_gk', label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
+  candidates.push({ type:'position_gk',  label:'Portero',   imgUrl:null, icon:'🧤', family:'position' });
+  candidates.push({ type:'position_def', label:'Defensa',   imgUrl:null, icon:'🛡️', family:'position' });
   candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades',imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_0',              label:'Sin internacionalidades',        imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_ge', value:1,   label:'Internacional (≥1 partido)',     imgUrl:null, icon:'🌍', family:'caps' });
+  candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'clubs_ge', value:3, label:'Ha jugado en 3 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
   candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
   candidates.push({ type:'fee_gt', value:70000000, label:'Traspaso de más de 70M €',   imgUrl:null, icon:'💰', family:'fee' });
@@ -447,6 +451,8 @@ function _isRedundant(rA, rB) {
   const SCORER_TROPHIES = new Set(['Pichichi La Liga','Bota de Oro Premier League','Capocannoniere Serie A','Maximo Goleador Bundesliga','Maximo Goleador Ligue 1','Bota de Oro Mundial','Bota de Oro Europea']);
   if (rA.type === 'position_gk' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
   if (rB.type === 'position_gk' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
+  if (rA.type === 'position_def' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
+  if (rB.type === 'position_def' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
 
   const NATIONAL_TROPHIES = new Set(['Eurocopa','Mundial','Copa America']);
   if (rA.type === 'caps_0' && rB.type === 'trophy' && NATIONAL_TROPHIES.has(rB.value)) return true;
@@ -659,7 +665,16 @@ function generate(seed, db) {
     usedFamilies.add('league');
   }
 
-  const familyNames = _shuffle(Object.keys(familyGroups).filter(f => !usedFamilies.has(f)), rng);
+  const familyNames = _shuffle(
+    Object.keys(familyGroups).filter(f => {
+      if (!usedFamilies.has(f)) {
+        if (f === 'position') return rng() < 0.50; // sale ~mitad de veces
+        return true;
+      }
+      return false;
+    }),
+    rng
+  );
 
   const chosen = [];
   /* Ronda 1: una restricción de cada familia distinta */
