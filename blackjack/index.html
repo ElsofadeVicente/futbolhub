@@ -6,20 +6,20 @@
   <title>Blackjack de Fútbol — Quién Coño Falta</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/global.css" />
-  <link rel="stylesheet" href="css/blackjack.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/global.css?v=2" />
+  <link rel="stylesheet" href="css/blackjack.css?v=2" />
 </head>
 <body>
 
 <!-- ═══════════════════════════════════════════════
      PANTALLA 1: MENÚ PRINCIPAL
      ═══════════════════════════════════════════════ -->
-<div id="screen-menu" class="screen active">
+<div id="screen-menu" class="screen active" style="position:relative;">
   <a href="../index.html" class="back-btn">← Volver</a>
 
   <div class="menu-hero">
-    <div class="menu-logo">🃏</div>
+    <div class="menu-logo">Blackjack · Est. 2026</div>
     <h1 class="menu-title">BLACKJACK</h1>
     <p class="menu-subtitle">de Fútbol</p>
   </div>
@@ -30,17 +30,17 @@
     <div>
       <p style="font-family:'Rajdhani',sans-serif;font-size:0.7rem;letter-spacing:2px;color:var(--neon-green);opacity:0.7;text-transform:uppercase;margin-bottom:7px;">Objetivo</p>
       <div class="mode-selector">
-        <button class="mode-btn selected" data-mode="mv" onclick="App.selectMode(this)">💰 Valor mercado</button>
-        <button class="mode-btn" data-mode="national" onclick="App.selectMode(this)">🌍 Internacionales</button>
-        <button class="mode-btn" data-mode="age" onclick="App.selectMode(this)">🎂 Edad actual</button>
+        <button class="mode-btn selected" data-mode="mv" onclick="App.selectMode(this)">Valor mercado</button>
+        <button class="mode-btn" data-mode="national" onclick="App.selectMode(this)">Internacionales</button>
+        <button class="mode-btn" data-mode="age" onclick="App.selectMode(this)">Edad actual</button>
       </div>
     </div>
 
     <!-- Tabs online / local -->
     <div class="menu-tabs">
-      <button class="menu-tab active" id="tab-private" onclick="App.setTab('private')">🔒 Privada</button>
-      <button class="menu-tab" id="tab-public" onclick="App.setTab('public')">🌐 Pública</button>
-      <button class="menu-tab" id="tab-local" onclick="App.setTab('local')">🎮 Local</button>
+      <button class="menu-tab active" id="tab-private" onclick="App.setTab('private')">Privada</button>
+      <button class="menu-tab" id="tab-public" onclick="App.setTab('public')">Pública</button>
+      <button class="menu-tab" id="tab-local" onclick="App.setTab('local')">Local</button>
     </div>
 
     <!-- Panel: Sala privada -->
@@ -91,7 +91,7 @@
 <!-- ═══════════════════════════════════════════════
      PANTALLA 2: LOBBY
      ═══════════════════════════════════════════════ -->
-<div id="screen-lobby" class="screen">
+<div id="screen-lobby" class="screen" style="position:relative;">
   <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
 
   <div class="lobby-wrap" style="justify-content:center;min-height:100vh;">
@@ -328,5 +328,17 @@
   });
 </script>
 
+
+<!-- SIDEBARS DE ANUNCIOS — solo visibles en desktop ≥760px -->
+<aside class="bj-ad-sidebar bj-ad-sidebar--left">
+  <div class="bj-ad-strip"><span class="bj-ad-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+  <div class="bj-ad-strip bj-ad-strip--accent"><span class="bj-ad-label">ANUNCIO</span></div>
+  <div class="bj-ad-strip"><span class="bj-ad-label">PUBLI<br>CITARIO</span></div>
+</aside>
+<aside class="bj-ad-sidebar bj-ad-sidebar--right">
+  <div class="bj-ad-strip bj-ad-strip--accent"><span class="bj-ad-label">ANUNCIO</span></div>
+  <div class="bj-ad-strip"><span class="bj-ad-label">PUBLI<br>CITARIO</span></div>
+  <div class="bj-ad-strip bj-ad-strip--accent"><span class="bj-ad-label">ANUNCIO</span></div>
+</aside>
 </body>
 </html>
