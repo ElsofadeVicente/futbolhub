@@ -4,10 +4,13 @@
 'use strict';
 
 // ── Paths ──────────────────────────────────────
-const PATH_QUESTIONS  = 'data/enteltop.json';
-const PATH_NAME_INDEX = '../data/players/name-index.json';
-const STATS_KEY       = 'enteltop_stats';
-const TIMER_TIMED     = 120; // 2 minutos
+const PATH_QUESTIONS    = 'data/enteltop.json';
+const PATH_NAME_INDEX   = 'data/players/name-index.json';
+const PATH_TEAM_NAMES   = 'data/teams/team-names.json';
+const PATH_LEAGUE_TEAMS = 'data/teams/league-teams.json';
+const STATS_KEY         = 'enteltop_stats';
+const TODAY_KEY         = 'enteltop_today';
+const TIMER_TIMED       = 120;
 
 // ── Banderas ───────────────────────────────────
 const FLAG_REMAP = {
@@ -27,11 +30,36 @@ function norm(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
-// ── Pregunta diaria ────────────────────────────
+// ── Fecha actual en Madrid ─────────────────────
+function getTodayMadrid() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid'
+  }).format(new Date()); // "YYYY-MM-DD"
+}
+
+// ── Ms hasta medianoche de Madrid ─────────────
+function getMsUntilMadridMidnight() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Madrid',
+    hour: 'numeric', minute: 'numeric', second: 'numeric',
+    hour12: false
+  }).formatToParts(now);
+  let h = parseInt(parts.find(p => p.type === 'hour').value);
+  const m = parseInt(parts.find(p => p.type === 'minute').value);
+  const s = parseInt(parts.find(p => p.type === 'second').value);
+  if (h === 24) h = 0;
+  const elapsed = h * 3600 + m * 60 + s;
+  return Math.max(0, (86400 - elapsed) * 1000);
+}
+
+// ── Pregunta diaria (hora española) ───────────
 function getDailyQuestion(questions) {
   if (!questions || !questions.length) return null;
-  const day = Math.floor(Date.now() / 86400000);
-  return questions[day % questions.length];
+  const dateStr = getTodayMadrid();
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const days = Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+  return questions[((days % questions.length) + questions.length) % questions.length];
 }
 
 // ── Formato M:SS ───────────────────────────────
@@ -39,6 +67,15 @@ function formatTime(t) {
   const m = Math.floor(t / 60);
   const s = Math.floor(t % 60);
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// ── Formato HH:MM:SS ───────────────────────────
+function formatCountdown(ms) {
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
 // ══════════════════════════════════════════════
@@ -74,21 +111,66 @@ function recordResult(found) {
 }
 
 // ══════════════════════════════════════════════
+//  PARTIDA DIARIA (localStorage)
+// ══════════════════════════════════════════════
+function saveTodayResult(questionId, foundArr, score) {
+  try {
+    localStorage.setItem(TODAY_KEY, JSON.stringify({
+      date: getTodayMadrid(),
+      questionId,
+      found: foundArr,
+      score
+    }));
+  } catch { /**/ }
+}
+
+function loadTodayResult() {
+  try {
+    const raw = localStorage.getItem(TODAY_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data.date !== getTodayMadrid()) return null;
+    return data;
+  } catch { return null; }
+}
+
+// ══════════════════════════════════════════════
+//  ÍNDICE DE EQUIPOS
+// ══════════════════════════════════════════════
+function buildTeamIndex(teamNames, leagueTeams) {
+  const priorityMap = new Map();
+  for (const [, leagueData] of Object.entries(leagueTeams)) {
+    for (const teamName of leagueData.teams) {
+      if (!priorityMap.has(teamName)) priorityMap.set(teamName, leagueData.priority);
+    }
+  }
+  const result = teamNames.map(name => ({
+    name,
+    normName: norm(name),
+    priority: priorityMap.get(name) || 999
+  }));
+  result.sort((a, b) => a.priority - b.priority);
+  return result;
+}
+
+// ══════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════
 let _questions     = [];
 let _question      = null;
 let _nameIndex     = [];
+let _teamIndex     = [];
 let _found         = new Set();
-let _mode          = 'normal';  // 'normal' | 'timed'
+let _mode          = 'normal';
 let _timeLeft      = 0;
 let _timerInterval = null;
 let _ended         = false;
 let _statsSaved    = false;
 
-let _acItems   = [];
-let _acIdx     = -1;
+let _acItems    = [];
+let _acIdx      = -1;
 let _acDebounce = null;
+let _cdInterval = null;
 
 // ── Refs ───────────────────────────────────────
 let elLoading, elMode, elGame, elEnd;
@@ -98,55 +180,54 @@ let elScore, elTitle, elRowsWrap;
 let elInput, elSugBox, elGiveup;
 let elEndEmoji, elEndTitle, elEndSub, elEndQ, elEndRows, elEndStatsBtn;
 let elGiveupOverlay, elGiveupYes, elGiveupNo;
-let elStatsOverlay, elStatsClose, elStatsNums, elStatsHistBars, elStatsHistLabels;
+let elStatsOverlay, elStatsClose, elStatsNums, elStatsHistBars, elStatsHistLabels, elStatsCountdown;
 
 // ══════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════
 async function init() {
-  elLoading       = document.getElementById('loading-screen');
-  elMode          = document.getElementById('mode-screen');
-  elGame          = document.getElementById('game-screen');
-  elEnd           = document.getElementById('end-screen');
-
-  elModeOpts      = document.querySelectorAll('.mode-opt');
-  elStartGameBtn  = document.getElementById('start-game-btn');
-  elStatsOpenBtn  = document.getElementById('stats-open-btn');
-
-  elTimerTrack    = document.getElementById('timer-track');
-  elTimerFill     = document.getElementById('timer-fill');
-  elTimerNum      = document.getElementById('timer-num');
-  elScore         = document.getElementById('score-badge');
-  elTitle         = document.getElementById('question-title');
-  elRowsWrap      = document.getElementById('rows-wrap');
-  elInput         = document.getElementById('ans-input');
-  elSugBox        = document.getElementById('sug-box');
-  elGiveup        = document.getElementById('giveup-btn');
-
-  elEndEmoji      = document.getElementById('end-emoji');
-  elEndTitle      = document.getElementById('end-title');
-  elEndSub        = document.getElementById('end-sub');
-  elEndQ          = document.getElementById('end-q');
-  elEndRows       = document.getElementById('end-rows');
-  elEndStatsBtn   = document.getElementById('end-stats-btn');
-
-  elGiveupOverlay = document.getElementById('giveup-overlay');
-  elGiveupYes     = document.getElementById('giveup-yes-btn');
-  elGiveupNo      = document.getElementById('giveup-no-btn');
-
-  elStatsOverlay  = document.getElementById('stats-overlay');
-  elStatsClose    = document.getElementById('stats-close-btn');
-  elStatsNums     = document.getElementById('stats-nums');
-  elStatsHistBars = document.getElementById('stats-hist-bars');
+  elLoading         = document.getElementById('loading-screen');
+  elMode            = document.getElementById('mode-screen');
+  elGame            = document.getElementById('game-screen');
+  elEnd             = document.getElementById('end-screen');
+  elModeOpts        = document.querySelectorAll('.mode-opt');
+  elStartGameBtn    = document.getElementById('start-game-btn');
+  elStatsOpenBtn    = document.getElementById('stats-open-btn');
+  elTimerTrack      = document.getElementById('timer-track');
+  elTimerFill       = document.getElementById('timer-fill');
+  elTimerNum        = document.getElementById('timer-num');
+  elScore           = document.getElementById('score-badge');
+  elTitle           = document.getElementById('question-title');
+  elRowsWrap        = document.getElementById('rows-wrap');
+  elInput           = document.getElementById('ans-input');
+  elSugBox          = document.getElementById('sug-box');
+  elGiveup          = document.getElementById('giveup-btn');
+  elEndEmoji        = document.getElementById('end-emoji');
+  elEndTitle        = document.getElementById('end-title');
+  elEndSub          = document.getElementById('end-sub');
+  elEndQ            = document.getElementById('end-q');
+  elEndRows         = document.getElementById('end-rows');
+  elEndStatsBtn     = document.getElementById('end-stats-btn');
+  elGiveupOverlay   = document.getElementById('giveup-overlay');
+  elGiveupYes       = document.getElementById('giveup-yes-btn');
+  elGiveupNo        = document.getElementById('giveup-no-btn');
+  elStatsOverlay    = document.getElementById('stats-overlay');
+  elStatsClose      = document.getElementById('stats-close-btn');
+  elStatsNums       = document.getElementById('stats-nums');
+  elStatsHistBars   = document.getElementById('stats-hist-bars');
   elStatsHistLabels = document.getElementById('stats-hist-labels');
+  elStatsCountdown  = document.getElementById('stats-countdown');
 
   try {
-    const [qs, ni] = await Promise.all([
+    const [qs, ni, tn, lt] = await Promise.all([
       fetch(PATH_QUESTIONS).then(r => r.json()),
       fetch(PATH_NAME_INDEX).then(r => r.json()),
+      fetch(PATH_TEAM_NAMES).then(r => r.json()),
+      fetch(PATH_LEAGUE_TEAMS).then(r => r.json()),
     ]);
     _questions = qs;
     _nameIndex = ni;
+    _teamIndex = buildTeamIndex(tn, lt);
   } catch (e) {
     elLoading.innerHTML = `<p style="color:#b5221e;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.15em;text-align:center">Error al cargar datos.<br>${e.message}</p>`;
     return;
@@ -159,11 +240,27 @@ async function init() {
   }
   _question._normMap = buildNormMap(_question.top10);
 
-  bindModeScreenEvents();
+  // Siempre vincular modales (necesario tanto para partida nueva como ya jugada)
   bindModalEvents();
 
+  // ¿Ya jugaste hoy?
+  const todayResult = loadTodayResult();
+  if (todayResult && todayResult.questionId === _question.id) {
+    _found      = new Set(todayResult.found);
+    _ended      = true;
+    _statsSaved = true;
+    elLoading.classList.add('hidden');
+    showEndScreen(todayResult.score === 10);
+    return;
+  }
+
+  bindModeScreenEvents();
   elLoading.classList.add('hidden');
   elMode.classList.remove('hidden');
+}
+
+function questionType() {
+  return (_question && _question.type) || 'player';
 }
 
 // ══════════════════════════════════════════════
@@ -230,6 +327,10 @@ function startGame() {
     updateTimerUI(_timeLeft);
   }
 
+  elInput.placeholder = questionType() === 'team'
+    ? 'Escribe el nombre del equipo…'
+    : 'Escribe el nombre del futbolista…';
+
   renderGame();
   bindGameEvents();
 
@@ -275,8 +376,7 @@ function makeRow(p) {
   if (url) {
     flagCell.className = 'row-flag';
     const img = document.createElement('img');
-    img.src = url;
-    img.alt = p.nat || '';
+    img.src = url; img.alt = p.nat || '';
     img.onerror = () => { img.style.display = 'none'; };
     flagCell.appendChild(img);
   } else {
@@ -285,11 +385,9 @@ function makeRow(p) {
 
   const nameCell = document.createElement('div');
   nameCell.className = 'row-name';
-
   const nameSpan = document.createElement('span');
   nameSpan.className = 'name-text';
   nameCell.appendChild(nameSpan);
-
   const valBadge = document.createElement('span');
   valBadge.className = 'val-badge';
   valBadge.textContent = `${p.v} ${_question.unit}`;
@@ -370,7 +468,7 @@ function bindGameEvents() {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (_acIdx >= 0 && _acItems[_acIdx]) submitSug(_acItems[_acIdx]);
-      else if (_acItems.length === 1) submitSug(_acItems[0]);
+      else if (_acItems.length > 0)         submitSug(_acItems[0]);
     }
   });
 
@@ -397,6 +495,11 @@ function wordBoundaryMatch(n, q) {
 }
 
 function buildSug(query) {
+  if (questionType() === 'team') buildTeamSug(query);
+  else                           buildPlayerSug(query);
+}
+
+function buildPlayerSug(query) {
   const q = norm(query);
   let exact = [], starts = [], wordBound = [], contains = [];
   for (const [id, name] of _nameIndex) {
@@ -416,14 +519,29 @@ function buildSug(query) {
   renderSug(combined, query);
 }
 
+function buildTeamSug(query) {
+  const q = norm(query);
+  let exact = [], starts = [], wordBound = [], contains = [];
+  for (const team of _teamIndex) {
+    const n = team.normName;
+    if      (n === q)                 exact.push(team);
+    else if (n.startsWith(q))         starts.push(team);
+    else if (wordBoundaryMatch(n, q)) wordBound.push(team);
+    else if (n.includes(q))           contains.push(team);
+    if (exact.length + starts.length + wordBound.length >= 10 && contains.length >= 4) break;
+  }
+  const combined = [...exact, ...starts, ...wordBound, ...contains].slice(0, 8);
+  renderSug(combined.map(t => ({ id: null, name: t.name })), query);
+}
+
 function renderSug(items, query) {
   _acItems = items;
-  _acIdx   = -1;
+  _acIdx   = items.length > 0 ? 0 : -1;
   if (!items.length) { closeSug(); return; }
   elSugBox.innerHTML = '';
   items.forEach((item, i) => {
     const div = document.createElement('div');
-    div.className = 'sug-item';
+    div.className = 'sug-item' + (i === 0 ? ' active' : '');
     div.innerHTML = `<span class="sug-name">${highlight(item.name, query)}</span>`;
     div.addEventListener('mousedown', e => { e.preventDefault(); submitSug(item); });
     div.addEventListener('mousemove', () => setAcIdx(i));
@@ -447,7 +565,7 @@ function escHtml(s) {
 }
 
 function moveSug(dir) {
-  setAcIdx(Math.max(-1, Math.min(_acItems.length - 1, _acIdx + dir)));
+  setAcIdx(Math.max(0, Math.min(_acItems.length - 1, _acIdx + dir)));
 }
 
 function setAcIdx(i) {
@@ -511,6 +629,7 @@ function endGame(won) {
   if (!_statsSaved) {
     _statsSaved = true;
     recordResult(_found.size);
+    saveTodayResult(_question.id, [..._found], _found.size);
   }
 
   for (const p of _question.top10) {
@@ -524,22 +643,11 @@ function showEndScreen(won) {
   elGame.classList.add('hidden');
 
   const n = _found.size;
-  if (n === 10) {
-    elEndEmoji.textContent = '🏆';
-    elEndTitle.textContent = '¡Top perfecto!';
-  } else if (n >= 7) {
-    elEndEmoji.textContent = '🥇';
-    elEndTitle.textContent = '¡Muy bien!';
-  } else if (n >= 4) {
-    elEndEmoji.textContent = '🥈';
-    elEndTitle.textContent = 'Bien, pero podías más';
-  } else if (n >= 1) {
-    elEndEmoji.textContent = '🥉';
-    elEndTitle.textContent = 'Malo el día…';
-  } else {
-    elEndEmoji.textContent = '😬';
-    elEndTitle.textContent = '¡Sin ninguno!';
-  }
+  if (n === 10)    { elEndEmoji.textContent = '🏆'; elEndTitle.textContent = '¡Top perfecto!'; }
+  else if (n >= 7) { elEndEmoji.textContent = '🥇'; elEndTitle.textContent = '¡Muy bien!'; }
+  else if (n >= 4) { elEndEmoji.textContent = '🥈'; elEndTitle.textContent = 'Bien, pero podías más'; }
+  else if (n >= 1) { elEndEmoji.textContent = '🥉'; elEndTitle.textContent = 'Malo el día…'; }
+  else             { elEndEmoji.textContent = '😬'; elEndTitle.textContent = '¡Sin ninguno!'; }
 
   elEndSub.textContent = `${n} / 10 adivinados`;
   elEndQ.textContent   = _question.q;
@@ -554,17 +662,40 @@ function showEndScreen(won) {
   }
 
   elEnd.classList.remove('hidden');
+
+  // Abrir estadísticas automáticamente al terminar
+  setTimeout(openStats, 700);
 }
 
 // ══════════════════════════════════════════════
-//  STATS MODAL
+//  STATS MODAL + COUNTDOWN
 // ══════════════════════════════════════════════
 function openStats() {
   renderStatsModal(loadStats());
   elStatsOverlay.classList.remove('hidden');
+  startCountdown();
 }
+
 function closeStats() {
   elStatsOverlay.classList.add('hidden');
+  stopCountdown();
+}
+
+function startCountdown() {
+  stopCountdown();
+  if (!elStatsCountdown) return;
+  function tick() {
+    const ms = getMsUntilMadridMidnight();
+    elStatsCountdown.innerHTML =
+      `Nuevo Top en <strong>${formatCountdown(ms)}</strong>`;
+  }
+  tick();
+  _cdInterval = setInterval(tick, 1000);
+}
+
+function stopCountdown() {
+  clearInterval(_cdInterval);
+  _cdInterval = null;
 }
 
 function renderStatsModal(stats) {
@@ -582,10 +713,7 @@ function renderStatsModal(stats) {
   ].forEach(({ val, label }) => {
     const cell = document.createElement('div');
     cell.className = 'stat-cell';
-    cell.innerHTML = `
-      <div class="stat-val">${val}</div>
-      <div class="stat-label">${label}</div>
-    `;
+    cell.innerHTML = `<div class="stat-val">${val}</div><div class="stat-label">${label}</div>`;
     elStatsNums.appendChild(cell);
   });
 
@@ -595,7 +723,7 @@ function renderStatsModal(stats) {
 function renderHistogram(hist) {
   elStatsHistBars.innerHTML   = '';
   elStatsHistLabels.innerHTML = '';
-  const maxCount    = Math.max(...hist, 1);
+  const maxCount     = Math.max(...hist, 1);
   const currentScore = _ended ? _found.size : null;
 
   hist.forEach((count, i) => {

@@ -154,7 +154,7 @@ body::before {
   transition: transform 0.4s ease;
 }
 #mode-box:hover #mode-art img {
-  transform: scale(1.02);
+  transform: none;
 }
 #mode-art--fallback {
   display: flex;
@@ -238,6 +238,7 @@ body::before {
   letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--np-ink-mid);
+  transform: none;
 }
 
 /* Toggle de modo */
@@ -304,7 +305,9 @@ body::before {
   padding: 0;
   transition: color 0.18s;
 }
-.stats-link-btn:hover { color: var(--np-red); }
+.stats-link-btn:hover { color: var(--np-red); 
+ transform: none;
+}
 .stats-link-btn svg { flex-shrink: 0; }
 
 /* ══════════════════════════════════════════════
@@ -626,8 +629,13 @@ body::before {
   border-bottom: 1px solid var(--np-ink-soft);
 }
 .sug-item:last-child { border-bottom: none; }
-.sug-item:hover,
-.sug-item.active { background: var(--np-paper); }
+.sug-item:hover { background: var(--np-paper); }
+.sug-item.active {
+  background: var(--np-ink);
+  color: var(--np-paper);
+}
+.sug-item.active .sug-name { color: var(--np-paper); }
+.sug-item.active .sug-highlight { color: #f4b89a; }
 .sug-name { flex: 1; color: var(--np-ink); }
 .sug-highlight { color: var(--np-red); font-weight: 700; }
 
@@ -924,10 +932,37 @@ body::before {
 }
 .hist-label.current { color: var(--np-red); font-weight: 500; }
 
+/* Countdown */
+.stats-countdown {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--np-ink-soft);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--np-ink-mid);
+  text-align: center;
+}
+.stats-countdown strong {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  letter-spacing: 0.06em;
+  color: var(--np-ink);
+  font-style: normal;
+}
+
 /* ══════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════ */
 @media (max-width: 480px) {
   #mode-box { box-shadow: none; }
   .np-modal { box-shadow: 3px 3px 0 var(--np-ink); }
+}
+
+*, ::before, ::after {
+    margin-left: 0px;
+    margin-top: 0px;
 }
