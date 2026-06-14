@@ -1,52 +1,42 @@
 [
   {
-    "id": "bernabeu",
-    "name": "Santiago Bernabéu",
-    "coord": [40.45309, -3.68835]
+    "id": "estadio-santiago-bernabeu",
+    "name": "Estadio Santiago Bernabéu",
+    "coord": [
+      40.45196,
+      -3.68829
+    ]
   },
   {
-    "id": "mestalla",
-    "name": "Mestalla",
-    "coord": [39.47466, -0.35817]
+    "id": "la-ceramica",
+    "name": "La Cerámica",
+    "coord": [
+      39.94452,
+      -0.10393
+    ]
   },
   {
-    "id": "signal-iduna",
-    "name": "Signal Iduna Park",
-    "coord": [51.49275, 7.45182]
+    "id": "reino-de-leon",
+    "name": "Reino de León",
+    "coord": [
+      42.58793,
+      -5.57581
+    ]
   },
   {
-    "id": "anfield",
-    "name": "Anfield",
-    "coord": [53.43083, -2.96083]
+    "id": "riyadh-air-metropolitano",
+    "name": "Riyadh Air Metropolitano",
+    "coord": [
+      40.43612,
+      -3.60157
+    ]
   },
   {
-    "id": "san-siro",
-    "name": "San Siro",
-    "coord": [45.47803, 9.12399]
-  },
-  {
-    "id": "maracana",
-    "name": "Maracanã",
-    "coord": [-22.91217, -43.23029]
-  },
-  {
-    "id": "wembley",
-    "name": "Wembley Stadium",
-    "coord": [51.55608, -0.27961]
-  },
-  {
-    "id": "allianz-arena",
-    "name": "Allianz Arena",
-    "coord": [48.21881, 11.62474]
-  },
-  {
-    "id": "azteca",
-    "name": "Estadio Azteca",
-    "coord": [19.30289, -99.15066]
-  },
-  {
-    "id": "metropolitano",
-    "name": "Estadio Metropolitano",
-    "coord": [40.43621, -3.59965]
+    "id": "spotify-camp-nou",
+    "name": "Spotify Camp Nou",
+    "coord": [
+      41.38055,
+      2.12163
+    ]
   }
 ]
