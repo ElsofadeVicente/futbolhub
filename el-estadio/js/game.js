@@ -158,8 +158,6 @@ function initMenu() {
     (s.partidas && s.acum)
       ? Math.round(s.acum / s.partidas).toLocaleString('es-ES')
       : '—';
-
-  document.getElementById('btn-jugar').addEventListener('click', startGame);
 }
 
 /* ══════════════════════════════════════════════
@@ -538,7 +536,7 @@ async function init() {
     const panel = document.getElementById('map-panel');
     panel.classList.toggle('map-expanded');
     panel.classList.toggle('map-collapsed');
-    if (gameMap) setTimeout(() => gameMap.invalidateSize(), 260);
+    if (gameMap) setTimeout(() => google.maps.event.trigger(gameMap, 'resize'), 260);
   });
 
   // Menú
@@ -546,4 +544,14 @@ async function init() {
   showScreen('screen-menu');
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  // Si Google Maps ya cargó, init directo; si no, espera al callback
+  if (typeof google !== 'undefined' && google.maps) {
+    init();
+  }
+  // si no, window.initMap lo arrancará (callback de la API)
+});
+
+window.initMap = function () {
+  init();
+};
