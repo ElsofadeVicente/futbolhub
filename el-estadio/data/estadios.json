@@ -1,0 +1,52 @@
+[
+  {
+    "id": "bernabeu",
+    "name": "Santiago Bernabéu",
+    "coord": [40.45309, -3.68835]
+  },
+  {
+    "id": "mestalla",
+    "name": "Mestalla",
+    "coord": [39.47466, -0.35817]
+  },
+  {
+    "id": "signal-iduna",
+    "name": "Signal Iduna Park",
+    "coord": [51.49275, 7.45182]
+  },
+  {
+    "id": "anfield",
+    "name": "Anfield",
+    "coord": [53.43083, -2.96083]
+  },
+  {
+    "id": "san-siro",
+    "name": "San Siro",
+    "coord": [45.47803, 9.12399]
+  },
+  {
+    "id": "maracana",
+    "name": "Maracanã",
+    "coord": [-22.91217, -43.23029]
+  },
+  {
+    "id": "wembley",
+    "name": "Wembley Stadium",
+    "coord": [51.55608, -0.27961]
+  },
+  {
+    "id": "allianz-arena",
+    "name": "Allianz Arena",
+    "coord": [48.21881, 11.62474]
+  },
+  {
+    "id": "azteca",
+    "name": "Estadio Azteca",
+    "coord": [19.30289, -99.15066]
+  },
+  {
+    "id": "metropolitano",
+    "name": "Estadio Metropolitano",
+    "coord": [40.43621, -3.59965]
+  }
+]
