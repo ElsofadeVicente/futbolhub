@@ -260,7 +260,9 @@ async function init() {
 }
 
 function questionType() {
-  return (_question && _question.type) || 'player';
+  if (!_question) return 'player';
+  if (_question.type) return _question.type;             // explícito gana
+  return _question.hint === 'club' ? 'team' : 'player'; // infiere de hint
 }
 
 // ══════════════════════════════════════════════
