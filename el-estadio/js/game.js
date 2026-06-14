@@ -276,7 +276,7 @@ function confirmarGuess() {
 /* ══════════════════════════════════════════════
    PANTALLA RESULTADO RONDA
    ══════════════════════════════════════════════ */
-let resMap    = null;
+let resMap = null;
 
 function showResult(estadio, distKm, puntos) {
   const idx = state.rondaActual;
@@ -287,72 +287,41 @@ function showResult(estadio, distKm, puntos) {
   document.getElementById('res-dist').textContent    = fmtDist(distKm);
 
   const [lat, lng] = estadio.coord;
-
   showScreen('screen-result');
 
-  // Inicializar mapa resultado
-  if (resMap) { resMap = null; }
+  if (resMap) { resMap.remove(); resMap = null; }
 
-  resMap = new google.maps.Map(document.getElementById('res-map'), {
-    center: { lat: lat, lng: lng },
-    zoom: 8,
-    mapTypeControl: false,
-    fullscreenControl: false,
-    streetViewControl: false,
-  });
+  resMap = L.map('res-map', { zoomControl: true, attributionControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 18,
+  }).addTo(resMap);
 
-  // Marcador tu pin (rojo)
-  const guessPos = { lat: state.guess.lat, lng: state.guess.lng };
-  const guessSvg = `
-    <svg width="24" height="35" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14,2 C8.48,2 4,6.48 4,12 C4,19 14,36 14,36 C14,36 24,19 24,12 C24,6.48 19.52,2 14,2 Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
+  const pinIcon = L.divIcon({
+    className: '',
+    html: `<svg width="24" height="35" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 1px 2px rgba(0,0,0,.3))">
+      <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
       <circle cx="14" cy="12" r="4" fill="#0f120e"/>
-    </svg>
-  `;
-  new google.maps.marker.AdvancedMarkerElement({
-    position: guessPos,
-    map: resMap,
-    content: createSvgElement(guessSvg),
-    title: 'Tu pin',
+    </svg>`,
+    iconSize: [24, 35], iconAnchor: [12, 35],
   });
 
-  // Marcador estadio real (negro con emoji)
-  const realPos = { lat: lat, lng: lng };
-  const realSvg = `
-    <svg width="26" height="38" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14,2 C8.48,2 4,6.48 4,12 C4,19 14,36 14,36 C14,36 24,19 24,12 C24,6.48 19.52,2 14,2 Z" fill="#0f120e" stroke="#b5221e" stroke-width="2"/>
-      <text x="14" y="16" font-size="16" text-anchor="middle" dominant-baseline="middle" fill="#b5221e">🏟</text>
-    </svg>
-  `;
-  new google.maps.marker.AdvancedMarkerElement({
-    position: realPos,
-    map: resMap,
-    content: createSvgElement(realSvg),
-    title: estadio.name,
+  const estadioIcon = L.divIcon({
+    className: '',
+    html: `<svg width="26" height="38" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 1px 2px rgba(0,0,0,.3))">
+      <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z" fill="#0f120e" stroke="#b5221e" stroke-width="2"/>
+      <text x="14" y="16" font-size="14" text-anchor="middle" dominant-baseline="middle" fill="#b5221e">🏟</text>
+    </svg>`,
+    iconSize: [26, 38], iconAnchor: [13, 38],
   });
 
-  // Línea entre los dos puntos
-  new google.maps.Polyline({
-    path: [guessPos, realPos],
-    geodesic: true,
-    strokeColor: '#b5221e',
-    strokeOpacity: 0.85,
-    strokeWeight: 2,
-    map: resMap,
-    icons: [{
-      icon: {path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3},
-      offset: '0',
-      repeat: '10px'
-    }],
-  });
+  const guessLL = L.latLng(state.guess.lat, state.guess.lng);
+  const realLL  = L.latLng(lat, lng);
 
-  // Ajustar vista para mostrar ambos puntos
-  const bounds = new google.maps.LatLngBounds();
-  bounds.extend(guessPos);
-  bounds.extend(realPos);
-  resMap.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
+  L.marker(guessLL, { icon: pinIcon }).addTo(resMap).bindPopup('Tu pin').openPopup();
+  L.marker(realLL,  { icon: estadioIcon }).addTo(resMap).bindPopup(estadio.name);
+  L.polyline([guessLL, realLL], { color: '#b5221e', weight: 2, dashArray: '6,4', opacity: 0.85 }).addTo(resMap);
+  resMap.fitBounds(L.latLngBounds([guessLL, realLL]), { padding: [30, 30] });
 
-  // Botón siguiente/fin
   const btnLabel = document.getElementById('btn-siguiente-label');
   btnLabel.textContent = (idx + 1 < TOTAL_RONDAS) ? 'Siguiente ronda →' : 'Ver resultado final →';
 }
@@ -406,70 +375,46 @@ function mostrarFin() {
   updateStats(total);
   saveScoreFirebase(total);
 
-  // Mapa final con todas las rondas
-  if (endMap) { endMap = null; }
+  if (endMap) { endMap.remove(); endMap = null; }
 
-  endMap = new google.maps.Map(document.getElementById('end-map'), {
-    center: { lat: 20, lng: 0 },
-    zoom: 2,
-    mapTypeControl: false,
-    fullscreenControl: false,
-    streetViewControl: false,
+  endMap = L.map('end-map', { zoomControl: true, attributionControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 18,
+  }).addTo(endMap);
+
+  const allPoints = [];
+
+  const pinIconSm = L.divIcon({
+    className: '',
+    html: `<svg width="18" height="26" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 1px 1px rgba(0,0,0,.3))">
+      <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
+      <circle cx="14" cy="12" r="3" fill="#0f120e"/>
+    </svg>`,
+    iconSize: [18, 26], iconAnchor: [9, 26],
   });
 
-  const bounds = new google.maps.LatLngBounds();
+  const estIconSm = L.divIcon({
+    className: '',
+    html: `<svg width="20" height="28" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 1px 1px rgba(0,0,0,.3))">
+      <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z" fill="#0f120e" stroke="#b5221e" stroke-width="2"/>
+      <text x="14" y="15" font-size="12" text-anchor="middle" dominant-baseline="middle" fill="#b5221e">🏟</text>
+    </svg>`,
+    iconSize: [20, 28], iconAnchor: [10, 28],
+  });
 
   state.rondas.forEach((est, i) => {
     const [lat, lng] = est.coord;
     const g = state.guesses[i];
-
-    const guessPos = { lat: g.lat, lng: g.lng };
-    const realPos = { lat: lat, lng: lng };
-
-    bounds.extend(guessPos);
-    bounds.extend(realPos);
-
-    // Marcador tu pin (rojo)
-    const guessSvg = `
-      <svg width="18" height="26" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14,2 C8.48,2 4,6.48 4,12 C4,19 14,36 14,36 C14,36 24,19 24,12 C24,6.48 19.52,2 14,2 Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
-        <circle cx="14" cy="12" r="3" fill="#0f120e"/>
-      </svg>
-    `;
-    new google.maps.marker.AdvancedMarkerElement({
-      position: guessPos,
-      map: endMap,
-      content: createSvgElement(guessSvg),
-      title: `Tu pin · Ronda ${i+1}`,
-    });
-
-    // Marcador estadio real
-    const realSvg = `
-      <svg width="20" height="28" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14,2 C8.48,2 4,6.48 4,12 C4,19 14,36 14,36 C14,36 24,19 24,12 C24,6.48 19.52,2 14,2 Z" fill="#0f120e" stroke="#b5221e" stroke-width="2"/>
-        <text x="14" y="15" font-size="12" text-anchor="middle" dominant-baseline="middle" fill="#b5221e">🏟</text>
-      </svg>
-    `;
-    new google.maps.marker.AdvancedMarkerElement({
-      position: realPos,
-      map: endMap,
-      content: createSvgElement(realSvg),
-      title: est.name,
-    });
-
-    // Línea entre puntos
-    new google.maps.Polyline({
-      path: [guessPos, realPos],
-      geodesic: true,
-      strokeColor: '#b5221e',
-      strokeOpacity: 0.7,
-      strokeWeight: 1.5,
-      map: endMap,
-    });
+    const guessLL = L.latLng(g.lat, g.lng);
+    const realLL  = L.latLng(lat, lng);
+    allPoints.push(guessLL, realLL);
+    L.marker(guessLL, { icon: pinIconSm }).addTo(endMap).bindPopup(`Tu pin · Ronda ${i+1}`);
+    L.marker(realLL,  { icon: estIconSm  }).addTo(endMap).bindPopup(est.name);
+    L.polyline([guessLL, realLL], { color: '#b5221e', weight: 1.5, dashArray: '5,4', opacity: 0.7 }).addTo(endMap);
   });
 
-  if (bounds.isEmpty() === false) {
-    endMap.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
+  if (allPoints.length) {
+    endMap.fitBounds(L.latLngBounds(allPoints), { padding: [20, 20] });
   }
 }
 
