@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Estadio — FutbolHUB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── Columnas de anuncios ── -->
+  <aside class="ad-col ad-col--left" aria-hidden="true">
+    <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+    <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  </aside>
+  <aside class="ad-col ad-col--right" aria-hidden="true">
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+    <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  </aside>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: MENÚ
+  ══════════════════════════════════════ -->
+  <div id="screen-menu" class="screen active">
+    <a href="../" class="back-btn">← Hub</a>
+
+    <div class="menu-hero">
+      <span class="menu-logo">FutbolHUB · Nº 10</span>
+      <span class="menu-title">El Estadio</span>
+      <span class="menu-subtitle">Street View · 5 Rondas · Mundial</span>
+    </div>
+
+    <div class="menu-wrap">
+      <p class="menu-desc">
+        Te dropeamos dentro o fuera de un estadio de fútbol real. Muévete, explora y coloca tu pin en el mapa.
+        Cuanto más cerca del punto de inicio, más puntuación.
+      </p>
+
+      <div class="menu-rule"></div>
+
+      <div class="menu-stats-row">
+        <div class="menu-stat">
+          <span class="menu-stat-val" id="stat-partidas">0</span>
+          <span class="menu-stat-label">Partidas</span>
+        </div>
+        <div class="menu-stat">
+          <span class="menu-stat-val" id="stat-mejor">—</span>
+          <span class="menu-stat-label">Mejor puntuación</span>
+        </div>
+        <div class="menu-stat">
+          <span class="menu-stat-val" id="stat-media">—</span>
+          <span class="menu-stat-label">Media</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-jugar">Jugar →</button>
+      <a href="../" class="btn-secondary">← Volver al Hub</a>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: JUEGO
+  ══════════════════════════════════════ -->
+  <div id="screen-game" class="screen">
+
+    <!-- HUD superior -->
+    <div id="game-hud">
+      <a href="../" class="hud-back">← Hub</a>
+      <div class="hud-center">
+        <span class="hud-label">RONDA</span>
+        <span class="hud-ronda"><span id="hud-ronda-num">1</span>/5</span>
+      </div>
+      <div class="hud-score">
+        <span class="hud-label">PUNTOS</span>
+        <span id="hud-score">0</span>
+      </div>
+    </div>
+
+    <!-- Street View fullscreen -->
+    <div id="sv-wrap">
+      <iframe id="sv-frame" allowfullscreen loading="lazy"></iframe>
+      <div id="sv-blocker" aria-hidden="true"></div>
+    </div>
+
+    <!-- Mapa Leaflet — esquina inferior derecha, estilo GeoGuessr -->
+    <div id="map-panel" class="map-collapsed">
+      <div id="map-leaflet"></div>
+      <div id="map-hint">Haz clic en el mapa para colocar tu pin</div>
+      <button id="btn-confirmar" class="btn-confirmar" disabled>Confirmar ubicación →</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: RESULTADO DE RONDA
+  ══════════════════════════════════════ -->
+  <div id="screen-result" class="screen">
+    <div class="result-wrap">
+
+      <div class="result-header">
+        <span class="result-kicker">RONDA <span id="res-ronda">1</span> DE 5</span>
+        <h2 class="result-stadium" id="res-stadium">Santiago Bernabéu</h2>
+      </div>
+
+      <div id="res-map"></div>
+
+      <div class="result-score-block">
+        <span class="result-score-label">Puntuación</span>
+        <span class="result-score-big" id="res-score">0</span>
+        <span class="result-score-max">/ 5.000</span>
+      </div>
+
+      <div class="result-dist">
+        <span id="res-dist-text">A <strong id="res-dist">0</strong> del estadio</span>
+      </div>
+
+      <button class="btn-primary" id="btn-siguiente">
+        <span id="btn-siguiente-label">Siguiente ronda →</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: FIN DE PARTIDA
+  ══════════════════════════════════════ -->
+  <div id="screen-end" class="screen">
+    <div class="end-wrap">
+
+      <div class="end-header">
+        <span class="end-kicker">FutbolHUB · El Estadio</span>
+        <div class="end-trophy">🏟️</div>
+        <h2 class="end-title" id="end-title">Resultado final</h2>
+        <div class="end-score-block">
+          <span class="end-score-big" id="end-score-total">0</span>
+          <span class="end-score-max">/ 25.000</span>
+        </div>
+        <div class="end-grade" id="end-grade"></div>
+      </div>
+
+      <div id="end-map"></div>
+
+      <div class="end-rounds" id="end-rounds"></div>
+
+      <div class="end-actions">
+        <button class="btn-primary" id="btn-jugar-de-nuevo">Jugar de nuevo →</button>
+        <a href="../" class="btn-secondary">← Volver al Hub</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
