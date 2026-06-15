@@ -502,7 +502,8 @@ function buildJerseySVG(kit, number, isGK){
   const sleeve = K.sl || (pat==='stripes' ? second : main);
   const collar = K.col || K.s || 'rgba(0,0,0,0.30)';
   const num    = K.num || _autoNum(main);
-  const numStroke = _lum(num)>0.58 ? 'rgba(0,0,0,0.32)' : 'rgba(255,255,255,0.30)';
+  // stroke sólido de alto contraste: negro si el número es claro, blanco si es oscuro
+  const numStroke = _lum(num)>0.42 ? '#111111' : '#ffffff';
   const body='M28 11 L25 47 L23 95 L77 95 L75 47 L72 11 C64 19 36 19 28 11 Z';
   const lsl ='M28 11 L8 21 L3 41 L25 47 Z';
   const rsl ='M72 11 L92 21 L97 41 L75 47 Z';
@@ -522,7 +523,7 @@ function buildJerseySVG(kit, number, isGK){
     + `<path d="${lsl}" fill="none" stroke="rgba(0,0,0,0.24)" stroke-width="1.1"/>`
     + `<path d="${rsl}" fill="none" stroke="rgba(0,0,0,0.24)" stroke-width="1.1"/>`
     + `<path d="${neck}" fill="none" stroke="${collar}" stroke-width="3.6" stroke-linecap="round"/>`
-    + `<text x="50" y="66" text-anchor="middle" font-family="'Bebas Neue','Rajdhani',sans-serif" font-size="31" font-weight="700" paint-order="stroke" stroke="${numStroke}" stroke-width="1.1" fill="${num}">${number!=null?number:''}</text>`
+    + `<text x="50" y="66" text-anchor="middle" font-family="'Bebas Neue','Rajdhani',sans-serif" font-size="31" font-weight="700" paint-order="stroke" stroke="${numStroke}" stroke-width="3.5" stroke-linejoin="round" fill="${num}">${number!=null?number:''}</text>`
     + `</svg>`;
 }
 
