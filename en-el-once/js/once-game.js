@@ -395,7 +395,7 @@ const KIT_RULES = [
   [['ALAVES'],                        {p:'#0761af',s:'#ffffff',pat:'stripes',sl:'#0761af',col:'#ffffff',num:'#ffffff'}],
   [['GRANADA'],                       {p:'#c8102e',s:'#ffffff',pat:'hoops',sl:'#c8102e',col:'#1a1a1a',num:'#ffffff'}],
   [['CADIZ'],                         {p:'#f4d600',s:'#0a3d91',pat:'solid',sl:'#f4d600',col:'#0a3d91',num:'#0a3d91'}],
-  [['ELCHE'],                         {p:'#ffffff',s:'#0a8f3c',pat:'centerband',sl:'#0a8f3c',col:'#0a8f3c',num:'#0a8f3c'}],
+  [['ELCHE'],                         {p:'#ffffff',s:'#0a8f3c',pat:'hband',sl:'#0a8f3c',col:'#0a8f3c',num:'#1a1a1a'}],
   [['ALMERIA'],                       {p:'#ce1126',s:'#ffffff',pat:'stripes',sl:'#ce1126',col:'#ffffff',num:'#ffffff'}],
   [['EIBAR'],                         {p:'#1a2d6b',s:'#7d1f35',pat:'stripes',sl:'#1a2d6b',col:'#7d1f35',num:'#ffffff'}],
   [['LEGANES'],                       {p:'#004b9f',s:'#ffffff',pat:'stripes',sl:'#004b9f',col:'#ffffff',num:'#ffffff'}],
@@ -431,7 +431,7 @@ const KIT_RULES = [
   [['PORTO'],                         {p:'#00428c',s:'#ffffff',pat:'stripes',sl:'#00428c',col:'#ffffff',num:'#ffffff'}],
   [['BENFICA'],                       {p:'#e40521',s:'#ffffff',pat:'solid',sl:'#e40521',col:'#ffffff',num:'#ffffff'}],
   [['SPORTING LISBOA','SPORTING CP'], {p:'#008057',s:'#ffffff',pat:'hoops',sl:'#008057',col:'#1a1a1a',num:'#ffffff'}],
-  [['SPORTING GIJON','GIJÓN','GIJON','SPORTING DE GIJON'], {p:'#e8002d',s:'#ffffff',pat:'stripes',sl:'#e8002d',col:'#e8002d',num:'#e8002d'}],
+  [['SPORTING GIJON','GIJÓN','GIJON','SPORTING DE GIJON'], {p:'#e8002d',s:'#ffffff',pat:'stripes',sl:'#e8002d',col:'#e8002d',num:'#ffffff'}],
   // ---- Paises Bajos ----
   [['AJAX'],                          {p:'#ffffff',s:'#d2122e',pat:'centerband',sl:'#ffffff',col:'#d2122e',num:'#1a1a1a'}],
   [['PSV'],                           {p:'#ee2e24',s:'#ffffff',pat:'solid',sl:'#ffffff',col:'#1a1a1a',num:'#ffffff'}],
@@ -490,6 +490,7 @@ function _pattern(pat, main, second, K){
     case 'diagonalhalves': return `<polygon points="100,0 100,100 12,100" fill="${second}"/>`;
     case 'sash':    return `<polygon points="73,1 97,25 31,100 8,80" fill="${second}"/>`;
     case 'centerband': { let r=`<rect x="41" y="0" width="18" height="100" fill="${second}"/>`; if(K&&K.edge) r+=`<rect x="39.4" y="0" width="1.5" height="100" fill="#fff"/><rect x="59.1" y="0" width="1.5" height="100" fill="#fff"/>`; return r; }
+    case 'hband': return `<rect x="0" y="41" width="100" height="18" fill="${second}"/>`;
     case 'checkers': { let r=''; const x0=23,y0=5,cw=(77-23)/5,ch=(99-5)/6; for(let i=0;i<5;i++) for(let j=0;j<6;j++){ if((i+j)%2) r+=`<rect x="${(x0+i*cw).toFixed(1)}" y="${(y0+j*ch).toFixed(1)}" width="${(cw+0.3).toFixed(1)}" height="${(ch+0.3).toFixed(1)}" fill="${second}"/>`; } return r; }
     default: return '';
   }
@@ -505,9 +506,7 @@ function buildJerseySVG(kit, number, isGK){
   const collar = K.col || K.s || 'rgba(0,0,0,0.30)';
   const num    = K.num || _autoNum(main);
   // fondo garantizado: rect semitransparente detrás del número, solo en camisetas con patrón
-  const hasPattern = (pat !== 'solid');
-  const bgDark  = _lum(num) > 0.42;   // número claro → fondo oscuro
-  const numBg   = hasPattern ? (bgDark ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.28)') : 'none';
+  const bgDark  = _lum(num) > 0.42;
   const numStroke = bgDark ? '#000000' : '#ffffff';
   const body='M28 11 L25 47 L23 95 L77 95 L75 47 L72 11 C64 19 36 19 28 11 Z';
   const lsl ='M28 11 L8 21 L3 41 L25 47 Z';
@@ -528,7 +527,6 @@ function buildJerseySVG(kit, number, isGK){
     + `<path d="${lsl}" fill="none" stroke="rgba(0,0,0,0.24)" stroke-width="1.1"/>`
     + `<path d="${rsl}" fill="none" stroke="rgba(0,0,0,0.24)" stroke-width="1.1"/>`
     + `<path d="${neck}" fill="none" stroke="${collar}" stroke-width="3.6" stroke-linecap="round"/>`
-    + (hasPattern ? `<ellipse cx="50" cy="58" rx="22" ry="16" fill="${numBg}"/>` : '')
     + `<text x="50" y="66" text-anchor="middle" font-family="'Bebas Neue','Rajdhani',sans-serif" font-size="31" font-weight="700" paint-order="stroke" stroke="${numStroke}" stroke-width="3.5" stroke-linejoin="round" fill="${num}">${number!=null?number:''}</text>`
     + `</svg>`;
 }
