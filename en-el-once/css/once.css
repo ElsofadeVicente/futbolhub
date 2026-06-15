@@ -483,68 +483,84 @@ body {
 
 /* ===================== CAMPO ===================== */
 .field-container {
-    background: linear-gradient(180deg, var(--bg-field) 0%, var(--field-stripe) 100%);
-    padding: 28px 16px;
     position: relative;
     min-height: 560px;
     overflow: hidden;
+    padding: 34px 16px 38px;
+    background:
+        repeating-linear-gradient(180deg,
+            #2f7e34 0, #2f7e34 56px,
+            #2a7531 56px, #2a7531 112px);
 }
-
-/* Rayas del campo */
-.field-pattern {
-    position: absolute;
-    inset: 0;
-    background-image:
-        repeating-linear-gradient(
-            180deg,
-            transparent 0px,
-            transparent 52px,
-            rgba(0,0,0,0.06) 52px,
-            rgba(0,0,0,0.06) 104px
-        );
-    pointer-events: none;
-}
-
-/* Líneas del campo */
-.penalty-area {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 70%;
-    height: 90px;
-    border: 2px solid var(--field-line);
-    border-bottom: none;
-    border-radius: 6px 6px 0 0;
-    pointer-events: none;
-}
-
-/* Línea central */
+/* luz de estadio arriba + sombra en los bordes */
 .field-container::before {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 8%;
-    right: 8%;
-    height: 2px;
-    background: var(--field-line);
-    transform: translateY(-50%);
+    inset: 0;
     pointer-events: none;
+    background:
+        radial-gradient(120% 70% at 50% -8%, rgba(255,255,255,0.12), rgba(255,255,255,0) 52%),
+        radial-gradient(135% 100% at 50% 44%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.42) 100%);
 }
+/* desactiva las marcas antiguas si siguen en el HTML */
+.field-pattern, .penalty-area { display: none !important; }
 
-/* Círculo central */
-.field-container::after {
-    content: '';
+/* ===================== MARCAS DEL CAMPO ===================== */
+.pitch-lines {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 80px;
-    height: 80px;
-    border: 2px solid var(--field-line);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
+    inset: 0;
+    z-index: 1;
     pointer-events: none;
+    --lc: rgba(255,255,255,0.46);
+    --lw: 2px;
+    --ins: 14px;
+    --pbw: clamp(192px, 52vmin, 460px);   /* area grande   */
+    --pbh: clamp(74px, 19vmin, 150px);
+    --gbw: clamp(112px, 30vmin, 248px);    /* area pequena  */
+    --gbh: clamp(30px, 8vmin, 64px);
+    --cir: clamp(88px, 25vmin, 150px);     /* circulo central */
+    --arc: clamp(120px, 30vmin, 230px);    /* diametro arco area */
+    --cr:  clamp(10px, 2.4vmin, 16px);     /* esquinas */
 }
+.pl-bounds { position: absolute; inset: var(--ins); border: var(--lw) solid var(--lc); border-radius: 3px; }
+.pl-half   { position: absolute; left: var(--ins); right: var(--ins); top: 50%; height: var(--lw); background: var(--lc); transform: translateY(-50%); }
+.pl-circle { position: absolute; top: 50%; left: 50%; width: var(--cir); height: var(--cir); border: var(--lw) solid var(--lc); border-radius: 50%; transform: translate(-50%,-50%); }
+
+.pl-spot { position: absolute; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: var(--lc); transform: translate(-50%,-50%); }
+.pl-spot-c      { top: 50%; }
+.pl-spot-top    { top: calc(var(--ins) + var(--pbh) * 0.66); }
+.pl-spot-bottom { top: calc(100% - var(--ins) - var(--pbh) * 0.66); }
+
+.pl-pbox { position: absolute; left: 50%; transform: translateX(-50%); width: var(--pbw); height: var(--pbh); border: var(--lw) solid var(--lc); }
+.pl-pbox.pl-top    { top: var(--ins);    border-top: none; }
+.pl-pbox.pl-bottom { bottom: var(--ins); border-bottom: none; }
+.pl-gbox { position: absolute; left: 50%; transform: translateX(-50%); width: var(--gbw); height: var(--gbh); border: var(--lw) solid var(--lc); }
+.pl-gbox.pl-top    { top: var(--ins);    border-top: none; }
+.pl-gbox.pl-bottom { bottom: var(--ins); border-bottom: none; }
+
+/* arco del area: semicirculo recortado por overflow (orientacion garantizada) */
+.pl-arc { position: absolute; left: 50%; transform: translateX(-50%); width: var(--arc); height: calc(var(--arc) / 2); overflow: hidden; }
+.pl-arc::before {
+    content: ''; position: absolute; left: 0; width: var(--arc); height: var(--arc);
+    border-radius: 50%; border: var(--lw) solid var(--lc); box-sizing: border-box;
+}
+.pl-arc-top         { top: calc(var(--ins) + var(--pbh)); }
+.pl-arc-top::before { top: calc(var(--arc) / -2); }
+.pl-arc-bottom         { bottom: calc(var(--ins) + var(--pbh)); }
+.pl-arc-bottom::before { bottom: calc(var(--arc) / -2); }
+
+/* porterias */
+.pl-goal { position: absolute; left: 50%; transform: translateX(-50%); width: clamp(62px,16vmin,120px); height: 11px; border: 2px solid rgba(255,255,255,0.55); }
+.pl-goal.pl-top    { top: calc(var(--ins) - 11px); border-bottom: none; }
+.pl-goal.pl-bottom { bottom: calc(var(--ins) - 11px); border-top: none; }
+
+/* arcos de esquina (cuarto de circulo recortado) */
+.pl-corner { position: absolute; width: var(--cr); height: var(--cr); overflow: hidden; }
+.pl-corner::before { content: ''; position: absolute; width: calc(var(--cr) * 2); height: calc(var(--cr) * 2); border-radius: 50%; border: var(--lw) solid var(--lc); box-sizing: border-box; }
+.pl-tl { top: var(--ins);    left: var(--ins);  } .pl-tl::before { left: calc(var(--cr) * -1); top: calc(var(--cr) * -1); }
+.pl-tr { top: var(--ins);    right: var(--ins); } .pl-tr::before { right: calc(var(--cr) * -1); top: calc(var(--cr) * -1); }
+.pl-bl { bottom: var(--ins); left: var(--ins);  } .pl-bl::before { left: calc(var(--cr) * -1); bottom: calc(var(--cr) * -1); }
+.pl-br { bottom: var(--ins); right: var(--ins); } .pl-br::before { right: calc(var(--cr) * -1); bottom: calc(var(--cr) * -1); }
 
 .formation {
     position: relative;
@@ -590,155 +606,22 @@ body {
     100% { transform: scale(1); }
 }
 
-/* Jersey shape — inspiración Total 90 */
+/* ===================== CAMISETA (SVG) ===================== */
 .jersey {
-    --kit-main: var(--player-bg);
-    --kit-top: var(--player-top);
-    --kit-line: rgba(255,255,255,0.2);
-    --kit-panel: rgba(255,255,255,0.1);
     width: 72px;
-    height: 82px;
-    background:
-        linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0) 22%),
-        linear-gradient(160deg, var(--kit-top) 0%, var(--kit-main) 100%);
-    border-radius: 12px 12px 18px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 78px;
     position: relative;
-    box-shadow:
-        0 6px 20px rgba(0,0,0,0.45),
-        inset 0 1px 0 rgba(255,255,255,0.15),
-        inset 0 -2px 0 rgba(0,0,0,0.2);
-    transition: box-shadow 0.2s, transform 0.2s;
-    clip-path: polygon(18% 10%, 30% 0%, 70% 0%, 82% 10%, 100% 25%, 92% 100%, 8% 100%, 0% 25%);
-    overflow: visible;
+    cursor: pointer;
+    filter: drop-shadow(0 5px 9px rgba(0,0,0,0.45));
+    transition: transform .2s ease, filter .2s ease;
 }
-
-.jersey::after,
-.jersey::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-}
-.jersey::before {
-    background:
-        linear-gradient(140deg, transparent 16%, var(--kit-line) 16%, var(--kit-line) 18%, transparent 18%) left top/50% 100% no-repeat,
-        linear-gradient(220deg, transparent 16%, var(--kit-line) 16%, var(--kit-line) 18%, transparent 18%) right top/50% 100% no-repeat;
-    opacity: .9;
-}
-.jersey::after {
-    border-radius: inherit;
-    box-shadow:
-        inset 0 0 0 1px rgba(0,0,0,0.18),
-        inset 0 14px 18px rgba(255,255,255,0.05);
-}
-
-.jersey.goalkeeper {
-    --kit-main: var(--gk-bg);
-    --kit-top: var(--gk-top);
-    --kit-line: rgba(15,20,16,0.22);
-    --kit-panel: rgba(15,20,16,0.08);
-}
-
-/* Brillito en la camiseta cuando está revelada */
+.jersey-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.player-card:hover .jersey { transform: translateY(-2px) scale(1.03); }
 .player-card.revealed .jersey {
-    box-shadow:
-        0 6px 24px rgba(0,0,0,0.45),
-        0 0 0 2px rgba(201,168,76,0.45),
-        inset 0 1px 0 rgba(255,255,255,0.15);
+    filter: drop-shadow(0 4px 9px rgba(0,0,0,0.42)) drop-shadow(0 0 5px rgba(201,168,76,0.55));
 }
 .player-card.revealed.goalkeeper .jersey {
-    box-shadow:
-        0 6px 24px rgba(0,0,0,0.45),
-        0 0 0 2px rgba(232,201,109,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.2);
-}
-
-.jersey-shoulder {
-    position: absolute;
-    top: 10px;
-    width: 18px;
-    height: 15px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px 8px 10px 10px;
-    pointer-events: none;
-}
-.jersey-shoulder-left {
-    left: 7px;
-    transform: rotate(-18deg);
-}
-.jersey-shoulder-right {
-    right: 7px;
-    transform: rotate(18deg);
-}
-.jersey-collar {
-    position: absolute;
-    top: 4px;
-    left: 50%;
-    width: 26px;
-    height: 14px;
-    transform: translateX(-50%);
-    border-radius: 0 0 12px 12px;
-    border: 2px solid rgba(15,18,15,0.34);
-    border-top: 0;
-    background: rgba(0,0,0,0.16);
-    pointer-events: none;
-}
-.jersey-panel {
-    position: absolute;
-    inset: 21px 10px 12px;
-    border-radius: 14px;
-    border: 1.5px solid var(--kit-line);
-    background:
-        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)),
-        var(--kit-panel);
-    pointer-events: none;
-}
-.jersey-mark {
-    position: absolute;
-    inset: 15px 8px auto;
-    height: 28px;
-    border-top: 1.5px solid var(--kit-line);
-    border-left: 1.5px solid var(--kit-line);
-    border-right: 1.5px solid var(--kit-line);
-    border-radius: 18px 18px 8px 8px;
-    opacity: .95;
-    pointer-events: none;
-}
-.jersey-ring {
-    position: absolute;
-    left: 50%;
-    top: 42px;
-    width: 34px;
-    height: 34px;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    border: 3px solid rgba(255,255,255,0.82);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14);
-    pointer-events: none;
-}
-.jersey.goalkeeper .jersey-ring {
-    border-color: rgba(15,20,16,0.82);
-}
-.jersey-number {
-    position: absolute;
-    left: 50%;
-    top: 42px;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.7rem;
-    line-height: 1;
-    letter-spacing: 0;
-    color: rgba(255,255,255,0.95);
-    text-shadow: 0 2px 6px rgba(0,0,0,0.4);
-}
-.jersey.goalkeeper .jersey-number {
-    color: rgba(15,20,16,0.92);
-    text-shadow: none;
+    filter: drop-shadow(0 4px 9px rgba(0,0,0,0.42)) drop-shadow(0 0 5px rgba(199,249,75,0.6));
 }
 
 /* Etiqueta nombre */
@@ -829,7 +712,29 @@ body {
 
 /* ===================== BOTONES ===================== */
 .next-btn {
+    background: linear-gradient(135deg, var(--correct), #27ae60);
+    border: none;
+    color: #fff;
     padding: 10px 22px;
+    border-radius: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(58,125,68,0.35);
+}
+.next-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+.next-btn:disabled {
+    background: #3a4038;
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
+    filter: none;
 }
 
 .give-up-btn {
@@ -1194,17 +1099,10 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
         min-width: 0;
     }
     .jersey {
-        width: 50px;
+        width: 52px;
         height: 58px;
     }
-    .jersey-panel { inset: 16px 7px 9px; border-radius: 10px; }
-    .jersey-mark { inset: 12px 6px auto; height: 20px; border-radius: 14px 14px 6px 6px; }
-    .jersey-ring { width: 24px; height: 24px; top: 30px; border-width: 2px; }
-    .jersey-number { top: 30px; font-size: 1.1rem; }
-    .jersey-collar { width: 18px; height: 10px; top: 3px; }
-    .jersey-shoulder { width: 12px; height: 10px; top: 8px; }
-    .jersey-shoulder-left { left: 5px; }
-    .jersey-shoulder-right { right: 5px; }
+    .pitch-lines { --ins: 10px; }
     .player-name-container {
         width: calc((100vw - 28px) / 5 - 4px);
         min-width: 0;
@@ -1228,13 +1126,7 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     .letter-cell { width: 35px; height: 40px; font-size: 1.2rem; }
     .letter-cell.space-cell { width: 11px; }
     .key { min-width: 25px; height: 40px; font-size: 0.8rem; }
-    .jersey { width: 44px; height: 50px; }
-    .jersey-panel { inset: 14px 6px 8px; }
-    .jersey-mark { inset: 10px 5px auto; height: 18px; }
-    .jersey-ring { width: 22px; height: 22px; top: 27px; }
-    .jersey-number { top: 27px; font-size: 1rem; }
-    .jersey-collar { width: 16px; }
-    .jersey-shoulder { width: 11px; height: 9px; }
+    .jersey { width: 46px; height: 52px; }
     .player-card { flex: 0 1 calc((100vw - 22px) / 5); }
     .player-name-container { width: calc((100vw - 22px) / 5 - 4px); max-width: 58px; font-size: 0.56rem; }
     .revealed-name { font-size: 0.56rem; }
