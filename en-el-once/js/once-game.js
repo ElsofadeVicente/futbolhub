@@ -398,6 +398,7 @@ const KIT_RULES = [
   [['ELCHE'],                         {p:'#ffffff',s:'#0a8f3c',pat:'hband',sl:'#0a8f3c',col:'#0a8f3c',num:'#1a1a1a'}],
   [['ALMERIA'],                       {p:'#ce1126',s:'#ffffff',pat:'stripes',sl:'#ce1126',col:'#ffffff',num:'#ffffff'}],
   [['EIBAR'],                         {p:'#1a2d6b',s:'#7d1f35',pat:'stripes',sl:'#1a2d6b',col:'#7d1f35',num:'#ffffff'}],
+  [['DEPORTIVO','CORUNA','CORUÑA'],   {p:'#ffffff',s:'#1a3a6b',pat:'stripes',sl:'#1a3a6b',col:'#1a3a6b',num:'#1a3a6b'}],
   [['LEGANES'],                       {p:'#004b9f',s:'#ffffff',pat:'stripes',sl:'#004b9f',col:'#ffffff',num:'#ffffff'}],
   [['LAS PALMAS','PALMAS'],           {p:'#ffe000',s:'#0067b1',pat:'solid',sl:'#ffe000',col:'#0067b1',num:'#0067b1'}],
   [['LEVANTE'],                       {p:'#004b9d',s:'#9d1846',pat:'stripes',sl:'#9d1846',col:'#9d1846',num:'#ffffff'}],
