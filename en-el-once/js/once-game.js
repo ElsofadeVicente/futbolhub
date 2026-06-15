@@ -357,6 +357,205 @@ function loadMatch() {
 }
 
 // =============================================
+// CAMISETAS (kits por equipo) + CAMPO
+// =============================================
+
+let _currentKit = null;
+let _jerseyUID  = 0;
+
+// Portero: kit propio, siempre contrasta con el cesped y con el equipo
+const GK_KIT = { p:'#23262e', s:'#c7f94b', pat:'solid', sl:'#1c1f25', col:'#c7f94b', num:'#c7f94b' };
+
+function _hex2rgb(h){ h=h.replace('#',''); if(h.length===3) h=h.split('').map(c=>c+c).join(''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function _lum(h){ const [r,g,b]=_hex2rgb(h); return (0.2126*r+0.7152*g+0.0722*b)/255; }
+function _autoNum(h){ return _lum(h)>0.58 ? '#16181d' : '#ffffff'; }
+function _hslHex(h,s,l){ s/=100; l/=100; const a=s*Math.min(l,1-l); const f=n=>{ const k=(n+h/30)%12; return l-a*Math.max(-1,Math.min(k-3,Math.min(9-k,1))); }; const to=x=>Math.round(255*x).toString(16).padStart(2,'0'); return '#'+to(f(0))+to(f(8))+to(f(4)); }
+
+// patrones: solid | stripes | hoops | halves | diagonalhalves | sash | centerband | checkers
+// Reglas ordenadas: los nombres ambiguos (ATLETICO antes que MADRID) van primero.
+const KIT_RULES = [
+  // ---- España ----
+  [['ATLETICO','ATLETI','ATHLETICO'], {p:'#cb3524',s:'#ffffff',pat:'stripes',sl:'#1c3a73',col:'#1c3a73',num:'#ffffff'}],
+  [['ATHLETIC','BILBAO'],             {p:'#ee2523',s:'#ffffff',pat:'stripes',sl:'#ffffff',col:'#0a1a3f',num:'#ffffff'}],
+  [['REAL SOCIEDAD','SOCIEDAD'],      {p:'#0a52a0',s:'#ffffff',pat:'stripes',sl:'#ffffff',col:'#ffffff',num:'#ffffff'}],
+  [['REAL BETIS','BETIS'],            {p:'#129b4a',s:'#ffffff',pat:'stripes',sl:'#ffffff',col:'#ffffff',num:'#ffffff'}],
+  [['VALLADOLID'],                    {p:'#6f2c91',s:'#ffffff',pat:'stripes',sl:'#ffffff',col:'#ffffff',num:'#ffffff'}],
+  [['REAL MADRID'],                   {p:'#ffffff',s:'#febe10',pat:'solid',sl:'#ffffff',col:'#0b1f4d',num:'#0b1f4d'}],
+  [['BARCELONA','BARCA','BARÇA'],     {p:'#a50044',s:'#004d98',pat:'stripes',sl:'#004d98',col:'#ffd000',num:'#ffd000'}],
+  [['SEVILLA'],                       {p:'#ffffff',s:'#d81e33',pat:'solid',sl:'#ffffff',col:'#d81e33',num:'#d81e33'}],
+  [['VILLARREAL'],                    {p:'#ffe667',s:'#0a2240',pat:'solid',sl:'#ffe667',col:'#0a2240',num:'#16315e'}],
+  [['VALENCIA'],                      {p:'#ffffff',s:'#ee3524',pat:'solid',sl:'#ffffff',col:'#111111',num:'#1a1a1a'}],
+  [['CELTA'],                         {p:'#8ac3ee',s:'#e4002b',pat:'solid',sl:'#8ac3ee',col:'#e4002b',num:'#143b6b'}],
+  [['GETAFE'],                        {p:'#005999',s:'#ffffff',pat:'solid',sl:'#005999',col:'#ffffff',num:'#ffffff'}],
+  [['GIRONA'],                        {p:'#cd2534',s:'#ffffff',pat:'stripes',sl:'#cd2534',col:'#ffffff',num:'#ffffff'}],
+  [['OSASUNA'],                       {p:'#d91a21',s:'#0a2240',pat:'solid',sl:'#0a2240',col:'#0a2240',num:'#ffffff'}],
+  [['RAYO'],                          {p:'#ffffff',s:'#e53027',pat:'sash',sl:'#ffffff',col:'#e53027',num:'#1a1a1a'}],
+  [['ESPANYOL'],                      {p:'#0072ce',s:'#ffffff',pat:'stripes',sl:'#0072ce',col:'#ffffff',num:'#ffffff'}],
+  [['MALLORCA'],                      {p:'#e2231a',s:'#1a1a1a',pat:'solid',sl:'#1a1a1a',col:'#1a1a1a',num:'#ffffff'}],
+  [['ALAVES'],                        {p:'#0761af',s:'#ffffff',pat:'stripes',sl:'#0761af',col:'#ffffff',num:'#ffffff'}],
+  [['GRANADA'],                       {p:'#c8102e',s:'#ffffff',pat:'hoops',sl:'#c8102e',col:'#1a1a1a',num:'#ffffff'}],
+  [['CADIZ'],                         {p:'#f4d600',s:'#0a3d91',pat:'solid',sl:'#f4d600',col:'#0a3d91',num:'#0a3d91'}],
+  [['ELCHE'],                         {p:'#0a8f3c',s:'#ffffff',pat:'stripes',sl:'#0a8f3c',col:'#ffffff',num:'#ffffff'}],
+  [['ALMERIA'],                       {p:'#ce1126',s:'#ffffff',pat:'stripes',sl:'#ce1126',col:'#ffffff',num:'#ffffff'}],
+  [['LEGANES'],                       {p:'#004b9f',s:'#ffffff',pat:'stripes',sl:'#004b9f',col:'#ffffff',num:'#ffffff'}],
+  [['LAS PALMAS','PALMAS'],           {p:'#ffe000',s:'#0067b1',pat:'solid',sl:'#ffe000',col:'#0067b1',num:'#0067b1'}],
+  [['LEVANTE'],                       {p:'#004b9d',s:'#9d1846',pat:'stripes',sl:'#9d1846',col:'#9d1846',num:'#ffffff'}],
+  // ---- Inglaterra ----
+  [['MANCHESTER CITY','MAN CITY'],          {p:'#6cabdd',s:'#1c2c5b',pat:'solid',sl:'#6cabdd',col:'#1c2c5b',num:'#1c2c5b'}],
+  [['MANCHESTER UNITED','MAN UTD','MAN UNITED'], {p:'#da291c',s:'#000000',pat:'solid',sl:'#da291c',col:'#1a1a1a',num:'#ffffff'}],
+  [['LIVERPOOL'],                           {p:'#c8102e',s:'#ffffff',pat:'solid',sl:'#c8102e',col:'#00b2a9',num:'#ffffff'}],
+  [['CHELSEA'],                             {p:'#034694',s:'#ffffff',pat:'solid',sl:'#034694',col:'#ffffff',num:'#ffffff'}],
+  [['ARSENAL'],                             {p:'#ef0107',s:'#ffffff',pat:'solid',sl:'#ffffff',col:'#1a1a1a',num:'#ffffff'}],
+  [['TOTTENHAM','SPURS'],                   {p:'#ffffff',s:'#132257',pat:'solid',sl:'#ffffff',col:'#132257',num:'#132257'}],
+  [['NEWCASTLE'],                           {p:'#ffffff',s:'#241f20',pat:'stripes',sl:'#241f20',col:'#241f20',num:'#241f20'}],
+  // ---- Alemania ----
+  [['BAYERN','MUNICH','MUNCHEN'],     {p:'#dc052d',s:'#ffffff',pat:'solid',sl:'#dc052d',col:'#0066b2',num:'#ffffff'}],
+  [['DORTMUND','BVB'],                {p:'#fde100',s:'#1a1a1a',pat:'solid',sl:'#fde100',col:'#1a1a1a',num:'#1a1a1a'}],
+  [['LEVERKUSEN'],                    {p:'#e32219',s:'#1a1a1a',pat:'solid',sl:'#1a1a1a',col:'#1a1a1a',num:'#ffffff'}],
+  [['LEIPZIG'],                       {p:'#ffffff',s:'#dd0741',pat:'solid',sl:'#ffffff',col:'#dd0741',num:'#dd0741'}],
+  // ---- Italia ----
+  [['JUVENTUS','JUVE'],               {p:'#ffffff',s:'#000000',pat:'stripes',sl:'#000000',col:'#000000',num:'#1a1a1a'}],
+  [['INTER','INTERNAZIONALE'],        {p:'#0b1f8c',s:'#000000',pat:'stripes',sl:'#000000',col:'#000000',num:'#ffffff'}],
+  [['MILAN'],                         {p:'#fb090b',s:'#000000',pat:'stripes',sl:'#000000',col:'#000000',num:'#ffffff'}],
+  [['NAPOLI'],                        {p:'#12a0d7',s:'#ffffff',pat:'solid',sl:'#12a0d7',col:'#ffffff',num:'#ffffff'}],
+  [['ROMA'],                          {p:'#8e1f2f',s:'#f0bc42',pat:'solid',sl:'#8e1f2f',col:'#f0bc42',num:'#f0bc42'}],
+  [['LAZIO'],                         {p:'#87d8f7',s:'#13235b',pat:'solid',sl:'#87d8f7',col:'#13235b',num:'#13235b'}],
+  [['ATALANTA'],                      {p:'#1d71b8',s:'#000000',pat:'stripes',sl:'#000000',col:'#000000',num:'#ffffff'}],
+  // ---- Francia ----
+  [['PARIS','PSG'],                   {p:'#0b2240',s:'#da291c',pat:'centerband',sl:'#0b2240',col:'#da291c',num:'#ffffff',edge:true}],
+  [['MARSEILLE','MARSELLA'],          {p:'#ffffff',s:'#2faadc',pat:'solid',sl:'#ffffff',col:'#2faadc',num:'#2faadc'}],
+  [['LYON','LYONNAIS'],               {p:'#ffffff',s:'#da291c',pat:'solid',sl:'#ffffff',col:'#13235b',num:'#13235b'}],
+  [['MONACO'],                        {p:'#e3001b',s:'#ffffff',pat:'diagonalhalves',sl:'#e3001b',col:'#ffffff',num:'#1a1a1a'}],
+  // ---- Portugal ----
+  [['PORTO'],                         {p:'#00428c',s:'#ffffff',pat:'stripes',sl:'#00428c',col:'#ffffff',num:'#ffffff'}],
+  [['BENFICA'],                       {p:'#e40521',s:'#ffffff',pat:'solid',sl:'#e40521',col:'#ffffff',num:'#ffffff'}],
+  [['SPORTING'],                      {p:'#008057',s:'#ffffff',pat:'hoops',sl:'#008057',col:'#1a1a1a',num:'#ffffff'}],
+  // ---- Paises Bajos ----
+  [['AJAX'],                          {p:'#ffffff',s:'#d2122e',pat:'centerband',sl:'#ffffff',col:'#d2122e',num:'#1a1a1a'}],
+  [['PSV'],                           {p:'#ee2e24',s:'#ffffff',pat:'solid',sl:'#ffffff',col:'#1a1a1a',num:'#ffffff'}],
+  [['FEYENOORD'],                     {p:'#c81e1e',s:'#ffffff',pat:'halves',sl:'#ffffff',col:'#1a1a1a',num:'#ffffff'}],
+  // ---- Escocia ----
+  [['CELTIC'],                        {p:'#16603e',s:'#ffffff',pat:'hoops',sl:'#16603e',col:'#1a1a1a',num:'#ffffff'}],
+  [['RANGERS'],                       {p:'#1b458f',s:'#ffffff',pat:'solid',sl:'#1b458f',col:'#e01020',num:'#ffffff'}],
+  // ---- Turquia / Ucrania ----
+  [['GALATASARAY'],                   {p:'#a90432',s:'#fdb912',pat:'halves',sl:'#a90432',col:'#fdb912',num:'#ffffff'}],
+  [['FENERBAHCE'],                    {p:'#ffed00',s:'#14467a',pat:'stripes',sl:'#14467a',col:'#14467a',num:'#14467a'}],
+  [['BESIKTAS'],                      {p:'#ffffff',s:'#000000',pat:'stripes',sl:'#000000',col:'#000000',num:'#1a1a1a'}],
+  [['SHAKHTAR'],                      {p:'#f58220',s:'#000000',pat:'stripes',sl:'#000000',col:'#000000',num:'#1a1a1a'}],
+  // ---- Selecciones ----
+  [['ESPANA','ESPAÑA','SPAIN'],                 {p:'#c60b1e',s:'#f9d616',pat:'solid',sl:'#c60b1e',col:'#13235b',num:'#f9d616'}],
+  [['BRASIL','BRAZIL'],                         {p:'#ffdf00',s:'#009739',pat:'solid',sl:'#009739',col:'#009739',num:'#0a3d91'}],
+  [['ARGENTINA'],                              {p:'#75aadb',s:'#ffffff',pat:'stripes',sl:'#75aadb',col:'#f6b40e',num:'#13235b'}],
+  [['ALEMANIA','GERMANY','DEUTSCHLAND'],        {p:'#ffffff',s:'#1a1a1a',pat:'solid',sl:'#ffffff',col:'#1a1a1a',num:'#1a1a1a'}],
+  [['FRANCIA','FRANCE'],                        {p:'#1a2d6b',s:'#ffffff',pat:'solid',sl:'#1a2d6b',col:'#e3001b',num:'#ffffff'}],
+  [['ITALIA','ITALY'],                          {p:'#1e4fa0',s:'#ffffff',pat:'solid',sl:'#1e4fa0',col:'#ffffff',num:'#ffffff'}],
+  [['INGLATERRA','ENGLAND'],                    {p:'#ffffff',s:'#e3001b',pat:'solid',sl:'#ffffff',col:'#13235b',num:'#13235b'}],
+  [['PORTUGAL'],                               {p:'#c00000',s:'#0a6b3b',pat:'solid',sl:'#c00000',col:'#0a6b3b',num:'#f6d100'}],
+  [['HOLANDA','NETHERLANDS','PAISES BAJOS','ORANJE'], {p:'#ec8b00',s:'#ffffff',pat:'solid',sl:'#ec8b00',col:'#13235b',num:'#13235b'}],
+  [['BELGICA','BELGIUM'],                       {p:'#e30613',s:'#f9d616',pat:'solid',sl:'#e30613',col:'#1a1a1a',num:'#f9d616'}],
+  [['URUGUAY'],                                {p:'#4f9bd9',s:'#ffffff',pat:'solid',sl:'#4f9bd9',col:'#13235b',num:'#13235b'}],
+  [['MEXICO'],                                 {p:'#006847',s:'#ffffff',pat:'solid',sl:'#006847',col:'#e3001b',num:'#ffffff'}],
+  [['CROACIA','CROATIA','HRVATSKA'],            {p:'#d3122e',s:'#ffffff',pat:'checkers',sl:'#d3122e',col:'#13235b',num:'#13235b'}],
+  [['COLOMBIA'],                               {p:'#fcd116',s:'#003893',pat:'solid',sl:'#fcd116',col:'#003893',num:'#003893'}],
+  [['CHILE'],                                  {p:'#d52b1e',s:'#0039a6',pat:'solid',sl:'#d52b1e',col:'#0039a6',num:'#ffffff'}],
+  [['JAPON','JAPAN'],                          {p:'#0b1f8c',s:'#ffffff',pat:'solid',sl:'#0b1f8c',col:'#ffffff',num:'#ffffff'}],
+  [['NIGERIA'],                                {p:'#008751',s:'#ffffff',pat:'solid',sl:'#ffffff',col:'#1a1a1a',num:'#ffffff'}],
+  [['CAMERUN','CAMEROON'],                      {p:'#008751',s:'#fcd116',pat:'solid',sl:'#008751',col:'#e3001b',num:'#fcd116'}],
+  [['ESTADOS UNIDOS','UNITED STATES'],          {p:'#ffffff',s:'#13235b',pat:'solid',sl:'#ffffff',col:'#bf0a30',num:'#13235b'}],
+];
+
+function _fallbackKit(n){
+  let h=0; for(let i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))>>>0;
+  const hue=h%360;
+  const main=_hslHex(hue,60,44);
+  const second=((h>>3)&1) ? '#ffffff' : _hslHex((hue+210)%360,52,38);
+  const pats=['solid','stripes','solid','sash'];
+  const pat=pats[(h>>5)%pats.length];
+  return { p:main, s:second, pat, sl: pat==='stripes'?second:main, col:second, num:_autoNum(main) };
+}
+
+function getKit(team){
+  const n=(team||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  for(const [keys,kit] of KIT_RULES){ if(keys.some(k=>n.includes(k))) return kit; }
+  return _fallbackKit(n);
+}
+
+function _pattern(pat, main, second, K){
+  switch(pat){
+    case 'stripes': { let r=''; const x0=23,x1=77,n=6,w=(x1-x0)/n; for(let i=1;i<n;i+=2) r+=`<rect x="${(x0+i*w).toFixed(1)}" y="0" width="${(w+0.4).toFixed(1)}" height="100" fill="${second}"/>`; return r; }
+    case 'hoops':   { let r=''; const y0=10,y1=98,n=7,h=(y1-y0)/n; for(let i=1;i<n;i+=2) r+=`<rect x="0" y="${(y0+i*h).toFixed(1)}" width="100" height="${(h+0.4).toFixed(1)}" fill="${second}"/>`; return r; }
+    case 'halves':  return `<rect x="50" y="0" width="50" height="100" fill="${second}"/>`;
+    case 'diagonalhalves': return `<polygon points="100,0 100,100 12,100" fill="${second}"/>`;
+    case 'sash':    return `<polygon points="73,1 97,25 31,100 8,80" fill="${second}"/>`;
+    case 'centerband': { let r=`<rect x="41" y="0" width="18" height="100" fill="${second}"/>`; if(K&&K.edge) r+=`<rect x="39.4" y="0" width="1.5" height="100" fill="#fff"/><rect x="59.1" y="0" width="1.5" height="100" fill="#fff"/>`; return r; }
+    case 'checkers': { let r=''; const x0=23,y0=5,cw=(77-23)/5,ch=(99-5)/6; for(let i=0;i<5;i++) for(let j=0;j<6;j++){ if((i+j)%2) r+=`<rect x="${(x0+i*cw).toFixed(1)}" y="${(y0+j*ch).toFixed(1)}" width="${(cw+0.3).toFixed(1)}" height="${(ch+0.3).toFixed(1)}" fill="${second}"/>`; } return r; }
+    default: return '';
+  }
+}
+
+function buildJerseySVG(kit, number, isGK){
+  const uid='k'+(_jerseyUID++);
+  const K = isGK ? GK_KIT : (kit || _fallbackKit(''));
+  const main   = K.p;
+  const second = K.s || _hslHex(0,0,30);
+  const pat    = isGK ? 'solid' : (K.pat||'solid');
+  const sleeve = K.sl || (pat==='stripes' ? second : main);
+  const collar = K.col || K.s || 'rgba(0,0,0,0.30)';
+  const num    = K.num || _autoNum(main);
+  const numStroke = _lum(num)>0.58 ? 'rgba(0,0,0,0.32)' : 'rgba(255,255,255,0.30)';
+  const body='M28 11 L25 47 L23 95 L77 95 L75 47 L72 11 C64 19 36 19 28 11 Z';
+  const lsl ='M28 11 L8 21 L3 41 L25 47 Z';
+  const rsl ='M72 11 L92 21 L97 41 L75 47 Z';
+  const neck='M28 11 C36 19 64 19 72 11';
+  return `<svg class="jersey-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`
+    + `<defs><clipPath id="${uid}b"><path d="${body}"/></clipPath>`
+    + `<linearGradient id="${uid}s" x1="0" y1="0" x2="0" y2="1">`
+    + `<stop offset="0" stop-color="#fff" stop-opacity="0.16"/>`
+    + `<stop offset="0.42" stop-color="#fff" stop-opacity="0"/>`
+    + `<stop offset="1" stop-color="#000" stop-opacity="0.22"/></linearGradient></defs>`
+    + `<path d="${lsl}" fill="${sleeve}"/><path d="${rsl}" fill="${sleeve}"/>`
+    + `<path d="${lsl}" fill="url(#${uid}s)"/><path d="${rsl}" fill="url(#${uid}s)"/>`
+    + `<g clip-path="url(#${uid}b)"><rect x="0" y="0" width="100" height="100" fill="${main}"/>`
+    + _pattern(pat, main, second, K)
+    + `<rect x="0" y="0" width="100" height="100" fill="url(#${uid}s)"/></g>`
+    + `<path d="${body}" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="1.4"/>`
+    + `<path d="${lsl}" fill="none" stroke="rgba(0,0,0,0.24)" stroke-width="1.1"/>`
+    + `<path d="${rsl}" fill="none" stroke="rgba(0,0,0,0.24)" stroke-width="1.1"/>`
+    + `<path d="${neck}" fill="none" stroke="${collar}" stroke-width="3.6" stroke-linecap="round"/>`
+    + `<text x="50" y="66" text-anchor="middle" font-family="'Bebas Neue','Rajdhani',sans-serif" font-size="31" font-weight="700" paint-order="stroke" stroke="${numStroke}" stroke-width="1.1" fill="${num}">${number!=null?number:''}</text>`
+    + `</svg>`;
+}
+
+// ---- Marcas del campo (se inyectan una vez dentro de .field-container) ----
+const PITCH_HTML = `
+<div class="pitch-lines" aria-hidden="true">
+  <div class="pl-bounds"></div>
+  <div class="pl-half"></div>
+  <div class="pl-circle"></div>
+  <div class="pl-spot pl-spot-c"></div>
+  <div class="pl-pbox pl-top"></div>
+  <div class="pl-pbox pl-bottom"></div>
+  <div class="pl-gbox pl-top"></div>
+  <div class="pl-gbox pl-bottom"></div>
+  <div class="pl-spot pl-spot-top"></div>
+  <div class="pl-spot pl-spot-bottom"></div>
+  <div class="pl-arc pl-arc-top"></div>
+  <div class="pl-arc pl-arc-bottom"></div>
+  <div class="pl-goal pl-top"></div>
+  <div class="pl-goal pl-bottom"></div>
+  <i class="pl-corner pl-tl"></i><i class="pl-corner pl-tr"></i>
+  <i class="pl-corner pl-bl"></i><i class="pl-corner pl-br"></i>
+</div>`;
+
+function ensurePitch(){
+  const fc = document.querySelector('.field-container');
+  if(!fc || fc.querySelector('.pitch-lines')) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = PITCH_HTML.trim();
+  fc.insertBefore(tmp.firstChild, fc.firstChild);
+}
+
+// =============================================
 // RENDER FORMACIÓN
 // =============================================
 
@@ -402,20 +601,14 @@ function buildPlayerCard(player, globalIndex) {
     const isRevealed = revealedPlayers.has(globalIndex);
 
     const playerCard = document.createElement('div');
-    playerCard.className = 'player-card' + (isRevealed ? ' revealed' : '');
+    const pos = (player.position || '').toUpperCase().trim();
+    const isGK = pos === 'GK';
+    playerCard.className = 'player-card' + (isRevealed ? ' revealed' : '') + (isGK ? ' goalkeeper' : '');
 
     const jersey = document.createElement('div');
-    jersey.className = `jersey ${player.position === 'GK' ? 'goalkeeper' : ''}`;
+    jersey.className = 'jersey' + (isGK ? ' goalkeeper' : '');
     jersey.onclick = () => openGuessModal(globalIndex);
-    jersey.innerHTML = `
-        <span class="jersey-shoulder jersey-shoulder-left" aria-hidden="true"></span>
-        <span class="jersey-shoulder jersey-shoulder-right" aria-hidden="true"></span>
-        <span class="jersey-collar" aria-hidden="true"></span>
-        <span class="jersey-panel" aria-hidden="true"></span>
-        <span class="jersey-mark" aria-hidden="true"></span>
-        <span class="jersey-ring" aria-hidden="true"></span>
-        <span class="jersey-number">${player.number || ''}</span>
-    `;
+    jersey.innerHTML = buildJerseySVG(_currentKit, player.number, isGK);
 
     const nameContainer = document.createElement('div');
     nameContainer.className = 'player-name-container';
@@ -449,6 +642,8 @@ function buildPlayerCard(player, globalIndex) {
 }
 
 function renderFormation() {
+    ensurePitch();
+    _currentKit = getKit(currentMatch && currentMatch.playingTeam);
     const formationContainer = document.getElementById('formation');
     formationContainer.innerHTML = '';
     const formation = currentMatch.formation;
