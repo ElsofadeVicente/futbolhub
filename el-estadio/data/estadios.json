@@ -1,5 +1,221 @@
 [
   {
+    "id": "abanca-balaidos",
+    "name": "Abanca Balaídos",
+    "coord": [
+      42.21198,
+      -8.73826
+    ]
+  },
+  {
+    "id": "av-n-colombino",
+    "name": "Av. N. Colombino",
+    "coord": [
+      37.24623,
+      -6.95527
+    ]
+  },
+  {
+    "id": "campo-de-futbol-de-vallecas",
+    "name": "Campo de Fútbol de Vallecas",
+    "coord": [
+      40.39237,
+      -3.6592
+    ]
+  },
+  {
+    "id": "coliseum-alfonso-perez",
+    "name": "Coliseum Alfonso Pérez",
+    "coord": [
+      40.32581,
+      -3.71649
+    ]
+  },
+  {
+    "id": "estadi-municipal-de-montilivi",
+    "name": "Estadi Municipal de Montilivi",
+    "coord": [
+      41.96095,
+      2.82713
+    ]
+  },
+  {
+    "id": "estadi-olimpic-lluis-companys",
+    "name": "Estadi Olímpic Lluís Companys",
+    "coord": [
+      41.36453,
+      2.15765
+    ]
+  },
+  {
+    "id": "estadio-abanca-riazor",
+    "name": "Estadio Abanca Riazor",
+    "coord": [
+      43.36787,
+      -8.41767
+    ]
+  },
+  {
+    "id": "estadio-benito-villamarin",
+    "name": "Estadio Benito Villamarín",
+    "coord": [
+      37.35563,
+      -5.98104
+    ]
+  },
+  {
+    "id": "estadio-butarque",
+    "name": "Estadio Butarque",
+    "coord": [
+      40.34038,
+      -3.75964
+    ]
+  },
+  {
+    "id": "estadio-carlos-belmonte",
+    "name": "Estadio Carlos Belmonte",
+    "coord": [
+      38.98101,
+      -1.85312
+    ]
+  },
+  {
+    "id": "estadio-ciudad-de-valencia",
+    "name": "Estadio Ciudad de Valencia",
+    "coord": [
+      39.49519,
+      -0.36484
+    ]
+  },
+  {
+    "id": "estadio-de-gran-canaria",
+    "name": "Estadio de Gran Canaria",
+    "coord": [
+      28.10046,
+      -15.45749
+    ]
+  },
+  {
+    "id": "estadio-de-wembley",
+    "name": "Estadio de Wembley",
+    "coord": [
+      51.55522,
+      -0.27754
+    ]
+  },
+  {
+    "id": "estadio-el-molinon-enrique-castro-quini",
+    "name": "Estadio El Molinón-Enrique Castro “Quini”",
+    "coord": [
+      43.53637,
+      -5.63865
+    ]
+  },
+  {
+    "id": "estadio-el-sadar",
+    "name": "Estadio El Sadar",
+    "coord": [
+      42.79702,
+      -1.63824
+    ]
+  },
+  {
+    "id": "estadio-el-sardinero",
+    "name": "Estadio El Sardinero",
+    "coord": [
+      43.47609,
+      -3.79429
+    ]
+  },
+  {
+    "id": "estadio-enrique-roca-de-murcia",
+    "name": "Estadio Enrique Roca de Murcia",
+    "coord": [
+      38.04166,
+      -1.14584
+    ]
+  },
+  {
+    "id": "estadio-jose-rico-perez",
+    "name": "Estadio José Rico Pérez",
+    "coord": [
+      38.35731,
+      -0.49374
+    ]
+  },
+  {
+    "id": "estadio-jose-zorrilla",
+    "name": "Estadio José Zorrilla",
+    "coord": [
+      41.64504,
+      -4.76002
+    ]
+  },
+  {
+    "id": "estadio-juegos-del-mediterraneo",
+    "name": "Estadio Juegos del Mediterráneo",
+    "coord": [
+      36.84007,
+      -2.43571
+    ]
+  },
+  {
+    "id": "estadio-la-rosaleda",
+    "name": "Estadio La Rosaleda",
+    "coord": [
+      36.73302,
+      -4.42665
+    ]
+  },
+  {
+    "id": "estadio-mendizorroza",
+    "name": "Estadio Mendizorroza",
+    "coord": [
+      42.83746,
+      -2.68933
+    ]
+  },
+  {
+    "id": "estadio-municipal-carlos-tartiere",
+    "name": "Estadio Municipal Carlos Tartiere",
+    "coord": [
+      43.36055,
+      -5.87179
+    ]
+  },
+  {
+    "id": "estadio-municipal-las-gaunas",
+    "name": "Estadio Municipal Las Gaunas",
+    "coord": [
+      42.4535,
+      -2.45451
+    ]
+  },
+  {
+    "id": "estadio-nuevo-arcangel-de-cordoba",
+    "name": "Estadio Nuevo Arcángel de Córdoba",
+    "coord": [
+      37.87237,
+      -4.7658
+    ]
+  },
+  {
+    "id": "estadio-ramon-de-carranza",
+    "name": "Estadio Ramón de Carranza",
+    "coord": [
+      36.50305,
+      -6.27421
+    ]
+  },
+  {
+    "id": "estadio-ramon-sanchez-pizjuan",
+    "name": "Estadio Ramón Sánchez-Pizjuán",
+    "coord": [
+      37.3838,
+      -5.96959
+    ]
+  },
+  {
     "id": "estadio-santiago-bernabeu",
     "name": "Estadio Santiago Bernabéu",
     "coord": [
@@ -8,11 +224,91 @@
     ]
   },
   {
+    "id": "estadio-skyfi-castalia",
+    "name": "Estadio Skyfi Castalia",
+    "coord": [
+      39.99547,
+      -0.03916
+    ]
+  },
+  {
+    "id": "heliodoro-rodriguez-lopez",
+    "name": "Heliodoro Rodríguez López",
+    "coord": [
+      28.46386,
+      -16.2604
+    ]
+  },
+  {
+    "id": "la-cartuja",
+    "name": "La Cartuja",
+    "coord": [
+      37.41707,
+      -6.00671
+    ]
+  },
+  {
     "id": "la-ceramica",
     "name": "La Cerámica",
     "coord": [
       39.94452,
       -0.10393
+    ]
+  },
+  {
+    "id": "la-romareda",
+    "name": "La Romareda",
+    "coord": [
+      41.63645,
+      -0.90184
+    ]
+  },
+  {
+    "id": "manuel-martinez-valero",
+    "name": "Manuel Martínez Valero",
+    "coord": [
+      38.2663,
+      -0.66217
+    ]
+  },
+  {
+    "id": "mestalla",
+    "name": "Mestalla",
+    "coord": [
+      39.47453,
+      -0.35685
+    ]
+  },
+  {
+    "id": "nou-estadi-costa-daurada",
+    "name": "Nou Estadi Costa Daurada",
+    "coord": [
+      41.12784,
+      1.27228
+    ]
+  },
+  {
+    "id": "nuevo-los-carmenes",
+    "name": "Nuevo Los Cármenes",
+    "coord": [
+      37.15181,
+      -3.59517
+    ]
+  },
+  {
+    "id": "rcde-stadium",
+    "name": "RCDE Stadium",
+    "coord": [
+      41.34724,
+      2.07615
+    ]
+  },
+  {
+    "id": "reale-arena",
+    "name": "Reale Arena",
+    "coord": [
+      43.3022,
+      -1.97478
     ]
   },
   {
@@ -32,11 +328,27 @@
     ]
   },
   {
+    "id": "san-mames",
+    "name": "San Mamés",
+    "coord": [
+      43.26372,
+      -2.94792
+    ]
+  },
+  {
+    "id": "son-moix",
+    "name": "Son Moix",
+    "coord": [
+      39.58911,
+      2.63136
+    ]
+  },
+  {
     "id": "spotify-camp-nou",
     "name": "Spotify Camp Nou",
     "coord": [
-      41.38055,
-      2.12163
+      41.3802,
+      2.12154
     ]
   }
 ]
