@@ -1314,7 +1314,8 @@ const Sync = (() => {
     const {set,serverTimestamp}=FB();
     const code=_genCode(), hostId=_genId();
     await set(_ref(`${ROOMS_PATH}/${code}`),{
-      status:'waiting', round:0, pointsToWin:7,
+      status:'waiting', round:0, pointsToWin:7, roundSecs:60,
+      isPublic:false, createdAt:Date.now(), lobbyAt:Date.now(),
       players:{[hostId]:{name:hostName,score:0,connected:true,isHost:true}},
       restrictions:null, roundSeed:0, roundStartAt:null,
       submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
@@ -1366,7 +1367,7 @@ const Sync = (() => {
     await set(_ref(`${MM_PATH}/${myCode}`),{code:myCode, status:'waiting', playerCount:1});
     try {
       await set(_ref(`${ROOMS_PATH}/${myCode}`),{
-        status:'waiting', round:0, pointsToWin:7,
+        status:'waiting', round:0, pointsToWin:7, roundSecs:60,
         isPublic:true, createdAt:Date.now(), lobbyAt:Date.now(),
         players:{[myId]:{name:playerName,score:0,connected:true,isHost:true}},
         restrictions:null, roundSeed:0, roundStartAt:null,
@@ -1493,6 +1494,23 @@ const Sync = (() => {
     await update(_ref('/'), batch);
   }
 
+  /* Reclama atómicamente el derecho a resetear la sala tras "Jugar de nuevo".
+     Sólo UN cliente gana la transición desde un estado terminal/no-waiting
+     hacia 'resetting'. El ganador hace resetToLobby; los demás re-unirse.
+     Devuelve true si ESTE cliente ganó la reclamación. */
+  async function claimReset(code) {
+    const {runTransaction}=FB();
+    const result = await runTransaction(_ref(`${ROOMS_PATH}/${code}/status`), current => {
+      /* Si ya está en waiting o resetting → otro jugador ya lo gestiona, abortar */
+      if (current === 'waiting' || current === 'resetting') return;
+      /* Si la sala expiró o no existe, abortar */
+      if (current === 'expired' || current === null || current === undefined) return;
+      /* finished / reveal / playing → reclamamos el reset */
+      return 'resetting';
+    });
+    return result.committed && result.snapshot.val() === 'resetting';
+  }
+
   async function resetToLobby(code, players, newHostId) {
     const {update,get}=FB();
     /* Solo incluir al jugador que pulsó "Jugar de nuevo" como host.
@@ -1552,21 +1570,33 @@ const Sync = (() => {
       const snap = await get(_ref(`${ROOMS_PATH}/${code}`));
       if (!snap.exists()) return;
       const room = snap.val();
-      if (room.status==='waiting') {
+      if (room.status==='waiting' || room.status==='resetting') {
         await remove(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`));
         const remaining = Object.keys(room.players||{}).filter(pid=>pid!==playerId).length;
-        if (remaining===0 && room.isPublic) {
-          remove(_ref(`${MM_PATH}/${code}`)).catch(()=>{});
+        if (remaining===0) {
+          /* Sala vacía → eliminarla (pública o privada) para no dejar basura */
           remove(_ref(`${ROOMS_PATH}/${code}`)).catch(()=>{});
+          if (room.isPublic) remove(_ref(`${MM_PATH}/${code}`)).catch(()=>{});
         } else if (room.isPublic) {
           update(_ref(`${MM_PATH}/${code}`),{playerCount:remaining}).catch(()=>{});
         }
-        if (room.players?.[playerId]?.isHost) {
+        if (remaining>0 && room.players?.[playerId]?.isHost) {
           const nextPid = Object.keys(room.players||{}).find(pid=>pid!==playerId);
           if (nextPid) update(_ref(`${ROOMS_PATH}/${code}/players/${nextPid}`),{isHost:true}).catch(()=>{});
         }
       } else {
         await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{connected:false});
+        /* Failover de host en partida: si el host se desconecta a mitad,
+           promover a otro jugador conectado para que el juego no se congele
+           (nadie dispararía reveal / siguiente ronda). */
+        if (room.players?.[playerId]?.isHost) {
+          const nextPid = Object.keys(room.players||{})
+            .find(pid => pid!==playerId && room.players[pid]?.connected!==false);
+          if (nextPid) {
+            update(_ref(`${ROOMS_PATH}/${code}/players/${nextPid}`),{isHost:true}).catch(()=>{});
+            update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{isHost:false}).catch(()=>{});
+          }
+        }
       }
     } catch(e) { console.warn('[Sync] disconnect error:', e); }
   }
@@ -1586,7 +1616,7 @@ const Sync = (() => {
   return {
     createRoom, joinRoom, findOrCreatePublicRoom, listenRoom,
     startGame, nextRound, submitAnswer, startReveal, setFinished,
-    resetToLobby, rejoinRoom, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
+    resetToLobby, claimReset, rejoinRoom, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
   };
 })();
 
@@ -1601,6 +1631,13 @@ const App = (() => {
   let _isPublic   = false;
   let _unsubRoom  = null;
   let _lastRoom   = null;
+  /* Token de sesión: se incrementa cada vez que entras/sales de una sala.
+     Cualquier operación asíncrona (cargar datos, generar restricciones,
+     arrancar partida) captura el token al empezar y se cancela a sí misma
+     si el token ha cambiado al terminar. Evita que un "startGame" lento
+     escriba sobre una sala distinta a la que iniciaste la acción. */
+  let _sessionToken = 0;
+  function _newSession() { return ++_sessionToken; }
   let _isLocal    = false;
   let _localName  = '';
   let _localRound = 0;
@@ -1649,16 +1686,38 @@ const App = (() => {
         try { resolve(Restrictions.generate(seed, db)); } catch(e) { reject(e); }
         return;
       }
-      const worker = new Worker('js/restrictions-worker.js');
+      let settled = false;
+      let worker;
+      /* Timeout de seguridad: si el worker no responde en 15s (cuelgue, bucle
+         infinito de generación, etc.), abortamos y caemos al modo sincrónico.
+         Sin esto, "CARGANDO…" se quedaría para siempre. */
+      const killTimer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        try { worker && worker.terminate(); } catch(e) {}
+        console.warn('[App] Worker timeout — generando restricciones de forma sincrónica');
+        try { resolve(Restrictions.generate(seed, db)); } catch(err) { reject(err); }
+      }, 15000);
+      const finish = (fn) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(killTimer);
+        try { worker && worker.terminate(); } catch(e) {}
+        fn();
+      };
+      try {
+        worker = new Worker('js/restrictions-worker.js');
+      } catch(e) {
+        finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(err); } });
+        return;
+      }
       worker.onmessage = ({ data }) => {
-        worker.terminate();
-        if (data.ok) resolve(data.restrictions);
-        else reject(new Error(data.error || 'Worker error'));
+        if (data.ok) finish(() => resolve(data.restrictions));
+        else finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(new Error(data.error||'Worker error')); } });
       };
       worker.onerror = (e) => {
-        worker.terminate();
         /* Fallback sincrónico si el worker falla (p.ej. file:// sin CORS) */
-        try { resolve(Restrictions.generate(seed, db)); } catch(err) { reject(err); }
+        finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err) { reject(err); } });
       };
       /* Sets no sobreviven structured clone (postMessage) → convertir a arrays */
       const rtSerialized = {};
@@ -2038,6 +2097,7 @@ const App = (() => {
     _btnLoad(btn,'CREANDO…');
     try {
       const {code,playerId} = await Sync.createRoom(name);
+      _newSession();
       _roomCode=code; _playerId=playerId; _isHost=true; _isPublic=false; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
     } catch(e) { _showError('error-private', e.message||'Error al crear sala'); }
@@ -2062,6 +2122,7 @@ const App = (() => {
     _btnLoad(btn,'UNIÉNDOSE…');
     try {
       const result = await Sync.joinRoom(code, name);
+      _newSession();
       _roomCode=result.code; _playerId=result.playerId; _isHost=false; _isPublic=false; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
     } catch(e) { _showError('error-private', e.message||'Error al unirse'); }
@@ -2084,6 +2145,7 @@ const App = (() => {
     _btnLoad(btn,'BUSCANDO…');
     try {
       const result = await Sync.findOrCreatePublicRoom(name);
+      _newSession();
       _roomCode=result.code; _playerId=result.playerId; _isHost=result.isHost; _isPublic=true; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
     } catch(e) { _showError('error-public', e.message||'Error al buscar partida'); }
@@ -2097,16 +2159,43 @@ const App = (() => {
     if (!_isHost || !_roomCode) return;
     const btn = document.getElementById('btn-start-game');
     if (btn) { btn.disabled=true; btn.textContent='CARGANDO…'; }
+    /* Capturar identidad de la sesión AHORA. Si el usuario sale, crea otra
+       sala, etc. mientras cargamos datos / generamos restricciones, abortamos
+       en vez de escribir 'playing' sobre una sala que ya no es esta. */
+    const token = _sessionToken;
+    const startRoom = _roomCode;
+    const stale = () => _sessionToken !== token || _roomCode !== startRoom || !_isHost;
+    const restoreBtn = () => {
+      const b = document.getElementById('btn-start-game');
+      if (b && _currentScreen() === 'screen-lobby') { b.disabled=false; b.textContent='EMPEZAR ▶'; }
+    };
     try {
       await _loadGameData();
+      if (stale()) { console.warn('[App] startGame abortado: sesión cambiada (post-loadData)'); restoreBtn(); return; }
       const seed         = Date.now();
       const restrictions = await _generateAsync(seed, PLAYERS_DB);
+      if (stale()) { console.warn('[App] startGame abortado: sesión cambiada (post-generate)'); restoreBtn(); return; }
       /* Usar ajustes de _lastRoom (ya sincronizados por el listener) — sin round-trip extra */
       if (_lastRoom?.pointsToWin != null) _onlinePointsToWin = _lastRoom.pointsToWin;
       if (_lastRoom?.roundSecs   != null) _onlineRoundSecs   = _lastRoom.roundSecs;
-      await Sync.startGame(_roomCode, {seed, restrictions, pointsToWin:_onlinePointsToWin, roundSecs:_onlineRoundSecs});
+      /* Última comprobación: la sala debe seguir en 'waiting' (nadie la arrancó ni reseteó) */
+      const fresh = await Sync.getRoom(startRoom);
+      if (stale()) { console.warn('[App] startGame abortado: sesión cambiada (post-getRoom)'); restoreBtn(); return; }
+      if (!fresh || fresh.status !== 'waiting') {
+        console.warn('[App] startGame abortado: la sala ya no está en waiting');
+        if (btn) { btn.disabled=false; btn.textContent='EMPEZAR ▶'; }
+        return;
+      }
+      const connectedCount = Object.values(fresh.players||{}).filter(p=>p.connected!==false).length;
+      if (connectedCount < 2) {
+        showToast('Necesitas al menos 2 jugadores conectados', 'error');
+        if (btn) { btn.disabled=false; btn.textContent='EMPEZAR ▶'; }
+        return;
+      }
+      await Sync.startGame(startRoom, {seed, restrictions, pointsToWin:_onlinePointsToWin, roundSecs:_onlineRoundSecs});
       _clearPublicLobbyTimer();
     } catch(e) {
+      if (stale()) return;
       showToast('Error al iniciar la partida: ' + (e.message||''), 'error');
       console.error('[App] startGame error:', e);
       if (btn) { btn.disabled=false; btn.textContent='EMPEZAR ▶'; }
@@ -2220,6 +2309,7 @@ const App = (() => {
      SALIR
      ════════════════════════════════════════ */
   async function leaveRoom() {
+    _newSession();
     _stopTimer(); _clearPublicLobbyTimer();
     if (_unsubRoom) { _unsubRoom(); _unsubRoom=null; }
     if (_roomCode && _playerId && !_isLocal) {
@@ -2242,17 +2332,48 @@ const App = (() => {
     _lastRoom = room;
     if (room.status === 'expired') { _handleKicked('La sala pública expiró por inactividad ⏱️'); return; }
     if (!_isLocal && _playerId && room.players && !room.players[_playerId]) {
-      /* En status waiting sin nuestro ID: la sala fue reseteada y aún no nos hemos re-unido.
-         No expulsar — el jugador se re-unirá al pulsar "Jugar de nuevo". */
-      if (room.status === 'waiting') return;
+      /* En status waiting/resetting sin nuestro ID: la sala fue reseteada y aún
+         no nos hemos re-unido. No expulsar — el jugador se re-unirá al pulsar
+         "Jugar de nuevo" (playAgain reintenta hasta que el status sea waiting). */
+      if (room.status === 'waiting' || room.status === 'resetting') return;
       _handleKicked('Has sido expulsado de la sala'); return;
     }
     if (room.players) {
       _players = Object.entries(room.players).map(([id,p])=>({
         id, name:p.name, score:p.score||0, connected:p.connected??true, isHost:p.isHost??false
       }));
+      /* Mantener _isHost sincronizado SIEMPRE (no solo en el lobby).
+         Permite el failover de host si el host original se desconecta
+         a mitad de partida: el juego sigue avanzando. */
+      if (!_isLocal && _playerId && room.players[_playerId]) {
+        const wasHost = _isHost;
+        _isHost = room.players[_playerId].isHost === true;
+        if (_isHost && !wasHost && (room.status==='playing' || room.status==='reveal')) {
+          /* Nos acaban de promover a host en plena partida: si ya estaban
+             todas las respuestas y nadie disparó el reveal, dispararlo ahora. */
+          if (room.status==='playing' && !_revealTriggered) {
+            const connected = _players.filter(p=>p.connected!==false);
+            const expected = _isSuddenDeath
+              ? connected.filter(p => _suddenDeathPlayers.includes(p.id)).length
+              : connected.length;
+            if (expected>0 && (room.doneCount||0)>=expected) _triggerReveal(room);
+          }
+          /* Si nos promovieron mientras ya veíamos la pantalla de resultados,
+             el botón "SIGUIENTE RONDA" estaba oculto (era de otro host).
+             Mostrarlo ahora para que el juego pueda avanzar (evita deadlock). */
+          if (room.status==='reveal' && _currentScreen()==='screen-results') {
+            const nxt=document.getElementById('btn-next-round');
+            if (nxt) { nxt.classList.remove('hidden'); nxt.disabled=false; }
+            _preGenerateNextRestrictions();
+          }
+        }
+      }
     }
     switch(room.status) {
+      case 'resetting':
+        /* Transición efímera mientras un jugador resetea la sala.
+           No hacer nada: el estado 'waiting' llegará en milisegundos. */
+        break;
       case 'waiting':
         /* Resetear estado interno de ronda al volver al lobby (playAgain / resetToLobby).
            Sin esto, _round podría quedarse en su valor anterior y
@@ -2399,9 +2520,18 @@ const App = (() => {
       else if (count < 2) hintEl.textContent = _isPublic ? 'Buscando más jugadores…' : 'Esperando jugadores… (mínimo 2)';
       else hintEl.textContent = `${count} jugadores listos — ¡empieza cuando quieras!`;
     }
-    /* Re-render durante el cooldown para actualizar el contador */
+    /* Re-render durante el cooldown para actualizar el contador.
+       Usar un único timer guardado para evitar acumulación exponencial:
+       _updateLobbyUI se llama también en cada update de Firebase, y sin
+       este guard cada llamada generaría su propio setTimeout encadenado. */
     if (cooldownActive && _isHost) {
-      setTimeout(() => { if (_lastRoom) _updateLobbyUI(_lastRoom); }, 1000);
+      if (_cooldownTickTimer) clearTimeout(_cooldownTickTimer);
+      _cooldownTickTimer = setTimeout(() => {
+        _cooldownTickTimer = null;
+        if (_lastRoom && _currentScreen()==='screen-lobby') _updateLobbyUI(_lastRoom);
+      }, 1000);
+    } else if (_cooldownTickTimer) {
+      clearTimeout(_cooldownTickTimer); _cooldownTickTimer = null;
     }
 
     /* Panel de ajustes online — solo visible en sala privada */
@@ -2430,6 +2560,7 @@ const App = (() => {
 
   /* Timer lobby público */
   let _lobbyRenderTimerIv = null;
+  let _cooldownTickTimer  = null;
   function _renderPublicLobbyTimer(lobbyAt) {
     const timerEl = document.getElementById('lobby-autotimer');
     const barEl   = document.getElementById('lobby-autotimer-bar');
@@ -2555,6 +2686,7 @@ const App = (() => {
   /* ════════════════════════════════════════
      ANIMACIÓN DE RESTRICCIONES
      ════════════════════════════════════════ */
+  let _animToken = 0;
   function _animateRestrictions(restrictions, onComplete) {
     const grid = document.getElementById('restrictions-grid');
     if (!grid) { onComplete?.(); return; }
@@ -2564,6 +2696,13 @@ const App = (() => {
         ? Object.values(restrictions) : [];
     }
     if (restrictions.length === 0) { onComplete?.(); return; }
+
+    /* Token de animación: si el jugador sale (o cambia de ronda) durante la
+       animación de revelado, las llamadas encadenadas de setTimeout quedan
+       canceladas y onComplete (que arranca el timer) NO se dispara en una
+       pantalla equivocada. */
+    const myToken = ++_animToken;
+    const alive = () => _animToken === myToken && _currentScreen() === 'screen-round';
 
     grid.innerHTML = restrictions.map(r => {
       /* Contenido visual: imagen con fallback a emoji */
@@ -2583,10 +2722,11 @@ const App = (() => {
     const cards = grid.querySelectorAll('.restriction-card');
     let i = 0;
     function next() {
+      if (!alive()) return;                      /* cancelado: salimos o cambió la ronda */
       if (i >= cards.length) { onComplete?.(); return; }
       cards[i].classList.add('visible'); i++;
       if (i < cards.length) setTimeout(next, 1000);
-      else setTimeout(()=>onComplete?.(), 400);
+      else setTimeout(()=>{ if (alive()) onComplete?.(); }, 400);
     }
     setTimeout(next, 300);
   }
@@ -2701,6 +2841,9 @@ const App = (() => {
     if (_revealTriggered) return;
     _revealTriggered=true;
     _stopTimer();
+    const _token = _sessionToken;
+    const _room  = _roomCode;
+    const _live  = () => _sessionToken === _token && _roomCode === _room && !_isLocal;
 
     /* Leer sala fresca de Firebase para asegurar que las submissions
        de todos los jugadores están disponibles (evita el bug de "Sin respuesta") */
@@ -2708,7 +2851,9 @@ const App = (() => {
     try {
       /* Pequeña espera para que Firebase propague todas las submissions */
       await new Promise(resolve => setTimeout(resolve, 500));
-      const fetched = await Sync.getRoom(_roomCode);
+      if (!_live()) { _revealTriggered=false; return; }
+      const fetched = await Sync.getRoom(_room);
+      if (!_live()) { _revealTriggered=false; return; }
       if (fetched) freshRoom = fetched;
     } catch(e) {
       console.warn('[App] No se pudo leer sala fresca, usando datos locales:', e);
@@ -2744,9 +2889,11 @@ const App = (() => {
         .find(p => results[p.id]?.isWinner);
       if (sdWinner) {
         _isSuddenDeath = false; _suddenDeathPlayers = [];
+        if (!_live()) { _revealTriggered=false; return; }
         try {
-          await Sync.startReveal(_roomCode, results, updated);
-          await Sync.setFinished(_roomCode, sdWinner.id, updated);
+          await Sync.startReveal(_room, results, updated);
+          if (!_live()) { _revealTriggered=false; return; }
+          await Sync.setFinished(_room, sdWinner.id, updated);
         } catch(e) { console.error('[App] sudden death finish error:', e); _revealTriggered=false; }
         return;
       }
@@ -2755,16 +2902,19 @@ const App = (() => {
       const ptw = _onlinePointsToWin || POINTS_WIN;
       const reached = updated.filter(p => p.score >= ptw);
       if (reached.length === 1) {
+        if (!_live()) { _revealTriggered=false; return; }
         try {
-          await Sync.startReveal(_roomCode, results, updated);
-          await Sync.setFinished(_roomCode, reached[0].id, updated);
+          await Sync.startReveal(_room, results, updated);
+          if (!_live()) { _revealTriggered=false; return; }
+          await Sync.setFinished(_room, reached[0].id, updated);
         } catch(e) { console.error('[App] finish error:', e); _revealTriggered=false; }
         return;
       }
     }
 
+    if (!_live()) { _revealTriggered=false; return; }
     try {
-      await Sync.startReveal(_roomCode, results, updated);
+      await Sync.startReveal(_room, results, updated);
     } catch(e) {
       console.error('[App] startReveal error:', e);
       _revealTriggered=false;
@@ -2852,6 +3002,9 @@ const App = (() => {
   function _showResultsScreen(room) {
     _stopTimer();
     const results = room.results||{};
+    const _sToken = _sessionToken;
+    const _sRoom  = _roomCode;
+    const _stillHere = () => _sessionToken===_sToken && _roomCode===_sRoom && _isHost && !_isLocal;
 
     /* Muerte súbita online: ¿hay ganador de esta ronda? */
     if (_isSuddenDeath && _isHost) {
@@ -2860,7 +3013,7 @@ const App = (() => {
         .find(p => results[p.id]?.isWinner);
       if (roundWinner) {
         _isSuddenDeath=false; _suddenDeathPlayers=[];
-        Sync.setFinished(_roomCode, roundWinner.id, _players).catch(()=>{});
+        if (_stillHere()) Sync.setFinished(_sRoom, roundWinner.id, _players).catch(()=>{});
         return;
       }
       /* Bug 3: No hay ganador claro → eliminar a los que sacaron menos puntos.
@@ -2875,7 +3028,7 @@ const App = (() => {
       } else if (stillTied.length === 1) {
         /* Solo queda 1 → gana la partida */
         _isSuddenDeath=false; _suddenDeathPlayers=[];
-        Sync.setFinished(_roomCode, stillTied[0], _players).catch(()=>{});
+        if (_stillHere()) Sync.setFinished(_sRoom, stillTied[0], _players).catch(()=>{});
         return;
       }
     }
@@ -2934,7 +3087,9 @@ const App = (() => {
       _startLocalRound(); return;
     }
     if (!_isHost||!_roomCode) return;
-
+    const _token = _sessionToken;
+    const _room  = _roomCode;
+    const _live  = () => _sessionToken === _token && _roomCode === _room && _isHost;
     /* Guard: evitar doble llamada mientras se procesa la petición a Firebase */
     const nxtBtn = document.getElementById('btn-next-round');
     if (nxtBtn) {
@@ -2958,17 +3113,18 @@ const App = (() => {
         /* La muerte súbita siempre genera nuevas restricciones (seed diferente al cache) */
         _nextRestrictionsCache = null;
         _generateAsync(seed, PLAYERS_DB).then(async restrictions => {
+          if (!_live()) return;
           try {
-            await Sync.nextRound(_roomCode, _round+1, {
+            await Sync.nextRound(_room, _round+1, {
               seed, restrictions,
               pointsToWin: _onlinePointsToWin, roundSecs: _onlineRoundSecs,
               isSuddenDeath: true, suddenDeathPlayers: _suddenDeathPlayers,
             }, _players);
-          } catch(e) { showToast('Error al iniciar muerte súbita', 'error'); _reenableBtn(); }
-        }).catch(() => { showToast('Error al generar restricciones', 'error'); _reenableBtn(); });
+          } catch(e) { if (_live()) { showToast('Error al iniciar muerte súbita', 'error'); _reenableBtn(); } }
+        }).catch(() => { if (_live()) { showToast('Error al generar restricciones', 'error'); _reenableBtn(); } });
         return;
       } else if (reached.length === 1) {
-        try { await Sync.setFinished(_roomCode, reached[0].id, _players); } catch(e) { _reenableBtn(); }
+        try { await Sync.setFinished(_room, reached[0].id, _players); } catch(e) { _reenableBtn(); }
         return;
       }
     } else {
@@ -2985,14 +3141,15 @@ const App = (() => {
       : _generateAsync(seed, PLAYERS_DB);
 
     restrictionsPromise.then(async restrictions => {
+      if (!_live()) return;
       try {
-        await Sync.nextRound(_roomCode, _round+1, {
+        await Sync.nextRound(_room, _round+1, {
           seed, restrictions,
           pointsToWin: _onlinePointsToWin, roundSecs: _onlineRoundSecs,
           isSuddenDeath: _isSuddenDeath, suddenDeathPlayers: _suddenDeathPlayers,
         }, _players);
-      } catch(e) { showToast('Error al iniciar la siguiente ronda', 'error'); _reenableBtn(); }
-    }).catch(() => { showToast('Error al generar restricciones', 'error'); _reenableBtn(); });
+      } catch(e) { if (_live()) { showToast('Error al iniciar la siguiente ronda', 'error'); _reenableBtn(); } }
+    }).catch(() => { if (_live()) { showToast('Error al generar restricciones', 'error'); _reenableBtn(); } });
   }
 
   /* ════════════════════════════════════════
@@ -3035,7 +3192,7 @@ const App = (() => {
       cdEl.id = '_finished-cd';
       cdEl.style.cssText = "text-align:center;font-family:'Bebas Neue',sans-serif;" +
         "font-size:1rem;letter-spacing:3px;color:#c8a84b;padding:8px 0;opacity:.8;";
-      const footer = document.getElementById('reveal-footer') || (nxt && nxt.parentNode);
+      const footer = (nxt && nxt.parentNode) || document.querySelector('.results-actions');
       if (footer) footer.insertBefore(cdEl, footer.firstChild);
     }
     if (nxt) nxt.style.display = 'none';
@@ -3109,25 +3266,57 @@ const App = (() => {
       _acClose(); _startLocalRound(); return;
     }
     if (!_roomCode||!_lastRoom?.players) { showMenu(); return; }
+    const token = _sessionToken;
+    const room  = _roomCode;
+    /* Deshabilitar el botón para evitar dobles pulsaciones */
+    const replayBtn = document.getElementById('btn-play-again');
+    if (replayBtn) { replayBtn.disabled = true; }
     try {
-      /* Comprobar si la sala ya fue reseteada por otro jugador */
-      const current = await Sync.getRoom(_roomCode);
-      if (current && current.status === 'waiting') {
-        /* La sala ya está en waiting → re-unirse como jugador normal */
-        await Sync.rejoinRoom(_roomCode, _playerId, _localName);
-        _isHost = false;
+      /* Reclamar atómicamente el derecho a resetear: sólo un jugador gana.
+         Esto elimina la condición de carrera donde AMBOS reseteaban (uno
+         sobreescribiendo al otro y echando jugadores del lobby). */
+      const won = await Sync.claimReset(room);
+      if (_sessionToken !== token || _roomCode !== room) return; /* salimos mientras tanto */
+      if (won) {
+        /* Somos el resetter → host del nuevo lobby */
+        _isHost = true;
+        await Sync.resetToLobby(room, _lastRoom.players, _playerId);
+        if (_sessionToken !== token || _roomCode !== room) return;
         _showLobby();
       } else {
-        /* Somos el primero en pulsar "Jugar de nuevo" → resetear sala.
-           Solo nosotros aparecemos en el lobby; los demás se unirán cuando pulsen. */
-        _isHost = true;
-        await Sync.resetToLobby(_roomCode, _lastRoom.players, _playerId);
+        /* Otro jugador está reseteando (o ya reseteó) → esperar a 'waiting' y re-unirse.
+           Reintentamos un breve periodo por si todavía está en 'resetting'. */
+        _isHost = false;
+        let joined = false;
+        for (let i = 0; i < 20; i++) {            /* hasta ~5s */
+          const current = await Sync.getRoom(room);
+          if (_sessionToken !== token || _roomCode !== room) return;
+          if (!current) { showMenu(); return; }   /* sala desapareció */
+          if (current.status === 'waiting') {
+            await Sync.rejoinRoom(room, _playerId, _localName);
+            joined = true;
+            break;
+          }
+          if (current.status === 'expired') { _handleKicked('La sala expiró ⏱️'); return; }
+          await new Promise(r => setTimeout(r, 250));
+        }
+        if (_sessionToken !== token || _roomCode !== room) return;
+        if (!joined) { showMenu(); return; }
+        _showLobby();
       }
     }
-    catch(e) { console.error('[App] playAgain error:', e); showMenu(); }
+    catch(e) {
+      if (_sessionToken !== token || _roomCode !== room) return;
+      console.error('[App] playAgain error:', e);
+      showMenu();
+    }
+    finally {
+      if (replayBtn) replayBtn.disabled = false;
+    }
   }
 
   function showMenu() {
+    _newSession();
     _stopTimer(); _clearPublicLobbyTimer();
     if (_unsubRoom) { _unsubRoom(); _unsubRoom=null; }
     _clearSession(); _resetState();
@@ -3142,6 +3331,7 @@ const App = (() => {
      EXPULSIÓN
      ════════════════════════════════════════ */
   function _handleKicked(msg='Has sido expulsado de la sala') {
+    _newSession();
     _stopTimer(); _clearPublicLobbyTimer();
     if (_unsubRoom) { _unsubRoom(); _unsubRoom=null; }
     _clearSession(); _resetState();
@@ -3358,12 +3548,24 @@ const App = (() => {
 
   function _acHighlight(name, query) {
     const q = _acNorm(query);
+    if (!q) return name;
     const n = _acNorm(name);
     const idx = n.indexOf(q);
     if (idx === -1) return name;
-    return name.slice(0, idx)
-      + '<span class="autocomplete-highlight">' + name.slice(idx, idx + query.length) + '</span>'
-      + name.slice(idx + query.length);
+    /* La normalización puede cambiar longitudes (Ø→o, æ→ae, espacios colapsados),
+       así que no se puede usar idx directamente sobre 'name'. Mapeamos carácter a
+       carácter: avanzamos por 'name' acumulando su forma normalizada hasta cubrir
+       el rango [idx, idx+q.length) en coordenadas normalizadas. */
+    let normPos = 0, startRaw = -1, endRaw = name.length;
+    for (let i = 0; i <= name.length; i++) {
+      if (normPos >= idx && startRaw === -1) startRaw = i;
+      if (normPos >= idx + q.length) { endRaw = i; break; }
+      if (i < name.length) normPos += _acNorm(name[i]).length;
+    }
+    if (startRaw === -1) return name;
+    return name.slice(0, startRaw)
+      + '<span class="autocomplete-highlight">' + name.slice(startRaw, endRaw) + '</span>'
+      + name.slice(endRaw);
   }
 
   function _acRender(items, query) {
@@ -3609,6 +3811,7 @@ const App = (() => {
     _pendingFinishedRoom=null;
     /* Limpiar intervalo del timer de lobby público */
     if (_lobbyRenderTimerIv) { clearInterval(_lobbyRenderTimerIv); _lobbyRenderTimerIv=null; }
+    if (_cooldownTickTimer)  { clearTimeout(_cooldownTickTimer);   _cooldownTickTimer=null; }
     /* Limpiar countdown de precarga */
     if (_preloadCountdownIv) { clearInterval(_preloadCountdownIv); _preloadCountdownIv=null; }
     /* Limpiar countdown online */
@@ -3633,7 +3836,6 @@ const App = (() => {
     submitAnswer, selectAutocomplete, selectAndSubmit,
     playAgain, showMenu, showToast, copyLink,
     _enrichPlayersDBFromChunks,
-    _continueLocalGame: null, /* se asigna dinámicamente desde _runCountdownThenLoad */
   };
 })();
 
