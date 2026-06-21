@@ -246,14 +246,36 @@ function _renderLobby(room){
   else hint.textContent='Esperando a que el host empiece.';
 }
 
-/* ═══ GAME ═════════════════════════════════════════════════ */
+/* ═══ GAME (mesa) ══════════════════════════════════════════ */
+function _seatChip(pid,p,opts){
+  const{isMe,isTurn,guess,canKick}=opts;
+  const chip=document.createElement('div');
+  chip.className=`seat${isMe?' me':''}${isTurn?' active':''}${p.connected===false?' off':''}`;
+  const photo=`https://tmssl.akamaized.net/images/foto/small/x.jpg`; // sin foto real de jugador-persona
+  const ini=escapeHtml((p.name||'?')[0].toUpperCase());
+  let state;
+  if(guess!==undefined&&guess!==null) state=`<span class="seat-bet">${guess}</span>`;
+  else if(isTurn) state='<span class="seat-status thinking">pensando…</span>';
+  else state='<span class="seat-status">—</span>';
+  chip.innerHTML=`
+    <div class="seat-av">${ini}</div>
+    <div class="seat-body">
+      <div class="seat-name">${escapeHtml(p.name)}${isMe?' (tú)':''}</div>
+      <div class="seat-meta"><span class="seat-score">${p.score||0} pt</span>${state}</div>
+    </div>
+    ${canKick?'<button class="seat-kick" title="Quitar">×</button>':''}`;
+  const k=chip.querySelector('.seat-kick');
+  if(k)k.addEventListener('click',e=>{e.stopPropagation();_kick(pid,p.name);});
+  return chip;
+}
+
 function _renderGame(room){
   showScreen('#screen-game');
   if(room.status==='playing'){$('#overlay-reveal').classList.add('hidden');$('#overlay-gameover').classList.add('hidden');_revealTriggered=false;}
   const cond=_getCondition(room);
   $('#game-round').textContent=String(room.round);
   $('#game-round-stat').textContent=(cond.label||'').toUpperCase();
-  $('#game-code').textContent=_local?'PRACTICA':_roomCode;
+  $('#game-code').textContent=_local?'PRÁCTICA':_roomCode;
 
   const sortedIds=Object.keys(room.players).sort();
   const deal=dealRound(room.seed,sortedIds);
@@ -262,36 +284,33 @@ function _renderGame(room){
   const order=getPlayerOrder(room);
   const guesses=room.guesses||{};
   const turnId=getCurrentTurnId(room);
+  const easyShow=room.mode==='easy';
 
-  /* Turn ring */
-  const ring=$('#turn-ring');ring.innerHTML='';
-  order.forEach(pid=>{
+  /* Asientos de los DEMÁS (arriba) */
+  const seatsTop=$('#seats-top');seatsTop.innerHTML='';
+  order.filter(pid=>pid!==_playerId).forEach(pid=>{
     const p=room.players[pid];if(!p)return;
-    const chip=document.createElement('div');
-    chip.className=`turn-chip${pid===turnId&&room.status==='playing'?' active':''}${pid===_playerId?' me':''}${p.connected===false?' off':''}`;
-    const g=guesses[pid];
-    chip.innerHTML=`<span>${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span><span class="tc-count">${p.score||0} pt</span><span class="tc-guess">${g!==undefined&&g!==null?`dice ${g}`:'...'}</span>${(_isHost&&!_local&&pid!==_playerId)?'<button class="tc-kick" title="Quitar">×</button>':''}`;
-    const k=chip.querySelector('.tc-kick');
-    if(k)k.addEventListener('click',e=>{e.stopPropagation();_kick(pid,p.name);});
-    ring.appendChild(chip);
+    seatsTop.appendChild(_seatChip(pid,p,{
+      isMe:false,isTurn:pid===turnId&&room.status==='playing',
+      guess:guesses[pid],canKick:_isHost&&!_local&&pid!==_playerId
+    }));
   });
 
-  /* Center */
+  /* Cartas del centro (foto + nombre, como la mano) */
   const ce=$('#center-cards');ce.innerHTML='';
   if(!centerCards.length)ce.innerHTML='<div class="empty-inline">Sin cartas en el centro</div>';
-  else centerCards.forEach(c=>ce.appendChild(renderCard(c,{mode:'center',cond})));
+  else centerCards.forEach(c=>ce.appendChild(renderCard(c,{reveal:false,showMatch:easyShow,cond})));
 
-  /* Bets list */
-  $('#bet-round-note').textContent=`Objetivo: ${room.pointsToWin} pts`;
-  const be=$('#bet-current');be.innerHTML='';
-  order.forEach(pid=>{const p=room.players[pid]||{};const g=guesses[pid];be.innerHTML+=`<div class="guess-row${g===undefined||g===null?' waiting':''}"><span>${escapeHtml(p.name)}</span><span>${g!==undefined&&g!==null?g:'...'}</span></div>`;});
+  /* Mi asiento (abajo) */
+  const ms=$('#my-seat');ms.innerHTML='';
+  const me=room.players[_playerId];
+  if(me)ms.appendChild(_seatChip(_playerId,me,{isMe:true,isTurn:turnId===_playerId&&room.status==='playing',guess:guesses[_playerId],canKick:false}));
 
-  /* My hand */
+  /* Mi mano (foto + nombre) */
   const he=$('#my-hand');he.innerHTML='';
-  myHand.forEach(c=>he.appendChild(renderCard(c,{mode:room.mode==='easy'?'own-easy':'own-hard',cond})));
-  $('#my-hand-note').textContent=room.mode==='easy'?'Verde = cumple la condicion':'Solo ves nombre y rasgos visibles';
+  myHand.forEach(c=>he.appendChild(renderCard(c,{reveal:false,showMatch:easyShow,cond})));
 
-  /* Action bar */
+  /* Barra de acción */
   const iAmDone=guesses[_playerId]!==undefined&&guesses[_playerId]!==null;
   const isMyTurn=turnId===_playerId;
   const totalCards=myHand.length*sortedIds.length+centerCards.length;
@@ -301,15 +320,20 @@ function _renderGame(room){
     _guessDraft=Math.min(_guessDraft,totalCards);
     $('#step-guess').textContent=_guessDraft;
     $('#guess-max').textContent=totalCards;
-    $('#action-panel-label').textContent='TU TURNO';
     clearTimeout(_skipTimer);
   }else{
     $('#action-panel').classList.add('hidden');
     $('#action-waiting').classList.remove('hidden');
+    const wl=$('#action-wait-label');
+    if(wl){
+      if(room.status!=='playing')wl.textContent='Ronda terminada';
+      else if(iAmDone)wl.textContent='Has apostado · esperando a los demás';
+      else if(turnId)wl.textContent=`Turno de ${escapeHtml(room.players[turnId]?.name||'')}`;
+      else wl.textContent='Esperando…';
+    }
     if(!_local&&_isHost&&room.status==='playing'&&turnId&&turnId!==_playerId)_armSkip(turnId);
   }
 
-  /* Host (online) triggers reveal when all guessed */
   if(!_local&&_isHost&&room.status==='playing'&&!_revealTriggered&&allGuessed(room)){
     _revealTriggered=true;_doRevealOnline(room);
   }
@@ -375,7 +399,7 @@ function _renderReveal(room){
   const sortedIds=Object.keys(room.players).sort();
   const deal=dealRound(room.seed,sortedIds);
   const cardsEl=$('#reveal-cards');cardsEl.innerHTML='';
-  deal.deck.forEach(c=>{c.matches=cardMatchesCond(c,cond);cardsEl.appendChild(renderCard(c,{mode:'reveal',cond}));});
+  deal.deck.forEach(c=>{cardsEl.appendChild(renderCard(c,{reveal:true,showMatch:false,cond}));});
   $('#reveal-verdict').textContent=cond.label;
   $('#btn-continue').classList.toggle('hidden',!_isHost);
 }
@@ -388,34 +412,25 @@ function _renderFinished(room){
   Object.entries(room.players||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0)).forEach(([,p])=>{sb.innerHTML+=`<div class="guess-row"><span>${escapeHtml(p.name)}</span><span>${p.score||0} pt</span></div>`;});
 }
 
-/* ═══ RENDER CARD ══════════════════════════════════════════ */
+/* ═══ RENDER CARD — solo foto + nombre ═════════════════════ */
 function renderCard(card,opts){
-  const el=document.createElement('div');el.className='card';
-  const{mode,cond}=opts;const isCenter=mode==='center';
+  const{reveal,showMatch,cond}=opts;
+  const el=document.createElement('div');el.className='tcard';
   const photo=`https://tmssl.akamaized.net/images/foto/small/${card.playerId}.jpg`;
   const ini=(card.playerName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  let hint='';
-  if(isCenter){
-    let icon,lbl,typ;
-    if(card.visibleAttr==='flag'){typ='País';icon=`<div class="hint-flag">${countryFlagHTML(card.country,card.countryFlag)}</div>`;lbl=card.country;}
-    else if(card.visibleAttr==='position'){typ='Posición';icon=`<div class="hint-pos">${escapeHtml(card.position)}</div>`;lbl=card.position;}
-    else{typ='Club';icon=`<div class="hint-badge">${clubBadgeHTML(card.club,36)}</div>`;lbl=card.club;}
-    hint=`<div class="card-hint-overlay"><span class="card-hint-type">${escapeHtml(typ)}</span>${icon}<span class="card-hint-label">${escapeHtml((lbl||'').toUpperCase())}</span></div>`;
-  }
-  const photoHtml=`<div class="card-photo-wrap${isCenter?' center-photo':''}"><img class="card-photo-img" src="${photo}" loading="lazy" alt="" onerror="this.closest('.card-photo-wrap').classList.add('no-photo')"><div class="card-photo-fallback">${escapeHtml(ini)}</div>${isCenter?hint:`<div class="card-photo-name">${escapeHtml(card.playerName)}</div>`}</div>`;
-  const ident=isCenter?'':`<div class="card-identity">${countryFlagHTML(card.country,card.countryFlag)}${clubBadgeHTML(card.club)}</div>`;
-  let stat='';
-  if(mode==='own-easy'||mode==='reveal'){
-    const raw=card.stats[cond.key];
-    const matches=mode==='reveal'?card.matches:cardMatchesCond(card,cond);
-    const disp=cond.type==='bool'?(raw?'SI':'NO'):(raw??0);
-    const b=document.createElement('div');b.className=`card-badge ${matches?'ok':'ko'}`;b.textContent=matches?'OK':'NO';el.appendChild(b);
-    if(mode==='reveal')el.classList.add('revealed',matches?'match':'nomatch');
-    stat=`<div class="card-stat"><span>${escapeHtml(cond.type==='bool'?cond.label:cond.unit)}</span><span class="card-stat-val">${escapeHtml(String(disp))}</span></div>`;
-  }else{
-    stat='<div class="card-stat hidden-stat">OCULTO</div>';
-  }
-  el.innerHTML+=photoHtml+ident+stat;
+
+  let matches=null;
+  if(reveal||showMatch) matches=cardMatchesCond(card,cond);
+  if(reveal) el.classList.add(matches?'r-match':'r-no');
+  else if(showMatch&&matches) el.classList.add('is-match');
+
+  el.innerHTML=`
+    <div class="tcard-photo">
+      <img src="${photo}" loading="lazy" alt="" onerror="this.closest('.tcard-photo').classList.add('no-photo')">
+      <div class="tcard-fallback">${escapeHtml(ini)}</div>
+      ${reveal&&matches?'<div class="tcard-tick">✓</div>':''}
+    </div>
+    <div class="tcard-name">${escapeHtml(card.playerName)}</div>`;
   return el;
 }
 
