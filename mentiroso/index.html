@@ -24,6 +24,7 @@
     <div class="menu-tabs">
       <button class="menu-tab active" data-tab="create">CREAR SALA</button>
       <button class="menu-tab" data-tab="join">UNIRSE</button>
+      <button class="menu-tab" data-tab="practice">PRACTICAR</button>
     </div>
 
     <div class="menu-panel active" data-panel="create">
@@ -57,6 +58,19 @@
       <input id="join-code" class="menu-input menu-code-input" type="text" placeholder="CODIGO" maxlength="6" autocomplete="off" />
       <button id="btn-join" class="btn-primary">ENTRAR</button>
       <div id="join-error" class="menu-error hidden">Sala no encontrada</div>
+    </div>
+
+    <div class="menu-panel" data-panel="practice">
+      <input id="practice-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" autocomplete="off" />
+      <div class="panel-hint">Juega contra bots para practicar sin conexion</div>
+      <div class="panel-hint">Numero de bots</div>
+      <div class="setting-stepper">
+        <button class="step-btn" id="btn-bots-minus">-</button>
+        <div class="setting-value" id="practice-bots-value">2</div>
+        <button class="step-btn" id="btn-bots-plus">+</button>
+      </div>
+      <button id="btn-practice" class="btn-primary">EMPEZAR PRACTICA</button>
+      <div class="panel-hint">Usa el modo y las rondas elegidos arriba en "Crear sala".</div>
     </div>
   </div>
 
@@ -233,7 +247,7 @@
     db, ref, set, get, update, remove, onValue, runTransaction
   };
 
-  const V = '?v=7';
+  const V = '?v=9';
   const scripts = [
     './js/data.js' + V,
     './js/game.js' + V
