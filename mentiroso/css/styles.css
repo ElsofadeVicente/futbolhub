@@ -459,10 +459,10 @@ input {
 
 .gt-code {
   font-size: 1.4rem;
+  letter-spacing: 5px;
+}
 
-/* ═══════════════════════════════════════════════════════
-   PANTALLA DE JUEGO — MESA
-══════════════════════════════════════════════════════ */
+/* PANTALLA DE JUEGO - MESA */
 .game-topbar { flex-shrink: 0; position: static; }
 
 .table-area {
@@ -675,9 +675,6 @@ input {
 }
 .btn-confirm { width: auto; padding: 0 22px; height: 44px; white-space: nowrap; }
 .bet-help { font-size: 0.72rem; color: var(--muted); opacity: 0.7; }
-  display: grid;
-  grid-template-columns: 1fr;
-}
 
 .action-waiting {
   text-align: center;
