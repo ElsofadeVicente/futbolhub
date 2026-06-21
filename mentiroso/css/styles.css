@@ -426,8 +426,11 @@ input {
   background:
     radial-gradient(circle at top, rgba(200, 168, 75, 0.065), transparent 24%),
     linear-gradient(180deg, #101610 0%, #0c110c 100%);
-  padding: 0 0 140px;
+  height: 100vh;
+  height: 100dvh;
+  padding: 0;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .game-topbar {
@@ -456,438 +459,222 @@ input {
 
 .gt-code {
   font-size: 1.4rem;
-  letter-spacing: 5px;
-}
-
-.turn-ring {
-  width: 100%;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 12px 16px;
-  border-bottom: 1px dashed rgba(200, 168, 75, 0.12);
-  justify-content: center;
-}
-
-.turn-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(200, 168, 75, 0.14);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.turn-chip.active {
-  border-color: var(--gold);
-  background: linear-gradient(90deg, rgba(200, 168, 75, 0.2), rgba(200, 168, 75, 0.05));
-  color: var(--gold-bright);
-}
-
-.turn-chip .tc-count {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.95rem;
-  letter-spacing: 1px;
-  color: var(--gold);
-  background: rgba(0, 0, 0, 0.28);
-  padding: 1px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(200, 168, 75, 0.2);
-}
-
-.turn-chip .tc-guess {
-  font-size: 0.72rem;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.turn-chip.me { outline: 1px solid rgba(74, 222, 128, 0.3); }
-
-.game-main {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 16px;
-  flex: 1;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.game-panel {
-  width: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(200, 168, 75, 0.14);
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: var(--shadow);
-}
-
-.game-panel-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.center-cards, .my-hand, .reveal-cards {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.empty-inline {
-  opacity: 0.45;
-  font-size: 0.9rem;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 20px;
-}
 
 /* ═══════════════════════════════════════════════════════
-   CARTAS — diseño con foto real (TM CDN)
+   PANTALLA DE JUEGO — MESA
 ══════════════════════════════════════════════════════ */
-.card {
-  --w: 132px;
-  --h: 196px;
-  width: var(--w);
-  height: var(--h);
-  background: linear-gradient(165deg, #18231a 0%, #0d140d 100%);
-  border: 1px solid rgba(200, 168, 75, 0.22);
-  border-radius: 12px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  font-size: 11px;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-  flex-shrink: 0;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(0,0,0,0.6); }
+.game-topbar { flex-shrink: 0; position: static; }
 
-/* — Foto — */
-.card-photo-wrap {
-  position: relative;
-  width: 100%;
-  height: 110px;
-  flex-shrink: 0;
-  background: #141e14;
-  overflow: hidden;
-}
-.card-photo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  display: block;
-  transition: opacity 0.3s;
-}
-.card-photo-wrap.no-photo .card-photo-img { display: none; }
-.card-photo-fallback {
-  position: absolute;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 34px;
-  color: var(--gold);
-  opacity: 0.35;
-  background: radial-gradient(circle at 50% 40%, #1f2f21 0%, #0d140d 100%);
-}
-.card-photo-wrap.no-photo .card-photo-fallback { display: flex; }
-
-/* Nombre sobre la foto */
-.card-photo-name {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  padding: 20px 8px 6px;
-  background: linear-gradient(to top, rgba(4,8,4,0.95) 0%, transparent 100%);
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 13px;
-  line-height: 1.1;
-  letter-spacing: 0.4px;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* — Centro: hint sobre foto difuminada — */
-.center-photo .card-photo-img { filter: blur(4px) brightness(0.3) saturate(0.5); }
-.card-hint-overlay {
-  position: absolute;
-  inset: 0;
+.table-area {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 6px;
-}
-.card-hint-type {
-  font-size: 8px;
-  letter-spacing: 2px;
-  color: var(--gold);
-  opacity: 0.8;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-.hint-flag .fi { width: 38px !important; height: 28px !important; border-radius: 3px; }
-.hint-pos {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 24px;
-  color: var(--gold-bright);
-}
-.hint-badge .card-club-logo { width: 36px !important; height: 36px !important; }
-.hint-badge .card-club-initials { font-size: 14px; padding: 4px 10px; }
-.card-hint-label {
-  font-size: 9px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.7);
-  max-width: 116px;
+  gap: clamp(8px, 1.4vh, 18px);
+  padding: clamp(8px, 1.6vh, 18px) 14px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* — Identidad: bandera + escudo — */
-.card-identity {
+/* ── Asientos (jugadores) ── */
+.seats-top {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+  max-height: 22vh;
+  overflow-y: auto;
+}
+.seat {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 9px 0;
-}
-.card-identity .fi {
-  width: 20px;
-  height: 15px;
-  flex-shrink: 0;
-  border-radius: 2px;
-  overflow: hidden;
-  background: #2a3a2c;
-}
-.card-flag-text {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--muted);
-  background: rgba(255,255,255,0.08);
-  padding: 2px 5px;
-  border-radius: 3px;
-}
-.card-club-logo {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.card-club-initials {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--gold);
-  background: rgba(200,168,75,0.12);
-  padding: 2px 5px;
-  border-radius: 3px;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
-}
-
-/* — Estadística — */
-.card-stat {
-  margin: auto 8px 8px;
-  padding: 5px 7px;
-  border-radius: 6px;
-  border: 1px solid rgba(200, 168, 75, 0.15);
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.2;
-}
-.card-stat-val {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  color: var(--gold-bright);
-  white-space: nowrap;
-}
-.card-stat.hidden-stat {
-  justify-content: center;
-  font-size: 9px;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.2);
-}
-
-/* — Badge OK/NO — */
-.card-badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  min-width: 28px;
-  height: 20px;
-  padding: 0 6px;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border: 1px solid rgba(200,168,75,0.16);
   border-radius: 999px;
-  display: grid;
-  place-items: center;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  z-index: 2;
+  position: relative;
+  min-width: 120px;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
 }
-.card-badge.ok { background: var(--green-ok); color: #0c110c; }
-.card-badge.ko { background: rgba(0,0,0,0.65); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.07); }
+.seat.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(200,168,75,0.25), 0 8px 22px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
+}
+.seat.me { background: linear-gradient(180deg, rgba(200,168,75,0.12), rgba(200,168,75,0.04)); border-color: rgba(200,168,75,0.4); }
+.seat.off { opacity: 0.45; }
+.seat-av {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 40% 35%, #26331f, #0e150e);
+  color: var(--gold-bright);
+  font-family: 'Bebas Neue', sans-serif; font-size: 16px;
+  border: 1px solid rgba(200,168,75,0.25);
+}
+.seat-body { display: flex; flex-direction: column; line-height: 1.15; }
+.seat-name { font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+.seat-meta { display: flex; align-items: center; gap: 7px; font-size: 0.72rem; }
+.seat-score { color: var(--gold); font-weight: 700; }
+.seat-bet {
+  min-width: 22px; height: 20px; padding: 0 6px;
+  display: grid; place-items: center;
+  background: var(--gold); color: #0c110c;
+  border-radius: 999px; font-weight: 800; font-size: 0.8rem;
+  font-family: 'Bebas Neue', sans-serif;
+}
+.seat-status { color: var(--muted); }
+.seat-status.thinking { color: var(--gold); animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:.4} 50%{opacity:1} }
+.seat-kick {
+  width: 18px; height: 18px; margin-left: 2px; padding: 0;
+  border: none; border-radius: 50%;
+  background: rgba(255,90,90,0.18); color: #ff8a8a;
+  font-size: 12px; cursor: pointer; flex-shrink: 0;
+}
+.seat-kick:hover { background: rgba(255,90,90,0.4); color: #fff; }
 
-/* — Match/no-match — */
-.card.revealed { animation: cardFlip 0.45s ease both; }
-.card.match {
-  border-color: var(--green-ok);
-  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.25), 0 14px 30px rgba(0, 0, 0, 0.5);
+/* ── Fieltro (mesa) ── */
+.felt {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.card.nomatch {
-  opacity: 0.52;
-  filter: grayscale(0.5);
-}
-
-@keyframes cardFlip {
-  from { transform: translateY(8px) scale(0.95); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-.bet-panel {
+.felt-felt {
   background:
-    linear-gradient(180deg, rgba(200, 168, 75, 0.08), rgba(200, 168, 75, 0.02)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
-  border-color: rgba(200, 168, 75, 0.3);
-  border-left: 3px solid var(--gold);
+    radial-gradient(ellipse at 50% 40%, rgba(40,90,55,0.55) 0%, rgba(18,40,26,0.6) 60%, rgba(10,22,14,0.7) 100%),
+    linear-gradient(180deg, #16321f, #0e2114);
+  border: 2px solid rgba(200,168,75,0.28);
+  border-radius: 28px;
+  box-shadow: inset 0 4px 30px rgba(0,0,0,0.5), inset 0 0 0 6px rgba(255,255,255,0.02), 0 18px 40px rgba(0,0,0,0.5);
+  padding: clamp(12px, 2vh, 22px) clamp(14px, 2.5vw, 30px);
+  max-width: 94%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.felt-label {
+  font-size: 0.66rem; letter-spacing: 2.5px; text-transform: uppercase;
+  color: rgba(200,168,75,0.7); font-weight: 700;
+}
+.center-cards, .my-hand {
+  display: flex;
+  gap: clamp(6px, 0.8vw, 12px);
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
-.bet-current {
-  display: grid;
+/* ── Mi zona ── */
+.my-zone {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
+.my-seat { display: flex; }
+.my-seat .seat { min-width: 150px; }
 
-.guess-row, .reveal-guess {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.24);
-  border: 1px solid rgba(200, 168, 75, 0.12);
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 1rem;
-  color: var(--text);
-}
-
-.guess-row.waiting, .reveal-guess {
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.guess-row span:last-child, .reveal-guess strong {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4rem;
-  letter-spacing: 1px;
-  color: var(--gold-bright);
-}
-
-.reveal-guess.hit {
-  border-color: rgba(74, 222, 128, 0.45);
-  background: rgba(74, 222, 128, 0.1);
-}
-
-.action-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 12px 14px 14px;
-  background: linear-gradient(180deg, rgba(12, 17, 12, 0) 0%, rgba(12, 17, 12, 0.88) 22%, rgba(7, 11, 7, 0.98) 100%);
-  z-index: 20;
-}
-
-.action-panel, .action-waiting {
-  max-width: 1000px;
-  margin: 0 auto;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(200, 168, 75, 0.18);
-  border-radius: 18px;
-  padding: 12px 14px;
-  box-shadow: var(--shadow);
-}
-
-.action-panel-label {
-  font-size: 0.72rem;
-  letter-spacing: 2.2px;
-  text-transform: uppercase;
-  color: var(--gold-bright);
-  text-align: center;
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-
-.bet-builder {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.bet-builder.single { grid-template-columns: 1fr; }
-
-.bet-field {
-  background: rgba(0, 0, 0, 0.24);
-  border: 1px solid rgba(200, 168, 75, 0.12);
-  border-radius: 12px;
-  padding: 10px;
-}
-
-.bet-field-help {
-  margin-top: 8px;
-  text-align: center;
-  opacity: 0.7;
-}
-
-.stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.step-btn {
-  width: 36px;
-  height: 36px;
+/* ── CARTA: foto + nombre ── */
+.tcard {
+  --cw: clamp(62px, 8.5vw, 100px);
+  width: var(--cw);
+  flex-shrink: 0;
+  background: #0e150e;
+  border: 1px solid rgba(200,168,75,0.18);
   border-radius: 10px;
-  background: rgba(200, 168, 75, 0.1);
-  border: 1px solid rgba(200, 168, 75, 0.25);
-  color: var(--gold-bright);
-  font-size: 1.3rem;
+  overflow: hidden;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.45);
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.tcard:hover { transform: translateY(-3px); box-shadow: 0 14px 26px rgba(0,0,0,0.55); }
+.tcard-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: radial-gradient(circle at 50% 35%, #1f2f21, #0d140d);
+  overflow: hidden;
+}
+.tcard-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+.tcard-photo.no-photo img { display: none; }
+.tcard-fallback {
+  position: absolute; inset: 0; display: none;
+  align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px;
+  color: var(--gold); opacity: 0.4;
+}
+.tcard-photo.no-photo .tcard-fallback { display: flex; }
+.tcard-name {
+  padding: 5px 6px;
+  font-size: 0.66rem;
   font-weight: 700;
-  line-height: 1;
-}
-
-.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-.step-val {
-  flex: 1;
   text-align: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.8rem;
-  letter-spacing: 1.5px;
-  color: var(--gold-bright);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
 }
+.tcard-tick {
+  position: absolute; top: 4px; right: 4px;
+  width: 20px; height: 20px;
+  display: grid; place-items: center;
+  background: var(--green-ok); color: #0c110c;
+  border-radius: 50%; font-size: 12px; font-weight: 800;
+}
+/* Modo fácil: resalta las que cumplen */
+.tcard.is-match { border-color: var(--green-ok); box-shadow: 0 0 0 2px rgba(74,222,128,0.35), 0 8px 18px rgba(0,0,0,0.45); }
+.tcard.is-match .tcard-name { color: var(--green-ok); }
+/* Reveal */
+.tcard.r-match { border-color: var(--green-ok); box-shadow: 0 0 0 2px rgba(74,222,128,0.4); }
+.tcard.r-no { opacity: 0.4; filter: grayscale(0.6); }
 
-.action-buttons.single {
+.empty-inline { color: var(--muted); font-size: 0.85rem; opacity: 0.6; padding: 20px; }
+
+/* ── Barra de acción ── */
+.action-bar {
+  flex-shrink: 0;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(9,15,9,0.6), rgba(7,11,7,0.96));
+  border-top: 1px solid rgba(200,168,75,0.16);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.action-panel { width: 100%; max-width: 560px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bet-row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center; }
+.bet-label { font-size: 0.85rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.step-btn {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(200,168,75,0.1);
+  border: 1px solid rgba(200,168,75,0.25);
+  color: var(--gold-bright);
+  font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer;
+}
+.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.step-val {
+  min-width: 54px; text-align: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
+  letter-spacing: 1.5px; color: var(--gold-bright);
+}
+.btn-confirm { width: auto; padding: 0 22px; height: 44px; white-space: nowrap; }
+.bet-help { font-size: 0.72rem; color: var(--muted); opacity: 0.7; }
   display: grid;
   grid-template-columns: 1fr;
 }
@@ -996,10 +783,8 @@ input {
   margin-bottom: 16px;
 }
 
-.reveal-cards .card {
-  --w: 96px;
-  --h: 140px;
-  font-size: 11px;
+.reveal-cards .tcard {
+  --cw: 76px;
 }
 
 .reveal-verdict {
@@ -1079,44 +864,23 @@ input {
 
 @media (max-width: 600px) {
   .game-topbar { padding: 10px 14px; }
-  .gt-round-stat { font-size: 1.2rem; }
+  .gt-round-stat { font-size: 1.1rem; }
   .gt-code { font-size: 1.15rem; letter-spacing: 4px; }
-  .card { --w: 104px; --h: 152px; }
   .menu-title { letter-spacing: 5px; }
   .lobby-code-big { font-size: 2.6rem; letter-spacing: 8px; }
+  .tcard { --cw: 64px; }
+  .seat { min-width: 0; padding: 5px 8px 5px 5px; }
+  .seat-name { font-size: 0.74rem; }
+  .felt-felt { border-radius: 20px; padding: 12px 14px; }
 }
 
 @media (max-width: 400px) {
-  .center-cards, .my-hand { gap: 7px; }
-  .card { --w: 92px; --h: 136px; padding: 8px 8px 10px; }
-  .card-hero { font-size: 28px; }
-  .card-photo-wrap { height: 90px; }
-  .card { --w: 108px; --h: 174px; }
-  .turn-chip { font-size: 0.78rem; padding: 6px 10px; }
+  .tcard { --cw: 58px; }
+  .center-cards, .my-hand { gap: 6px; }
 }
-
-/* --- Boton de expulsar jugador (solo host) --- */
-.turn-chip { position: relative; }
-.turn-chip .tc-kick {
-  width: 18px;
-  height: 18px;
-  margin-left: 2px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 90, 90, 0.18);
-  color: #ff8a8a;
-  font-size: 13px;
-  line-height: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  flex: 0 0 auto;
-}
-.turn-chip .tc-kick:hover { background: rgba(255, 90, 90, 0.4); color: #fff; }
 
 /* --- Soporte para moviles con notch / barra inferior --- */
 .hub-back-link, .back-btn { margin-top: env(safe-area-inset-top, 0px); }
-.action-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
 
 /* Boton de saltar turno bloqueado */
 .tc-skip {
