@@ -139,55 +139,35 @@
     </div>
   </div>
 
-  <div class="turn-ring" id="turn-ring"></div>
+  <div class="table-area">
+    <div class="seats-top" id="seats-top"></div>
 
-  <div class="game-main">
-    <div class="game-panel">
-      <div class="game-panel-title">
-        <span>Cartas del centro</span>
-        <div class="game-panel-note">Visibles para todos</div>
+    <div class="felt">
+      <div class="felt-felt">
+        <div class="felt-label">MESA · cartas de todos</div>
+        <div class="center-cards" id="center-cards"></div>
       </div>
-      <div class="center-cards" id="center-cards"></div>
     </div>
 
-    <div class="game-panel bet-panel">
-      <div class="game-panel-title">
-        <span>Apuestas de la ronda</span>
-        <div class="game-panel-note" id="bet-round-note">-</div>
-      </div>
-      <div class="bet-current" id="bet-current"></div>
-    </div>
-
-    <div class="game-panel">
-      <div class="game-panel-title">
-        <span>Tus cartas</span>
-        <div class="game-panel-note" id="my-hand-note">-</div>
-      </div>
+    <div class="my-zone">
+      <div class="my-seat" id="my-seat"></div>
       <div class="my-hand" id="my-hand"></div>
     </div>
   </div>
 
   <div class="action-bar" id="action-bar">
     <div class="action-panel" id="action-panel">
-      <div class="action-panel-label" id="action-panel-label">TU TURNO</div>
-      <div class="bet-builder single">
-        <div class="bet-field">
-          <div class="bet-field-label">Tu apuesta exacta</div>
-          <div class="stepper">
-            <button class="step-btn" id="guess-minus">-</button>
-            <div class="step-val" id="step-guess">0</div>
-            <button class="step-btn" id="guess-plus">+</button>
-          </div>
-          <div class="bet-field-help">Maximo posible: <span id="guess-max">0</span></div>
-        </div>
+      <div class="bet-row">
+        <span class="bet-label">Tu apuesta:</span>
+        <button class="step-btn" id="guess-minus">−</button>
+        <div class="step-val" id="step-guess">0</div>
+        <button class="step-btn" id="guess-plus">+</button>
+        <button class="btn-primary btn-confirm" id="btn-guess">CONFIRMAR</button>
       </div>
-      <div class="action-buttons single">
-        <button class="btn-primary" id="btn-guess">CONFIRMAR APUESTA</button>
-      </div>
+      <div class="bet-help">Cartas en juego: <span id="guess-max">0</span></div>
     </div>
-
     <div class="action-waiting hidden" id="action-waiting">
-      <div class="action-panel-label">ESPERANDO...</div>
+      <span class="wait-label" id="action-wait-label">Esperando a los demás</span>
       <div class="waiting-dots"><span></span><span></span><span></span></div>
     </div>
   </div>
@@ -247,7 +227,7 @@
     db, ref, set, get, update, remove, onValue, runTransaction
   };
 
-  const V = '?v=9';
+  const V = '?v=10';
   const scripts = [
     './js/data.js' + V,
     './js/game.js' + V
