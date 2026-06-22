@@ -437,11 +437,11 @@ input {
   width: 100%;
   background: linear-gradient(180deg, rgba(9, 15, 9, 0.96), rgba(7, 11, 7, 0.94));
   border-bottom: 1px solid rgba(200, 168, 75, 0.15);
-  padding: 12px 18px;
+  padding: 10px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -780,8 +780,116 @@ input {
   margin-bottom: 16px;
 }
 
+.guess-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.guess-row.hit {
+  background: rgba(74,222,128,0.1);
+  border-color: rgba(74,222,128,0.3);
+  color: var(--green-ok);
+}
+
 .reveal-cards .tcard {
   --cw: 76px;
+}
+
+/* ── Reveal en filas ── */
+.reveal-section {
+  width: 100%;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.reveal-section-label {
+  font-size: 0.68rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  opacity: 0.75;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(200,168,75,0.18);
+  font-weight: 700;
+}
+.reveal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.reveal-row:last-child { border-bottom: none; }
+.reveal-row-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-width: 80px;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.reveal-row-name.is-me { color: var(--gold-bright); }
+.reveal-row-cards {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.reveal-row-cards .tcard { --cw: 68px; }
+
+/* Contador de rondas en topbar */
+.gt-progress {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.gt-progress-pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(200,168,75,0.4);
+  background: transparent;
+  transition: background .2s, border-color .2s;
+}
+.gt-progress-pip.won {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+/* Botón abandonar en partida */
+.leave-game-btn {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(232,232,232,0.45);
+  padding: 5px 10px;
+  border: 1px solid rgba(232,232,232,0.14);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  z-index: 20;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.leave-game-btn:hover {
+  color: var(--red-ko);
+  border-color: rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.08);
 }
 
 .reveal-verdict {
