@@ -277,6 +277,42 @@ function _renderGame(room){
   $('#game-round-stat').textContent=(cond.label||'').toUpperCase();
   $('#game-code').textContent=_local?'PRÁCTICA':_roomCode;
 
+  /* Botón de abandonar en topbar (solo añadir si no existe) */
+  const topbar=$('.game-topbar');
+  if(topbar&&!topbar.querySelector('.leave-game-btn')){
+    const leaveBtn=document.createElement('button');
+    leaveBtn.className='leave-game-btn';leaveBtn.textContent='Abandonar';
+    leaveBtn.addEventListener('click',()=>{if(confirm('¿Seguro que quieres abandonar la partida?'))_leaveRoom();});
+    topbar.appendChild(leaveBtn);
+  }
+
+  /* Progreso de puntos: pips por jugador */
+  const gtRight=$('.gt-right');
+  if(gtRight){
+    let prog=gtRight.querySelector('.gt-progress');
+    if(!prog){prog=document.createElement('div');prog.className='gt-progress';gtRight.appendChild(prog);}
+    prog.innerHTML='';
+    const target=room.pointsToWin||3;
+    const sortedIds=Object.keys(room.players).sort();
+    sortedIds.forEach(pid=>{
+      const p=room.players[pid];if(!p)return;
+      const score=p.score||0;
+      const wrap=document.createElement('div');
+      wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:3px;';
+      const nameEl=document.createElement('div');
+      nameEl.style.cssText='font-size:0.58rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase;white-space:nowrap;max-width:52px;overflow:hidden;text-overflow:ellipsis;';
+      nameEl.textContent=pid===_playerId?'TÚ':(p.name||'').slice(0,5).toUpperCase();
+      const pipsRow=document.createElement('div');pipsRow.style.cssText='display:flex;gap:3px;';
+      for(let i=0;i<target;i++){
+        const pip=document.createElement('div');
+        pip.className=`gt-progress-pip${i<score?' won':''}`;
+        pipsRow.appendChild(pip);
+      }
+      wrap.appendChild(nameEl);wrap.appendChild(pipsRow);
+      prog.appendChild(wrap);
+    });
+  }
+
   const sortedIds=Object.keys(room.players).sort();
   const deal=dealRound(room.seed,sortedIds);
   const myHand=deal.hands[_playerId]||[];
@@ -384,6 +420,8 @@ function _renderReveal(room){
   const guesses=room.guesses||{};
   const actual=room.actualTotal;
   const winners=room.winners||[];
+  const easyMode=room.mode==='easy';
+
   if(winners.length&&winners[0]!=='Nadie acertó'){
     $('#reveal-tag').textContent='ACIERTO EXACTO';
     $('#reveal-headline').textContent=winners.join(', ');
@@ -394,12 +432,48 @@ function _renderReveal(room){
     $('#reveal-sub').textContent='Ningun jugador acerto el total exacto';
   }
   $('#reveal-count').textContent=actual;
+
+  /* Apuestas de cada jugador */
   const ge=$('#reveal-guesses');ge.innerHTML='';
-  Object.entries(room.players).forEach(([pid,p])=>{const g=guesses[pid]??'—';const hit=Number(g)===actual;ge.innerHTML+=`<div class="guess-row${hit?' hit':''}"><span>${escapeHtml(p.name)}</span><span>${g}${hit?' ✓':''}</span></div>`;});
+  Object.entries(room.players).forEach(([pid,p])=>{
+    const g=guesses[pid]??'—';
+    const hit=Number(g)===actual;
+    ge.innerHTML+=`<div class="guess-row${hit?' hit':''}"><span>${escapeHtml(p.name)}</span><span>${g}${hit?' ✓':''}</span></div>`;
+  });
+
+  /* Cartas en filas: primero la mesa, luego cada jugador */
   const sortedIds=Object.keys(room.players).sort();
   const deal=dealRound(room.seed,sortedIds);
   const cardsEl=$('#reveal-cards');cardsEl.innerHTML='';
-  deal.deck.forEach(c=>{cardsEl.appendChild(renderCard(c,{reveal:true,showMatch:false,cond}));});
+
+  /* Fila: Mesa central */
+  if(deal.centerCards.length){
+    const sec=document.createElement('div');sec.className='reveal-section';
+    sec.innerHTML=`<div class="reveal-section-label">Mesa central</div>`;
+    const row=document.createElement('div');row.className='reveal-row';
+    const cards=document.createElement('div');cards.className='reveal-row-cards';
+    deal.centerCards.forEach(c=>cards.appendChild(renderCard(c,{reveal:true,showMatch:easyMode,cond,alwaysShowMatch:true})));
+    row.appendChild(cards);
+    sec.appendChild(row);
+    cardsEl.appendChild(sec);
+  }
+
+  /* Filas: cada jugador */
+  const sec2=document.createElement('div');sec2.className='reveal-section';
+  sec2.innerHTML=`<div class="reveal-section-label">Cartas de cada jugador</div>`;
+  sortedIds.forEach(pid=>{
+    const p=room.players[pid];if(!p)return;
+    const hand=deal.hands[pid]||[];if(!hand.length)return;
+    const row=document.createElement('div');row.className='reveal-row';
+    const isMe=pid===_playerId;
+    row.innerHTML=`<div class="reveal-row-name${isMe?' is-me':''}">${escapeHtml(p.name)}${isMe?' (tú)':''}</div>`;
+    const cards=document.createElement('div');cards.className='reveal-row-cards';
+    hand.forEach(c=>cards.appendChild(renderCard(c,{reveal:true,showMatch:easyMode,cond,alwaysShowMatch:true})));
+    row.appendChild(cards);
+    sec2.appendChild(row);
+  });
+  cardsEl.appendChild(sec2);
+
   $('#reveal-verdict').textContent=cond.label;
   $('#btn-continue').classList.toggle('hidden',!_isHost);
 }
@@ -414,21 +488,21 @@ function _renderFinished(room){
 
 /* ═══ RENDER CARD — solo foto + nombre ═════════════════════ */
 function renderCard(card,opts){
-  const{reveal,showMatch,cond}=opts;
+  const{reveal,showMatch,cond,alwaysShowMatch}=opts;
   const el=document.createElement('div');el.className='tcard';
   const photo=`https://tmssl.akamaized.net/images/foto/small/${card.playerId}.jpg`;
   const ini=(card.playerName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 
   let matches=null;
-  if(reveal||showMatch) matches=cardMatchesCond(card,cond);
-  if(reveal) el.classList.add(matches?'r-match':'r-no');
+  if(reveal||showMatch||alwaysShowMatch) matches=cardMatchesCond(card,cond);
+  if(reveal||alwaysShowMatch) el.classList.add(matches?'r-match':'r-no');
   else if(showMatch&&matches) el.classList.add('is-match');
 
   el.innerHTML=`
     <div class="tcard-photo">
       <img src="${photo}" loading="lazy" alt="" onerror="this.closest('.tcard-photo').classList.add('no-photo')">
       <div class="tcard-fallback">${escapeHtml(ini)}</div>
-      ${reveal&&matches?'<div class="tcard-tick">✓</div>':''}
+      ${(reveal||alwaysShowMatch)&&matches?'<div class="tcard-tick">✓</div>':''}
     </div>
     <div class="tcard-name">${escapeHtml(card.playerName)}</div>`;
   return el;
