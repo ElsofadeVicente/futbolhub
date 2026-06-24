@@ -45,6 +45,53 @@ body {
     min-height: 100vh;
 }
 
+/* ===================== COLUMNAS DE ANUNCIOS (estilo coche/blackjack, adaptado) ===================== */
+.ad-col {
+    position: fixed;
+    top: 0; bottom: 0; width: 72px;
+    display: none; flex-direction: column;
+    z-index: 5;
+    background: var(--bg-mid);
+}
+.ad-col--left  { left: 0;  border-right: 1px solid var(--border-subtle); }
+.ad-col--right { right: 0; border-left:  1px solid var(--border-subtle); }
+.ad-strip {
+    flex: 1; margin: 5px;
+    border: 1px dashed rgba(201,168,76,0.18);
+    background: rgba(255,255,255,0.012);
+    display: flex; align-items: center; justify-content: center;
+    min-height: 80px;
+}
+.ad-strip--accent {
+    border-color: rgba(201,168,76,0.34);
+    background: rgba(201,168,76,0.05);
+}
+.ad-strip-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 6px; letter-spacing: 0.16em; font-weight: 700;
+    text-transform: uppercase; text-align: center;
+    color: rgba(240,236,224,0.28); line-height: 1.7;
+}
+.ad-strip--accent .ad-strip-label { color: rgba(201,168,76,0.5); }
+
+@media (min-width: 760px) {
+    .ad-col { display: flex; }
+    .once-menu-screen, .mode-selection, #game { margin-left: 72px; margin-right: 72px; }
+    .home-btn { left: 86px; }
+    .settings-btn { right: 86px; }
+}
+
+/* ===================== ESTADO INICIAL (el JS lo muestra/oculta) ===================== */
+#loading, #game, #comp-countdown { display: none; }
+
+/* ===================== UTILIDADES ===================== */
+.stats-heading {
+    margin-bottom: 15px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 2px;
+}
+.settings-close-btn { width: 100%; margin-top: 20px; }
+
 /* ===================== SETTINGS BTN ===================== */
 .settings-btn {
     position: fixed;
@@ -185,8 +232,31 @@ body {
     position: absolute;
     top: 18px; left: 18px;
     z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.84rem;
+    letter-spacing: 1.2px;
+    padding: 8px 15px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(200,168,75,0.34);
+    background: rgba(8,14,8,0.6);
+    color: var(--gold-light);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
-.menu-back-btn:hover { transform: translateY(-1px); }
+.menu-back-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(201,168,76,0.16);
+    border-color: var(--gold);
+    color: var(--gold-light);
+}
 
 .mode-title {
     font-family: 'Bebas Neue', sans-serif;
@@ -1015,6 +1085,16 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     font-family: 'Bebas Neue', sans-serif;
     font-size: 2.8rem;
     line-height: 1;
+    display: inline-block;
+}
+@keyframes count-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.4); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+.completion-stat-value.count-pop {
+    animation: count-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .completion-stat:nth-child(1) .completion-stat-value { color: var(--correct-bright); }
 .completion-stat:nth-child(2) .completion-stat-value { color: #e74c3c; }
