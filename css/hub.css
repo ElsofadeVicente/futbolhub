@@ -207,6 +207,15 @@ body.np-body .settings-btn:hover {
 }
 
 /* ── Columnas de anuncios ── */
+/* El hub usa ad-cols DENTRO del grid (no fixed como en los juegos).
+   Anulamos aquí lo que impone global.css. */
+body.np-body .np-layout .ad-col {
+  position: static;
+  top: auto; bottom: auto; left: auto; right: auto;
+  width: auto;
+  background: transparent;
+  z-index: auto;
+}
 .ad-col {
   display: flex; flex-direction: column;
   gap: 8px; padding: 0 5px;
@@ -402,12 +411,14 @@ body.np-body .settings-btn:hover {
   .np-layout {
     grid-template-columns: 52px 1fr 52px;
   }
+  /* El global oculta .ad-col a 759px; el hub las mantiene hasta 540px */
+  body.np-body .np-layout .ad-col { display: flex; }
 }
 @media (max-width: 540px) {
   .np-layout {
     grid-template-columns: 1fr;
   }
-  .ad-col { display: none; }
+  body.np-body .np-layout .ad-col { display: none; }
   .np-grid { grid-template-columns: 1fr; }
   .logo-fut, .logo-hub { font-size: 38px; }
 }
