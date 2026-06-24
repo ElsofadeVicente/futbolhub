@@ -16,8 +16,7 @@ let currentGuess = [];
 let playerAttempts = {};
 let playerGuessHistory = {};
 
-let dailyOffset = 0;
-let dailyEditionNumber = 0;
+let dailyOffset  = 0;
 
 let matchStats = { guessed: 0, failed: 0, revealed: 0 };
 
@@ -39,31 +38,51 @@ function goBackToMenu() {
 
 // ── ONCE DIARIO ─────────────────────────────
 
-function getDailyKey(offset) {
-    const d = new Date();
-    d.setDate(d.getDate() - offset);
-    const yyyy = d.getFullYear();
-    const mm   = String(d.getMonth() + 1).padStart(2, '0');
-    const dd   = String(d.getDate()).padStart(2, '0');
-    return `daily_${yyyy}${mm}${dd}`;
+// Nombres de meses en español, usados para construir el nombre del archivo JSON
+const MONTH_NAMES_ES = [
+    'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+];
+
+/**
+ * Devuelve la fecha "hoy" en la zona horaria de España (Europe/Madrid).
+ * Usamos toLocaleString con timeZone para obtener el día correcto incluso si el usuario
+ * está en otro huso horario.
+ */
+function getSpainDate(offsetDays = 0) {
+    const now = new Date();
+    now.setDate(now.getDate() - offsetDays);
+    // Convertir a fecha local de España
+    const parts = new Intl.DateTimeFormat('es-ES', {
+        timeZone: 'Europe/Madrid',
+        year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(now);
+    const get = type => parseInt(parts.find(p => p.type === type).value, 10);
+    return { year: get('year'), month: get('month'), day: get('day') };
 }
 
-function saveDailyResult(offset, result) {
-    localStorage.setItem(getDailyKey(offset), JSON.stringify(result));
+/** Clave de localStorage: oncediario_YYYYMMDD */
+function getDailyKey(offsetDays = 0) {
+    const { year, month, day } = getSpainDate(offsetDays);
+    return `oncediario_${year}${String(month).padStart(2,'0')}${String(day).padStart(2,'0')}`;
 }
 
-function loadDailyResult(offset) {
-    const raw = localStorage.getItem(getDailyKey(offset));
+function saveDailyResult(offsetDays, result) {
+    localStorage.setItem(getDailyKey(offsetDays), JSON.stringify(result));
+}
+
+function loadDailyResult(offsetDays) {
+    const raw = localStorage.getItem(getDailyKey(offsetDays));
     return raw ? JSON.parse(raw) : null;
 }
 
-function getDailyHistoryCount() {
-    let count = 0;
-    for (let i = 0; i < 365; i++) {
-        if (loadDailyResult(i) !== null) count++;
-        else break;
-    }
-    return count;
+/**
+ * Nombre del archivo JSON para el mes de una fecha con offset.
+ * Formato: Septiembre_2026.json
+ */
+function getDailyFileName(offsetDays = 0) {
+    const { year, month } = getSpainDate(offsetDays);
+    return `${MONTH_NAMES_ES[month - 1]}_${year}.json`;
 }
 
 // =============================================
@@ -80,7 +99,7 @@ function updateLoadingProgress(loaded, total) {
     if (pctEl) pctEl.textContent = pct + '%';
 }
 
-async function loadMatchData(mode) {
+async function loadMatchData(mode, offsetDays = 0) {
     try {
         let folders = [];
         switch (mode) {
@@ -91,8 +110,27 @@ async function loadMatchData(mode) {
             case 'historico': folders = ['./data/historico']; break;
         }
 
+        // Para modo diario: cargar solo el archivo del mes de hoy
+        if (mode === 'diario') {
+            const fileName = getDailyFileName(0);
+            try {
+                const r = await fetch(`./data/once-diario/${fileName}`);
+                if (!r.ok) throw new Error('Archivo no encontrado');
+                const data = await r.json();
+                if (!Array.isArray(data) || data.length === 0) throw new Error('Archivo vacío');
+                dailyPool  = data;
+                allMatches = data;
+                dailyAvailability[0] = true;
+                updateLoadingProgress(1, 1);
+                return true;
+            } catch(e) {
+                console.error('Error cargando once diario:', e);
+                alert('No hay partidos disponibles para este mes.');
+                return false;
+            }
+        }
+
         const knownFiles = {
-            './data/once-diario': ['once-diario.json'],
             './data/liga': [
                 '14_15.json','15_16.json','16_17.json',
                 '17_18.json','18_19.json','19_20.json',
@@ -169,19 +207,26 @@ function shuffleArray(array) {
     return shuffled;
 }
 
-function getDailyMatchForOffset(offset) {
-    const edition = getDailyEditionNumber(offset); // 1, 2, 3...
-    const index = (edition - 1) % dailyPool.length;
+/**
+ * Devuelve el partido del día para el offset dado.
+ * El índice es el día del mes - 1 (0-based) en hora española.
+ * Si no hay partido para ese día (mes incompleto), toma el último disponible.
+ */
+function getDailyMatchForOffset(offsetDays) {
+    const { day } = getSpainDate(offsetDays);
+    const index = Math.min(day - 1, dailyPool.length - 1);
     return dailyPool[index];
 }
 
-function getDailyEditionNumber(offset) {
-    const launch = new Date(2026, 2, 1);
-    const target = new Date();
-    target.setDate(target.getDate() - offset);
-    target.setHours(0, 0, 0, 0);
-    launch.setHours(0, 0, 0, 0);
-    return Math.max(1, Math.floor((target - launch) / 86400000) + 1);
+/**
+ * Devuelve una cadena legible con la fecha española del offset.
+ * Ej: "24 de junio" para hoy, "23 de junio" para ayer.
+ */
+function getDailyDateLabel(offsetDays) {
+    const { year, month, day } = getSpainDate(offsetDays);
+    const months = ['enero','febrero','marzo','abril','mayo','junio',
+                    'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    return `${day} de ${months[month - 1]}`;
 }
 
 // =============================================
@@ -194,10 +239,10 @@ async function startGame(mode) {
     hideAllScreens();
     document.getElementById('loading').style.display = 'block';
 
-    const loaded = await loadMatchData(mode);
+    const loaded = await loadMatchData(mode, 0);
     document.getElementById('loading').style.display = 'none';
 
-    if (!loaded) { goToGame('once'); return; }
+    if (!loaded) { goBackToMenu(); return; }
 
     currentMatchIndex = 0;
     if (mode === 'diario') loadDailyMatch(0);
@@ -208,10 +253,84 @@ async function startGame(mode) {
 // ONCE DIARIO
 // =============================================
 
-function loadDailyMatch(offset) {
-    dailyOffset        = offset;
-    dailyEditionNumber = getDailyEditionNumber(offset);
-    currentMatch       = getDailyMatchForOffset(offset);
+// Cache de disponibilidad: offset (días) -> true/false
+const dailyAvailability = {};
+// Cache de pools ya cargados por nombre de archivo, para no refetchear al navegar
+const dailyPoolCache = {};
+
+/**
+ * Comprueba si existe un partido para el offset dado.
+ * Usa caché para no repetir el fetch en cada navegación.
+ * GitHub Pages no soporta HEAD, así que usa GET y guarda el resultado.
+ */
+async function checkDayAvailable(offsetDays) {
+    if (offsetDays === 0) return true;
+    if (dailyAvailability[offsetDays] !== undefined) return dailyAvailability[offsetDays];
+
+    const fileName = getDailyFileName(offsetDays);
+    const { day } = getSpainDate(offsetDays);
+
+    // Si ya tenemos el pool en caché para ese archivo, solo verificar que tiene ese día
+    if (dailyPoolCache[fileName]) {
+        const available = (day - 1) < dailyPoolCache[fileName].length;
+        dailyAvailability[offsetDays] = available;
+        return available;
+    }
+
+    try {
+        const r = await fetch(`./data/once-diario/${fileName}`);
+        if (!r.ok) { dailyAvailability[offsetDays] = false; return false; }
+        const data = await r.json();
+        if (!Array.isArray(data) || data.length === 0) { dailyAvailability[offsetDays] = false; return false; }
+        // Guardar en caché para reutilizar si el usuario navega a ese mes
+        dailyPoolCache[fileName] = data;
+        const available = (day - 1) < data.length;
+        dailyAvailability[offsetDays] = available;
+        return available;
+    } catch(e) {
+        dailyAvailability[offsetDays] = false;
+        return false;
+    }
+}
+
+async function loadDailyMatch(offsetDays) {
+    dailyOffset = offsetDays;
+
+    // Cargar el pool correcto si cambia de mes o está vacío
+    const neededFile  = getDailyFileName(offsetDays);
+    const currentFile = getDailyFileName(0);
+    const needsReload = neededFile !== currentFile || dailyPool.length === 0;
+
+    if (needsReload) {
+        // Primero mirar si ya lo tenemos en caché (prefetcheado por checkDayAvailable)
+        if (dailyPoolCache[neededFile]) {
+            dailyPool = dailyPoolCache[neededFile];
+        } else {
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const r = await fetch(`./data/once-diario/${neededFile}`);
+                if (r.ok) {
+                    const data = await r.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        dailyPool = data;
+                        dailyPoolCache[neededFile] = data;
+                        dailyAvailability[offsetDays] = true;
+                    }
+                } else {
+                    dailyAvailability[offsetDays] = false;
+                }
+            } catch(e) {
+                dailyAvailability[offsetDays] = false;
+            }
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    currentMatch = getDailyMatchForOffset(offsetDays);
+    if (!currentMatch) {
+        alert('No hay partido disponible para este día.');
+        return;
+    }
 
     revealedPlayers    = new Set();
     failedPlayers      = new Set();
@@ -231,21 +350,23 @@ function loadDailyMatch(offset) {
 
     document.getElementById('next-match-btn').style.display = 'none';
 
-    updateDailyHeader(offset, dailyEditionNumber);
+    // Comprobar si el día anterior existe (async, no bloquea la carga)
+    const prevAvailable = offsetDays < 30 ? await checkDayAvailable(offsetDays + 1) : false;
+    updateDailyHeader(offsetDays, prevAvailable);
 
     document.getElementById('game').style.display = 'block';
 
-    const saved = loadDailyResult(offset);
+    const saved = loadDailyResult(offsetDays);
     if (saved) {
         renderFormationFromSaved(saved);
-        showDailyAlreadyPlayed(saved, offset);
+        showDailyAlreadyPlayed(saved, offsetDays);
     } else {
         renderFormation();
         updateRevealedCount();
     }
 }
 
-function updateDailyHeader(offset, edition) {
+function updateDailyHeader(offsetDays, prevAvailable = false) {
     let headerEl = document.getElementById('daily-header');
     if (!headerEl) {
         headerEl = document.createElement('div');
@@ -255,31 +376,35 @@ function updateDailyHeader(offset, edition) {
         pt.parentNode.insertBefore(headerEl, pt.nextSibling);
     }
 
-    const canGoBack    = edition > 1;
-    const canGoForward = offset > 0;
+    const canGoBack    = prevAvailable;      // hay archivo para el día anterior
+    const canGoForward = offsetDays > 0;     // no estamos ya en hoy
+    const isToday      = offsetDays === 0;
+
+    const dateLabel = getDailyDateLabel(offsetDays);
+    const pastLabel = isToday ? '' : offsetDays === 1 ? 'AYER' : `HACE ${offsetDays} DÍAS`;
 
     headerEl.innerHTML = `
         <div class="daily-nav">
             <button class="daily-nav-btn${canGoBack ? '' : ' disabled'}"
-                    ${canGoBack ? `onclick="navigateDaily(${offset + 1})"` : 'disabled'}>
+                    ${canGoBack ? `onclick="navigateDaily(${offsetDays + 1})"` : 'disabled'}>
                 ← Anterior
             </button>
             <div class="daily-edition">
                 <span class="daily-label">ONCE DIARIO</span>
-                <span class="daily-number">#${edition}</span>
-                ${offset > 0 ? '<span class="daily-past-badge">PASADO</span>' : ''}
+                <span class="daily-number">${dateLabel}</span>
+                ${pastLabel ? `<span class="daily-past-badge">${pastLabel}</span>` : ''}
             </div>
             <button class="daily-nav-btn${canGoForward ? '' : ' disabled'}"
-                    ${canGoForward ? `onclick="navigateDaily(0)"` : 'disabled'}>
-                Hoy →
+                    ${canGoForward ? `onclick="navigateDaily(${offsetDays - 1})"` : 'disabled'}>
+                ${offsetDays === 1 ? 'Hoy →' : 'Siguiente →'}
             </button>
         </div>
     `;
 }
 
-function navigateDaily(newOffset) {
-    if (newOffset < 0) return;
-    loadDailyMatch(newOffset);
+async function navigateDaily(newOffset) {
+    if (newOffset < 0 || newOffset > 30) return;
+    await loadDailyMatch(newOffset);
 }
 
 function renderFormationFromSaved(saved) {
@@ -291,7 +416,7 @@ function renderFormationFromSaved(saved) {
     document.getElementById('revealed-count').textContent = total;
 }
 
-function showDailyAlreadyPlayed(saved, offset) {
+function showDailyAlreadyPlayed(saved, offsetDays) {
     setTimeout(() => {
         document.getElementById('completion-match').textContent =
             `${currentMatch.homeTeam} ${currentMatch.score} ${currentMatch.awayTeam} • ${currentMatch.date}`;
@@ -299,16 +424,20 @@ function showDailyAlreadyPlayed(saved, offset) {
         document.getElementById('comp-failed').textContent   = saved.matchStats?.failed   ?? 0;
         document.getElementById('comp-revealed').textContent = saved.matchStats?.revealed ?? 0;
 
-        document.querySelector('.completion-title').textContent = offset === 0
-            ? (saved.matchStats?.guessed === 11 ? '🏆 ¡ONCE PERFECTO!' : '✅ YA JUGASTE HOY')
-            : `📅 ONCE #${getDailyEditionNumber(offset)}`;
+        if (offsetDays === 0) {
+            document.querySelector('.completion-title').textContent =
+                saved.matchStats?.guessed === 11 ? '🏆 ¡ONCE PERFECTO!' : '✅ YA JUGASTE HOY';
+        } else {
+            const dateLabel = getDailyDateLabel(offsetDays);
+            document.querySelector('.completion-title').textContent = `📅 ${dateLabel.toUpperCase()}`;
+        }
 
         document.getElementById('comp-streak').style.display = 'none';
         const nextBtn = document.querySelector('.completion-buttons .next-btn');
         if (nextBtn) nextBtn.style.display = 'none';
 
         // Solo mostrar countdown si es hoy
-        if (offset === 0) startDailyCountdown();
+        if (offsetDays === 0) startDailyCountdown();
         else {
             const el = document.getElementById('comp-countdown');
             if (el) el.style.display = 'none';
@@ -998,12 +1127,43 @@ function updateRevealedCount() {
 
 let dailyCountdownInterval = null;
 
+/**
+ * Calcula el tiempo hasta las 00:00 hora española del día siguiente.
+ * Usamos la diferencia entre el timestamp actual y el próximo medianoche en Europe/Madrid.
+ */
 function getTimeUntilNextDaily() {
-    const now  = new Date();
-    const next = new Date();
-    next.setHours(12, 0, 0, 0);
-    if (now >= next) next.setDate(next.getDate() + 1);
-    const diff = next - now;
+    const now = new Date();
+
+    // Construir "mañana a las 00:00 en Madrid" como timestamp UTC
+    // Primero obtenemos la fecha de mañana en hora española
+    const tomorrow = new Date(now.getTime() + 86400000);
+    const tomorrowParts = new Intl.DateTimeFormat('es-ES', {
+        timeZone: 'Europe/Madrid',
+        year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(tomorrow);
+    const getP = type => parseInt(tomorrowParts.find(p => p.type === type).value, 10);
+    const tY = getP('year'), tM = getP('month'), tD = getP('day');
+
+    // Convertir "tY-tM-tD 00:00:00 Madrid" a UTC usando Date.parse con offset aproximado
+    // La forma más correcta es usar un formatter para encontrar el offset
+    const midnightMadridStr = `${tY}-${String(tM).padStart(2,'0')}-${String(tD).padStart(2,'0')}T00:00:00`;
+    // Creamos la fecha como si fuera UTC y luego ajustamos con el offset de Madrid
+    const madridOffset = (() => {
+        const testDate = new Date(midnightMadridStr + 'Z');
+        const localStr = testDate.toLocaleString('es-ES', { timeZone: 'Europe/Madrid', hour12: false,
+            year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit' });
+        // Extraer la hora de Madrid para el timestamp UTC testDate
+        const h = parseInt(localStr.slice(12,14), 10);
+        // Si en UTC las 00:00 son las h en Madrid, el offset Madrid→UTC es -h horas
+        return h; // horas que hay que restar en UTC para que en Madrid sea medianoche
+    })();
+
+    // Construir el timestamp de la próxima medianoche Madrid en UTC
+    const nextMidnightUTC = new Date(midnightMadridStr + 'Z');
+    nextMidnightUTC.setUTCHours(nextMidnightUTC.getUTCHours() - madridOffset);
+
+    const diff = nextMidnightUTC - now;
+    if (diff <= 0) return '00:00:00';
     const h = Math.floor(diff / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
@@ -1029,7 +1189,7 @@ function showCompletionModal() {
     document.getElementById('comp-revealed').textContent = matchStats.revealed;
 
     const streakEl = document.getElementById('comp-streak');
-    if (stats.currentStreak >= 3 && currentMode !== 'diario') {
+    if (stats.currentStreak >= 3 && (currentMode !== 'diario' || dailyOffset === 0)) {
         streakEl.textContent = `🔥 Racha actual: ${stats.currentStreak}`; streakEl.style.display = 'block';
     } else { streakEl.style.display = 'none'; }
 
@@ -1047,6 +1207,15 @@ function showCompletionModal() {
             failedPlayers:   Array.from(failedPlayers),
             matchStats:      { ...matchStats }
         });
+    } else if (currentMode === 'diario' && dailyOffset > 0) {
+        // Guardar el resultado del día anterior también (para no perder el progreso)
+        saveDailyResult(dailyOffset, {
+            revealedPlayers: Array.from(revealedPlayers),
+            failedPlayers:   Array.from(failedPlayers),
+            matchStats:      { ...matchStats }
+        });
+        if (countdownEl) countdownEl.style.display = 'none';
+        if (dailyCountdownInterval) clearInterval(dailyCountdownInterval);
     } else {
         if (countdownEl) countdownEl.style.display = 'none';
         if (dailyCountdownInterval) clearInterval(dailyCountdownInterval);
@@ -1094,12 +1263,19 @@ function giveUp() {
 
 function updateStats(mode) {
     stats.totalAttempts++;
+    const isDailyToday = currentMode === 'diario' && dailyOffset === 0;
     if (mode === 'correct') {
         stats.playersGuessed++; matchStats.guessed++;
-        stats.currentStreak++;
-        if (stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak;
+        // Solo aumentar racha en modos no-diario, o en el diario de HOY
+        if (currentMode !== 'diario' || isDailyToday) {
+            stats.currentStreak++;
+            if (stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak;
+        }
     } else if (mode === 'failed') {
-        matchStats.failed++; stats.currentStreak = 0;
+        matchStats.failed++;
+        if (currentMode !== 'diario' || isDailyToday) {
+            stats.currentStreak = 0;
+        }
     } else if (mode === 'voluntary') {
         matchStats.revealed++; stats.totalAttempts--;
     }
@@ -1171,4 +1347,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mostrar menú del once por defecto
     hideAllScreens();
     document.getElementById('once-menu').style.display = 'flex';
+
+    // Actualizar subtítulo del botón diario con la fecha de hoy
+    const subtitleEl = document.getElementById('daily-btn-subtitle');
+    if (subtitleEl) {
+        const months = ['enero','febrero','marzo','abril','mayo','junio',
+                        'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        const { day, month } = getSpainDate(0);
+        subtitleEl.textContent = `Partidos del ${day} de ${months[month - 1]} · cambia a medianoche`;
+    }
 });
