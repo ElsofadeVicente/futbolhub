@@ -14,6 +14,21 @@
   <!-- Textura de papel (SVG inline) -->
   <div id="paper-overlay" aria-hidden="true"></div>
 
+  <!-- ── Columnas de anuncios (solo desktop ≥760px) ───────────── -->
+  <aside class="ad-col ad-col--left" aria-hidden="true">
+    <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+    <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  </aside>
+  <aside class="ad-col ad-col--right" aria-hidden="true">
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+    <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  </aside>
+
+  <!-- ── Botón volver al Hub (esquina, estilo coche) ──────────── -->
+  <a href="../" class="back-btn">← Volver</a>
+
   <!-- ── Loading ─────────────────────────────────────────────── -->
   <div id="loading-screen">
     <div class="spin"></div>
@@ -39,8 +54,6 @@
 
       <!-- Cuerpo -->
       <div id="mode-body">
-        <a href="../" id="mode-back">← Volver al Hub</a>
-
         <h1 id="mode-title">En el Top</h1>
         <p id="mode-desc">Adivina los 10 futbolistas de la lista. Solo la bandera como pista.</p>
 
@@ -72,7 +85,6 @@
     <main id="game-main">
 
       <div id="top-bar">
-        <a href="../" id="game-back">← Hub</a>
         <span id="score-badge">0/10</span>
         <span id="timer-num">2:00</span>
       </div>

@@ -53,6 +53,64 @@ body::before {
 
 .hidden { display: none !important; }
 
+/* ══════════════════════════════════════════════
+   COLUMNAS LATERALES DE ANUNCIOS (estilo coche/blackjack)
+   ══════════════════════════════════════════════ */
+.ad-col {
+  position: fixed;
+  top: 0; bottom: 0; width: 72px;
+  display: none; flex-direction: column;
+  z-index: 3;
+  background: var(--np-paper);
+}
+.ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
+.ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
+.ad-strip {
+  flex: 1; margin: 5px;
+  border: 1px dashed var(--np-ink-soft);
+  background: rgba(15,18,14,0.018);
+  display: flex; align-items: center; justify-content: center;
+  min-height: 80px;
+}
+.ad-strip--accent {
+  border-color: rgba(181,34,30,0.20);
+  background: rgba(181,34,30,0.022);
+}
+.ad-strip-label {
+  font-family: var(--font-mono);
+  font-size: 5.5px; letter-spacing: 0.16em;
+  text-transform: uppercase; text-align: center;
+  color: rgba(15,18,14,0.24); line-height: 1.7;
+}
+.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+
+/* ══════════════════════════════════════════════
+   BOTÓN VOLVER (esquina, estilo coche)
+   ══════════════════════════════════════════════ */
+.back-btn {
+  position: fixed; top: 14px; left: 14px;
+  z-index: 50;
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.6rem; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--np-ink); padding: 5px 10px;
+  border: 1px solid var(--np-ink); background: var(--np-paper2);
+  box-shadow: 2px 2px 0 var(--np-ink);
+  transition: background 0.12s, color 0.12s;
+  cursor: pointer;
+}
+.back-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+
+/* En desktop: mostrar columnas y dejar hueco para no solaparse */
+@media (min-width: 760px) {
+  .ad-col { display: flex; }
+  #mode-screen, #game-screen, #end-screen, #loading-screen {
+    margin-left: 72px; margin-right: 72px;
+  }
+  #timer-track { left: 72px; right: 72px; }
+  .back-btn { left: 86px; }
+}
+
 /* ── Shared: eyebrow label ───────────────────── */
 .eyebrow {
   display: flex;
