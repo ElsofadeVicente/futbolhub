@@ -1,48 +1,74 @@
 /* =====================================================
-   EN EL ONCE — CSS REDISEÑADO
-   Estética: Premium Football Card Game
+   EN EL ONCE — Newspaper Edition (matches FutbolHUB)
    ===================================================== */
 
 :root {
-    --bg-dark: #0f1410;
-    --bg-mid: #151c15;
-    --bg-card: #1a2219;
-    --bg-field: #2e7d32;
-    --field-stripe: #276929;
-    --field-line: rgba(255,255,255,0.18);
-    --gold: #c9a84c;
-    --gold-light: #e8c96d;
-    --gold-dim: rgba(201,168,76,0.15);
-    --text-light: #f0ece0;
-    --text-muted: rgba(240,236,224,0.55);
-    --player-bg: #7b1c1c;
+    /* Paleta newspaper compartida (como coche/top/blackjack) */
+    --np-paper:    #f4ead2;
+    --np-paper2:   #ede0c0;
+    --np-paper3:   #e4d3aa;
+    --np-ink:      #0f120e;
+    --np-ink-mid:  rgba(15,18,14,0.60);
+    --np-ink-soft: rgba(15,18,14,0.16);
+    --np-red:      #b5221e;
+    --np-green:    #2d6a35;
+    --font-display: 'Anton', sans-serif;
+    --font-serif:   'Playfair Display', Georgia, serif;
+    --font-mono:    'DM Mono', monospace;
+
+    /* Tokens del Once mapeados al sistema newspaper */
+    --bg-dark: var(--np-paper);
+    --bg-mid: var(--np-paper2);
+    --bg-card: #efe3c6;
+    --bg-field: #e7dab4;
+    --field-stripe: #e1d3a6;
+    --field-line: rgba(15,18,14,0.32);
+    --gold: #0f120e;             /* títulos/acentos → tinta */
+    --gold-light: #b5221e;       /* acento brillante → rojo */
+    --gold-dim: rgba(181,34,30,0.10);
+    --text-light: #0f120e;       /* texto principal → tinta */
+    --text-muted: rgba(15,18,14,0.55);
+    --player-bg: #b5221e;
     --player-top: #9b2222;
     --gk-bg: #b8860b;
     --gk-top: #daa520;
-    --correct: #3a7d44;
-    --correct-bright: #4ade80;
+    --correct: #2d6a35;
+    --correct-bright: #2d6a35;
     --present: #b8860b;
-    --absent: #2a3028;
-    --red-accent: #c0392b;
-    --border-subtle: rgba(255,255,255,0.07);
+    --absent: #d4c59c;
+    --red-accent: #b5221e;
+    --border-subtle: rgba(15,18,14,0.16);
 }
 
 body.high-contrast {
-    --bg-dark: #000;
-    --bg-mid: #111;
-    --text-light: #fff;
-    --correct: #00bb00;
-    --present: #ccaa00;
-    --absent: #444;
+    --np-paper: #fff;
+    --bg-dark: #fff;
+    --bg-mid: #f2f2f2;
+    --bg-card: #fff;
+    --text-light: #000;
+    --np-ink: #000;
+    --gold: #000;
+    --gold-light: #aa0000;
+    --correct: #007a1f;
+    --present: #9c7400;
+    --absent: #cfcfcf;
+    --border-subtle: rgba(0,0,0,0.4);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Rajdhani', sans-serif;
-    background: var(--bg-dark);
-    color: var(--text-light);
+    font-family: 'Rajdhani', system-ui, sans-serif;
+    color: var(--np-ink);
     min-height: 100vh;
+    background-color: var(--np-paper);
+    background-image:
+        repeating-linear-gradient(90deg,
+            transparent, transparent 159px,
+            rgba(15,18,14,0.04) 159px, rgba(15,18,14,0.04) 160px),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    background-size: auto, 280px 280px;
+    background-attachment: fixed;
 }
 
 /* ===================== COLUMNAS DE ANUNCIOS (estilo coche/blackjack, adaptado) ===================== */
@@ -87,7 +113,7 @@ body {
 /* ===================== UTILIDADES ===================== */
 .stats-heading {
     margin-bottom: 15px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     letter-spacing: 2px;
 }
 .settings-close-btn { width: 100%; margin-top: 20px; }
@@ -140,7 +166,7 @@ body {
     box-shadow: 0 24px 60px rgba(0,0,0,0.6);
 }
 .settings-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 2rem;
     letter-spacing: 4px;
     color: var(--gold);
@@ -259,7 +285,7 @@ body {
 }
 
 .mode-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: clamp(3.2rem, 9vw, 5.5rem);
     letter-spacing: 14px;
     color: var(--gold);
@@ -315,7 +341,7 @@ body {
 }
 
 .mode-btn-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: clamp(1.2rem, 2.4vw, 1.55rem);
     letter-spacing: 3px;
     color: var(--gold-light);
@@ -349,7 +375,7 @@ body {
     color: var(--gold);
 }
 .loading-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 2.4rem;
     letter-spacing: 8px;
     animation: pulse 1.2s ease-in-out infinite;
@@ -386,7 +412,7 @@ body {
 }
 @keyframes ballBounce { from{top:15%} to{top:85%} }
 .loading-percent {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 1.6rem;
     letter-spacing: 4px;
     color: var(--gold-light);
@@ -426,7 +452,7 @@ body {
     text-transform: uppercase;
 }
 .daily-number {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 1.3rem;
     color: var(--gold-light);
     letter-spacing: 2px;
@@ -485,7 +511,7 @@ body {
 }
 
 .competition-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 0.95rem;
     letter-spacing: 5px;
     color: var(--text-muted);
@@ -513,7 +539,7 @@ body {
 .team-badge { display: none; }
 
 .team-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: clamp(1.5rem, 3vw, 2.2rem);
     letter-spacing: 2px;
     color: var(--text-light);
@@ -521,7 +547,7 @@ body {
 }
 
 .score-display {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: clamp(2.8rem, 6vw, 4.2rem);
     font-weight: bold;
     letter-spacing: 8px;
@@ -547,7 +573,7 @@ body {
     border-bottom: 1px solid rgba(201,168,76,0.12);
     padding: 7px 20px;
     text-align: center;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 0.95rem;
     letter-spacing: 4px;
     color: var(--gold);
@@ -770,7 +796,7 @@ body {
 }
 
 .revealed-count {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 1.8rem;
     letter-spacing: 2px;
     color: var(--gold-light);
@@ -906,7 +932,7 @@ body {
     transform: none;
 }
 .modal-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 1.4rem;
     letter-spacing: 3px;
     color: var(--gold);
@@ -1052,7 +1078,7 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     box-shadow: 0 32px 80px rgba(0,0,0,0.7);
 }
 .completion-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 2rem;
     letter-spacing: 4px;
     color: var(--gold-light);
@@ -1082,7 +1108,7 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     padding: 14px 8px;
 }
 .completion-stat-value {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 2.8rem;
     line-height: 1;
     display: inline-block;
@@ -1218,3 +1244,206 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     .guess-row { gap: 4px; }
     .keyboard-row { gap: 3px; }
 }
+
+/* =====================================================
+   NEWSPAPER OVERRIDES — ajusta los componentes con
+   colores fijos del tema oscuro al sistema FutbolHUB.
+   ===================================================== */
+
+/* Botón volver (menú e in-game) → caja newspaper como coche/top */
+.menu-back-btn, .home-btn {
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 6px 11px;
+    border-radius: 0;
+    border: 1px solid var(--np-ink);
+    background: var(--np-paper2);
+    color: var(--np-ink);
+    box-shadow: 2px 2px 0 var(--np-ink);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.menu-back-btn:hover, .home-btn:hover {
+    background: var(--np-ink);
+    color: var(--np-paper);
+    border-color: var(--np-ink);
+    transform: none;
+    box-shadow: 2px 2px 0 var(--np-ink);
+}
+
+/* Menú: fondo papel con rejilla de tinta y leve acento rojo */
+.once-menu-screen, .mode-selection {
+    background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(181,34,30,0.06) 0%, transparent 70%),
+        repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(15,18,14,0.03) 80px, rgba(15,18,14,0.03) 81px),
+        repeating-linear-gradient(0deg,  transparent, transparent 80px, rgba(15,18,14,0.03) 80px, rgba(15,18,14,0.03) 81px),
+        var(--np-paper);
+}
+
+/* Título principal → Playfair itálica en tinta */
+.mode-title {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: var(--np-ink);
+    text-shadow: none;
+}
+
+/* Tarjetas de modo → papel con borde tinta y acento rojo */
+.mode-btn {
+    background: var(--np-paper2);
+    border: 1px solid var(--np-ink-soft);
+    border-left: 3px solid var(--np-red);
+    border-radius: 0;
+    box-shadow: 2px 2px 0 var(--np-ink-soft);
+}
+.mode-btn:hover {
+    background: var(--np-paper3);
+    border-left-color: var(--np-red);
+    box-shadow: 3px 3px 0 var(--np-ink-soft);
+    transform: translateX(3px);
+}
+.mode-btn--daily { border-left-color: var(--np-red); background: #f0e3c2; }
+.mode-btn-title { font-family: var(--font-display); letter-spacing: 2px; }
+.mode-btn-desc  { color: var(--np-ink); opacity: 0.82; }
+.mode-btn-teams { color: var(--np-ink-mid); }
+
+/* Settings */
+.settings-btn {
+    background: var(--np-paper2);
+    border: 1px solid var(--np-ink);
+    color: var(--np-ink);
+    border-radius: 0;
+    box-shadow: 2px 2px 0 var(--np-ink);
+}
+.settings-btn:hover { background: var(--np-ink); color: var(--np-paper); transform: none; }
+.settings-content {
+    background: var(--np-paper);
+    border: 2px solid var(--np-ink);
+    border-radius: 0;
+    box-shadow: 5px 5px 0 var(--np-ink);
+}
+.stats-display { background: rgba(15,18,14,0.03); border-color: var(--np-ink-soft); }
+.reset-stats-btn { background: var(--np-red); border-radius: 0; box-shadow: 2px 2px 0 var(--np-ink); }
+
+/* Loading */
+.loading { background: var(--np-paper); color: var(--np-ink); }
+.loading-title { color: var(--np-ink); }
+.loading-bar-track { background: rgba(15,18,14,0.06); border-color: var(--np-ink-soft); }
+.loading-bar-fill { background: var(--np-red); }
+.loading-ball { filter: drop-shadow(0 0 4px rgba(15,18,14,0.3)); }
+.loading-percent { color: var(--np-red); }
+
+/* Cabecera de partido / días */
+.match-header { background: var(--np-paper2); border-bottom: 2px solid var(--np-ink); }
+.daily-header { background: var(--np-paper2); border-bottom: 1px solid var(--np-ink-soft); }
+.daily-nav-btn {
+    background: var(--np-paper); border: 1px solid var(--np-ink);
+    color: var(--np-ink); border-radius: 0;
+}
+.daily-nav-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+.daily-past-badge { background: var(--gold-dim); color: var(--np-red); border-color: rgba(181,34,30,0.4); }
+.score-display { color: var(--np-ink); text-shadow: none; }
+.playing-team {
+    background: rgba(181,34,30,0.06);
+    border-top: 1px solid var(--np-ink-soft);
+    border-bottom: 1px solid var(--np-ink-soft);
+    color: var(--np-red);
+}
+
+/* Campo → césped en tono papel con líneas de tinta */
+.field-container {
+    background:
+        repeating-linear-gradient(180deg, #e7dab4 0, #e7dab4 56px, #e1d3a6 56px, #e1d3a6 112px);
+    border-top: 1px solid var(--np-ink-soft);
+    border-bottom: 1px solid var(--np-ink-soft);
+}
+.field-container::before {
+    background:
+        radial-gradient(120% 70% at 50% -8%, rgba(255,255,255,0.18), rgba(255,255,255,0) 52%),
+        radial-gradient(135% 100% at 50% 44%, rgba(0,0,0,0) 60%, rgba(15,18,14,0.10) 100%);
+}
+.pitch-lines { --lc: rgba(15,18,14,0.34); }
+.pl-goal { border-color: rgba(15,18,14,0.5); }
+
+/* Camisetas y etiquetas */
+.jersey { filter: drop-shadow(0 4px 7px rgba(15,18,14,0.28)); }
+.player-card.revealed .jersey {
+    filter: drop-shadow(0 3px 6px rgba(15,18,14,0.25)) drop-shadow(0 0 4px rgba(181,34,30,0.5));
+}
+.player-card.revealed.goalkeeper .jersey {
+    filter: drop-shadow(0 3px 6px rgba(15,18,14,0.25)) drop-shadow(0 0 4px rgba(184,134,11,0.6));
+}
+.player-name-container { background: #fff; border: 1px solid var(--np-ink-soft); box-shadow: 0 1px 4px rgba(15,18,14,0.2); }
+.attempts-counter { background: var(--np-ink); color: var(--np-paper); }
+
+/* Barra de stats */
+.stats-bar { background: var(--np-paper2); border-top: 2px solid var(--np-ink); }
+.revealed-count { color: var(--np-ink); }
+
+/* Botones de acción → planos newspaper */
+.next-btn { background: var(--np-ink); color: var(--np-paper); border-radius: 0; box-shadow: 2px 2px 0 var(--np-ink-soft); }
+.next-btn:hover { filter: none; transform: translateY(-1px); }
+.next-btn:disabled { background: var(--np-ink-soft); color: var(--np-ink-mid); }
+.give-up-btn { background: var(--np-red); color: var(--np-paper); border-radius: 0; box-shadow: 2px 2px 0 var(--np-ink-soft); }
+.give-up-btn:hover { filter: none; transform: translateY(-1px); }
+.reveal-btn, .reveal-btn-modal { background: var(--np-ink); color: var(--np-paper); border-radius: 0; }
+.reveal-btn:hover, .reveal-btn-modal:hover { filter: none; }
+.reveal-btn:disabled { background: var(--np-ink-soft); }
+
+/* Modales */
+.modal-content, .completion-content {
+    background: var(--np-paper);
+    border: 2px solid var(--np-ink);
+    border-radius: 0;
+    box-shadow: 5px 5px 0 var(--np-ink);
+}
+.modal-header .back-btn {
+    border: 1px solid var(--np-ink-soft);
+    background: var(--np-paper2);
+    color: var(--np-ink-mid);
+    border-radius: 0;
+}
+.modal-header .back-btn:hover {
+    color: var(--np-ink);
+    background: var(--np-paper3);
+    border-color: var(--np-ink);
+}
+
+/* Cuadrícula de letras y teclado */
+.letter-cell { border: 1.5px solid var(--np-ink-soft); background: rgba(15,18,14,0.04); color: var(--np-ink); }
+.letter-cell.correct { color: #fff; box-shadow: none; }
+.letter-cell.present { color: #fff; }
+.letter-cell.absent  { color: var(--np-ink-mid); }
+.key { background: var(--np-paper2); border: 1px solid var(--np-ink-soft); color: var(--np-ink); border-radius: 0; }
+.key:hover { background: var(--np-paper3); }
+.key.correct { color: #fff; }
+.key.present { color: #fff; }
+.key.absent  { opacity: 1; color: var(--np-ink-mid); }
+
+/* Columnas de anuncios */
+.ad-col { background: var(--np-paper2); }
+.ad-col--left  { border-right: 1px solid var(--np-ink-soft); }
+.ad-col--right { border-left:  1px solid var(--np-ink-soft); }
+.ad-strip { border: 1px dashed var(--np-ink-soft); background: rgba(15,18,14,0.018); }
+.ad-strip--accent { border-color: rgba(181,34,30,0.22); background: rgba(181,34,30,0.04); }
+.ad-strip-label { font-family: var(--font-mono); color: rgba(15,18,14,0.30); }
+.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.5); }
+
+/* Modal de completado */
+.completion-content { box-shadow: 5px 5px 0 var(--np-ink); }
+.completion-title { color: var(--np-ink); }
+.completion-stat { background: rgba(15,18,14,0.03); border-color: var(--np-ink-soft); }
+.completion-stat:nth-child(1) .completion-stat-value { color: var(--np-green); }
+.completion-stat:nth-child(2) .completion-stat-value { color: var(--np-red); }
+.completion-stat:nth-child(3) .completion-stat-value { color: var(--np-ink); }
+.completion-streak { color: var(--np-red); }
+
+/* Barra táctil móvil */
+.mobile-tap-bar { border-color: rgba(181,34,30,0.4); }
+.mobile-tap-text { color: var(--np-red); }
