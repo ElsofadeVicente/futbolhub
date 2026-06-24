@@ -8,7 +8,7 @@
     --np-paper2:   #ede0c0;
     --np-paper3:   #e4d3aa;
     --np-ink:      #0f120e;
-    --np-ink-mid:  rgba(15,18,14,0.60);
+    --np-ink-mid:  rgba(15,18,14,0.68);
     --np-ink-soft: rgba(15,18,14,0.16);
     --np-red:      #b5221e;
     --np-green:    #2d6a35;
@@ -27,7 +27,7 @@
     --gold-light: #b5221e;       /* acento brillante → rojo */
     --gold-dim: rgba(181,34,30,0.10);
     --text-light: #0f120e;       /* texto principal → tinta */
-    --text-muted: rgba(15,18,14,0.55);
+    --text-muted: rgba(15,18,14,0.68);
     --player-bg: #b5221e;
     --player-top: #9b2222;
     --gk-bg: #b8860b;
@@ -64,16 +64,24 @@ body.high-contrast {
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Rajdhani', system-ui, sans-serif;
+    font-family: 'Rajdhani', sans-serif;
     color: var(--np-ink);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
     background-color: var(--np-paper);
     background-image:
-        repeating-linear-gradient(90deg,
+        radial-gradient(ellipse 115% 95% at 50% 50%,
+            transparent 55%, rgba(15,18,14,0.07) 100%),
+        linear-gradient(180deg,
+            rgba(201,168,76,0.06) 0%, transparent 45%),
+        repeating-linear-gradient(
+            90deg,
             transparent, transparent 159px,
-            rgba(15,18,14,0.04) 159px, rgba(15,18,14,0.04) 160px),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-    background-size: auto, 280px 280px;
+            rgba(15,18,14,0.042) 159px, rgba(15,18,14,0.042) 160px
+        ),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+    background-size: auto, auto, auto, 280px 280px;
     background-attachment: fixed;
 }
 
@@ -1259,6 +1267,7 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
 /* Botón volver (menú e in-game) → caja newspaper como coche/top */
 .menu-back-btn, .home-btn {
     gap: 6px;
+    text-decoration: none;
     font-family: var(--font-mono);
     font-weight: 500;
     font-size: 0.62rem;
@@ -1281,14 +1290,8 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     box-shadow: 2px 2px 0 var(--np-ink);
 }
 
-/* Menú: fondo papel con rejilla de tinta y leve acento rojo */
-.once-menu-screen, .mode-selection {
-    background:
-        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(181,34,30,0.06) 0%, transparent 70%),
-        repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(15,18,14,0.03) 80px, rgba(15,18,14,0.03) 81px),
-        repeating-linear-gradient(0deg,  transparent, transparent 80px, rgba(15,18,14,0.03) 80px, rgba(15,18,14,0.03) 81px),
-        var(--np-paper);
-}
+/* Menú: sin fondo propio, se ve el papel del body (igual que los otros juegos) */
+.once-menu-screen, .mode-selection { background: transparent; }
 
 /* Título principal → Playfair itálica en tinta */
 .mode-title {
@@ -1337,8 +1340,8 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
 .stats-display { background: rgba(15,18,14,0.03); border-color: var(--np-ink-soft); }
 .reset-stats-btn { background: var(--np-red); border-radius: 0; box-shadow: 2px 2px 0 var(--np-ink); }
 
-/* Loading */
-.loading { background: var(--np-paper); color: var(--np-ink); }
+/* Loading: sin fondo propio, se ve el papel texturizado del body (el menú está oculto durante la carga) */
+.loading { background: transparent; color: var(--np-ink); }
 .loading-title { color: var(--np-ink); }
 .loading-bar-track { background: rgba(15,18,14,0.06); border-color: var(--np-ink-soft); }
 .loading-bar-fill { background: var(--np-red); }
@@ -1411,13 +1414,13 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
 .key.absent  { opacity: 1; color: var(--np-ink-mid); }
 
 /* Columnas de anuncios */
-.ad-col { background: var(--np-paper2); }
+.ad-col { background: var(--np-paper); }
 .ad-col--left  { border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { border-left:  1px solid var(--np-ink-soft); }
 .ad-strip { border: 1px dashed var(--np-ink-soft); background: rgba(15,18,14,0.018); }
-.ad-strip--accent { border-color: rgba(181,34,30,0.22); background: rgba(181,34,30,0.04); }
-.ad-strip-label { font-family: var(--font-mono); color: rgba(15,18,14,0.30); }
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.5); }
+.ad-strip--accent { border-color: rgba(181,34,30,0.20); background: rgba(181,34,30,0.022); }
+.ad-strip-label { font-family: var(--font-mono); color: rgba(15,18,14,0.24); }
+.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
 
 /* Modal de completado */
 .completion-content { box-shadow: 5px 5px 0 var(--np-ink); }

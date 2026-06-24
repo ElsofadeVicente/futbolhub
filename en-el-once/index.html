@@ -28,40 +28,9 @@
   <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
 </aside>
 
-<!-- Ajustes -->
-<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
-
-<div id="settings-modal" class="settings-modal">
-  <div class="settings-content">
-    <h2 class="settings-title">CONFIGURACIÓN</h2>
-
-    <div class="settings-option">
-      <span>Modo Alto Contraste</span>
-      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
-    </div>
-
-    <div class="stats-display">
-      <h3 class="stats-heading">ESTADÍSTICAS</h3>
-      <div class="stat-row"><span>Partidos completados:</span><span id="stat-matches">0</span></div>
-      <div class="stat-row"><span>Jugadores adivinados:</span><span id="stat-players">0</span></div>
-      <div class="stat-row"><span>Tasa de acierto:</span><span id="stat-success">0%</span></div>
-      <div class="stat-row"><span>Racha actual:</span><span id="stat-streak">0</span></div>
-      <div class="stat-row"><span>Mejor racha:</span><span id="stat-best-streak">0</span></div>
-      <button class="reset-stats-btn" onclick="resetStats()">Resetear estadísticas</button>
-    </div>
-
-    <button class="next-btn settings-close-btn" onclick="toggleSettings()">Cerrar</button>
-  </div>
-</div>
-
 <!-- Pantalla 1: menú -->
 <div id="once-menu" class="once-menu-screen">
-  <button class="menu-back-btn" onclick="window.location.href='../'">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 18 9 12 15 6"></polyline>
-    </svg>
-    <span>MENÚ</span>
-  </button>
+  <a href="../index.html" class="menu-back-btn">← Volver</a>
 
   <h1 class="mode-title">EN EL ONCE</h1>
 
