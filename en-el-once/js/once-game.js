@@ -372,9 +372,8 @@ function updateDailyHeader(offsetDays, prevAvailable = false) {
         headerEl = document.createElement('div');
         headerEl.id        = 'daily-header';
         headerEl.className = 'daily-header';
-        // Insertar arriba del todo (como el estático), no debajo del marcador
-        const game = document.getElementById('game');
-        game.insertBefore(headerEl, game.firstChild);
+        const pt = document.getElementById('playing-team');
+        pt.parentNode.insertBefore(headerEl, pt.nextSibling);
     }
 
     const canGoBack    = prevAvailable;      // hay archivo para el día anterior
@@ -1182,31 +1181,10 @@ function startDailyCountdown() {
     }, 1000);
 }
 
-// Anima un número contando de 0 al objetivo, con un "salto" final (como el resultado del Top)
-function animateCountUp(el, target, duration = 900) {
-    if (!el) return;
-    el.classList.remove('count-pop');
-    const start = performance.now();
-    function frame(now) {
-        const t = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-        el.textContent = Math.round(eased * target);
-        if (t < 1) {
-            requestAnimationFrame(frame);
-        } else {
-            el.textContent = target;
-            // reiniciar la animación de pop
-            void el.offsetWidth;
-            el.classList.add('count-pop');
-        }
-    }
-    requestAnimationFrame(frame);
-}
-
 function showCompletionModal() {
     document.getElementById('completion-match').textContent =
         `${currentMatch.homeTeam} ${currentMatch.score} ${currentMatch.awayTeam} • ${currentMatch.date}`;
-    document.getElementById('comp-guessed').textContent  = '0';
+    document.getElementById('comp-guessed').textContent  = matchStats.guessed;
     document.getElementById('comp-failed').textContent   = matchStats.failed;
     document.getElementById('comp-revealed').textContent = matchStats.revealed;
 
@@ -1244,8 +1222,6 @@ function showCompletionModal() {
     }
 
     document.getElementById('completion-modal').classList.add('active');
-    // Racha del día: el contador de aciertos salta de 0 a N (como en el Top)
-    setTimeout(() => animateCountUp(document.getElementById('comp-guessed'), matchStats.guessed), 220);
     stats.matchesCompleted++;
     saveStats();
 }
@@ -1372,9 +1348,12 @@ document.addEventListener('DOMContentLoaded', () => {
     hideAllScreens();
     document.getElementById('once-menu').style.display = 'flex';
 
-    // Subtítulo del botón diario
+    // Actualizar subtítulo del botón diario con la fecha de hoy
     const subtitleEl = document.getElementById('daily-btn-subtitle');
     if (subtitleEl) {
-        subtitleEl.textContent = 'Juega un partido que se jugó tal día como hoy hace unos años';
+        const months = ['enero','febrero','marzo','abril','mayo','junio',
+                        'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        const { day, month } = getSpainDate(0);
+        subtitleEl.textContent = `Partidos del ${day} de ${months[month - 1]} · cambia a medianoche`;
     }
 });

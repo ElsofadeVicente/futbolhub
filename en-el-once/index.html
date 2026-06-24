@@ -9,36 +9,60 @@
 <!-- Fuentes -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 
 <!-- Estilos -->
+<link rel="stylesheet" href="../css/global.css">
 <link rel="stylesheet" href="./css/once.css">
 </head>
 <body>
 
-<!-- Columnas de anuncios (solo desktop ≥760px) -->
-<aside class="ad-col ad-col--left" aria-hidden="true">
-  <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
-  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
-  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
-</aside>
-<aside class="ad-col ad-col--right" aria-hidden="true">
-  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
-  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
-  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
-</aside>
+<!-- ========== BOTÓN SETTINGS ========== -->
+<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
 
-<!-- Pantalla 1: menú -->
+<!-- ========== MODAL SETTINGS ========== -->
+<div id="settings-modal" class="settings-modal">
+  <div class="settings-content">
+    <h2 class="settings-title">CONFIGURACIÓN</h2>
+    
+    <div class="settings-option">
+      <span>Modo Alto Contraste</span>
+      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
+    </div>
+
+    <div class="stats-display">
+      <h3 style="margin-bottom:15px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">ESTADÍSTICAS</h3>
+      <div class="stat-row"><span>Partidos completados:</span><span id="stat-matches">0</span></div>
+      <div class="stat-row"><span>Jugadores adivinados:</span><span id="stat-players">0</span></div>
+      <div class="stat-row"><span>Tasa de acierto:</span><span id="stat-success">0%</span></div>
+      <div class="stat-row"><span>Racha actual:</span><span id="stat-streak">0</span></div>
+      <div class="stat-row"><span>Mejor racha:</span><span id="stat-best-streak">0</span></div>
+      <button class="reset-stats-btn" onclick="resetStats()">Resetear estadísticas</button>
+    </div>
+
+    <button class="next-btn" style="width:100%;margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PANTALLA 1: MENÚ DEL ONCE                  -->
+<!-- ========================================== -->
 <div id="once-menu" class="once-menu-screen">
-  <a href="../index.html" class="menu-back-btn">← Volver</a>
-
+  <button class="menu-back-btn" onclick="window.location.href='../'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    <span>MENÚ</span>
+  </button>
+  
   <h1 class="mode-title">EN EL ONCE</h1>
-
+  
   <div class="mode-buttons">
+
     <div class="mode-btn mode-btn--daily" onclick="startGame('diario')">
       <div class="mode-btn-title">📅 ONCE DIARIO</div>
       <div class="mode-btn-desc">El partido de hoy. Igual para todos</div>
-      <div class="mode-btn-teams" id="daily-btn-subtitle">Juega un partido que se jugó tal día como hoy hace unos años</div>
+      <div class="mode-btn-teams" id="daily-btn-subtitle">Un partido real jugado tal día como hoy</div>
     </div>
 
     <div class="mode-btn" onclick="startGame('liga')">
@@ -64,11 +88,14 @@
       <div class="mode-btn-desc">Mezcla de todo</div>
       <div class="mode-btn-teams">Una sorpresa cada vez</div>
     </div>
+
   </div>
 </div>
 
-<!-- Pantalla 2: carga -->
-<div id="loading" class="loading">
+<!-- ========================================== -->
+<!-- PANTALLA 2: LOADING                        -->
+<!-- ========================================== -->
+<div id="loading" class="loading" style="display:none;">
   <div class="loading-title">CARGANDO PARTIDOS</div>
   <div class="loading-bar-wrap">
     <div class="loading-bar-track">
@@ -79,14 +106,26 @@
   <div class="loading-percent" id="loading-percent">0%</div>
 </div>
 
-<!-- Pantalla 3: juego -->
-<div id="game">
-
-  <!-- Navegación de días (modo diario; el JS la rellena) -->
-  <div id="daily-header" class="daily-header"></div>
+<!-- ========================================== -->
+<!-- PANTALLA 3: JUEGO DEL ONCE                 -->
+<!-- ========================================== -->
+<div id="game" style="display:none;">
+  
+  <!-- Navegación días anteriores (solo para modo diario) -->
+  <div id="daily-header" class="daily-header" style="display:none;">
+    <div class="daily-nav">
+      <button class="daily-nav-btn" id="prev-day-btn" onclick="navigateDay(-1)">← Anterior</button>
+      <div class="daily-edition">
+        <div class="daily-label">EDICIÓN</div>
+        <div class="daily-number" id="daily-number">1</div>
+        <div class="daily-past-badge" id="daily-past-badge" style="display:none;">ARCHIVO</div>
+      </div>
+      <button class="daily-nav-btn" id="next-day-btn" onclick="navigateDay(1)">Siguiente →</button>
+    </div>
+  </div>
 
   <div class="match-header">
-    <button class="home-btn" id="home-btn" onclick="goBackToMenu()">← Volver</button>
+    <button class="home-btn" id="home-btn" onclick="goBackToMenu()">← MENÚ</button>
     <div class="competition-name" id="competition"></div>
     <div class="match-score">
       <div class="team-info">
@@ -105,11 +144,14 @@
   <div class="playing-team" id="playing-team"></div>
 
   <div class="field-container">
+    <!-- las marcas del campo se inyectan por JS (.pitch-lines) -->
     <div id="formation" class="formation"></div>
   </div>
 
   <div class="stats-bar">
-    <div class="revealed-count"><span id="revealed-count">0</span>/11</div>
+    <div class="revealed-count">
+      <span id="revealed-count">0</span>/11
+    </div>
     <div class="btn-group">
       <button class="next-btn" id="next-match-btn" onclick="nextMatch()">Siguiente</button>
       <button class="give-up-btn" id="give-up-btn" onclick="giveUp()">Revelar todo</button>
@@ -180,7 +222,7 @@
       </div>
     </div>
     <div class="completion-streak" id="comp-streak"></div>
-    <div class="comp-countdown" id="comp-countdown"></div>
+    <div class="comp-countdown" id="comp-countdown" style="display:none;"></div>
     <div class="completion-buttons">
       <button class="next-btn" onclick="nextMatch()">Siguiente partido →</button>
       <button class="give-up-btn" onclick="closeCompletionModal()">Ver alineación</button>
