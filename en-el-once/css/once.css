@@ -42,11 +42,17 @@
 
 body.high-contrast {
     --np-paper: #fff;
+    --np-paper2: #f2f2f2;
+    --np-paper3: #e8e8e8;
     --bg-dark: #fff;
     --bg-mid: #f2f2f2;
     --bg-card: #fff;
     --text-light: #000;
     --np-ink: #000;
+    --np-ink-mid: rgba(0,0,0,0.7);
+    --np-ink-soft: rgba(0,0,0,0.35);
+    --np-red: #cc0000;
+    --np-green: #007a1f;
     --gold: #000;
     --gold-light: #aa0000;
     --correct: #007a1f;
@@ -1356,31 +1362,9 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     color: var(--np-red);
 }
 
-/* Campo → césped en tono papel con líneas de tinta */
-.field-container {
-    background:
-        repeating-linear-gradient(180deg, #e7dab4 0, #e7dab4 56px, #e1d3a6 56px, #e1d3a6 112px);
-    border-top: 1px solid var(--np-ink-soft);
-    border-bottom: 1px solid var(--np-ink-soft);
-}
-.field-container::before {
-    background:
-        radial-gradient(120% 70% at 50% -8%, rgba(255,255,255,0.18), rgba(255,255,255,0) 52%),
-        radial-gradient(135% 100% at 50% 44%, rgba(0,0,0,0) 60%, rgba(15,18,14,0.10) 100%);
-}
-.pitch-lines { --lc: rgba(15,18,14,0.34); }
-.pl-goal { border-color: rgba(15,18,14,0.5); }
-
-/* Camisetas y etiquetas */
-.jersey { filter: drop-shadow(0 4px 7px rgba(15,18,14,0.28)); }
-.player-card.revealed .jersey {
-    filter: drop-shadow(0 3px 6px rgba(15,18,14,0.25)) drop-shadow(0 0 4px rgba(181,34,30,0.5));
-}
-.player-card.revealed.goalkeeper .jersey {
-    filter: drop-shadow(0 3px 6px rgba(15,18,14,0.25)) drop-shadow(0 0 4px rgba(184,134,11,0.6));
-}
-.player-name-container { background: #fff; border: 1px solid var(--np-ink-soft); box-shadow: 0 1px 4px rgba(15,18,14,0.2); }
-.attempts-counter { background: var(--np-ink); color: var(--np-paper); }
+/* El campo se mantiene VERDE como antes (sin overrides aquí):
+   .field-container, .field-container::before, .pitch-lines, .pl-goal,
+   .jersey y .player-name-container conservan su estilo original. */
 
 /* Barra de stats */
 .stats-bar { background: var(--np-paper2); border-top: 2px solid var(--np-ink); }
@@ -1418,12 +1402,12 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
 /* Cuadrícula de letras y teclado */
 .letter-cell { border: 1.5px solid var(--np-ink-soft); background: rgba(15,18,14,0.04); color: var(--np-ink); }
 .letter-cell.correct { color: #fff; box-shadow: none; }
-.letter-cell.present { color: #fff; }
+.letter-cell.present { color: var(--np-ink); }
 .letter-cell.absent  { color: var(--np-ink-mid); }
 .key { background: var(--np-paper2); border: 1px solid var(--np-ink-soft); color: var(--np-ink); border-radius: 0; }
 .key:hover { background: var(--np-paper3); }
 .key.correct { color: #fff; }
-.key.present { color: #fff; }
+.key.present { color: var(--np-ink); }
 .key.absent  { opacity: 1; color: var(--np-ink-mid); }
 
 /* Columnas de anuncios */
@@ -1447,3 +1431,10 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
 /* Barra táctil móvil */
 .mobile-tap-bar { border-color: rgba(181,34,30,0.4); }
 .mobile-tap-text { color: var(--np-red); }
+
+/* Offsets para no solaparse con las columnas de anuncios.
+   Va al final para ganar a las reglas base (que estaban después del @media original). */
+@media (min-width: 760px) {
+    .home-btn { left: 86px; }
+    .settings-btn { right: 86px; }
+}

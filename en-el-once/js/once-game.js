@@ -372,8 +372,9 @@ function updateDailyHeader(offsetDays, prevAvailable = false) {
         headerEl = document.createElement('div');
         headerEl.id        = 'daily-header';
         headerEl.className = 'daily-header';
-        const pt = document.getElementById('playing-team');
-        pt.parentNode.insertBefore(headerEl, pt.nextSibling);
+        // Insertar arriba del todo (como el estático), no debajo del marcador
+        const game = document.getElementById('game');
+        game.insertBefore(headerEl, game.firstChild);
     }
 
     const canGoBack    = prevAvailable;      // hay archivo para el día anterior
