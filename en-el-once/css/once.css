@@ -357,14 +357,16 @@ body {
 }
 .daily-number {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     color: var(--gold-light);
     letter-spacing: 2px;
+    text-transform: uppercase;
 }
 .daily-past-badge {
     font-size: 0.62rem;
-    background: var(--gold);
-    color: var(--bg-dark);
+    background: rgba(201,168,76,0.18);
+    color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.35);
     padding: 1px 8px;
     border-radius: 4px;
     font-weight: 700;
