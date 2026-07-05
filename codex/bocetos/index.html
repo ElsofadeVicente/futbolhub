@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bocetos FutbolHUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1520;
+    --panel: #172232;
+    --line: rgba(255,255,255,0.1);
+    --text: #f2f6fb;
+    --muted: rgba(242,246,251,0.7);
+    --accent: #63c7da;
+    --accent-2: #ff7b72;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top, rgba(99,199,218,0.18), transparent 30%),
+      linear-gradient(180deg, #0e1520 0%, #121d2a 100%);
+    padding: 32px 18px;
+  }
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  h1 {
+    margin: 0 0 10px;
+    font-family: 'Anton', sans-serif;
+    letter-spacing: 2px;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+  }
+  p {
+    margin: 0 0 24px;
+    color: var(--muted);
+    max-width: 720px;
+    line-height: 1.6;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 18px 42px rgba(0,0,0,0.25);
+    transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99,199,218,0.45);
+  }
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+  }
+  .desc {
+    color: var(--muted);
+    line-height: 1.55;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Bocetos De Color</h1>
+    <p>Misma portada del hub, pero con cinco direcciones visuales completas. Cada boceto cambia fondo, ticker, tarjetas, anuncios, footer y modal para que puedas comparar estilos de verdad.</p>
+    <div class="grid">
+      <a href="./hub-boceto-01-aurora.html" class="card">
+        <div class="eyebrow">Boceto 01</div>
+        <div class="title">Aurora</div>
+        <div class="desc">Papel frio, azul petroleo, coral editorial y cian luminoso.</div>
+      </a>
+      <a href="./hub-boceto-02-brasa.html" class="card">
+        <div class="eyebrow">Boceto 02</div>
+        <div class="title">Brasa</div>
+        <div class="desc">Fondo carbon, cobre, arena y un punto de fuego en los acentos.</div>
+      </a>
+      <a href="./hub-boceto-03-esmeralda.html" class="card">
+        <div class="eyebrow">Boceto 03</div>
+        <div class="title">Esmeralda</div>
+        <div class="desc">Tonos campo premium con marfil suave y verde intenso.</div>
+      </a>
+      <a href="./hub-boceto-04-ultravioleta.html" class="card">
+        <div class="eyebrow">Boceto 04</div>
+        <div class="title">Ultravioleta</div>
+        <div class="desc">Una version mas atrevida con noche tinta, magenta y azul electrico.</div>
+      </a>
+      <a href="./hub-boceto-05-marfil.html" class="card">
+        <div class="eyebrow">Boceto 05</div>
+        <div class="title">Marfil</div>
+        <div class="desc">Portada mas limpia y editorial, con marfil, negro humo y azul clasico.</div>
+      </a>
+      <a href="./hub-boceto-06-limon.html" class="card">
+        <div class="eyebrow">Boceto 06</div>
+        <div class="title">Limon</div>
+        <div class="desc">Version vibrante con lima electrica, grafito y toques blancos muy limpios.</div>
+      </a>
+      <a href="./hub-boceto-07-rosa.html" class="card">
+        <div class="eyebrow">Boceto 07</div>
+        <div class="title">Rosa</div>
+        <div class="desc">Un tono mas pop y editorial con rosa empolvado, vino y marfil suave.</div>
+      </a>
+      <a href="./hub-boceto-08-cobalto.html" class="card">
+        <div class="eyebrow">Boceto 08</div>
+        <div class="title">Cobalto</div>
+        <div class="desc">Azul intenso con contraste alto y detalles metalicos frios.</div>
+      </a>
+      <a href="./hub-boceto-09-mango.html" class="card">
+        <div class="eyebrow">Boceto 09</div>
+        <div class="title">Mango</div>
+        <div class="desc">Calido y luminoso, con naranja suave, arena y marron tostado.</div>
+      </a>
+      <a href="./hub-boceto-10-hielo.html" class="card">
+        <div class="eyebrow">Boceto 10</div>
+        <div class="title">Hielo</div>
+        <div class="desc">Minimal y frio, con blancos azulados, gris acero y acento turquesa.</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
