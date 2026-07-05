@@ -7,11 +7,23 @@
 <meta name="description" content="Juego diario offline. Encuentra al futbolista que rompe la torre.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/global.css">
-<link rel="stylesheet" href="./css/la-torre.css?v=2026-04-03-2">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/la-torre.css?v=20260705c">
 </head>
 <body>
+
+<!-- SIDEBARS DE ANUNCIOS — solo visibles en desktop ≥760px -->
+<aside class="ad-col ad-col--left">
+  <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+</aside>
+<aside class="ad-col ad-col--right">
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+</aside>
+
 <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
 <div id="settings-modal" class="settings-modal">
   <div class="settings-content">
@@ -35,6 +47,6 @@
 <div id="tower-screen"></div>
 <script src="../js/shared.js"></script>
 <script src="../js/player-data-loader.js"></script>
-<script src="./js/la-torre-game.js?v=2026-04-03-2"></script>
+<script src="./js/la-torre-game.js?v=20260705c"></script>
 </body>
 </html>

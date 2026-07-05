@@ -7,11 +7,22 @@
 <meta name="description" content="¿Quién vale más? Adivina si el valor de mercado del siguiente jugador es mayor, igual o menor.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/global.css">
-<link rel="stylesheet" href="higher-or-lower.css">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="higher-or-lower.css?v=20260705c">
 </head>
 <body>
+
+<!-- SIDEBARS DE ANUNCIOS — solo visibles en desktop ≥760px -->
+<aside class="ad-col ad-col--left">
+  <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+</aside>
+<aside class="ad-col ad-col--right">
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+</aside>
 
 <!-- SETTINGS -->
 <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
@@ -46,8 +57,8 @@
     <div class="hol-loading-title">CARGANDO JUGADORES…</div>
   </div>
 
-  <!-- Botón volver durante la partida -->
-  <a href="../" class="hol-back-btn hol-back-btn--ingame">← Volver</a>
+  <!-- Botón volver durante la partida: vuelve al menú de modo del propio juego, no al hub -->
+  <button class="hol-back-btn hol-back-btn--ingame" onclick="showModeMenu()">← Volver</button>
 
   <div class="hol-topbar">
     <div class="hol-score-left">
@@ -118,6 +129,6 @@
 </div>
 
 <script src="../js/shared.js"></script>
-<script src="higher-or-lower.js"></script>
+<script src="higher-or-lower.js?v=20260705c"></script>
 </body>
 </html>
