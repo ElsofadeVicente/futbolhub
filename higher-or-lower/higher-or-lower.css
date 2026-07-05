@@ -95,6 +95,8 @@ a      { text-decoration: none; }
 @media (min-width: 760px) {
   .hol-mode-menu,
   .hol-game { margin-left: 72px; margin-right: 72px; }
+  /* .hol-back-btn--ingame es position:fixed con top/left explícitos: ignora el margin-push, hay que desplazarlo a mano */
+  .hol-back-btn--ingame { left: 88px; }
 }
 @media (max-width: 759px) {
   .ad-col { display: none; }

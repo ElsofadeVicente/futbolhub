@@ -56,11 +56,9 @@
       </div>
 
       <!-- Unirse a sala -->
-      <div style="display:flex;gap:8px;">
-        <input id="input-join-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="20" style="flex:1" />
-        <input id="input-join-code" class="menu-input menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6"
-               oninput="this.value=this.value.toUpperCase()" style="flex:1;max-width:130px" />
-      </div>
+      <input id="input-join-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="20" />
+      <input id="input-join-code" class="menu-input menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6"
+             oninput="this.value=this.value.toUpperCase()" />
       <button class="btn-secondary" onclick="App.joinRoom()">UNIRSE A SALA ▶</button>
 
       <p class="menu-error hidden" id="error-private"></p>

@@ -1376,6 +1376,12 @@ const App = (() => {
   function _showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
+    // Defensa extra: el menú nunca debe arrastrar la barra "Objetivo" de una partida
+    // anterior (bug: al salir a mitad de partida podía quedar visible al hacer scroll).
+    if (id === 'screen-menu') {
+      document.getElementById('game-topbar')?.classList.add('hidden');
+      window.scrollTo(0, 0);
+    }
   }
 
   function _showError(id, msg) {
