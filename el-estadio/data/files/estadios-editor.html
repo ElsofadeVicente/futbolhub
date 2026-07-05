@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Estadios — FutbolHUB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --paper:#f4ead2; --paper2:#ede0c0; --paper3:#e4d3aa;
+      --ink:#0f120e; --red:#b5221e; --mid:rgba(15,18,14,0.55);
+      --soft:rgba(15,18,14,0.13); --green:#1a7a3c;
+    }
+    html,body { height:100%; background:var(--paper); color:var(--ink); font-family:'Rajdhani',sans-serif; overflow:hidden; }
+    .app { display:grid; grid-template-columns:340px 1fr; grid-template-rows:48px 1fr; height:100vh; }
+
+    header { grid-column:1/-1; background:var(--ink); display:flex; align-items:center; padding:0 16px; gap:14px; border-bottom:3px solid var(--red); }
+    .h-logo { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.3em; color:rgba(244,234,210,.4); text-transform:uppercase; }
+    .h-title { font-family:'Playfair Display',serif; font-style:italic; font-weight:900; font-size:1.1rem; color:var(--paper); }
+    .h-sep { flex:1; }
+    .h-count { font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.15em; color:rgba(244,234,210,.5); }
+    .h-count strong { font-family:'Anton',sans-serif; font-size:1rem; color:var(--red); letter-spacing:.05em; }
+
+    .panel { background:var(--paper2); border-right:2px solid var(--ink); display:flex; flex-direction:column; overflow:hidden; }
+
+    .btn { font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; padding:7px 10px; border:1.5px solid var(--ink); cursor:pointer; background:var(--paper); color:var(--ink); transition:background .12s,color .12s; flex:1; display:flex; align-items:center; justify-content:center; gap:5px; }
+    .btn:hover { background:var(--ink); color:var(--paper); }
+    .btn.green { border-color:var(--green); color:var(--green); }
+    .btn.green:hover { background:var(--green); color:var(--paper); }
+    .btn.primary { background:var(--ink); color:var(--paper); box-shadow:2px 2px 0 var(--red); }
+    .btn.primary:hover { background:var(--red); border-color:var(--red); box-shadow:none; }
+    .btn.red { border-color:var(--red); color:var(--red); }
+    .btn.red:hover { background:var(--red); color:var(--paper); }
+    .btn-row { display:flex; gap:6px; }
+
+    .section { padding:10px; border-bottom:1.5px solid var(--soft); display:flex; flex-direction:column; gap:7px; }
+    .label { font-family:'DM Mono',monospace; font-size:.55rem; letter-spacing:.2em; text-transform:uppercase; color:var(--mid); display:block; margin-bottom:2px; }
+    .inp { width:100%; font-family:'DM Mono',monospace; font-size:.72rem; padding:6px 8px; border:1.5px solid var(--soft); background:var(--paper); color:var(--ink); outline:none; transition:border-color .12s; }
+    .inp:focus { border-color:var(--ink); }
+    .inp::placeholder { color:rgba(15,18,14,.3); }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .hint { font-family:'DM Mono',monospace; font-size:.55rem; color:var(--red); letter-spacing:.05em; text-align:center; padding:2px 0; min-height:18px; }
+
+    /* Buscador con dropdown */
+    .search-wrap { position:relative; }
+    .search-wrap input { padding-right:28px; }
+    .search-spinner { position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:.7rem; display:none; }
+    .search-spinner.on { display:block; animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform:translateY(-50%) rotate(360deg); } }
+    .search-drop { position:absolute; left:0; right:0; top:100%; background:var(--paper); border:1.5px solid var(--ink); z-index:500; max-height:200px; overflow-y:auto; display:none; }
+    .search-drop.open { display:block; }
+    .drop-item { padding:7px 10px; font-family:'DM Mono',monospace; font-size:.65rem; cursor:pointer; border-bottom:1px solid var(--soft); line-height:1.4; }
+    .drop-item:hover { background:var(--paper3); }
+    .drop-item strong { font-family:'Rajdhani',sans-serif; font-size:.8rem; display:block; }
+    .drop-item span { color:var(--mid); font-size:.58rem; }
+    .drop-none { padding:8px 10px; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--mid); }
+
+    .list-head { padding:7px 12px; font-family:'DM Mono',monospace; font-size:.55rem; letter-spacing:.25em; text-transform:uppercase; color:var(--mid); border-bottom:1px solid var(--soft); }
+    .list-search { padding:6px 10px; border-bottom:1px solid var(--soft); }
+    .list-search input { width:100%; font-family:'DM Mono',monospace; font-size:.68rem; padding:5px 8px; border:1.5px solid var(--soft); background:var(--paper); color:var(--ink); outline:none; }
+    .list-search input:focus { border-color:var(--ink); }
+    .list { flex:1; overflow-y:auto; }
+    .list::-webkit-scrollbar { width:4px; }
+    .list::-webkit-scrollbar-thumb { background:var(--soft); }
+    .item { display:flex; align-items:center; padding:8px 12px; border-bottom:1px solid var(--soft); cursor:pointer; transition:background .1s; gap:8px; }
+    .item:hover { background:var(--paper3); }
+    .item.sel { background:var(--ink); color:var(--paper); }
+    .item-n { font-family:'DM Mono',monospace; font-size:.55rem; color:var(--mid); width:18px; text-align:right; flex-shrink:0; }
+    .item.sel .item-n,.item.sel .item-id,.item.sel .item-xy { color:rgba(244,234,210,.45); }
+    .item-info { flex:1; min-width:0; }
+    .item-name { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .item-id { font-family:'DM Mono',monospace; font-size:.55rem; color:var(--mid); }
+    .item-xy { font-family:'DM Mono',monospace; font-size:.5rem; color:var(--mid); text-align:right; flex-shrink:0; line-height:1.5; }
+    .item-del { font-size:.65rem; padding:2px 5px; border:1px solid transparent; background:none; cursor:pointer; color:var(--red); opacity:0; transition:opacity .1s; font-family:'DM Mono',monospace; flex-shrink:0; }
+    .item:hover .item-del { opacity:1; }
+    .item.sel .item-del { opacity:.7; color:rgba(244,234,210,.7); }
+    .item-del:hover { border-color:var(--red); background:var(--red); color:var(--paper); opacity:1!important; }
+    .empty { padding:24px 12px; text-align:center; font-family:'DM Mono',monospace; font-size:.65rem; color:var(--mid); }
+
+    .map-wrap { position:relative; }
+    #map { width:100%; height:100%; }
+
+    #banner { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); font-family:'DM Mono',monospace; font-size:.65rem; letter-spacing:.12em; padding:8px 18px; border:2px solid var(--red); z-index:100; display:none; align-items:center; gap:10px; white-space:nowrap; }
+    #banner.on { display:flex; }
+    #banner button { font-family:'DM Mono',monospace; font-size:.58rem; background:var(--red); color:var(--paper); border:none; padding:3px 8px; cursor:pointer; }
+
+    #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--ink); color:var(--paper); font-family:'DM Mono',monospace; font-size:.68rem; letter-spacing:.1em; padding:10px 20px; border-left:3px solid var(--red); opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; z-index:999; white-space:nowrap; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    #file-in { display:none; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="h-logo">FutbolHUB</span>
+    <span class="h-title">Editor de Estadios</span>
+    <span class="h-sep"></span>
+    <span class="h-count"><strong id="count">0</strong> estadios</span>
+  </header>
+
+  <div class="panel">
+    <div class="section">
+      <div class="btn-row">
+        <button class="btn green" onclick="document.getElementById('file-in').click()">📂 Importar JSON</button>
+        <button class="btn primary" onclick="exportJson()">💾 Exportar JSON</button>
+      </div>
+      <input type="file" id="file-in" accept=".json" onchange="importJson(event)">
+    </div>
+
+    <div class="section">
+      <!-- Buscador Nominatim -->
+      <div>
+        <label class="label">Buscar lugar en el mapa</label>
+        <div class="search-wrap">
+          <input class="inp" id="f-search-map" type="text" placeholder="ej: Bernabéu, Camp Nou..." autocomplete="off">
+          <span class="search-spinner" id="spinner">⟳</span>
+          <div class="search-drop" id="search-drop"></div>
+        </div>
+      </div>
+
+      <div>
+        <label class="label">Nombre del estadio</label>
+        <input class="inp" id="f-name" type="text" placeholder="ej: Camp Nou" autocomplete="off">
+      </div>
+      <div>
+        <label class="label">ID (slug)</label>
+        <input class="inp" id="f-id" type="text" placeholder="ej: camp-nou" autocomplete="off">
+      </div>
+      <div class="two">
+        <div>
+          <label class="label">Latitud</label>
+          <input class="inp" id="f-lat" type="number" step="0.00001" placeholder="41.38089">
+        </div>
+        <div>
+          <label class="label">Longitud</label>
+          <input class="inp" id="f-lng" type="number" step="0.00001" placeholder="2.12282">
+        </div>
+      </div>
+      <div class="hint" id="hint">↑ Busca, escribe coords o haz clic en el mapa</div>
+      <div class="btn-row">
+        <button class="btn red" id="btn-pick" onclick="togglePick()">📍 Clic en mapa</button>
+        <button class="btn primary" onclick="addItem()">＋ Añadir</button>
+      </div>
+    </div>
+
+    <div class="list-head">Estadios guardados</div>
+    <div class="list-search"><input type="text" id="f-filter" placeholder="Filtrar por nombre o ID..." oninput="renderList()"></div>
+    <div class="list" id="list"></div>
+  </div>
+
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div id="banner">📍 Haz clic en el mapa para fijar las coordenadas <button onclick="togglePick(false)">Cancelar</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+  let data = [], sel = null, picking = false;
+  let gmap = null, markers = [], tmpMark = null;
+  let searchTimer = null;
+
+  /* ── INIT MAP ── */
+  window.initMap = function () {
+    gmap = new google.maps.Map(document.getElementById('map'), {
+      center: { lat: 20, lng: 0 }, zoom: 2,
+      mapTypeControl: true, fullscreenControl: true, streetViewControl: true,
+      mapTypeControlOptions: { mapTypeIds: ['roadmap','satellite','hybrid'] },
+    });
+    gmap.addListener('click', e => {
+      if (!picking) return;
+      const lat = +e.latLng.lat().toFixed(5), lng = +e.latLng.lng().toFixed(5);
+      setCoords(lat, lng);
+      togglePick(false);
+    });
+    renderMarkers();
+  };
+
+  /* ── NOMINATIM SEARCH ── */
+  const searchInput = document.getElementById('f-search-map');
+  const searchDrop  = document.getElementById('search-drop');
+  const spinner     = document.getElementById('spinner');
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = searchInput.value.trim();
+    if (q.length < 3) { searchDrop.classList.remove('open'); return; }
+    searchTimer = setTimeout(() => nominatimSearch(q), 400);
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { searchDrop.classList.remove('open'); }
+  });
+
+  document.addEventListener('click', e => {
+    if (!searchInput.contains(e.target) && !searchDrop.contains(e.target)) {
+      searchDrop.classList.remove('open');
+    }
+  });
+
+  async function nominatimSearch(q) {
+    spinner.classList.add('on');
+    searchDrop.innerHTML = '';
+    searchDrop.classList.add('open');
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&accept-language=es`;
+      const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+      const json = await res.json();
+      if (!json.length) {
+        searchDrop.innerHTML = '<div class="drop-none">Sin resultados</div>';
+      } else {
+        searchDrop.innerHTML = json.map((r,i) => `
+          <div class="drop-item" onclick="pickResult(${i})">
+            <strong>${r.display_name.split(',')[0]}</strong>
+            <span>${r.display_name.split(',').slice(1,3).join(',').trim()}</span>
+          </div>`).join('');
+        // guardamos resultados para acceso por índice
+        searchDrop._results = json;
+      }
+    } catch {
+      searchDrop.innerHTML = '<div class="drop-none">Error de conexión</div>';
+    }
+    spinner.classList.remove('on');
+  }
+
+  function pickResult(i) {
+    const r = searchDrop._results[i];
+    const lat = parseFloat(parseFloat(r.lat).toFixed(5));
+    const lng = parseFloat(parseFloat(r.lon).toFixed(5));
+    const name = r.display_name.split(',')[0];
+
+    // Centrar mapa
+    gmap.setCenter({ lat, lng });
+    gmap.setZoom(16);
+
+    // Poner marcador temporal
+    setCoords(lat, lng, true);
+
+    // Rellenar nombre si está vacío
+    if (!document.getElementById('f-name').value) {
+      document.getElementById('f-name').value = name;
+      autoSlug(name);
+    }
+
+    searchInput.value = name;
+    searchDrop.classList.remove('open');
+  }
+
+  /* ── COORDS ── */
+  function setCoords(lat, lng, fromSearch) {
+    document.getElementById('f-lat').value = lat;
+    document.getElementById('f-lng').value = lng;
+    document.getElementById('hint').innerHTML = `✅ <strong>${lat}, ${lng}</strong>`;
+    if (tmpMark) { tmpMark.map = null; }
+    const el = document.createElement('div');
+    el.innerHTML = `<svg width="22" height="32" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 1px 2px rgba(0,0,0,.4))">
+      <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
+      <circle cx="14" cy="12" r="4" fill="#0f120e"/>
+    </svg>`;
+    tmpMark = new google.maps.marker.AdvancedMarkerElement({ position:{lat,lng}, map:gmap, content:el });
+  }
+
+  /* ── PICK MODE ── */
+  function togglePick(force) {
+    picking = force !== undefined ? force : !picking;
+    document.getElementById('banner').classList.toggle('on', picking);
+    const b = document.getElementById('btn-pick');
+    b.style.background = picking ? 'var(--red)' : '';
+    b.style.color = picking ? 'var(--paper)' : '';
+    if (gmap) gmap.getDiv().style.cursor = picking ? 'crosshair' : '';
+  }
+
+  /* ── SLUG AUTO ── */
+  function autoSlug(n) {
+    document.getElementById('f-id').value = n.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-');
+  }
+  document.getElementById('f-name').addEventListener('input', e => autoSlug(e.target.value));
+
+  /* ── AÑADIR ── */
+  function addItem() {
+    const name = document.getElementById('f-name').value.trim();
+    const id   = document.getElementById('f-id').value.trim();
+    const lat  = parseFloat(document.getElementById('f-lat').value);
+    const lng  = parseFloat(document.getElementById('f-lng').value);
+    if (!name) { toast('⚠ Escribe un nombre'); return; }
+    if (!id)   { toast('⚠ Escribe un ID'); return; }
+    if (isNaN(lat)||isNaN(lng)) { toast('⚠ Coordenadas inválidas'); return; }
+    if (data.find(e => e.id===id)) { toast('⚠ Ya existe ese ID'); return; }
+    data.push({ id, name, coord:[lat,lng] });
+    data.sort((a,b)=>a.name.localeCompare(b.name));
+    ['f-name','f-id','f-lat','f-lng','f-search-map'].forEach(x=>document.getElementById(x).value='');
+    document.getElementById('hint').textContent = '↑ Busca, escribe coords o haz clic en el mapa';
+    if (tmpMark) { tmpMark.map=null; tmpMark=null; }
+    renderList(); renderMarkers();
+    toast(`✅ "${name}" añadido`);
+  }
+
+  /* ── ELIMINAR ── */
+  function delItem(i) {
+    const name = data[i].name;
+    data.splice(i,1);
+    if (sel===i) sel=null; else if (sel>i) sel--;
+    renderList(); renderMarkers();
+    toast(`🗑 "${name}" eliminado`);
+  }
+
+  /* ── SELECCIONAR ── */
+  function selItem(i) {
+    sel = i;
+    renderList(); renderMarkers();
+    if (gmap) { gmap.setCenter({lat:data[i].coord[0],lng:data[i].coord[1]}); gmap.setZoom(14); }
+  }
+
+  /* ── RENDER LISTA ── */
+  function renderList() {
+    const q = document.getElementById('f-filter').value.toLowerCase();
+    document.getElementById('count').textContent = data.length;
+    const filtered = data.map((e,i)=>({e,i})).filter(({e})=>
+      e.name.toLowerCase().includes(q)||e.id.toLowerCase().includes(q));
+    const list = document.getElementById('list');
+    if (!filtered.length) {
+      list.innerHTML = `<div class="empty">${q?`Sin resultados para "${q}"`:'Sin estadios. Importa o añade uno.'}</div>`;
+      return;
+    }
+    list.innerHTML = filtered.map(({e,i},fi)=>`
+      <div class="item ${sel===i?'sel':''}" onclick="selItem(${i})">
+        <span class="item-n">${fi+1}</span>
+        <div class="item-info">
+          <div class="item-name">${e.name}</div>
+          <div class="item-id">${e.id}</div>
+        </div>
+        <div class="item-xy">${e.coord[0].toFixed(3)}<br>${e.coord[1].toFixed(3)}</div>
+        <button class="item-del" onclick="event.stopPropagation();delItem(${i})">✕</button>
+      </div>`).join('');
+  }
+
+  /* ── RENDER MARKERS ── */
+  function renderMarkers() {
+    markers.forEach(m=>m.map=null); markers=[];
+    if (!gmap) return;
+    data.forEach((e,i) => {
+      const el = document.createElement('div');
+      const active = sel===i;
+      el.innerHTML = `<svg width="22" height="32" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 1px 2px rgba(0,0,0,.35))">
+        <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z"
+          fill="${active?'#b5221e':'#0f120e'}" stroke="${active?'#0f120e':'#b5221e'}" stroke-width="2"/>
+        <text x="14" y="15" font-size="11" text-anchor="middle" dominant-baseline="middle"
+          fill="${active?'#0f120e':'#f4ead2'}">🏟</text>
+      </svg>`;
+      el.style.cursor='pointer';
+      const m = new google.maps.marker.AdvancedMarkerElement({
+        position:{lat:e.coord[0],lng:e.coord[1]}, map:gmap, content:el, title:e.name
+      });
+      m.addListener('click',()=>selItem(i));
+      markers.push(m);
+    });
+  }
+
+  /* ── IMPORTAR ── */
+  function importJson(ev) {
+    const f = ev.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+      try {
+        const arr = JSON.parse(e.target.result);
+        if (!Array.isArray(arr)) throw 0;
+        const valid = arr.filter(x=>x.id&&x.name&&Array.isArray(x.coord)&&x.coord.length===2);
+        let added=0;
+        valid.forEach(x=>{ if(!data.find(d=>d.id===x.id)){data.push(x);added++;} });
+        data.sort((a,b)=>a.name.localeCompare(b.name));
+        renderList(); renderMarkers();
+        toast(`📂 ${added} nuevos · ${valid.length-added} ya existían`);
+      } catch { toast('❌ JSON inválido'); }
+      ev.target.value='';
+    };
+    r.readAsText(f);
+  }
+
+  /* ── EXPORTAR ── */
+  function exportJson() {
+    if (!data.length) { toast('⚠ No hay estadios'); return; }
+    const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download='estadios.json'; a.click();
+    toast(`💾 Exportado (${data.length} estadios)`);
+  }
+
+  /* ── TOAST ── */
+  function toast(msg) {
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2500);
+  }
+
+  /* ── KEYBOARD ── */
+  ['f-name','f-id','f-lat','f-lng'].forEach((id,i,arr)=>{
+    document.getElementById(id).addEventListener('keydown',e=>{
+      if(e.key==='Enter') i<arr.length-1 ? document.getElementById(arr[i+1]).focus() : addItem();
+    });
+  });
+
+  renderList();
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8amv7PMCVEJ15YtQNFFTSCRStUGNX37w&libraries=marker&callback=initMap&loading=async" defer></script>
+</body>
+</html>

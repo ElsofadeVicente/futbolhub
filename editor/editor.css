@@ -1,0 +1,265 @@
+/* ============================================================
+   FutbolHUB Design Editor — editor.css
+   Estetica periodico/vintage del proyecto
+   ============================================================ */
+:root {
+  --papel: #f4ead2;
+  --tinta: #0f120e;
+  --rojo: #b5221e;
+  --linea: #0f120e;
+  --topbar-h: 52px;
+  --panel-w: 320px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: "DM Mono", ui-monospace, "Courier New", monospace;
+  background: #2a2a2a;
+  color: var(--tinta);
+}
+
+/* ---------- Barra superior ---------- */
+#topbar {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 14px;
+  background: var(--papel);
+  border-bottom: 3px solid var(--tinta);
+  box-shadow: 0 3px 0 var(--tinta);
+  position: relative;
+  z-index: 10;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+.brand span {
+  font-style: italic;
+  color: var(--rojo);
+  font-size: 13px;
+}
+
+.nav { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.nav .url {
+  font-size: 12px;
+  opacity: .7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#start-path {
+  width: 200px;
+  padding: 5px 8px;
+  border: 2px solid var(--tinta);
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.modes { display: flex; gap: 6px; }
+
+button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 2px solid var(--tinta);
+  background: var(--papel);
+  color: var(--tinta);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--tinta);
+  transition: transform .05s;
+}
+button:hover { background: #fff; }
+button:active { transform: translate(2px, 2px); box-shadow: none; }
+button.active {
+  background: var(--rojo);
+  color: var(--papel);
+  border-color: var(--tinta);
+}
+button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+/* ---------- Zona principal ---------- */
+main {
+  position: absolute;
+  top: var(--topbar-h);
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+}
+
+/* área del lienzo: scrollable, fondo oscuro, centra el iframe */
+#stage-area {
+  flex: 1;
+  overflow: auto;
+  background: #2a2a2a;
+  text-align: center;
+  min-width: 0;
+}
+
+#stage {
+  display: inline-block;
+  vertical-align: top;
+  border: none;
+  background: #fff;
+  width: 1280px;       /* por defecto: escritorio FIJO (no se reajusta) */
+  height: 100%;
+}
+
+body[data-mode="edit"] #stage { cursor: crosshair; }
+
+.devices { display: flex; gap: 4px; }
+.devices button { padding: 6px 9px; }
+
+/* ---------- Panel de propiedades ---------- */
+#panel {
+  width: var(--panel-w);
+  background: var(--papel);
+  border-left: 3px solid var(--tinta);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#panel.hidden { display: none; }
+
+.panel-head {
+  padding: 12px 14px;
+  border-bottom: 2px solid var(--tinta);
+}
+.panel-head h2 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+#sel-tag {
+  font-size: 12px;
+  color: var(--rojo);
+  word-break: break-all;
+}
+
+.target {
+  padding: 10px 14px;
+  border-bottom: 2px dashed var(--tinta);
+}
+.target label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 4px;
+}
+#rule-select {
+  width: 100%;
+  padding: 5px;
+  border: 2px solid var(--tinta);
+  background: #fff;
+  font-family: inherit;
+  font-size: 11px;
+}
+.note { font-size: 11px; margin: 6px 0 0; line-height: 1.35; }
+
+#controls {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 14px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dotted rgba(15,18,14,.25);
+  flex-wrap: wrap;
+}
+.row label {
+  flex: 0 0 100%;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  opacity: .8;
+}
+.row input[type="color"] {
+  width: 34px; height: 28px;
+  border: 2px solid var(--tinta);
+  padding: 0; background: #fff; cursor: pointer;
+}
+.txt {
+  padding: 5px 7px;
+  border: 2px solid var(--tinta);
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  flex: 1;
+  min-width: 60px;
+}
+.txt.wide { flex: 1 1 100%; }
+.txt.num { width: 64px; flex: 0 0 64px; }
+
+.move-pad { display: flex; gap: 4px; }
+.move-pad button { padding: 4px 9px; box-shadow: 1px 1px 0 var(--tinta); }
+.xy { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+
+.panel-foot {
+  padding: 12px 14px;
+  border-top: 2px solid var(--tinta);
+  display: flex;
+  gap: 8px;
+}
+.panel-foot button { flex: 1; }
+button.primary {
+  background: var(--rojo);
+  color: var(--papel);
+}
+button.primary:hover { background: #cf2a26; }
+
+/* ---------- Toast ---------- */
+#toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: var(--tinta);
+  color: var(--papel);
+  padding: 10px 18px;
+  border: 2px solid var(--papel);
+  box-shadow: 3px 3px 0 var(--rojo);
+  font-size: 13px;
+  max-width: 70vw;
+  transition: transform .25s;
+  z-index: 100;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.error { box-shadow: 3px 3px 0 #d9a800; }
+
+/* ===== v2: grupos, token panel, extras ===== */
+.grp {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+  font-weight: 700; color: var(--rojo);
+  margin: 12px 0 4px; padding-bottom: 3px;
+  border-bottom: 2px solid var(--tinta);
+}
+.note.small { flex: 0 0 100%; font-size: 10px; opacity: .7; margin-top: 4px; }
+.note.pad { padding: 8px 14px; margin: 0; }
+
+button.mini { padding: 2px 8px; box-shadow: 1px 1px 0 var(--tinta); }
+
+#token-panel {
+  width: var(--panel-w);
+  background: var(--papel);
+  border-left: 3px solid var(--tinta);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#token-panel.hidden { display: none; }
+#token-list { flex: 1; overflow-y: auto; padding: 6px 14px; }
+#token-list .row label {
+  flex: 0 0 100%; font-family: "DM Mono", monospace;
+  font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--tinta);
+}
