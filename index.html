@@ -12,28 +12,6 @@
 </head>
 <body class="np-body">
 
-<!-- ── SETTINGS ── -->
-<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
-<div id="settings-modal" class="settings-modal">
-  <div class="settings-content np-modal">
-    <h2 class="settings-title">CONFIGURACIÓN</h2>
-    <div class="settings-option">
-      <span>Modo Alto Contraste</span>
-      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
-    </div>
-    <div class="stats-display">
-      <h3 style="margin-bottom:12px;font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.25em;text-transform:uppercase;opacity:.6;">Estadísticas</h3>
-      <div class="stat-row"><span>Partidos completados</span><span id="stat-matches">0</span></div>
-      <div class="stat-row"><span>Jugadores adivinados</span><span id="stat-players">0</span></div>
-      <div class="stat-row"><span>Tasa de acierto</span><span id="stat-success">0%</span></div>
-      <div class="stat-row"><span>Racha actual</span><span id="stat-streak">0</span></div>
-      <div class="stat-row"><span>Mejor racha</span><span id="stat-best-streak">0</span></div>
-      <button class="reset-stats-btn" onclick="resetStats()">Resetear estadísticas</button>
-    </div>
-    <button class="next-btn" style="width:100%;margin-top:16px;" onclick="toggleSettings()">Cerrar</button>
-  </div>
-</div>
-
 <div class="hub">
 
   <!-- MASTHEAD -->

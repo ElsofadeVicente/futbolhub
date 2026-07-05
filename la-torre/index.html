@@ -24,26 +24,6 @@
   <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
 </aside>
 
-<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
-<div id="settings-modal" class="settings-modal">
-  <div class="settings-content">
-    <h2 class="settings-title">CONFIGURACIÓN</h2>
-    <div class="settings-option">
-      <span>Modo Alto Contraste</span>
-      <div class="toggle-switch" id="contrast-toggle" onclick="toggleContrast()"></div>
-    </div>
-    <div class="stats-display">
-      <h3 style="margin-bottom:15px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;">ESTADÍSTICAS</h3>
-      <div class="stat-row"><span>Torres jugadas:</span><span id="tower-stat-played">0</span></div>
-      <div class="stat-row"><span>Torres ganadas:</span><span id="tower-stat-wins">0</span></div>
-      <div class="stat-row"><span>Tasa de acierto:</span><span id="tower-stat-rate">0%</span></div>
-      <div class="stat-row"><span>Racha actual:</span><span id="tower-stat-streak">0</span></div>
-      <div class="stat-row"><span>Mejor racha:</span><span id="tower-stat-best">0</span></div>
-      <button class="reset-stats-btn" onclick="towerResetStats()">Resetear estadísticas</button>
-    </div>
-    <button class="next-btn" style="width:100%;margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
-  </div>
-</div>
 <div id="tower-screen"></div>
 <script src="../js/shared.js"></script>
 <script src="../js/player-data-loader.js"></script>
