@@ -6,11 +6,22 @@
   <title>En La Cadena — Quién Coño Falta</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/global.css" />
-  <link rel="stylesheet" href="css/cadena.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cadena.css?v=20260705c" />
 </head>
 <body>
+
+<!-- SIDEBARS DE ANUNCIOS — solo visibles en desktop ≥760px -->
+<aside class="ad-col ad-col--left">
+  <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+</aside>
+<aside class="ad-col ad-col--right">
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+</aside>
 
 <!-- ══════════════ PANTALLA 1: MENÚ PRINCIPAL ══════════════ -->
 <div id="screen-menu" class="screen active">
@@ -338,9 +349,9 @@
   };
 
   // Cargar el resto del juego
-  const s1 = document.createElement('script'); s1.src = 'js/cadena-data.js';  document.body.appendChild(s1);
+  const s1 = document.createElement('script'); s1.src = 'js/cadena-data.js?v=20260705c';  document.body.appendChild(s1);
   s1.onload = () => {
-    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js'; document.body.appendChild(s2);
+    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js?v=20260705c'; document.body.appendChild(s2);
   };
 </script>
 
