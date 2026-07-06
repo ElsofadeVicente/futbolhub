@@ -6,6 +6,16 @@
 
 const BlackjackGame = (() => {
 
+  /* ── Escapa texto para insertar de forma segura en HTML (texto o atributo) ── */
+  function escapeHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   /* ═══════════════════════════════════════════
      CONSTANTES
      ═══════════════════════════════════════════ */
@@ -29,7 +39,7 @@ const BlackjackGame = (() => {
   function freshState(players, mode, roomCode, isHost, myPlayerId) {
     return {
       // Partida
-      mode,           // 'mv' | 'goals' | 'national'
+      mode,           // 'mv' | 'national' | 'age'
       roomCode,
       isHost,
       myPlayerId,
@@ -55,7 +65,6 @@ const BlackjackGame = (() => {
 
       // Progreso propio
       currentCardIdx: 0,   // índice en cardOrder del jugador local
-      jokerUsed:      false,
     };
   }
 
@@ -117,7 +126,6 @@ const BlackjackGame = (() => {
     }
 
     state.currentCardIdx = 0;
-    state.jokerUsed      = false;
 
     // Limpiar UI de la ronda anterior
     const bustEl = document.getElementById('bust-indicator');
@@ -148,6 +156,7 @@ const BlackjackGame = (() => {
 
     if (h.total > state.objective && !h.bust) {
       h.bust = true;
+      _showBustIndicator(h.total);
     }
 
     _advanceCard(h);
@@ -173,9 +182,6 @@ const BlackjackGame = (() => {
     _onPlayerDone();
   }
 
-  /* ── Comodín eliminado ── */
-  function actionJoker() { /* eliminado */ }
-
   /* ── Timeout: carta descartada automáticamente ── */
   function _onCardTimeout() {
     const h = myHand();
@@ -187,10 +193,6 @@ const BlackjackGame = (() => {
   /* ─── Avanzar a la siguiente carta o terminar ─── */
   function _advanceCard(hand) {
     state.currentCardIdx++;
-
-    // Ocultar reveal del comodín si estaba visible
-    const jokerEl = document.getElementById('joker-reveal');
-    if (jokerEl) jokerEl.classList.add('hidden');
 
     if (state.currentCardIdx >= CARDS_PER_ROUND) {
       // Visto todas las cartas
@@ -292,7 +294,10 @@ const BlackjackGame = (() => {
       App.onRoundScoresReady(state.players);
     }
 
-    const winner = state.players.find(p => p.score >= POINTS_TO_WIN);
+    const eligible = state.players.filter(p => p.score >= POINTS_TO_WIN);
+    const winner = eligible.length
+      ? eligible.reduce((best, p) => (p.score > best.score ? p : best), eligible[0])
+      : null;
     if (winner) {
       setTimeout(() => _endGame(winner), 2000);
     } else {
@@ -383,7 +388,7 @@ const BlackjackGame = (() => {
       const sorted = [...state.players].sort((a, b) => b.score - a.score);
       scoreList.innerHTML = sorted.map(p =>
         `<div class="final-score-row ${p.id === winner.id ? 'winner' : ''}">
-          <span class="fs-name">${p.name}</span>
+          <span class="fs-name">${escapeHtml(p.name)}</span>
           <span class="fs-pts">${p.score} pt${p.score !== 1 ? 's' : ''}</span>
         </div>`
       ).join('');
@@ -449,17 +454,12 @@ const BlackjackGame = (() => {
     const btnAdd    = document.getElementById('btn-add');
     const btnDiscard = document.getElementById('btn-discard');
     const btnStand  = document.getElementById('btn-stand');
-    const btnJoker  = document.getElementById('btn-joker');
 
     if (btnAdd)    btnAdd.disabled    = false;
     if (btnDiscard) btnDiscard.disabled = false;
     // Stand solo disponible si no bust y tiene algo acumulado
     // Stand disponible si tiene algo acumulado (aunque se haya pasado)
     if (btnStand)  btnStand.disabled = h.total === 0;
-
-    // Ocultar reveal comodín
-    const jokerEl = document.getElementById('joker-reveal');
-    if (jokerEl) jokerEl.classList.add('hidden');
   }
 
   /* ─── club → ruta local del escudo (sin JSON, sin fetch) ─── */
@@ -552,7 +552,7 @@ const BlackjackGame = (() => {
     const flagHtml = flagUrl
       ? `<div class="card-header-flag">
            <img src="${flagUrl}" alt="${card.nat}" loading="lazy" class="card-header-flag-img"
-                onerror="this.nextSibling && (this.nextSibling.style.display='inline'); this.style.display='none'">
+                onerror="this.nextElementSibling && (this.nextElementSibling.style.display='inline'); this.style.display='none'">
            <span class="card-header-flag-nat" style="display:none">${card.nat || ''}</span>
          </div>`
       : `<div class="card-header-flag">
@@ -590,8 +590,14 @@ const BlackjackGame = (() => {
     `;
   }
 
-  function _showBustIndicator() {
-    // Sin mensaje — el jugador simplemente sigue
+  function _showBustIndicator(total) {
+    const el = document.getElementById('bust-indicator');
+    if (!el) return;
+    const shown = (typeof BlackjackSets !== 'undefined' && BlackjackSets.formatValue)
+      ? BlackjackSets.formatValue(total, state.mode)
+      : total;
+    el.textContent = `¡TE HAS PASADO! (${shown})`;
+    el.classList.remove('hidden');
   }
 
   /* ═══════════════════════════════════════════
@@ -604,7 +610,7 @@ const BlackjackGame = (() => {
     container.innerHTML = state.players.map(p => `
       <div class="reveal-player-area" id="reveal-area-${p.id}">
         <div class="reveal-player-header">
-          <span class="reveal-player-name">${p.name}</span>
+          <span class="reveal-player-name">${escapeHtml(p.name)}</span>
           <span class="reveal-player-total" id="reveal-total-${p.id}">—</span>
         </div>
         <div class="reveal-cards-list" id="reveal-cards-${p.id}">
@@ -709,7 +715,7 @@ const BlackjackGame = (() => {
     if (!sb) return;
     sb.innerHTML = state.players.map(p =>
       `<div class="sb-player">
-        <span class="sb-name">${p.name}</span>
+        <span class="sb-name">${escapeHtml(p.name)}</span>
         <span class="sb-score">${p.score}</span>
       </div>`
     ).join('');
@@ -723,8 +729,8 @@ const BlackjackGame = (() => {
       .map(p => {
         const h = state.hands[p.id];
         const done = h && (h.standing || h.doneAt);
-        return `<div class="opp-avatar ${done ? 'opp-done' : 'opp-thinking'}" title="${p.name}">
-          ${p.name.charAt(0).toUpperCase()}
+        return `<div class="opp-avatar ${done ? 'opp-done' : 'opp-thinking'}" title="${escapeHtml(p.name)}">
+          ${escapeHtml(p.name.charAt(0).toUpperCase())}
         </div>`;
       }).join('');
   }
@@ -749,11 +755,6 @@ const BlackjackGame = (() => {
     return map[pos] || pos || '?';
   }
 
-  /* ── Firebase sync placeholders ── */
-  function _syncJokerUsed() {
-    // BlackjackSync.reportJoker(state.myPlayerId)
-  }
-
   /* ═══════════════════════════════════════════
      API PÚBLICA
      ═══════════════════════════════════════════ */
@@ -767,7 +768,6 @@ const BlackjackGame = (() => {
     actionAdd,
     actionDiscard,
     actionStand,
-    actionJoker,
 
     // Reveal
     startReveal,

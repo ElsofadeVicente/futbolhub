@@ -105,8 +105,12 @@ function towerDefaultState() {
   return { finished: false, won: false, selectedPlayerId: null, traitRevealed: false };
 }
 
-function towerLoadProgress(offset) {
-  const raw = localStorage.getItem(towerProgressKey(towerDateString(offset)));
+function towerLoadProgress(dateString) {
+  // Usa el dateString real de la torre cargada (towerActiveDateString) en vez de
+  // recalcularlo desde el offset: con fallback a días anteriores o cambios de
+  // horario (DST) el offset puede no corresponder a la fecha real del archivo,
+  // y el progreso se guardaría y cargaría con claves distintas.
+  const raw = localStorage.getItem(towerProgressKey(dateString));
   if (!raw) return towerDefaultState();
   try {
     return { ...towerDefaultState(), ...JSON.parse(raw) };
@@ -152,11 +156,6 @@ function towerRenderStats() {
   });
 }
 
-function towerResetStats() {
-  if (!confirm('¿Seguro que quieres resetear las estadísticas de La Torre?')) return;
-  towerSaveStats({ played: 0, wins: 0, currentStreak: 0, bestStreak: 0 });
-}
-
 function towerRecordResult(won) {
   const stats = towerLoadStats();
   stats.played += 1;
@@ -171,9 +170,14 @@ function towerRecordResult(won) {
 }
 
 function towerGetEdition(dateString) {
-  const launch = towerParseDateString(TOWER_LAUNCH_DATE);
-  const target = towerParseDateString(dateString);
-  return Math.max(1, Math.floor((target - launch) / 86400000) + 1);
+  // Días de calendario contados en UTC (no restando Date locales) para que un
+  // cambio de horario de verano/invierno entre medias no desplace el número
+  // de edición en ±1 día.
+  const [ly, lm, ld] = String(TOWER_LAUNCH_DATE).split('-').map(Number);
+  const [ty, tm, td] = String(dateString).split('-').map(Number);
+  const launchUTC = Date.UTC(ly, lm - 1, ld);
+  const targetUTC  = Date.UTC(ty, tm - 1, td);
+  return Math.max(1, Math.floor((targetUTC - launchUTC) / 86400000) + 1);
 }
 
 async function towerFetchJson(dateString) {
@@ -248,7 +252,7 @@ async function towerLoad(offset) {
 
   await towerEnrichPlayers();
 
-  towerState = towerLoadProgress(towerOffset);
+  towerState = towerLoadProgress(towerActiveDateString);
   towerRenderScreen();
   if (towerState.finished) setTimeout(() => towerOpenResultModal(), 250);
 }
@@ -357,6 +361,7 @@ function towerRenderScreen() {
         <div class="tower-result-player" id="tower-result-player"></div>
         <div class="tower-countdown ${towerOffset === 0 ? 'visible' : ''}" id="tower-countdown"></div>
         <div class="tower-modal-actions">
+          <button class="next-btn" id="tower-share-btn" onclick="towerShare()">📤 Compartir</button>
           <button class="next-btn" onclick="towerCloseResultModal()">Ver torre</button>
         </div>
       </div>
@@ -475,6 +480,42 @@ function towerCloseResultModal() {
   if (towerCountdownInterval) {
     clearInterval(towerCountdownInterval);
     towerCountdownInterval = null;
+  }
+}
+
+/* ── COMPARTIR RESULTADO (estilo Wordle) ────── */
+
+function towerShare() {
+  if (!towerState || !towerState.finished) return;
+  const emoji = towerState.won ? '🗼✅' : '🗼💥';
+  const line  = towerState.won ? '¡Torre salvada!' : 'La torre cayó…';
+  const text =
+    `La Torre FutbolHUB #${towerEdition}\n` +
+    `${emoji} ${line}\n` +
+    window.location.origin + window.location.pathname;
+  towerDoShare(text, document.getElementById('tower-share-btn'));
+}
+
+function towerDoShare(text, btn) {
+  const feedback = () => {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = '✓ ¡Copiado!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  };
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(feedback).catch(() => {});
+  } else {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      feedback();
+    } catch {}
   }
 }
 

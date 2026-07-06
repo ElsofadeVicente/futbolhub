@@ -3,291 +3,24 @@
    Lógica de juego, UI, turnos, vidas, Firebase
    ============================================= */
 
+/* ── Escapa texto para insertar de forma segura en HTML (texto o atributo) ── */
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /* ══════════════════════════════════════════════
-   ESTADO GLOBAL
+   CADENAGAME
+   La lógica real de turnos/vidas/cadena vive en el bloque
+   "CADENAGAME — LÓGICA DE JUEGO" más abajo en este mismo archivo, que
+   trabaja sobre CadenaGame._state (inyectado por App._startGameUI).
+   Aquí solo se expone FBSync, que sí se usa tal cual.
    ══════════════════════════════════════════════ */
 const CadenaGame = (() => {
-
-  const TURN_SECS = 15;
-
-  let state = null;       // Estado del juego
-  let timerInterval = null;
-  let timerStart    = 0;
-  let isMyTurn      = false;  // Para modo online
-
-  /* ─── Estado inicial ─────────────────────────── */
-  function freshState(players, lives) {
-    return {
-      players: players.map((name, i) => ({
-        id: i, name,
-        lives: lives,
-        eliminated: false
-      })),
-      currentIndex: 0,
-      chain: [],          // [{ type:'player'|'team', value, id?, data?, submittedBy }]
-      chainLength: 0,
-      lives,
-      mode: 'local',      // 'local' | 'online'
-      roomCode: null,
-      isHost: false,
-      myPlayerId: null,   // solo online
-      phase: 'playing',   // 'playing' | 'finished'
-    };
-  }
-
-  function getState()           { return state; }
-  function getCurrentTurnType() {
-    if (!state || !state.chain.length) return 'player';
-    return state.chain[state.chain.length - 1].type === 'player' ? 'team' : 'player';
-  }
-
-  /* ─── Jugador activo ─────────────────────────── */
-  function activePlayers()  { return state.players.filter(p => !p.eliminated); }
-  function currentPlayer()  {
-    const active = activePlayers();
-    if (!active.length) return null;
-    return active[state.currentIndex % active.length];
-  }
-
-  /* ─── Timer ──────────────────────────────────── */
-  function startTimer() {
-    clearInterval(timerInterval);
-    timerStart = Date.now();
-    updateTimerUI(TURN_SECS);
-
-    timerInterval = setInterval(() => {
-      const elapsed = (Date.now() - timerStart) / 1000;
-      const remaining = Math.max(0, TURN_SECS - elapsed);
-      updateTimerUI(remaining);
-      if (remaining <= 0) {
-        clearInterval(timerInterval);
-        if (isMyTurn || state.mode === 'local') {
-          onTimeout();
-        }
-      }
-    }, 250);
-  }
-
-  function stopTimer() {
-    clearInterval(timerInterval);
-    const bar  = document.getElementById('timer-bar');
-    const text = document.getElementById('timer-text');
-    if (bar)  { bar.style.width = '100%'; bar.classList.remove('warning'); }
-    if (text) text.textContent = TURN_SECS;
-  }
-
-  function updateTimerUI(remaining) {
-    const bar  = document.getElementById('timer-bar');
-    const text = document.getElementById('timer-text');
-    if (!bar || !text) return;
-    const pct = (remaining / TURN_SECS) * 100;
-    bar.style.width = pct + '%';
-    bar.classList.toggle('warning', remaining <= 5);
-    text.textContent = Math.ceil(remaining);
-  }
-
-  function onTimeout() {
-    const cp = currentPlayer();
-    if (!cp) return;
-    App.showToast(`⏰ ¡Tiempo! ${cp.name} pierde una vida`, 'error');
-    penalizeCurrentPlayer(`${cp.name} se quedó sin tiempo`);
-  }
-
-  /* ─── Penalización ───────────────────────────── */
-  function penalizeCurrentPlayer(reason) {
-    clearInterval(timerInterval);
-    const cp = currentPlayer();
-    if (!cp) return;
-
-    cp.lives--;
-    if (cp.lives <= 0) {
-      cp.eliminated = true;
-      showEliminated(cp, reason);
-    } else {
-      App.showToast(`❤️ Le quedan ${cp.lives} vida${cp.lives !== 1 ? 's' : ''}`, 'error');
-      nextTurn();
-    }
-  }
-
-  // Llamado desde CadenaData cuando la respuesta es incorrecta
-  function penalizeWrongAnswer(value, type) {
-    const cp = currentPlayer();
-    if (!cp) return;
-    penalizeCurrentPlayer(`"${value}" no es válido`);
-  }
-
-  /* ─── Añadir a la cadena (respuesta correcta) ── */
-  function addToChain(entry) {
-    clearInterval(timerInterval);
-
-    const cp = currentPlayer();
-    entry.submittedBy = cp?.name || '?';
-    state.chain.push(entry);
-    state.chainLength++;
-
-    // Actualizar Firebase si online
-    if (state.mode === 'online') {
-      FBSync.pushChainEntry(entry);
-    }
-
-    renderChainEntry(entry);
-    resetAnswerInput();
-    nextTurn();
-  }
-
-  /* ─── Siguiente turno ────────────────────────── */
-  function nextTurn() {
-    const active = activePlayers();
-    if (active.length <= 1) {
-      endGame(active[0]);
-      return;
-    }
-
-    // Avanzar índice (solo entre jugadores activos)
-    state.currentIndex = (state.currentIndex + 1) % active.length;
-
-    if (state.mode === 'online') {
-      FBSync.pushTurnState();
-    } else {
-      beginTurn();
-    }
-  }
-
-  function beginTurn() {
-    const cp = currentPlayer();
-    if (!cp) { endGame(null); return; }
-
-    const type = getCurrentTurnType();
-    isMyTurn   = (state.mode === 'local') ||
-                 (state.myPlayerId !== null && cp.id === state.myPlayerId);
-
-    updateGameUI();
-    updateChainLabel();
-
-    // Zona de respuesta
-    const answerZone  = document.getElementById('answer-zone');
-    const waitingMsg  = document.getElementById('waiting-msg');
-    const input       = document.getElementById('answer-input');
-
-    if (isMyTurn) {
-      answerZone.classList.remove('hidden');
-      waitingMsg.classList.add('hidden');
-      input.disabled = false;
-      input.value = '';
-      CadenaData.closeSuggestions();
-      startTimer();
-      setTimeout(() => input.focus(), 100);
-    } else {
-      answerZone.classList.add('hidden');
-      waitingMsg.classList.remove('hidden');
-      document.getElementById('waiting-name').textContent = cp.name;
-      startTimer(); // visual only
-    }
-  }
-
-  /* ─── Fin de partida ─────────────────────────── */
-  function endGame(winner) {
-    clearInterval(timerInterval);
-    state.phase = 'finished';
-
-    setTimeout(() => {
-      showScreen('screen-result');
-      const wname = document.getElementById('winner-name');
-      const stats = document.getElementById('chain-stats');
-      wname.textContent = winner ? winner.name : '— Empate —';
-      stats.innerHTML = `Cadena de <strong>${state.chainLength}</strong> eslabones<br>
-        ${state.players.map(p =>
-          `${p.eliminated ? '💀' : '✅'} ${p.name}`
-        ).join('<br>')}`;
-    }, 400);
-  }
-
-  /* ─── Eliminación ────────────────────────────── */
-  function showEliminated(player, reason) {
-    showScreen('screen-eliminated');
-    document.getElementById('elim-title').textContent = `💀 ${player.name} ELIMINADO`;
-    document.getElementById('elim-msg').textContent   =
-      reason + '\n\nLa partida continúa sin él.';
-  }
-
-  /* ═══════════════════════════════════════════════
-     UI RENDERING
-     ═══════════════════════════════════════════════ */
-
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const target = document.getElementById(id);
-    if (target) target.classList.add('active');
-  }
-
-  function updateGameUI() {
-    const cp    = currentPlayer();
-    const type  = getCurrentTurnType();
-    const lives = state.lives;
-
-    // Turno indicator
-    document.getElementById('turn-name').textContent = cp?.name || '—';
-
-    // Badge tipo respuesta
-    const badge = document.getElementById('answer-type-badge');
-    badge.textContent = type === 'player' ? '⚽ JUGADOR' : '🏟️ EQUIPO';
-
-    // Vidas de los jugadores
-    const livesEl = document.getElementById('players-lives');
-    livesEl.innerHTML = state.players.map(p => {
-      const hearts = p.eliminated
-        ? '💀'
-        : Array(lives).fill(0).map((_, i) => i < p.lives ? '❤️' : '🖤').join('');
-      const isActive = !p.eliminated && p.id === currentPlayer()?.id;
-      return `<div class="player-life-card ${isActive ? 'active-player' : ''} ${p.eliminated ? 'eliminated' : ''}">
-        <span class="plc-name">${p.name}</span>
-        <span class="plc-hearts">${hearts}</span>
-      </div>`;
-    }).join('');
-  }
-
-  function updateChainLabel() {
-    const type     = getCurrentTurnType();
-    const label    = document.getElementById('chain-label');
-    const prevName = state.chain.length
-      ? state.chain[state.chain.length - 1].value || state.chain[state.chain.length - 1].name
-      : null;
-
-    if (!state.chain.length) {
-      label.textContent = 'Di un JUGADOR de fútbol para empezar';
-    } else if (type === 'team') {
-      label.textContent = `¿En qué equipo jugó ${prevName}?`;
-    } else {
-      label.textContent = `¿Qué jugador jugó en ${prevName}?`;
-    }
-  }
-
-  function renderChainEntry(entry) {
-    const container = document.getElementById('chain-entries');
-    const div = document.createElement('div');
-    const val  = entry.name || entry.value || '?';
-    const meta = entry.type === 'player'
-      ? (entry.data?.nat || '') + (entry.data?.b ? ` · ${entry.data.b}` : '')
-      : (entry.isOneClubMan ? '★ One-club man' : '');
-
-    div.className = `chain-entry type-${entry.type}`;
-    div.innerHTML = `
-      <span class="ce-icon">${entry.type === 'player' ? '⚽' : '🏟️'}</span>
-      <div class="ce-content">
-        <div class="ce-value">${val}</div>
-        ${meta ? `<div class="ce-meta">${meta}</div>` : ''}
-      </div>
-      <span class="ce-player">${entry.submittedBy || ''}</span>`;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-  }
-
-  function resetAnswerInput() {
-    const input = document.getElementById('answer-input');
-    input.value = '';
-    input.disabled = false;
-    CadenaData.closeSuggestions();
-  }
 
   /* ═══════════════════════════════════════════════
      FIREBASE ONLINE SYNC
@@ -366,51 +99,22 @@ const CadenaGame = (() => {
       this.unsubFns.push(unsub);
     },
 
-    /** Empuja una entrada en la cadena */
-    async pushChainEntry(entry) {
-      const FB = window._FB;
-      if (!FB?.configured || !this.roomRef) return;
-      const { db, ref, update } = FB;
-      const code = state.roomCode;
-
-      // Construir cadena serializable
-      const chainEntry = { type: entry.type, submittedBy: entry.submittedBy };
-      if (entry.name)  chainEntry.name  = entry.name;
-      if (entry.value) chainEntry.value = entry.value;
-      if (entry.id)    chainEntry.id    = entry.id;
-      if (entry.isOneClubMan) chainEntry.isOneClubMan = true;
-
-      const newChain = [...(state.chain.map(e => ({
-        type: e.type,
-        name: e.name,
-        value: e.value,
-        id: e.id,
-        isOneClubMan: e.isOneClubMan,
-        submittedBy: e.submittedBy
-      })))];
-      newChain.push(chainEntry);
-
-      await update(ref(FB.db, this.roomPath(code)), {
-        chain: newChain,
-        chainLength: newChain.length
-      });
-    },
-
     /** Empuja el estado del turno */
     async pushTurnState() {
       const FB = window._FB;
-      if (!FB?.configured || !state.roomCode) return;
+      const s = CadenaGame._state;
+      if (!FB?.configured || !s?.roomCode) return;
       const { db, ref, update, serverTimestamp } = FB;
 
-      const playersSerial = state.players.map(p => ({
+      const playersSerial = s.players.map(p => ({
         id: p.id, name: p.name, lives: p.lives, eliminated: p.eliminated
       }));
 
-      await update(ref(db, this.roomPath(state.roomCode)), {
-        turnIndex: state.currentIndex,
+      await update(ref(db, this.roomPath(s.roomCode)), {
+        turnIndex: s.currentIndex,
         players: playersSerial,
         turnStartTime: serverTimestamp(),
-        status: state.phase === 'finished' ? 'finished' : 'playing'
+        status: s.phase === 'finished' ? 'finished' : 'playing'
       });
     },
 
@@ -420,42 +124,14 @@ const CadenaGame = (() => {
     }
   };
 
-  /* ─── Aplicar estado remoto (online) ── */
-  function applyRemoteState(remote) {
-    if (!state) return;
-
-    // Actualizar jugadores y vidas
-    if (remote.players) {
-      state.players = remote.players.map(rp => ({
-        ...rp,
-        lives: rp.lives ?? state.lives,
-        eliminated: rp.eliminated ?? false
-      }));
-    }
-
-    // Actualizar índice de turno
-    if (typeof remote.turnIndex === 'number') {
-      state.currentIndex = remote.turnIndex;
-    }
-
-    // Actualizar cadena
-    if (remote.chain && remote.chain.length !== state.chain.length) {
-      state.chain = remote.chain;
-      state.chainLength = remote.chainLength || remote.chain.length;
-      // Re-render sólo entradas nuevas
-      const container = document.getElementById('chain-entries');
-      container.innerHTML = '';
-      state.chain.forEach(e => renderChainEntry(e));
-    }
-
-    if (remote.status === 'playing') beginTurn();
-    if (remote.status === 'finished') endGame(activePlayers()[0]);
-  }
-
   /* ═══════════════════════════════════════════════
      API PÚBLICA DE CadenaGame
+     getState, getCurrentTurnType, addToChain, penalizeWrongAnswer,
+     beginTurn y applyRemoteState se definen más abajo en el bloque
+     "CADENAGAME — LÓGICA DE JUEGO", que sobrescribe estas propiedades
+     con la implementación real (basada en CadenaGame._state).
      ═══════════════════════════════════════════════ */
-  return { getState, getCurrentTurnType, addToChain, penalizeWrongAnswer, beginTurn, FBSync, applyRemoteState };
+  return { FBSync };
 
 })();
 
@@ -753,8 +429,8 @@ const App = (() => {
     list.innerHTML = normalized.map((p, i) => {
       const pid = p.id !== null ? p.id : i;
       return `<div class="lobby-player-item">
-        <div class="lobby-player-avatar">${p.name[0].toUpperCase()}</div>
-        <span class="lobby-player-name">${p.name}</span>
+        <div class="lobby-player-avatar">${escapeHtml((p.name || '?').charAt(0).toUpperCase())}</div>
+        <span class="lobby-player-name">${escapeHtml(p.name)}</span>
         ${pid === 0 ? '<span class="lobby-player-host">👑 Host</span>' : ''}
         ${pid === myId ? '<span class="lobby-player-host">← Tú</span>' : ''}
       </div>`;
@@ -1045,19 +721,17 @@ const App = (() => {
 })();
 
 /* ══════════════════════════════════════════════
-   RESET DE ESTADO (puente entre módulos)
+   CADENAGAME — LÓGICA DE JUEGO
+   Implementación real de turnos, vidas, cadena y sync remoto. Se añade
+   aquí (en vez de dentro del IIFE de CadenaGame) porque necesita que el
+   estado de la partida (CadenaGame._state) se pueda re-crear por completo
+   en cada partida nueva vía App._startGameUI → CadenaGame._resetState().
    ══════════════════════════════════════════════ */
-
-// Añadimos _resetState al módulo CadenaGame desde fuera
-// (necesario porque el módulo es un IIFE con closure)
-;(function patchCadenaGame() {
+;(function () {
   let _state = null;
 
-  // Sobreescribir getState y getCurrentTurnType con acceso al estado parchado
-  const orig = CadenaGame.getState;
   CadenaGame._resetState = function(newState) {
     _state = newState;
-    // Parchear todas las referencias internas que usaban state
     CadenaGame._state = _state;
   };
 
@@ -1192,6 +866,11 @@ const App = (() => {
       waitingMsg.classList.add('hidden');
       input.disabled = false;
       input.value = '';
+      // Re-habilitar el botón de enviar: submitAnswer lo deshabilita al enviar
+      // y en el camino de éxito nadie lo re-habilitaba (solo el input), por lo
+      // que tras el primer acierto el botón quedaba muerto el resto de partida.
+      const submitBtn = document.querySelector('.submit-btn');
+      if (submitBtn) submitBtn.disabled = false;
       CadenaData.closeSuggestions();
       if (graceMs > 0) {
         _showCountdownOverlay(graceMs, () => { _startTimer(); setTimeout(() => input.focus(), 50); });
@@ -1322,7 +1001,7 @@ const App = (() => {
     if (elimOpts && elimList) {
       if (validOptions && validOptions.length > 0) {
         elimList.innerHTML = validOptions.slice(0, 10).map(o =>
-          `<span class="valid-option-tag">${o}</span>`
+          `<span class="valid-option-tag">${escapeHtml(o)}</span>`
         ).join('');
         elimOpts.classList.remove('hidden');
       } else {
@@ -1337,7 +1016,7 @@ const App = (() => {
     if (!panel || !list) return;
     if (validOptions && validOptions.length > 0) {
       list.innerHTML = validOptions.slice(0, 10).map(o =>
-        `<span class="valid-option-tag">${o}</span>`
+        `<span class="valid-option-tag">${escapeHtml(o)}</span>`
       ).join('');
       panel.classList.remove('hidden');
     } else {
@@ -1403,7 +1082,7 @@ const App = (() => {
       document.getElementById('winner-name').textContent = winner ? winner.name : '— Empate —';
       document.getElementById('chain-stats').innerHTML =
         `Cadena de <strong>${s?.chainLength || 0}</strong> eslabones<br>` +
-        (s?.players || []).map(p => `${p.eliminated ? '💀' : '✅'} ${p.name}`).join('<br>');
+        (s?.players || []).map(p => `${p.eliminated ? '💀' : '✅'} ${escapeHtml(p.name)}`).join('<br>');
     }, 400);
   }
 
@@ -1426,10 +1105,10 @@ const App = (() => {
     div.innerHTML = `
       <span class="ce-icon">${entry.type === 'player' ? '⚽' : '🏟️'}</span>
       <div class="ce-content">
-        <div class="ce-value">${val}</div>
-        ${meta ? `<div class="ce-meta">${meta}</div>` : ''}
+        <div class="ce-value">${escapeHtml(val)}</div>
+        ${meta ? `<div class="ce-meta">${escapeHtml(meta)}</div>` : ''}
       </div>
-      <span class="ce-player">${entry.submittedBy || ''}</span>`;
+      <span class="ce-player">${escapeHtml(entry.submittedBy || '')}</span>`;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
   }
@@ -1445,7 +1124,7 @@ const App = (() => {
         : Array(s.lives).fill(0).map((_, i) => i < p.lives ? '❤️' : '🖤').join('');
       const isActive = !p.eliminated && p.id === cp?.id;
       return `<div class="player-life-card ${isActive ? 'active-player' : ''} ${p.eliminated ? 'eliminated' : ''}">
-        <span class="plc-name">${p.name}</span>
+        <span class="plc-name">${escapeHtml(p.name)}</span>
         <span class="plc-hearts">${hearts}</span>
       </div>`;
     }).join('');

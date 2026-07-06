@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FutbolHUB</title>
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./img/iconoapp.png">
+<meta name="theme-color" content="#16181d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Inter:wght@400;500;600;700&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
@@ -18,7 +21,7 @@
   <header class="masthead">
     <div class="masthead-top">
       <div class="masthead-meta" id="masthead-date-meta">
-        No. 89 · DOM 03 MAY · 2026<br>MADRID · PRIMERA EDICIÓN
+        No. 1 · DOM 03 MAY · 2026<br>MADRID · PRIMERA EDICIÓN
       </div>
       <div class="masthead-edition">
         <strong>EDICIÓN DIGITAL</strong>
@@ -307,21 +310,34 @@
   </div><!-- /np-layout -->
 
   <footer class="np-footer">
-    <span>FutbolHUb · V10 · 2026</span>
+    <span>FutbolHUB · V10 · 2026</span>
     <span>La Liga · Champions League · Partidos Históricos</span>
   </footer>
 
 </div><!-- /hub -->
 
 <script src="./js/shared.js"></script>
+<script src="./js/hub-streaks.js?v=20260705"></script>
+<script>
+  // PWA: registrar el service worker (cache de datos pesados + instalable)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
 <script>
   (function () {
     const dias  = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
     const meses = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
     const now   = new Date();
     const el    = document.getElementById('masthead-date-meta');
+    // Edición calculada en días (UTC) desde el lanzamiento, en vez de un "No. 89" fijo.
+    const LAUNCH_DATE_UTC = Date.UTC(2026, 0, 1); // 1 ene 2026
+    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const edition = Math.max(1, Math.floor((todayUTC - LAUNCH_DATE_UTC) / 86400000) + 1);
     if (el) el.innerHTML =
-      `No. 89 · ${dias[now.getDay()]} ${String(now.getDate()).padStart(2,'0')} ${meses[now.getMonth()]} · ${now.getFullYear()}<br>MADRID · PRIMERA EDICIÓN`;
+      `No. ${edition} · ${dias[now.getDay()]} ${String(now.getDate()).padStart(2,'0')} ${meses[now.getMonth()]} · ${now.getFullYear()}<br>MADRID · PRIMERA EDICIÓN`;
   })();
 </script>
 </body>

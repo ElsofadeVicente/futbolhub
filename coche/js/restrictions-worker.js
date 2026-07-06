@@ -327,7 +327,7 @@ function validate(player, r) {
     case 'position_gk':
       return player.position === 'GK' || (player.position || '').toUpperCase().includes('GK');
     case 'position_def':
-      return player.position === 'DEF';
+      return player.position === 'DEF' || (player.position || '').toUpperCase().includes('DEF');
     case 'birthDecade': {
       const y = player.birthYear;
       if (typeof y !== 'number') return false;

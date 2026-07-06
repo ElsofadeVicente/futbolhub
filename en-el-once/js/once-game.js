@@ -120,6 +120,7 @@ async function loadMatchData(mode, offsetDays = 0) {
                 if (!Array.isArray(data) || data.length === 0) throw new Error('Archivo vacío');
                 dailyPool  = data;
                 allMatches = data;
+                dailyLoadedFile = fileName;
                 dailyAvailability[0] = true;
                 updateLoadingProgress(1, 1);
                 return true;
@@ -257,6 +258,8 @@ async function startGame(mode) {
 const dailyAvailability = {};
 // Cache de pools ya cargados por nombre de archivo, para no refetchear al navegar
 const dailyPoolCache = {};
+// Archivo mensual actualmente cargado en dailyPool (para saber si hay que recargar)
+let dailyLoadedFile = null;
 
 /**
  * Comprueba si existe un partido para el offset dado.
@@ -296,15 +299,18 @@ async function checkDayAvailable(offsetDays) {
 async function loadDailyMatch(offsetDays) {
     dailyOffset = offsetDays;
 
-    // Cargar el pool correcto si cambia de mes o está vacío
+    // Cargar el pool correcto si cambia de mes o está vacío.
+    // FIX: comparar con el archivo REALMENTE cargado (dailyLoadedFile), no con el
+    // archivo de hoy. Antes, al navegar a un mes anterior y volver a "Hoy", el
+    // pool seguía siendo el del mes anterior y se mostraba una alineación errónea.
     const neededFile  = getDailyFileName(offsetDays);
-    const currentFile = getDailyFileName(0);
-    const needsReload = neededFile !== currentFile || dailyPool.length === 0;
+    const needsReload = neededFile !== dailyLoadedFile || dailyPool.length === 0;
 
     if (needsReload) {
         // Primero mirar si ya lo tenemos en caché (prefetcheado por checkDayAvailable)
         if (dailyPoolCache[neededFile]) {
             dailyPool = dailyPoolCache[neededFile];
+            dailyLoadedFile = neededFile;
         } else {
             document.getElementById('loading').style.display = 'block';
             try {
@@ -313,6 +319,7 @@ async function loadDailyMatch(offsetDays) {
                     const data = await r.json();
                     if (Array.isArray(data) && data.length > 0) {
                         dailyPool = data;
+                        dailyLoadedFile = neededFile;
                         dailyPoolCache[neededFile] = data;
                         dailyAvailability[offsetDays] = true;
                     }
@@ -454,7 +461,9 @@ function showDailyAlreadyPlayed(saved, offsetDays) {
 function loadMatch() {
     if (currentMatchIndex >= allMatches.length) {
         alert('¡Has completado todos los partidos de este modo!');
-        goToGame('once');
+        // FIX: goToGame() no existe en esta página — lanzaba ReferenceError
+        // y dejaba la pantalla congelada al agotar los partidos del modo.
+        goBackToMenu();
         return;
     }
 
@@ -606,9 +615,33 @@ function _fallbackKit(n){
   return { p:main, s:second, pat, sl: pat==='stripes'?second:main, col:second, num:_autoNum(main) };
 }
 
+/* Reglas activas: por defecto las embebidas (KIT_RULES); si data/kits.json
+   existe y es v\u00e1lido, se sustituyen por las del JSON (editable sin tocar c\u00f3digo). */
+let _kitRules = KIT_RULES;
+let _gkKit    = GK_KIT;
+
+function loadKitsJson() {
+  fetch('./data/kits.json')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      if (Array.isArray(data.rules)) {
+        const rules = data.rules
+          .filter(r => Array.isArray(r.keys) && r.keys.length && r.kit && r.kit.p)
+          .map(r => [r.keys.map(k => String(k).toUpperCase()), r.kit]);
+        if (rules.length) {
+          _kitRules = rules;
+          console.log(`\u2705 Kits cargados desde kits.json: ${rules.length} reglas`);
+        }
+      }
+      if (data.gk && data.gk.p) _gkKit = data.gk;
+    })
+    .catch(() => { /* sin kits.json: se usan las reglas embebidas */ });
+}
+
 function getKit(team){
   const n=(team||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
-  for(const [keys,kit] of KIT_RULES){ if(keys.some(k=>n.includes(k))) return kit; }
+  for(const [keys,kit] of _kitRules){ if(keys.some(k=>n.includes(k))) return kit; }
   return _fallbackKit(n);
 }
 
@@ -628,7 +661,7 @@ function _pattern(pat, main, second, K){
 
 function buildJerseySVG(kit, number, isGK){
   const uid='k'+(_jerseyUID++);
-  const K = isGK ? GK_KIT : (kit || _fallbackKit(''));
+  const K = isGK ? _gkKit : (kit || _fallbackKit(''));
   const main   = K.p;
   const second = K.s || _hslHex(0,0,30);
   const pat    = isGK ? 'solid' : (K.pat||'solid');
@@ -805,15 +838,23 @@ function renderFormation() {
         groups.get(group).push({ player, globalIndex });
     });
 
-    // 3. Renderizar en orden ascendente de grupo
-    // column-reverse del contenedor invierte la visual: grupo 1 (GK) queda abajo, grupo 5 (delanteros) arriba
+    // 3. Renderizar siempre los 5 slots (grupos 1-5).
+    // column-reverse del contenedor invierte la visual: grupo 1 (GK) queda abajo, grupo 5 (delanteros) arriba.
+    // Si un grupo no tiene jugadores se inserta un spacer invisible para mantener el campo siempre igual de alto.
     const LEFT_POS  = new Set(['LM','LW','LWB','ML']);
     const RIGHT_POS = new Set(['RM','RW','RWB','MR']);
 
-    [...groups.keys()].sort((a, b) => a - b).forEach(group => {
+    for (let group = 1; group <= 5; group++) {
         const lineDiv = document.createElement('div');
-        lineDiv.className = 'line';
 
+        if (!groups.has(group)) {
+            // Slot vacío: spacer que ocupa el hueco sin mostrar nada
+            lineDiv.className = 'line line--spacer';
+            formationContainer.appendChild(lineDiv);
+            continue;
+        }
+
+        lineDiv.className = 'line';
         const players = groups.get(group);
 
         // Ordenar: izquierdas primero, derechas al final, centro en medio
@@ -828,7 +869,7 @@ function renderFormation() {
             lineDiv.appendChild(buildPlayerCard(player, globalIndex));
         });
         formationContainer.appendChild(lineDiv);
-    });
+    }
 }
 
 // =============================================
@@ -927,7 +968,11 @@ function getPlayerByIndex(index) {
 
 let currentRow = 0;
 
-function normalizeText(text) {
+// Nota: se llama onceNormalizeText (no normalizeText) para no pisar la
+// funci\u00f3n global normalizeText(text) de shared.js \u2014 esta p\u00e1gina carga ambos
+// scripts y, al declarar las dos una funci\u00f3n global con el mismo nombre, la
+// de shared.js quedaba inalcanzable (c\u00f3digo muerto) en esta p\u00e1gina.
+function onceNormalizeText(text) {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 }
 
@@ -961,7 +1006,7 @@ function getKnownName(fullName) {
         'STEPHAN EL SHAARAWY': 'EL SHAARAWY', 'EL SHAARAWY': 'EL SHAARAWY',
         'RAUL GONZALEZ': 'RAUL', 'RAUL GONZALEZ BLANCO': 'RAUL'
     };
-    const nameNorm = normalizeText(name);
+    const nameNorm = onceNormalizeText(name);
     if (exceptions[nameNorm]) return exceptions[nameNorm];
 
     const words = name.split(' ');
@@ -998,7 +1043,7 @@ function getKnownName(fullName) {
 function handleKeyPress(key) {
     if (failedPlayers.has(currentPlayerIndex)) return;
     const player     = getPlayerByIndex(currentPlayerIndex);
-    const targetName = normalizeText(removeSpecialChars(getKnownName(player.name)));
+    const targetName = onceNormalizeText(removeSpecialChars(getKnownName(player.name)));
 
     if (key === 'Enter') { if (currentGuess.length === targetName.length) checkGuess(); return; }
     if (key === 'Delete') { if (currentGuess.length > 0) { currentGuess.pop(); updateCurrentRow(); } return; }
@@ -1007,7 +1052,7 @@ function handleKeyPress(key) {
 
 function updateCurrentRow() {
     const player       = getPlayerByIndex(currentPlayerIndex);
-    const targetLength = normalizeText(removeSpecialChars(getKnownName(player.name))).length;
+    const targetLength = onceNormalizeText(removeSpecialChars(getKnownName(player.name))).length;
     for (let i = 0; i < targetLength; i++) {
         const cell = document.getElementById(`cell-${currentRow}-${i}`);
         if (cell) {
@@ -1022,7 +1067,7 @@ function updateCurrentRow() {
 
 function checkGuess() {
     const player     = getPlayerByIndex(currentPlayerIndex);
-    const targetName = normalizeText(removeSpecialChars(getKnownName(player.name)));
+    const targetName = onceNormalizeText(removeSpecialChars(getKnownName(player.name)));
     const guessWord  = currentGuess.join('');
 
     if (guessWord === targetName) {
@@ -1031,7 +1076,7 @@ function checkGuess() {
             guess: guessWord, status: new Array(targetName.length).fill('correct')
         });
         animateCorrectGuess();
-        setTimeout(() => { revealPlayer(currentPlayerIndex); closeGuessModal(); updateStats('correct'); }, 1500);
+        setTimeout(() => { revealPlayer(currentPlayerIndex); closeGuessModal(); updateOnceStats('correct'); }, 1500);
         return;
     }
 
@@ -1066,13 +1111,13 @@ function checkGuess() {
     playerAttempts[currentPlayerIndex]++;
 
     if (currentRow >= 6) {
-        setTimeout(() => { revealPlayer(currentPlayerIndex, true); closeGuessModal(); updateStats('failed'); }, 1000);
+        setTimeout(() => { revealPlayer(currentPlayerIndex, true); closeGuessModal(); updateOnceStats('failed'); }, 1000);
     }
 }
 
 function animateCorrectGuess() {
     const player       = getPlayerByIndex(currentPlayerIndex);
-    const targetLength = normalizeText(removeSpecialChars(getKnownName(player.name))).length;
+    const targetLength = onceNormalizeText(removeSpecialChars(getKnownName(player.name))).length;
     for (let i = 0; i < targetLength; i++) {
         const cell = document.getElementById(`cell-${currentRow}-${i}`);
         setTimeout(() => cell.classList.add('flip', 'correct'), i * 100);
@@ -1111,7 +1156,7 @@ function revealPlayerFromModal() {
     if (currentPlayerIndex !== null) {
         revealPlayer(currentPlayerIndex);
         closeGuessModal();
-        updateStats('voluntary');
+        updateOnceStats('voluntary');
     }
 }
 
@@ -1226,6 +1271,51 @@ function showCompletionModal() {
     saveStats();
 }
 
+// =============================================
+// COMPARTIR RESULTADO (estilo Wordle)
+// =============================================
+
+function onceShare() {
+    if (!currentMatch) return;
+    const g = matchStats.guessed  || 0;
+    const f = matchStats.failed   || 0;
+    const r = matchStats.revealed || 0;
+    const rest = Math.max(0, 11 - g - f - r);
+    const squares = '🟩'.repeat(g) + '🟨'.repeat(f) + '⬛'.repeat(r + rest);
+    const header = (currentMode === 'diario')
+        ? `En el Once FutbolHUB · ${getDailyDateLabel(dailyOffset)}`
+        : 'En el Once FutbolHUB';
+    const text =
+        `${header}\n` +
+        `${currentMatch.homeTeam} ${currentMatch.score} ${currentMatch.awayTeam}\n` +
+        `${g}/11 aciertos\n${squares}\n` +
+        window.location.origin + window.location.pathname;
+    onceDoShare(text, document.getElementById('once-share-btn'));
+}
+
+function onceDoShare(text, btn) {
+    const feedback = () => {
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = '✓ ¡Copiado!';
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+    };
+    if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+    } else if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(feedback).catch(() => {});
+    } else {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            feedback();
+        } catch { /**/ }
+    }
+}
+
 function closeCompletionModal() {
     document.getElementById('completion-modal').classList.remove('active');
     if (dailyCountdownInterval) { clearInterval(dailyCountdownInterval); dailyCountdownInterval = null; }
@@ -1261,7 +1351,11 @@ function giveUp() {
 // ESTADÍSTICAS
 // =============================================
 
-function updateStats(mode) {
+// Nota: se llama updateOnceStats (no updateStats) para no pisar la función
+// global updateStats(guessed,failed,revealed) definida en shared.js — ambos
+// scripts comparten el mismo objeto global `stats`, pero con formas de
+// actualizarlo distintas (por evento aquí, por partida completa en shared.js).
+function updateOnceStats(mode) {
     stats.totalAttempts++;
     const isDailyToday = currentMode === 'diario' && dailyOffset === 0;
     if (mode === 'correct') {
@@ -1344,6 +1438,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── INIT AL CARGAR ──────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Cargar kits editables (data/kits.json) en background
+    loadKitsJson();
+
     // Mostrar menú del once por defecto
     hideAllScreens();
     document.getElementById('once-menu').style.display = 'flex';

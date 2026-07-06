@@ -27,13 +27,6 @@
   --shadow-old:  var(--shadow);
 }
 
-body.high-contrast {
-  --np-paper:  #ffffff;
-  --np-paper2: #f0f0f0;
-  --np-ink:    #000000;
-  --np-red:    #b5221e;
-}
-
 html, body {
   min-height: 100vh;
   background-color: var(--np-paper);
@@ -1107,7 +1100,10 @@ input {
   letter-spacing: 0.5px;
 }
 .tc-skip:hover { background: var(--np-ink); color: var(--np-paper); }
-.turn-chip.overdue {
+/* Antes era ".turn-chip.overdue", una clase que no existía en ningún elemento
+   (el asiento con turno usa "seat active", ver _seatChip en game.js) — por
+   eso el aviso de turno atascado nunca se veía. */
+.seat.overdue {
   border-color: var(--np-red);
   animation: pulse-warn 1.5s ease infinite;
 }

@@ -12,6 +12,9 @@
   --np-ink-mid:  rgba(15,18,14,0.68);   /* subido para legibilidad */
   --np-ink-soft: rgba(15,18,14,0.16);
   --np-white:    #ffffff;
+  /* Alias de compatibilidad (mismo patrón que el resto de juegos) */
+  --neon-green:  var(--np-ink);
+  --text-light:  var(--np-ink);
 }
 
 /* ── Fondo: papel + grano + líneas de columna ── */
@@ -537,12 +540,6 @@ body {
 
 @keyframes bustPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.32; } }
 
-.joker-reveal {
-  position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
-  background: var(--np-paper2); border: 2px solid var(--np-ink);
-  padding: 5px 14px; font-family: 'Anton', sans-serif; font-size: 1.1rem; letter-spacing: 2px;
-  color: var(--np-ink); white-space: nowrap; z-index: 10; box-shadow: 3px 3px 0 var(--np-ink);
-}
 
 /* ── BUST indicator ── */
 .bust-indicator {

@@ -10,32 +10,20 @@
 /* ═══ 1. HELPERS ═══════════════════════════════════════════ */
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
-function escapeHtml(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML;}
+function escapeHtml(s){
+  return String(s??'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
 
 let _toastTimer=null;
 function toast(msg,type){const el=$('#toast');if(!el)return;el.textContent=msg;el.className=`toast show ${type||''}`;clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
 function showScreen(id){$$('.screen').forEach(s=>s.classList.remove('active'));$(id)?.classList.add('active');}
 function genCode(n=6){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:n},()=>c[Math.floor(Math.random()*c.length)]).join('');}
 function genId(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
-
-/* ═══ 2. BANDERAS + ESCUDOS ════════════════════════════════ */
-const COUNTRY_ISO={'Albania':'AL','Algeria':'DZ','Argentina':'AR','Armenia':'AM','Australia':'AU','Austria':'AT','Belarus':'BY','Belgium':'BE','Benin':'BJ','Bolivia':'BO','Bosnia-Herzegovina':'BA','Brazil':'BR','Bulgaria':'BG','Cameroon':'CM','Canada':'CA','Chile':'CL','China':'CN','Colombia':'CO','Congo':'CG','Costa':'CR','Cote':'CI',"Cote d'Ivoire":'CI','Croatia':'HR','Curacao':'CW','Cyprus':'CY','Czech':'CZ','Denmark':'DK','Ecuador':'EC','Egypt':'EG','Estonia':'EE','Finland':'FI','France':'FR','Gabon':'GA','Georgia':'GE','Germany':'DE','Ghana':'GH','Greece':'GR','Guinea':'GN','Haiti':'HT','Honduras':'HN','Hungary':'HU','Iceland':'IS','Iran':'IR','Iraq':'IQ','Ireland':'IE','Israel':'IL','Italy':'IT','Jamaica':'JM','Japan':'JP','Kazakhstan':'KZ','Korea,':'KR','Korea, South':'KR','Kosovo':'XK','Latvia':'LV','Lebanon':'LB','Lithuania':'LT','Luxembourg':'LU','Mali':'ML','Mexico':'MX','Moldova':'MD','Montenegro':'ME','Morocco':'MA','Netherlands':'NL','Nigeria':'NG','Norway':'NO','Panama':'PA','Paraguay':'PY','Peru':'PE','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO','Russia':'RU','Senegal':'SN','Serbia':'RS','Slovakia':'SK','Slovenia':'SI','South':'ZA','Spain':'ES','Suriname':'SR','Sweden':'SE','Switzerland':'CH','Tanzania':'TZ','Thailand':'TH','Togo':'TG','Trinidad':'TT','Tunisia':'TN','Türkiye':'TR','Ukraine':'UA','United':'US','United States':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE','Zambia':'ZM','Zimbabwe':'ZW'};
-const COUNTRY_SPECIAL={'England':'fi-gb-eng','Scotland':'fi-gb-sct','Wales':'fi-gb-wls','Northern Ireland':'fi-gb-nir'};
-function countryFlagHTML(country,fb){
-  if(!country)return `<span class="card-flag-text">${escapeHtml(fb||'')}</span>`;
-  if(COUNTRY_SPECIAL[country])return `<span class="fi ${COUNTRY_SPECIAL[country]}" title="${escapeHtml(country)}"></span>`;
-  const iso=COUNTRY_ISO[country];
-  if(iso)return `<span class="fi fi-${iso.toLowerCase()}" title="${escapeHtml(country)}"></span>`;
-  return `<span class="card-flag-text">${escapeHtml(fb||country.slice(0,2).toUpperCase())}</span>`;
-}
-const CLUB_TM={'Bayern Munich':27,'Inter Milan':46,'FC Barcelona':131,'AC Milan':5,'Arsenal FC':11,'Real Madrid':418,'Liverpool FC':31,'Manchester City':281,'Aston Villa':405,'SSC Napoli':6195,'Tottenham Hotspur':148,'Newcastle United':762,'Galatasaray':141,'Manchester United':985,'AS Roma':12,'Atalanta BC':800,'Atlético de Madrid':13,'Juventus FC':506,'Santos FC':4843,'Borussia Dortmund':16,'Chelsea FC':631,'Al-Nassr FC':52908,'Inter Miami CF':53537,'Girona FC':12321,'Bayer 04 Leverkusen':15,'SL Benfica':294,'Ajax Amsterdam':610,'West Ham United':379,'Villarreal CF':1050,'ACF Fiorentina':430,'AFC Bournemouth':989,'Al-Hilal SFC':52918,'Sevilla FC':368,'Paris Saint-Germain':583,'PSV Eindhoven':383,'RB Leipzig':23826,'Real Sociedad':681,'Valencia CF':1049,'Athletic Club':621,'AS Monaco':162,'Sporting CP':336,'FC Porto':720,'CF Monterrey':3716,'Al-Ittihad':45221};
-function clubBadgeHTML(name,sz){
-  sz=sz||18;const id=CLUB_TM[name];
-  const ini=((name||'').replace(/\b(FC|CF|SC|AFC|SL|CA|AS|SS|SSC|AC|ACF|CR|RB)\b/gi,'').trim().split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,3).toUpperCase())||'?';
-  const t=escapeHtml(name||'');
-  if(id)return `<img class="card-club-logo" style="width:${sz}px;height:${sz}px" src="https://tmssl.akamaized.net/images/wappen/small/${id}.png" loading="lazy" alt="${t}" title="${t}" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><span class="card-club-initials" title="${t}" style="display:none">${ini}</span>`;
-  return `<span class="card-club-initials" title="${t}">${ini}</span>`;
-}
 
 /* ═══ 3. CARTAS DETERMINISTAS ══════════════════════════════ */
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^(seed>>>15),1|seed);t=t+Math.imul(t^(t>>>7),61|t)^t;return ((t^(t>>>14))>>>0)/4294967296;};}
@@ -78,6 +66,20 @@ function chooseCondition(deck,rng){
   const def=defs.find(d=>d.type==='bool')||defs[0];
   return {key:def.key,type:def.type,label:def.label,unit:def.unit||'',threshold:null};
 }
+/* ⚠️ LIMITACIÓN DE SEGURIDAD CONOCIDA (no solucionable solo con cambios de
+   cliente): el reparto de cartas es 100% determinista a partir de room.seed,
+   que se sincroniza a todos los clientes ANTES de que termine la ronda de
+   apuestas. Cualquier jugador con la consola del navegador abierta puede
+   ejecutar dealRound(room.seed, Object.keys(room.players)) y ver la mano de
+   todo el mundo y el total real antes de apostar. Arreglarlo de verdad exige
+   que el reparto se calcule en un sitio que el cliente no pueda leer antes de
+   tiempo — típicamente una Cloud Function que reparta las cartas y unas
+   Reglas de Seguridad de Firebase (+ Firebase Auth) que solo dejen a cada
+   jugador leer su propia mano. Eso son cambios de infraestructura del
+   proyecto Firebase (fuera de estos archivos estáticos) y no se pueden
+   aplicar solo editando este JS. Ver el informe de auditoría para más
+   detalle; si se quiere, puedo preparar el borrador de la Cloud Function y
+   las reglas de seguridad como punto de partida. */
 function dealRound(seed,sortedIds){
   const rng=mulberry32(seed);
   const n=sortedIds.length;
@@ -93,7 +95,13 @@ function dealRound(seed,sortedIds){
 
 /* ═══ TURNO derivado ═══════════════════════════════════════ */
 function getPlayerOrder(room){
-  const ids=Object.keys(room.players||{}).sort();
+  // Antes se ordenaba alfabéticamente por id de Firebase (aleatorio), lo que
+  // hacía que el orden de turno no coincidiera con el orden mostrado en el
+  // lobby (que es el orden de entrada real). Al no ordenar, Object.keys
+  // conserva el orden de entrada — igual que Object.entries en _renderLobby —
+  // así que turno y lobby quedan alineados. Sigue siendo determinista para
+  // todos los clientes porque todos parten del mismo objeto room.players.
+  const ids=Object.keys(room.players||{});
   if(!ids.length)return[];
   const shift=((room.round||1)-1)%ids.length;
   return [...ids.slice(shift),...ids.slice(0,shift)];
@@ -117,6 +125,17 @@ const Sync=(()=>{
   const FB=()=>window._FB;
   const _ref=p=>{const{db,ref}=FB();return ref(db,p);};
 
+  /* Presencia: al cerrar la pestaña, marcar connected:false automáticamente.
+     Sin esto, un jugador (o el host) que cierra a mitad de partida se queda
+     "conectado" para siempre y el turno/la partida se congela. */
+  function _registerPresence(code,playerId){
+    try{
+      if(!window._FBOnDisconnect)return;
+      const{db,ref}=FB();
+      window._FBOnDisconnect(ref(db,`${PATH}/${code}/players/${playerId}/connected`)).set(false).catch(()=>{});
+    }catch(e){}
+  }
+
   async function createRoom(hostName,mode,pointsToWin){
     const{set}=FB();
     const code=genCode(),hostId=genId();
@@ -126,6 +145,7 @@ const Sync=(()=>{
       actualTotal:null,winners:null,winnerName:null,guesses:null,
       players:{[hostId]:{name:hostName,score:0,connected:true,isHost:true}},
     });
+    _registerPresence(code,hostId);
     return {code,playerId:hostId};
   }
   async function joinRoom(code,playerName){
@@ -138,6 +158,7 @@ const Sync=(()=>{
     if(Object.keys(room.players||{}).length>=8)throw new Error('Sala llena');
     const playerId=genId();
     await update(_ref(`${PATH}/${code}/players/${playerId}`),{name:playerName,score:0,connected:true,isHost:false});
+    _registerPresence(code,playerId);
     return {code,playerId};
   }
   function listenRoom(code,cb){
@@ -188,7 +209,16 @@ const Sync=(()=>{
   async function updateSettings(code,o){const{update}=FB();await update(_ref(`${PATH}/${code}`),o);}
   async function kick(code,pid){const{remove:rm}=FB();await rm(_ref(`${PATH}/${code}/players/${pid}`));}
 
-  return {createRoom,joinRoom,listenRoom,startRound,submitGuess,triggerReveal,setFinished,disconnect,getRoom,updateSettings,kick};
+  /* Reconexión (restaurar sesión): volver a marcar connected y re-registrar presencia */
+  async function markConnected(code,playerId){
+    try{
+      const{update}=FB();
+      await update(_ref(`${PATH}/${code}/players/${playerId}`),{connected:true});
+      _registerPresence(code,playerId);
+    }catch(e){}
+  }
+
+  return {createRoom,joinRoom,listenRoom,startRound,submitGuess,triggerReveal,setFinished,disconnect,getRoom,updateSettings,kick,markConnected};
 })();
 
 /* ═══ 5. ESTADO APP ════════════════════════════════════════ */
@@ -207,7 +237,6 @@ function _reset(){
   _clearSession();
 }
 function _getCondition(r){return {key:r.condKey,type:r.condType,label:r.condLabel,unit:r.condUnit||'',threshold:r.condThreshold??null};}
-function _ensureExtraStats(){/* compat: las definiciones ya vienen completas en data.js */}
 
 /* ═══ 6. ROUTER DE RENDER ══════════════════════════════════ */
 function _onRoomUpdate(room){
@@ -215,6 +244,26 @@ function _onRoomUpdate(room){
   if(!room||!room.players)return;
   if(!_local&&!room.players[_playerId]){toast('Has salido de la sala','info');_reset();showScreen('#screen-menu');return;}
   _isHost=_local?true:(room.players[_playerId]?.isHost===true);
+
+  /* Failover de host: si el host está desconectado (cerró la pestaña) y la
+     partida está en curso, el primer jugador conectado (orden determinista
+     por id) se autopromociona para que el juego no se congele. */
+  if(!_local&&_roomCode&&room.status!=='waiting'&&room.status!=='finished'){
+    const connectedP=Object.entries(room.players).filter(([,p])=>p&&p.connected!==false);
+    const hasHost=connectedP.some(([,p])=>p.isHost===true);
+    if(!hasHost&&connectedP.length){
+      const candidate=connectedP.map(([pid])=>pid).sort()[0];
+      if(candidate===_playerId){
+        try{
+          const{db,ref,update}=window._FB;
+          update(ref(db,`restricciones/rooms/${_roomCode}/players/${_playerId}`),{isHost:true}).catch(()=>{});
+          const oldHost=Object.entries(room.players).find(([,p])=>p&&p.isHost===true&&p.connected===false);
+          if(oldHost)update(ref(db,`restricciones/rooms/${_roomCode}/players/${oldHost[0]}`),{isHost:false}).catch(()=>{});
+          _isHost=true;
+        }catch(e){}
+      }
+    }
+  }
   switch(room.status){
     case'waiting':_renderLobby(room);break;
     case'playing':_renderGame(room);break;
@@ -378,7 +427,10 @@ function _renderGame(room){
 function _armSkip(pid){
   clearTimeout(_skipTimer);
   _skipTimer=setTimeout(()=>{
-    $$('.turn-chip.active').forEach(ch=>{
+    // El asiento activo usa la clase "seat active" (ver _seatChip), no
+    // "turn-chip active" (esa clase no existe en ningún elemento — el botón
+    // de saltar nunca aparecía porque este selector no encontraba nada).
+    $$('.seat.active').forEach(ch=>{
       ch.classList.add('overdue');
       if(!ch.querySelector('.tc-skip')){
         const b=document.createElement('button');b.className='tc-skip';b.textContent='Saltar';
@@ -432,6 +484,17 @@ function _renderReveal(room){
     $('#reveal-sub').textContent='Ningun jugador acerto el total exacto';
   }
   $('#reveal-count').textContent=actual;
+
+  /* Aviso si dos o más jugadores están empatados en cabeza al llegar/superar
+     el objetivo de puntos — antes la partida simplemente seguía a la
+     siguiente ronda sin explicar por qué nadie ganaba todavía. */
+  const _scores=Object.values(room.players||{}).map(p=>p.score||0);
+  const _maxScore=_scores.length?Math.max(..._scores):0;
+  const _leadersCount=_scores.filter(s=>s>=(room.pointsToWin||3)&&s===_maxScore).length;
+  if(_leadersCount>=2){
+    const subEl=$('#reveal-sub');
+    if(subEl)subEl.textContent+=' · 🔥 Empate en cabeza — la partida continúa';
+  }
 
   /* Apuestas de cada jugador */
   const ge=$('#reveal-guesses');ge.innerHTML='';
@@ -671,7 +734,7 @@ function boot(){
   const sala=new URLSearchParams(window.location.search).get('sala');
   if(sala){$('#join-code').value=sala;$$('.menu-tab').forEach(t=>t.classList.remove('active'));$('.menu-tab[data-tab="join"]')?.classList.add('active');$$('.menu-panel').forEach(p=>p.classList.remove('active'));$('.menu-panel[data-panel="join"]')?.classList.add('active');}
   /* Restaurar sesión online */
-  try{const s=JSON.parse(sessionStorage.getItem('mentiroso_s')||'null');if(s&&s.code&&s.pid&&window._FB?.configured){_roomCode=s.code;_playerId=s.pid;_unsub=Sync.listenRoom(s.code,_onRoomUpdate);return;}}catch{}
+  try{const s=JSON.parse(sessionStorage.getItem('mentiroso_s')||'null');if(s&&s.code&&s.pid&&window._FB?.configured){_roomCode=s.code;_playerId=s.pid;Sync.markConnected(s.code,s.pid);_unsub=Sync.listenRoom(s.code,_onRoomUpdate);return;}}catch{}
   if($('#create-points-value'))$('#create-points-value').textContent=_pointsDraft;
   showScreen('#screen-menu');
 }

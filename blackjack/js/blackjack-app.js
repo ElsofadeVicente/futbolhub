@@ -6,6 +6,16 @@
 
 const App = (() => {
 
+  /* ── Escapa texto para insertar de forma segura en HTML (texto o atributo) ── */
+  function escapeHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   /* ─── Estado de la app ─── */
   let _mode      = 'mv';
   let _tab       = 'private';
@@ -281,26 +291,30 @@ const App = (() => {
 
     document.getElementById('public-options-panel')?.remove();
 
-    const escaped = playerName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    // Construido vía DOM (sin interpolar el nombre en HTML/onclick) para evitar
+    // cualquier problema de escapado, tanto en HTML como en atributos.
     const div = document.createElement('div');
     div.id = 'public-options-panel';
-    div.innerHTML = `
-      <div style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);
-                  border-radius:10px;padding:14px;margin-top:10px;">
-        <p style="font-family:'Rajdhani',sans-serif;font-size:0.75rem;letter-spacing:2px;
-                  color:var(--neon-green);opacity:0.7;text-transform:uppercase;margin-bottom:10px;">
-          Partida en curso
-        </p>
-        <button class="btn-primary" style="margin-bottom:8px;"
-                onclick="App.doCreatePublicRoom('${escaped}')">
-          🆕 Crear nueva sala
-        </button>
-        <button class="btn-secondary"
-                onclick="App.doWaitPublicRoom('${escaped}')">
-          ⏳ Esperar que terminen
-        </button>
-      </div>
-    `;
+    div.style.cssText = 'background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:10px;padding:14px;margin-top:10px;';
+
+    const label = document.createElement('p');
+    label.style.cssText = "font-family:'Rajdhani',sans-serif;font-size:0.75rem;letter-spacing:2px;color:var(--neon-green);opacity:0.7;text-transform:uppercase;margin-bottom:10px;";
+    label.textContent = 'Partida en curso';
+
+    const btnCreate = document.createElement('button');
+    btnCreate.className = 'btn-primary';
+    btnCreate.style.marginBottom = '8px';
+    btnCreate.textContent = '🆕 Crear nueva sala';
+    btnCreate.addEventListener('click', () => doCreatePublicRoom(playerName));
+
+    const btnWait = document.createElement('button');
+    btnWait.className = 'btn-secondary';
+    btnWait.textContent = '⏳ Esperar que terminen';
+    btnWait.addEventListener('click', () => doWaitPublicRoom(playerName));
+
+    div.appendChild(label);
+    div.appendChild(btnCreate);
+    div.appendChild(btnWait);
     panel.appendChild(div);
   }
 
@@ -428,6 +442,44 @@ const App = (() => {
     _lastRoomData = room;
     _mode = room.mode || _mode;
 
+    // ── Failover de host ──────────────────────────────────────────
+    // Mantener _isHost sincronizado SIEMPRE (no solo en el lobby): permite
+    // que el juego siga si el host original se cae a mitad de partida.
+    if (!_isLocal && _playerId) {
+      const wasHost = _isHost;
+      const meP = room.players?.[_playerId];
+      if (meP !== undefined) _isHost = meP.isHost === true;
+
+      // Si el host cerró la pestaña (onDisconnect borra su nodo) o quedó
+      // desconectado y NO hay ningún host conectado, el primer jugador
+      // conectado (orden determinista por id) se autopromociona.
+      if ((room.status === 'playing' || room.status === 'reveal' || room.status === 'countdown')) {
+        const connectedP = Object.entries(room.players || {}).filter(([, p]) => p.connected !== false);
+        const hasHost = connectedP.some(([, p]) => p.isHost === true);
+        if (!hasHost && connectedP.length > 0) {
+          const candidate = connectedP.map(([pid]) => pid).sort()[0];
+          if (candidate === _playerId && !_isHost) {
+            _isHost = true;
+            try {
+              const { db, ref, update } = window._FB;
+              update(ref(db, `blackjack/rooms/${_roomCode}/players/${_playerId}`), { isHost: true }).catch(() => {});
+            } catch (e) {}
+          }
+        }
+      }
+
+      // Nos acaban de promover: actualizar el estado del juego para que el
+      // botón "Siguiente ronda" y los triggers de host funcionen ya.
+      if (_isHost && !wasHost) {
+        const st = BlackjackGame.getState?.();
+        if (st) st.isHost = true;
+        if (room.status === 'reveal') {
+          const nxt = document.getElementById('btn-next-round');
+          if (nxt) nxt.classList.remove('hidden');
+        }
+      }
+    }
+
     switch (room.status) {
       case 'waiting':
         _updateLobbyUI(room);
@@ -524,8 +576,8 @@ const App = (() => {
     if (listEl) {
       listEl.innerHTML = players.map(([pid, p]) => `
         <div class="lobby-player-row">
-          <div class="lobby-player-avatar">${p.name.charAt(0).toUpperCase()}</div>
-          <span class="lobby-player-name">${p.name}</span>
+          <div class="lobby-player-avatar">${escapeHtml((p.name || '?').charAt(0).toUpperCase())}</div>
+          <span class="lobby-player-name">${escapeHtml(p.name)}</span>
           ${p.isHost ? '<span class="lobby-player-host">HOST</span>' : ''}
           ${pid === _playerId ? '<span style="margin-left:auto;font-family:\'Rajdhani\',sans-serif;font-size:0.7rem;opacity:0.4;letter-spacing:1px;">← TÚ</span>' : ''}
         </div>

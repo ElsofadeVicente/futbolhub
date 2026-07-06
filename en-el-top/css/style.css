@@ -87,7 +87,6 @@ body::before {
 
 @media (min-width: 760px) {
   #mode-screen, #game-screen, #end-screen { margin-left: 72px; margin-right: 72px; }
-  #timer-track, #input-area { left: 72px; right: 72px; }
 }
 @media (max-width: 759px) {
   .ad-col { display: none; }
@@ -586,6 +585,14 @@ body::before {
   gap: 10px;
   align-items: flex-end;
   z-index: 50;
+}
+/* #timer-track y #input-area son position:fixed, así que el margin-push de
+   #game-screen no los afecta: hay que desplazarlos a mano. Esta regla debe ir
+   DESPUÉS de sus definiciones base (arriba): con la misma especificidad, si
+   fuera anterior en el archivo el navegador aplicaría la base (left/right:0)
+   por ir después en el cascade, dejando la barra por detrás de los anuncios. */
+@media (min-width: 760px) {
+  #timer-track, #input-area { left: 72px; right: 72px; }
 }
 #input-wrap {
   flex: 1;

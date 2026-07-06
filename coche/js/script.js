@@ -4,6 +4,16 @@
    ============================================= */
 'use strict';
 
+/* ── Escapa texto para insertar de forma segura en HTML (texto o atributo) ── */
+function _escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /* ── Normalización de texto compartida entre _loadData y App ── */
 function _acNorm(s) {
   return String(s || '').toLowerCase()
@@ -1200,7 +1210,7 @@ const Restrictions = (() => {
       case 'position_gk':
         return player.position === 'GK' || (player.position || '').toUpperCase().includes('GK');
       case 'position_def':
-        return player.position === 'DEF';
+        return player.position === 'DEF' || (player.position || '').toUpperCase().includes('DEF');
 
       /* Décadas */
       case 'birthDecade': {
@@ -2489,8 +2499,8 @@ const App = (() => {
         .filter(([,p])=>p.connected!==false)
         .map(([pid,p])=>`
           <div class="lobby-player-row">
-            <div class="lobby-player-avatar">${p.name.charAt(0).toUpperCase()}</div>
-            <span class="lobby-player-name">${p.name}</span>
+            <div class="lobby-player-avatar">${_escHtml((p.name||'?').charAt(0).toUpperCase())}</div>
+            <span class="lobby-player-name">${_escHtml(p.name)}</span>
             ${p.isHost ? '<span class="lobby-player-host">HOST</span>' : ''}
             ${pid===_playerId ? '<span style="margin-left:auto;font-size:.7rem;opacity:.4;letter-spacing:1px;">← TÚ</span>' : ''}
           </div>
@@ -3033,6 +3043,20 @@ const App = (() => {
       }
     }
 
+    /* Detectar un empate NUEVO justo en el momento del reveal (no esperar a que el
+       host pulse "siguiente ronda"), para que TODOS vean el aviso de muerte súbita
+       de inmediato — igual que ya ocurre en modo local. nextRound() simplemente
+       continuará sin re-detectar, ya que _isSuddenDeath ya estará a true. */
+    if (!_isSuddenDeath) {
+      const ptwFresh = _onlinePointsToWin || POINTS_WIN;
+      const reachedFresh = _players.filter(p => p.score >= ptwFresh);
+      if (reachedFresh.length >= 2) {
+        _isSuddenDeath = true;
+        _suddenDeathPlayers = reachedFresh.map(p => p.id);
+        showToast('💀 ¡MUERTE SÚBITA! Rondas express', 'error');
+      }
+    }
+
     const rawRes = room.restrictions;
     const safeRestrictions = Array.isArray(rawRes) ? rawRes
       : rawRes && typeof rawRes === 'object' ? Object.values(rawRes)
@@ -3102,39 +3126,28 @@ const App = (() => {
     };
     const ptw = _onlinePointsToWin || POINTS_WIN;
 
-    /* Muerte súbita online */
+    /* Muerte súbita online — normalmente ya se detecta y anuncia en
+       _showResultsScreen justo en el momento del reveal (igual que en local).
+       Aquí solo actuamos como red de seguridad por si no se hubiera detectado
+       antes, y forzamos restricciones frescas para la ronda que entra en
+       muerte súbita (nunca reusar la cache pregenerada en ese caso). */
+    let forceFreshRestrictions = false;
     if (!_isSuddenDeath) {
       const reached = _players.filter(p=>p.score>=ptw);
       if (reached.length >= 2) {
         _isSuddenDeath = true;
         _suddenDeathPlayers = reached.map(p=>p.id);
         showToast('💀 ¡MUERTE SÚBITA! Rondas express de 20 segundos', 'error');
-        const seed = Date.now()+(_round*3137);
-        /* La muerte súbita siempre genera nuevas restricciones (seed diferente al cache) */
-        _nextRestrictionsCache = null;
-        _generateAsync(seed, PLAYERS_DB).then(async restrictions => {
-          if (!_live()) return;
-          try {
-            await Sync.nextRound(_room, _round+1, {
-              seed, restrictions,
-              pointsToWin: _onlinePointsToWin, roundSecs: _onlineRoundSecs,
-              isSuddenDeath: true, suddenDeathPlayers: _suddenDeathPlayers,
-            }, _players);
-          } catch(e) { if (_live()) { showToast('Error al iniciar muerte súbita', 'error'); _reenableBtn(); } }
-        }).catch(() => { if (_live()) { showToast('Error al generar restricciones', 'error'); _reenableBtn(); } });
-        return;
+        forceFreshRestrictions = true;
       } else if (reached.length === 1) {
         try { await Sync.setFinished(_room, reached[0].id, _players); } catch(e) { _reenableBtn(); }
         return;
       }
-    } else {
-      /* Ya en muerte súbita — ¿hay ganador? */
-      /* Se detecta en _triggerReveal/_showResultsScreen */
     }
 
     const seed = Date.now()+(_round*3137);
-    /* Usar cache pregenerada si está disponible → sin espera */
-    const cached = _nextRestrictionsCache;
+    /* Usar cache pregenerada si está disponible (salvo al entrar en muerte súbita) */
+    const cached = forceFreshRestrictions ? null : _nextRestrictionsCache;
     _nextRestrictionsCache = null;
     const restrictionsPromise = cached
       ? Promise.resolve(cached)
@@ -3172,7 +3185,7 @@ const App = (() => {
       scoresEl.innerHTML = sorted.map(p=>{
         const isW = p.id===winnerId;
         return '<div class="final-score-item ' + (isW?'winner-item':'') + '">' +
-          '<span class="final-score-name">' + p.name + ' ' + (isW?'🏆':'') + '</span>' +
+          '<span class="final-score-name">' + _escHtml(p.name) + ' ' + (isW?'🏆':'') + '</span>' +
           '<span class="final-score-pts">' + p.score + ' pts</span>' +
           '</div>';
       }).join('');
@@ -3238,7 +3251,7 @@ const App = (() => {
         scoresEl.innerHTML=[..._players].sort((a,b)=>b.score-a.score).map(p=>{
           const isW = p.id===winner.id;
           return '<div class="final-score-item ' + (isW?'winner-item':'') + '">' +
-            '<span class="final-score-name">' + p.name + ' ' + (isW?'🏆':'') + '</span>' +
+            '<span class="final-score-name">' + _escHtml(p.name) + ' ' + (isW?'🏆':'') + '</span>' +
             '<span class="final-score-pts">' + p.score + ' pts</span>' +
             '</div>';
         }).join('');
@@ -3413,7 +3426,7 @@ const App = (() => {
     if (!sb) return;
     sb.innerHTML=players.map(p=>`
       <div class="sb-player ${p.id===_playerId?'me':''}">
-        <span class="sb-name">${p.name}</span>
+        <span class="sb-name">${_escHtml(p.name)}</span>
         <span class="sb-score">${p.score||0}</span>
       </div>
     `).join('');
@@ -3430,9 +3443,9 @@ const App = (() => {
       return `
         <div class="submission-item ${sent?'submitted':''} ${isMe?'me':''}">
           <div class="submission-item-head">
-            <div class="submission-avatar">${p.name.charAt(0).toUpperCase()}</div>
+            <div class="submission-avatar">${_escHtml((p.name||'?').charAt(0).toUpperCase())}</div>
             <div class="submission-meta">
-              <span class="submission-name">${p.name}</span>
+              <span class="submission-name">${_escHtml(p.name)}</span>
               <span class="submission-status">${sent?'Jugador bloqueado':'Esperando elección'}</span>
             </div>
           </div>
@@ -3493,7 +3506,7 @@ const App = (() => {
         return `
           <div class="result-card ${r.isWinner?'winner':''} ${!r.valid&&!noSubmit?'invalid':''}">
             <div class="result-card-header">
-              <div class="result-player-name">${p.name}</div>
+              <div class="result-player-name">${_escHtml(p.name)}</div>
               <div style="display:flex;gap:6px;align-items:center;">
                 ${r.isWinner?'<div class="result-winner-badge">🏆 GANADOR</div>':''}
                 ${r.isWinner?`<div class="result-points-badge">+${r.points||1} pto${(r.points||1)>1?'s':''}</div>`:''}

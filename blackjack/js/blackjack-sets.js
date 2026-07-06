@@ -54,8 +54,8 @@ const BlackjackSets = (() => {
      Genera un set de 10 jugadores balanceado.
 
      Params:
-       playerPool  Array<{id, data}> — pool de candidatos con .mv/.goals etc.
-       mode        'mv' | 'goals' | 'national'
+       playerPool  Array<{id, data}> — pool de candidatos con .mv/.nt/.b etc.
+       mode        'mv' | 'national' | 'age'
        seed        number — semilla compartida del servidor para el set global
                    (el orden por jugador se deriva de seed + playerId)
 
@@ -247,12 +247,7 @@ const BlackjackSets = (() => {
       // Redondear solo a 1M para cifras naturales y variadas
       return Math.round(raw / 1e6) * 1e6;
     }
-    if (mode === 'goals') {
-      return Math.round(raw);
-    }
-    if (mode === 'national') {
-      return Math.round(raw);
-    }
+    // 'national', 'age' y cualquier otro modo: cifra entera tal cual
     return Math.round(raw);
   }
 
