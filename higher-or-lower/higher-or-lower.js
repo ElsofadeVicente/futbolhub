@@ -369,7 +369,6 @@ function setPlayerBg(bgEl, player) {
 function getStatValue(player) {
   const field = HOL_CONFIG.categories[HOL.currentCategory].field;
   const val = player[field];
-  if (field === 'h' && val) return parseFloat(val);
   return val != null ? Number(val) : null;
 }
 

@@ -42,21 +42,6 @@
     --absent: #2a3028;
 }
 
-body.high-contrast {
-    --bg-dark: #fff;
-    --bg-mid: #f0f0f0;
-    --bg-card: #f0f0f0;
-    --gold: #b5221e;
-    --gold-light: #b5221e;
-    --text-light: #000;
-    --text-muted: rgba(0,0,0,0.6);
-    --border-subtle: rgba(0,0,0,0.2);
-    /* NO TOCAR (alto contraste tampoco toca campo/camisetas) */
-    --correct: #00bb00;
-    --present: #ccaa00;
-    --absent: #444;
-}
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -113,151 +98,10 @@ body {
 
 @media (min-width: 760px) {
     .once-menu-screen, .mode-selection, #game { margin-left: 72px; margin-right: 72px; }
-    /* .home-btn es position:fixed (ignora el margin-push de #game), hay que desplazarlo a mano */
-    .home-btn { left: 86px; }
 }
 @media (max-width: 759px) {
     .ad-col { display: none; }
 }
-
-/* ===================== SETTINGS BTN ===================== */
-.settings-btn {
-    position: fixed;
-    top: 18px;
-    right: 18px;
-    background: var(--np-paper2);
-    border: 1.5px solid var(--np-ink);
-    color: var(--np-ink);
-    width: 42px;
-    height: 42px;
-    border-radius: 0;
-    cursor: pointer;
-    font-size: 1.1rem;
-    z-index: 999;
-    box-shadow: 2px 2px 0 var(--np-ink);
-    transition: background 0.18s, color 0.18s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.settings-btn:hover {
-    background: var(--np-ink);
-    color: var(--np-paper);
-    transform: none;
-}
-
-/* ===================== SETTINGS MODAL ===================== */
-.settings-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15,18,14,0.55);
-    z-index: 1001;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    animation: fadeIn 0.2s ease;
-}
-.settings-modal.active { display: flex; }
-
-.settings-content {
-    background: var(--np-paper);
-    border: 2px solid var(--np-ink);
-    border-radius: 0;
-    padding: 28px 26px;
-    max-width: 460px;
-    width: 100%;
-    box-shadow: var(--shadow);
-    animation: slideUpModal 0.25s ease;
-}
-.settings-title {
-    font-family: 'Anton', sans-serif;
-    font-size: 1.6rem;
-    letter-spacing: 3px;
-    color: var(--np-ink);
-    border-bottom: 2px solid var(--np-ink);
-    padding-bottom: 10px;
-    margin-bottom: 16px;
-    text-align: center;
-}
-.settings-option {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--np-ink-soft);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--np-ink);
-    font-weight: normal;
-}
-.toggle-switch {
-    position: relative;
-    width: 50px;
-    height: 26px;
-    background: var(--np-ink-soft);
-    border: 1.5px solid var(--np-ink);
-    border-radius: 0;
-    cursor: pointer;
-    transition: background 0.3s;
-    flex-shrink: 0;
-}
-.toggle-switch.active { background: var(--np-red); border-color: var(--np-red); }
-.toggle-switch::after {
-    content: '';
-    position: absolute;
-    top: 2px; left: 2px;
-    width: 18px; height: 18px;
-    background: var(--np-ink);
-    border-radius: 0;
-    transition: transform 0.3s;
-}
-.toggle-switch.active::after { transform: translateX(24px); background: var(--np-white); }
-
-.stats-display {
-    background: rgba(15,18,14,0.03);
-    border: 1px solid var(--np-ink-soft);
-    padding: 18px;
-    border-radius: 0;
-    margin-top: 14px;
-}
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--np-ink);
-    border-bottom: 1px solid var(--np-ink-soft);
-}
-.stat-row:last-of-type { border-bottom: none; }
-.stat-row span:first-child { opacity: 0.8; }
-.stat-row span:last-child {
-    font-family: 'Anton', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 1px;
-    color: var(--np-red);
-}
-
-.reset-stats-btn {
-    background: transparent;
-    color: var(--np-red);
-    border: 1.5px solid var(--np-red);
-    padding: 10px 20px;
-    border-radius: 0;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 14px;
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    transition: background 0.18s, color 0.18s;
-}
-.reset-stats-btn:hover { background: var(--np-red); color: var(--np-white); }
 
 /* ===================== MENÚ PRINCIPAL ===================== */
 .once-menu-screen,
@@ -517,6 +361,15 @@ body {
     transform: none;
 }
 
+/* .home-btn es position:fixed (ignora el margin-push de #game/.mode-selection),
+   hay que desplazarlo a mano para que no quede debajo de la columna de anuncios.
+   Esta regla debe ir DESPUÉS de la definición base de .home-btn: al tener la
+   misma especificidad, si fuera anterior en el archivo el navegador aplicaría
+   la base (left:14px) por ir después en el cascade, anulando este ajuste. */
+@media (min-width: 760px) {
+    .home-btn { left: 86px; }
+}
+
 .competition-name {
     font-family: 'DM Mono', monospace;
     font-size: 0.7rem;
@@ -593,7 +446,7 @@ body {
 /* ===================== CAMPO ===================== */
 .field-container {
     position: relative;
-    min-height: 560px;
+    min-height: 580px;
     overflow: hidden;
     padding: 34px 16px 38px;
     background:
@@ -676,9 +529,16 @@ body {
     z-index: 2;
     display: flex;
     flex-direction: column-reverse;
-    gap: 32px;
-    min-height: 500px;
-    justify-content: space-evenly;
+    gap: 0;
+    height: 500px;
+    justify-content: space-between;
+}
+
+/* Spacer invisible que ocupa el hueco de una línea ausente */
+.line--spacer {
+    visibility: hidden;
+    pointer-events: none;
+    min-height: 90px;
 }
 
 .line,
@@ -1035,7 +895,6 @@ body {
     border-color: var(--present);
     color: rgba(15,20,16,0.95);
 }
-body.high-contrast .letter-cell.present::before { content:'~'; position:absolute; font-size:1.2rem; }
 .letter-cell.absent {
     background: var(--absent);
     border-color: var(--absent);
@@ -1208,8 +1067,9 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     .score-display { font-size: 2.8rem; letter-spacing: 5px; min-width: 80px; }
     .team-badge { display: none; }
 
-    .field-container { padding: 16px 8px; min-height: 0; }
-    .formation { gap: 14px; min-height: 0; }
+    .field-container { padding: 16px 8px; min-height: 420px; }
+    .formation { gap: 0; height: 380px; }
+    .line--spacer { min-height: 60px; }
     .line, .line--cdm, .line--cam, .line--mid {
         flex-wrap: nowrap;
         gap: 6px;
@@ -1259,10 +1119,3 @@ body.high-contrast .letter-cell.present::before { content:'~'; position:absolute
     .keyboard-row { gap: 3px; }
 }
 
-/* ═══════════════════════════════════════════
-   ANIMACIONES MODAL (settings)
-   ═══════════════════════════════════════════ */
-@keyframes slideUpModal {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-}

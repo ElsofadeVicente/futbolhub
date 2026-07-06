@@ -14,6 +14,7 @@ let crucSelectedWord = null;  // { word, direction }
 let crucSelectedCell = null;  // { row, col }
 let crucCountdownInterval = null;
 let crucHidden      = false;  // input nativo móvil
+let crucUsedReveal  = false;  // se usó "Revelar" (letra/palabra/todo) en este puzzle
 
 // ── NAVEGACIÓN ──────────────────────────────
 
@@ -28,26 +29,34 @@ function openCrucigrama() {
 
 // ── GUARDAR / CARGAR ESTADO ──────────────────
 
-function crucKey(offset) {
-    const d = new Date();
-    d.setDate(d.getDate() - offset);
-    return `cruc_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+/* FIX: la clave se deriva de la fecha REAL del crucigrama cargado (crucData.date),
+   no de la fecha calculada con el offset. Con el fallback al último disponible,
+   el offset no corresponde al puzzle real y el progreso se guardaba en otra clave. */
+function crucKeyFor(dateStr) {
+    return `cruc_${String(dateStr).replace(/-/g, '')}`;
 }
 
 function crucSave() {
-    if (!crucData) return;
+    if (!crucData || !crucData.date) return;
     const state = {
         userGrid: Object.fromEntries(
             Object.entries(crucUserGrid).map(([k, v]) => [k, v])
         ),
-        solvedWords: Array.from(crucSolvedWords)
+        solvedWords: Array.from(crucSolvedWords),
+        completed: crucIsComplete(),
+        clean: !crucUsedReveal   // sin usar "Revelar" — cuenta para la racha del hub
     };
-    localStorage.setItem(crucKey(crucOffset), JSON.stringify(state));
+    try {
+        localStorage.setItem(crucKeyFor(crucData.date), JSON.stringify(state));
+    } catch {}
 }
 
-function crucLoad(offset) {
-    const raw = localStorage.getItem(crucKey(offset));
-    return raw ? JSON.parse(raw) : null;
+function crucLoad() {
+    if (!crucData || !crucData.date) return null;
+    try {
+        const raw = localStorage.getItem(crucKeyFor(crucData.date));
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
 }
 
 // ── CARGAR CRUCIGRAMA ────────────────────────
@@ -105,12 +114,14 @@ async function loadCrucigrama(offset) {
     crucSolvedWords = new Set();
     crucSelectedWord = null;
     crucSelectedCell = null;
+    crucUsedReveal   = false;
 
-    // Restore saved state if any
-    const saved = crucLoad(offset);
+    // Restore saved state if any (clave por fecha real del puzzle cargado)
+    const saved = crucLoad();
     if (saved) {
         crucUserGrid    = saved.userGrid    || {};
         crucSolvedWords = new Set(saved.solvedWords || []);
+        crucUsedReveal  = saved.clean === false;
     }
 
     // Rebuild screen
@@ -125,12 +136,13 @@ async function loadCrucigrama(offset) {
 // ── CALCULAR EDICIÓN ────────────────────────
 
 function crucGetEdition(offset) {
-    const launch = new Date(2026, 2, 3); // 3 marzo 2026
-    const target = new Date();
-    target.setDate(target.getDate() - offset);
-    target.setHours(0, 0, 0, 0);
-    launch.setHours(0, 0, 0, 0);
-    return Math.max(1, Math.floor((target - launch) / 86400000) + 1);
+    // Días de calendario contados en UTC para que un cambio de horario de
+    // verano/invierno entre medias no desplace el número de edición en ±1 día.
+    const launchUTC = Date.UTC(2026, 2, 3); // 3 marzo 2026
+    const now = new Date();
+    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const targetUTC = todayUTC - offset * 86400000;
+    return Math.max(1, Math.floor((targetUTC - launchUTC) / 86400000) + 1);
 }
 
 // ── CONSTRUIR PANTALLA ───────────────────────
@@ -190,7 +202,7 @@ function buildCrucigramaScreen() {
                         ).join('')}
                     </div>
                     <div class="cruc-keyboard-row">
-                        ${['A','S','D','F','G','H','J','K','L'].map(k =>
+                        ${['A','S','D','F','G','H','J','K','L','Ñ'].map(k =>
                             `<button class="cruc-key" data-cruc-key="${k}" onclick="crucHandleKey('${k}')">${k}</button>`
                         ).join('')}
                     </div>
@@ -249,6 +261,7 @@ function buildCrucigramaScreen() {
                 </div>
                 <div class="cruc-countdown" id="cruc-countdown" style="display:none;"></div>
                 <div class="cruc-completion-btns">
+                    <button class="next-btn" id="cruc-share-btn" onclick="crucShare()">📤 Compartir</button>
                     <button class="give-up-btn" onclick="crucCloseCompletion()">Ver crucigrama</button>
                 </div>
             </div>
@@ -524,6 +537,10 @@ function crucHandleKey(key) {
         const cellKey = `${row},${col}`;
         if (crucUserGrid[cellKey]) {
             delete crucUserGrid[cellKey];
+            // Re-comprobar TODAS las palabras que pasan por la celda: si alguna
+            // estaba marcada como resuelta, al borrar la letra deja de estarlo
+            // (antes quedaba "resuelta" para siempre y podía dar falso completado).
+            crucGetWordsAtCell(row, col).forEach(wd => crucCheckWordSolved(wd));
             updateCellVisual(row, col);
         } else {
             // Move backwards
@@ -532,6 +549,7 @@ function crucHandleKey(key) {
                 crucSelectedCell = prev;
                 const prevKey = `${prev.row},${prev.col}`;
                 delete crucUserGrid[prevKey];
+                crucGetWordsAtCell(prev.row, prev.col).forEach(wd => crucCheckWordSolved(wd));
                 updateCellVisual(prev.row, prev.col);
                 refreshAllCells();
             }
@@ -552,8 +570,11 @@ function crucHandleKey(key) {
     crucUserGrid[cellKey] = letter;
     updateCellVisual(row, col);
 
-    // Check if word is solved
-    crucCheckWordSolved(w);
+    // Check if word is solved — comprobar TODAS las palabras que pasan por la
+    // celda, no solo la seleccionada: una letra puede completar también la
+    // palabra perpendicular (antes esa palabra nunca se marcaba como resuelta
+    // y el crucigrama no se podía completar rellenándolo solo en un sentido).
+    crucGetWordsAtCell(row, col).forEach(wd => crucCheckWordSolved(wd));
 
     // Advance cursor
     const next = crucGetNextCell(w, row, col);
@@ -571,7 +592,14 @@ function crucHandleKey(key) {
 }
 
 function crucNormalize(letter) {
-    return letter.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    // La \u00d1 es una letra distinta de la N: si se le quitan los acentos con
+    // normalize('NFD'), su virgulilla se descompone en un car\u00e1cter combinante
+    // que cae dentro del rango que borramos abajo, convirti\u00e9ndola en "N" y
+    // rompiendo la comparaci\u00f3n (aceptar\u00eda N donde deber\u00eda exigir \u00d1, o viceversa).
+    // Por eso se comprueba la \u00d1 ANTES de descomponer y se devuelve intacta.
+    const upper = letter.normalize('NFC').toUpperCase();
+    if (upper === '\u00d1') return '\u00d1';
+    return upper.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function crucGetNextCell(word, r, c) {
@@ -672,6 +700,7 @@ function crucCloseRevealMenu() {
 function crucRevealLetter() {
     crucCloseRevealMenu();
     if (!crucSelectedCell || !crucData) return;
+    crucUsedReveal = true;
     const { row, col } = crucSelectedCell;
 
     // Encontrar la respuesta correcta para esta celda
@@ -696,6 +725,7 @@ function crucRevealLetter() {
 function crucRevealWord() {
     crucCloseRevealMenu();
     if (!crucSelectedWord || !crucData) return;
+    crucUsedReveal = true;
     const w = crucSelectedWord;
     crucGetWordCells(w).forEach(({ row, col }, i) => {
         crucUserGrid[`${row},${col}`] = crucNormalize(w.answer[i]);
@@ -715,6 +745,7 @@ function crucRevealAll() {
     crucCloseRevealMenu();
     if (!confirm('¿Seguro que quieres revelar toda la cuadrícula?')) return;
     if (!crucData) return;
+    crucUsedReveal = true;
     crucData.words.forEach(w => {
         crucGetWordCells(w).forEach(({ row, col }, i) => {
             crucUserGrid[`${row},${col}`] = crucNormalize(w.answer[i]);
@@ -766,6 +797,46 @@ function crucCloseCompletion() {
     if (crucCountdownInterval) { clearInterval(crucCountdownInterval); crucCountdownInterval = null; }
 }
 
+/* ── COMPARTIR RESULTADO (estilo Wordle) ────── */
+
+function crucShare() {
+    if (!crucData) return;
+    const total  = crucData.words.length;
+    const solved = crucSolvedWords.size;
+    const clean  = !crucUsedReveal;
+    const squares = '🟩'.repeat(Math.min(solved, total)) + '⬛'.repeat(Math.max(0, total - solved));
+    const text =
+        `El Crucigrama FutbolHUB #${crucEdition}\n` +
+        `${solved}/${total} palabras${clean ? ' ✅' : ' 🔍 (con ayudas)'}\n` +
+        `${squares}\n` +
+        window.location.origin + window.location.pathname;
+    crucDoShare(text, document.getElementById('cruc-share-btn'));
+}
+
+/* Comparte con la hoja nativa del móvil si existe; si no, copia al portapapeles */
+function crucDoShare(text, btn) {
+    const feedback = () => {
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = '✓ ¡Copiado!';
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+    };
+    if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+    } else if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(feedback).catch(() => {});
+    } else {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            feedback();
+        } catch {}
+    }
+}
+
 function crucTimeUntilMidnight() {
     const now  = new Date();
     const next = new Date();
@@ -788,16 +859,7 @@ function crucFocusMobile() {
 // ── INTEGRACIÓN CON core.js + SETUP GLOBAL ──
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. Patch goToGame para interceptar el crucigrama
-    if (typeof window.goToGame === 'function') {
-        const _orig = window.goToGame;
-        window.goToGame = function(game) {
-            if (game === 'crucigrama') openCrucigrama();
-            else _orig(game);
-        };
-    }
-
-    // 2. Input oculto global (igual que en app.js para el Once)
+    // Input oculto global (igual que en app.js para el Once)
     //    Se crea UNA SOLA VEZ y persiste toda la sesión.
     const mobileInput = document.createElement('input');
     mobileInput.id = 'cruc-mobile-input';

@@ -238,14 +238,6 @@ const BlackjackSync = (() => {
   }
 
   /* ═══════════════════════════════════════════
-     REPORTAR USO DE COMODÍN
-     ═══════════════════════════════════════════ */
-  async function reportJoker(code, playerId) {
-    const { update } = FB();
-    await update(_ref(`blackjack/rooms/${code}/jokers/${playerId}`), { used: true });
-  }
-
-  /* ═══════════════════════════════════════════
      JUGAR DE NUEVO — cualquier jugador puede iniciarlo
      El primero en llamar se convierte en nuevo host.
      ═══════════════════════════════════════════ */
@@ -512,6 +504,17 @@ const BlackjackSync = (() => {
         await update(_ref(`blackjack/rooms/${code}/players/${playerId}`), {
           connected: false,
         });
+        // Failover de host en partida: si el que se va era el host, promover a
+        // otro jugador conectado para que el juego no se congele (nadie
+        // dispararía el reveal ni la siguiente ronda).
+        if (room.players?.[playerId]?.isHost) {
+          const nextPid = Object.keys(room.players || {})
+            .find(pid => pid !== playerId && room.players[pid]?.connected !== false);
+          if (nextPid) {
+            update(_ref(`blackjack/rooms/${code}/players/${nextPid}`), { isHost: true }).catch(() => {});
+            update(_ref(`blackjack/rooms/${code}/players/${playerId}`), { isHost: false }).catch(() => {});
+          }
+        }
       }
     } catch (e) {
       console.warn('[Sync] disconnect error (no crítico):', e);
@@ -600,12 +603,15 @@ const BlackjackSync = (() => {
   async function claimAutoStart(code) {
     const { runTransaction } = FB();
     let claimed = false;
-    await runTransaction(_ref(`blackjack/rooms/${code}/autoStartLock`), current => {
+    const result = await runTransaction(_ref(`blackjack/rooms/${code}/autoStartLock`), current => {
+      // FIX: resetear en cada invocación del callback (Firebase puede reintentar
+      // si hay conflicto, y claimed quedaría stale-true de un intento previo)
+      claimed = false;
       if (current) return; // ya reclamado — abortar
       claimed = true;
       return Date.now();
     });
-    return claimed;
+    return result.committed && claimed;
   }
 
 /* ═══════════════════════════════════════════
@@ -622,7 +628,6 @@ const BlackjackSync = (() => {
     reportDone,
     startReveal,
     updateScores,
-    reportJoker,
     requestPlayAgain,
     findOrCreatePublicRoom,
     checkPublicRoomStatus,

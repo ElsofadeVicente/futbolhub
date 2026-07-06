@@ -98,13 +98,16 @@
   <!-- Navegación días anteriores (solo para modo diario) -->
   <div id="daily-header" class="daily-header" style="display:none;">
     <div class="daily-nav">
-      <button class="daily-nav-btn" id="prev-day-btn" onclick="navigateDay(-1)">← Anterior</button>
+      <!-- Este contenido inicial se sustituye por updateDailyHeader() en cuanto carga
+           el partido diario; se deja funcional (navigateDaily, no navigateDay) por si
+           llegara a verse antes de esa sustitución. -->
+      <button class="daily-nav-btn" id="prev-day-btn" onclick="navigateDaily(1)">← Anterior</button>
       <div class="daily-edition">
         <div class="daily-label">EDICIÓN</div>
         <div class="daily-number" id="daily-number">1</div>
         <div class="daily-past-badge" id="daily-past-badge" style="display:none;">ARCHIVO</div>
       </div>
-      <button class="daily-nav-btn" id="next-day-btn" onclick="navigateDay(1)">Siguiente →</button>
+      <button class="daily-nav-btn disabled" id="next-day-btn" disabled>Siguiente →</button>
     </div>
   </div>
 
@@ -208,7 +211,10 @@
     <div class="completion-streak" id="comp-streak"></div>
     <div class="comp-countdown" id="comp-countdown" style="display:none;"></div>
     <div class="completion-buttons">
+      <!-- OJO: "Siguiente partido" debe ser el PRIMER .next-btn del bloque:
+           el JS lo localiza con querySelector('.completion-buttons .next-btn') -->
       <button class="next-btn" onclick="nextMatch()">Siguiente partido →</button>
+      <button class="next-btn" id="once-share-btn" onclick="onceShare()">📤 Compartir</button>
       <button class="give-up-btn" onclick="closeCompletionModal()">Ver alineación</button>
     </div>
   </div>

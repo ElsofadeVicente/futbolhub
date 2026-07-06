@@ -24,7 +24,11 @@ function flagUrl(code) {
 
 // ── Normalización de texto ─────────────────────
 function norm(s) {
+  // Mapeamos primero letras nordicas/especiales que NFD no descompone
+  // (o-con-barra, ae-danesa, etc.) para que se acepte "Hojbjerg" al
+  // teclear el nombre de jugadores como Hojbjerg, igual que hace Coche.
   return String(s || '').toLowerCase()
+    .replace(/\u00f8/g,'o').replace(/\u00e6/g,'ae').replace(/\u00f0/g,'d').replace(/\u00fe/g,'th').replace(/\u0142/g,'l').replace(/\u0111/g,'d')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9 ]/g, ' ')
     .replace(/\s+/g, ' ').trim();
@@ -54,12 +58,22 @@ function getMsUntilMadridMidnight() {
 }
 
 // ── Pregunta diaria (hora española) ───────────
+// Usa el mismo hash entero determinista que shared.js (getDailyMatchIndex) en
+// vez de un simple "días % total": con un módulo directo, el orden de
+// preguntas es una rotación 0,1,2,3... totalmente predecible con solo mirar
+// el JSON; el hash mezcla el índice manteniendo el resultado 100% determinista
+// para la misma fecha (igual para todos los usuarios).
 function getDailyQuestion(questions) {
   if (!questions || !questions.length) return null;
   const dateStr = getTodayMadrid();
   const [y, m, d] = dateStr.split('-').map(Number);
-  const days = Math.floor(Date.UTC(y, m - 1, d) / 86400000);
-  return questions[((days % questions.length) + questions.length) % questions.length];
+  const seed = y * 10000 + m * 100 + d;
+  let hash = seed;
+  hash = ((hash >>> 16) ^ hash) * 0x45d9f3b;
+  hash = ((hash >>> 16) ^ hash) * 0x45d9f3b;
+  hash = (hash >>> 16) ^ hash;
+  const idx = Math.abs(hash) % questions.length;
+  return questions[idx];
 }
 
 // ── Formato M:SS ───────────────────────────────
@@ -121,6 +135,9 @@ function saveTodayResult(questionId, foundArr, score) {
       found: foundArr,
       score
     }));
+    // Registro por fecha (no se sobreescribe al día siguiente) — lo usa el hub
+    // para calcular la racha de días con 10/10.
+    localStorage.setItem(`enteltop_day_${getTodayMadrid()}`, JSON.stringify({ score }));
   } catch { /**/ }
 }
 
@@ -665,8 +682,50 @@ function showEndScreen(won) {
 
   elEnd.classList.remove('hidden');
 
-  // Abrir estadísticas automáticamente al terminar
-  setTimeout(openStats, 700);
+  // Abrir estadísticas automáticamente solo la primera vez que se termina una
+  // partida en este navegador — a partir de ahí el jugador ya sabe que puede
+  // abrirlas con el botón de estadísticas, y no se le interrumpe cada día.
+  if (!localStorage.getItem('topEndStatsAutoShown')) {
+    localStorage.setItem('topEndStatsAutoShown', '1');
+    setTimeout(openStats, 700);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  COMPARTIR RESULTADO (estilo Wordle)
+// ══════════════════════════════════════════════
+function topShare() {
+  const n = _found.size;
+  const squares = '🟩'.repeat(n) + '⬛'.repeat(Math.max(0, 10 - n));
+  const text =
+    `En el Top FutbolHUB · ${getTodayMadrid()}\n` +
+    `${_question ? _question.q + '\n' : ''}` +
+    `${n}/10\n${squares}\n` +
+    window.location.origin + window.location.pathname;
+  topDoShare(text, document.getElementById('top-share-btn'));
+}
+
+function topDoShare(text, btn) {
+  const feedback = () => {
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ ¡Copiado!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  };
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(feedback).catch(() => {});
+  } else {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      feedback();
+    } catch { /**/ }
+  }
 }
 
 // ══════════════════════════════════════════════

@@ -96,20 +96,19 @@ function grade(total) {
   return '📰 A PRACTICAR';
 }
 
-/* URL de Street View embed desde coordenadas */
-function svEmbedUrl(lat, lng) {
-  // Construye URL de Google Maps Street View embed apuntando a las coords exactas
-  // heading=0, pitch=0, fov=90 para vista neutra
-  const encoded = encodeURIComponent(`${lat},${lng}`);
-  return `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&location=${encoded}&heading=0&pitch=0&fov=90`;
-}
-
-/* Nota: la key de arriba es solo para pruebas con embed/v1.
-   La versión iframe sin key usa este formato alternativo: */
+/* URL de Street View embed desde coordenadas (sin API key) */
 function svEmbedUrlFree(lat, lng) {
   // Formato de embed gratuito vía URL de Google Maps normal
   // Construye la URL de Street View panorámica sin API key
   return `https://www.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=12,0,,0,0&output=svembed`;
+}
+
+/* Carga el Street View de la ronda vía la URL de embed gratuita
+   (sin API key — la API JS de Google ya no se usa en este juego). */
+function loadStreetView(lat, lng) {
+  const frame = document.getElementById('sv-frame');
+  if (!frame) return;
+  frame.src = svEmbedUrlFree(lat, lng);
 }
 
 /* ── UID anónimo ── */
@@ -161,6 +160,29 @@ function initMenu() {
 }
 
 /* ══════════════════════════════════════════════
+   MODO DIARIO — una partida por día
+   ══════════════════════════════════════════════ */
+function estadioDailyKey() { return `estadio_daily_${todayStr()}`; }
+
+function loadDailyPlayed() {
+  try {
+    const raw = localStorage.getItem(estadioDailyKey());
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveDailyPlayed(total) {
+  try {
+    localStorage.setItem(estadioDailyKey(), JSON.stringify({
+      total,
+      scores:  state.scores,
+      guesses: state.guesses,
+      ts: Date.now(),
+    }));
+  } catch {}
+}
+
+/* ══════════════════════════════════════════════
    INICIO DE PARTIDA
    ══════════════════════════════════════════════ */
 function startGame() {
@@ -172,48 +194,65 @@ function startGame() {
   state.guesses     = [];
   state.guess       = null;
 
+  /* Modo diario: si ya jugaste hoy, restaurar y mostrar el resultado */
+  const played = loadDailyPlayed();
+  if (played && Array.isArray(played.scores) && Array.isArray(played.guesses)
+      && played.scores.length === TOTAL_RONDAS && played.guesses.length === TOTAL_RONDAS) {
+    state.scores      = played.scores;
+    state.guesses     = played.guesses;
+    state.rondaActual = TOTAL_RONDAS;
+    mostrarFin(true);
+    return;
+  }
+
   showScreen('screen-game');
   loadRonda(0);
+  // El mapa se creó con la pantalla oculta (tamaño 0) — recalcular ahora
+  refreshGameMapSize();
 }
 
 /* ══════════════════════════════════════════════
-   GOOGLE MAPS — mapa de guess
+   MAPA DE GUESS — Leaflet + OpenStreetMap (sin API key)
    ══════════════════════════════════════════════ */
 let gameMap    = null;
 let gameMarker = null;
 
-function initGameMap() {
-  if (gameMap) { gameMap = null; gameMarker = null; }
+/* Chincheta roja bien visible (misma que la de los mapas de resultados) */
+const GUESS_PIN_ICON = () => L.divIcon({
+  className: '',
+  html: `<svg width="30" height="42" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 2px 2px rgba(0,0,0,.4))">
+    <path d="M14,2 C8.48,2 4,6.48 4,12 C4,19 14,36 14,36 C14,36 24,19 24,12 C24,6.48 19.52,2 14,2 Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
+    <circle cx="14" cy="12" r="4" fill="#0f120e"/>
+  </svg>`,
+  iconSize:   [30, 42],
+  iconAnchor: [15, 40],   // la punta del pin marca la coordenada exacta
+});
 
-  gameMap = new google.maps.Map(document.getElementById('map-leaflet'), {
-    center: { lat: 20, lng: 0 },
+function initGameMap() {
+  if (gameMap) return;
+
+  gameMap = L.map('map-leaflet', {
+    center: [20, 0],
     zoom: 2,
-    mapTypeControl: false,
-    fullscreenControl: false,
-    streetViewControl: false,
+    minZoom: 1,
+    maxZoom: 18,
+    worldCopyJump: true,
+    zoomControl: true,
+    attributionControl: true,
   });
 
-  gameMap.addListener('click', (e) => {
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 18,
+  }).addTo(gameMap);
+
+  gameMap.on('click', (e) => {
+    const { lat, lng } = e.latlng;
     state.guess = { lat, lng };
 
     if (gameMarker) {
-      gameMarker.setPosition({ lat, lng });
+      gameMarker.setLatLng(e.latlng);
     } else {
-      const markerSvg = `
-        <svg width="28" height="40" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg">
-          <path d="M14,2 C8.48,2 4,6.48 4,12 C4,19 14,36 14,36 C14,36 24,19 24,12 C24,6.48 19.52,2 14,2 Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
-          <circle cx="14" cy="12" r="4" fill="#0f120e"/>
-        </svg>
-      `;
-      
-      gameMarker = new google.maps.marker.AdvancedMarkerElement({
-        position: { lat, lng },
-        map: gameMap,
-        content: createSvgElement(markerSvg),
-        title: 'Tu pin',
-      });
+      gameMarker = L.marker(e.latlng, { icon: GUESS_PIN_ICON(), title: 'Tu pin' }).addTo(gameMap);
     }
 
     document.getElementById('map-hint').textContent = 'Confirma tu ubicación';
@@ -221,10 +260,10 @@ function initGameMap() {
   });
 }
 
-function createSvgElement(svgString) {
-  const div = document.createElement('div');
-  div.innerHTML = svgString;
-  return div.firstElementChild;
+/* Leaflet necesita recalcular su tamaño cuando el contenedor cambia
+   (mostrar la pantalla de juego, expandir/colapsar el panel, hover…) */
+function refreshGameMapSize() {
+  if (gameMap) setTimeout(() => gameMap.invalidateSize(), 280);
 }
 
 /* ══════════════════════════════════════════════
@@ -241,7 +280,7 @@ function loadRonda(idx) {
 
   // Street View iframe
   const [lat, lng] = estadio.coord;
-  document.getElementById('sv-frame').src = svEmbedUrlFree(lat, lng);
+  loadStreetView(lat, lng);
 
   // Reset mapa
   document.getElementById('map-hint').textContent = 'Haz clic en el mapa para colocar tu pin';
@@ -249,11 +288,9 @@ function loadRonda(idx) {
   document.getElementById('map-panel').classList.remove('map-expanded');
   document.getElementById('map-panel').classList.add('map-collapsed');
 
-  if (gameMarker) { gameMarker.map = null; gameMarker = null; }
-  if (gameMap) {
-    gameMap.setCenter({ lat: 20, lng: 0 });
-    gameMap.setZoom(2);
-  }
+  if (gameMarker) { gameMarker.remove(); gameMarker = null; }
+  if (gameMap) gameMap.setView([20, 0], 2);
+  refreshGameMapSize();
 }
 
 /* ══════════════════════════════════════════════
@@ -344,7 +381,7 @@ function siguienteRonda() {
    ══════════════════════════════════════════════ */
 let endMap = null;
 
-function mostrarFin() {
+function mostrarFin(alreadyPlayed = false) {
   const total = state.scores.reduce((a, b) => a + b, 0);
 
   document.getElementById('end-score-total').textContent = total.toLocaleString('es-ES');
@@ -372,8 +409,24 @@ function mostrarFin() {
   });
 
   showScreen('screen-end');
-  updateStats(total);
-  saveScoreFirebase(total);
+
+  /* Modo diario: stats/Firebase/guardado solo la primera vez del día */
+  if (!alreadyPlayed) {
+    updateStats(total);
+    saveScoreFirebase(total);
+    saveDailyPlayed(total);
+  }
+
+  /* Bloquear "Jugar de nuevo" hasta mañana */
+  const againBtn = document.getElementById('btn-jugar-de-nuevo');
+  if (againBtn) {
+    againBtn.disabled    = true;
+    againBtn.textContent = '⏱ Ya jugaste hoy · vuelve mañana';
+    againBtn.style.opacity = '0.55';
+    againBtn.style.cursor  = 'default';
+  }
+  const endTitle = document.getElementById('end-title');
+  if (alreadyPlayed && endTitle) endTitle.textContent = '📅 Tu resultado de hoy';
 
   if (endMap) { endMap.remove(); endMap = null; }
 
@@ -418,6 +471,43 @@ function mostrarFin() {
   }
 }
 
+/* ══════════════════════════════════════════════
+   COMPARTIR RESULTADO (estilo Wordle)
+   ══════════════════════════════════════════════ */
+function estadioShare() {
+  const total = state.scores.reduce((a, b) => a + b, 0);
+  const squares = state.scores.map(s => (s >= 4000 ? '🟩' : s >= 1500 ? '🟨' : '🟥')).join('');
+  const text =
+    `El Estadio FutbolHUB · ${todayStr()}\n` +
+    `🏟️ ${total.toLocaleString('es-ES')} / 25.000 puntos\n` +
+    `${squares}\n` +
+    window.location.origin + window.location.pathname;
+  estadioDoShare(text, document.getElementById('btn-compartir'));
+}
+
+function estadioDoShare(text, btn) {
+  const feedback = () => {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = '✓ ¡Copiado!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  };
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(feedback).catch(() => {});
+  } else {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      feedback();
+    } catch {}
+  }
+}
+
 function gradeTitle(total) {
   const pct = total / (MAX_SCORE * TOTAL_RONDAS);
   if (pct >= 0.96) return 'Edición especial: conocedor total';
@@ -448,7 +538,15 @@ async function saveScoreFirebase(total) {
 /* ══════════════════════════════════════════════
    INIT
    ══════════════════════════════════════════════ */
+let _inited = false;
+
 async function init() {
+  // Guard: init puede llamarse dos veces (DOMContentLoaded + callback initMap
+  // de Google Maps). Sin esto se duplican los event listeners: cada click en
+  // "Confirmar" puntuaría dos veces y el toggle del mapa se anularía a sí mismo.
+  if (_inited) return;
+  _inited = true;
+
   state.uid = getUid();
 
   // Cargar estadios
@@ -468,35 +566,33 @@ async function init() {
   document.getElementById('btn-confirmar').addEventListener('click', confirmarGuess);
   document.getElementById('btn-siguiente').addEventListener('click', siguienteRonda);
   document.getElementById('btn-jugar-de-nuevo').addEventListener('click', () => {
-    state.rondaActual = 0;
-    state.scores      = [];
-    state.guesses     = [];
-    state.guess       = null;
-    showScreen('screen-menu');
-    initMenu();
+    // "Jugar de nuevo" debe iniciar una partida nueva de inmediato, no solo
+    // volver al menú (antes había que pulsar "Jugar" una segunda vez).
+    startGame();
   });
+  document.getElementById('btn-compartir')?.addEventListener('click', estadioShare);
 
-  // Expandir mapa al hacer clic en el panel
-  document.getElementById('map-panel').addEventListener('click', () => {
-    const panel = document.getElementById('map-panel');
-    panel.classList.toggle('map-expanded');
-    panel.classList.toggle('map-collapsed');
-    if (gameMap) setTimeout(() => google.maps.event.trigger(gameMap, 'resize'), 260);
+  // Expandir el mapa al pinchar (solo expande — nunca colapsa, para que
+  // colocar la chincheta no cierre el panel). Se colapsa solo al pasar de ronda.
+  const mapPanel = document.getElementById('map-panel');
+  mapPanel.addEventListener('click', () => {
+    if (mapPanel.classList.contains('map-collapsed')) {
+      mapPanel.classList.remove('map-collapsed');
+      mapPanel.classList.add('map-expanded');
+    }
+    refreshGameMapSize();
   });
+  // El hover del CSS también cambia el tamaño del panel → recalcular
+  mapPanel.addEventListener('mouseenter', refreshGameMapSize);
+  mapPanel.addEventListener('mouseleave', refreshGameMapSize);
 
   // Menú
   initMenu();
   showScreen('screen-menu');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Si Google Maps ya cargó, init directo; si no, espera al callback
-  if (typeof google !== 'undefined' && google.maps) {
-    init();
-  }
-  // si no, window.initMap lo arrancará (callback de la API)
-});
+document.addEventListener('DOMContentLoaded', init);
 
-window.initMap = function () {
-  init();
-};
+// Compatibilidad: si quedara en caché un index.html antiguo que aún cargue la
+// API de Google Maps con callback=initMap, no debe romper nada.
+window.initMap = function () { init(); };

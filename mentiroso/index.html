@@ -219,7 +219,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getDatabase, ref, set, get, update, remove, onValue, runTransaction }
+  import { getDatabase, ref, set, get, update, remove, onValue, runTransaction, onDisconnect }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
   const FIREBASE_CONFIG = {
@@ -239,6 +239,7 @@
     configured: true,
     db, ref, set, get, update, remove, onValue, runTransaction
   };
+  window._FBOnDisconnect = onDisconnect;
 
   const V = '?v=20260705c';
   const scripts = [
