@@ -43,6 +43,20 @@ async function sbFetchAll(path, pageSize = 1000) {
     return all;
 }
 
+/**
+ * Quita acentos/diéresis/eñes de un nombre de archivo para que coincida con
+ * la clave real en Supabase Storage (los buckets rechazan claves no-ASCII;
+ * ver admin/upload_images_to_storage.py:safe_key, misma normalización).
+ */
+function sbStorageSafeKey(name) {
+    return String(name).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/** URL pública de un archivo en Supabase Storage (buckets creados como públicos). */
+function sbStorageUrl(bucket, name) {
+    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(sbStorageSafeKey(name))}`;
+}
+
 if (typeof module !== "undefined" && module.exports) {
-    module.exports = { SUPABASE_URL, SUPABASE_KEY, SB_HEADERS, sbFetch, sbFetchAll };
+    module.exports = { SUPABASE_URL, SUPABASE_KEY, SB_HEADERS, sbFetch, sbFetchAll, sbStorageUrl, sbStorageSafeKey };
 }

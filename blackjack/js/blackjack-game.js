@@ -462,14 +462,14 @@ const BlackjackGame = (() => {
     if (btnStand)  btnStand.disabled = h.total === 0;
   }
 
-  /* ─── club → ruta local del escudo (sin JSON, sin fetch) ─── */
+  /* ─── club → URL del escudo en Supabase Storage (bucket team-logos) ─── */
   function _getLogoUrl(club) {
     if (!club) return null;
     // Misma lógica que safe_filename() en download-assets.py
     const fname = club.trim()
       .replace(/[\/:\*\?"<>|]/g, '_')
       .replace(/\s+/g, '_');
-    return `../data/teams/logos/${fname}.png`;
+    return sbStorageUrl('team-logos', `${fname}.png`);
   }
 
   /* ─── nat → ruta local de bandera (sin JSON, sin fetch) ─── */
@@ -519,7 +519,7 @@ const BlackjackGame = (() => {
       'JPN':'jp','KOR':'kr','AUS':'au',
     };
     const iso = MAP[nat];
-    return iso ? `../data/teams/flags/${iso}.png` : null;
+    return iso ? sbStorageUrl('team-flags', `${iso}.png`) : null;
   }
 
   function _renderCurrentCard(card, hand) {

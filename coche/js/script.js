@@ -433,7 +433,7 @@ const Restrictions = (() => {
 
   /* ────────── LOGOS ────────── */
   function _logoUrl(tmName) {
-    return 'data/logos/' + tmName.replace(/ /g, '_') + '.png';
+    return sbStorageUrl('team-logos', tmName.replace(/ /g, '_') + '.png');
   }
 
   /* ────────── LISTA 34 CLUBES ────────── */
@@ -536,25 +536,25 @@ const Restrictions = (() => {
     ],
   };
 
-  /* Logo de liga */
+  /* Logo de liga (bucket league-logos) */
   const LEAGUE_LOGOS = {
-    'La Liga':        'data/logos/leagues/LaLiga.png',
-    'Premier League': 'data/logos/leagues/PremierLeague.png',
-    'Serie A':        'data/logos/leagues/SerieA.png',
-    'Bundesliga':     'data/logos/leagues/Bundesliga.png',
-    'Ligue 1':        'data/logos/leagues/Ligue1.png',
+    'La Liga':        sbStorageUrl('league-logos', 'LaLiga.png'),
+    'Premier League': sbStorageUrl('league-logos', 'PremierLeague.png'),
+    'Serie A':        sbStorageUrl('league-logos', 'SerieA.png'),
+    'Bundesliga':     sbStorageUrl('league-logos', 'Bundesliga.png'),
+    'Ligue 1':        sbStorageUrl('league-logos', 'Ligue1.png'),
   };
 
   /* ────────── NACIONALIDADES ────────── */
   /* tmNat = valor en chunk.nat (inglés)   */
   const NATIONALITIES = [
-    { tmNat:'Spain',       display:'España',    adj:'Español',    flag:'🇪🇸', flagImg:'data/flags/es.png' },
-    { tmNat:'England',     display:'Inglaterra', adj:'Inglés',    flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagImg:'data/flags/eng.png' },
-    { tmNat:'France',      display:'Francia',   adj:'Francés',   flag:'🇫🇷', flagImg:'data/flags/fr.png' },
-    { tmNat:'Argentina',   display:'Argentina', adj:'Argentino', flag:'🇦🇷', flagImg:'data/flags/ar.png' },
-    { tmNat:'Germany',     display:'Alemania',  adj:'Alemán',    flag:'🇩🇪', flagImg:'data/flags/de.png' },
-    { tmNat:'Brazil',      display:'Brasil',    adj:'Brasileño', flag:'🇧🇷', flagImg:'data/flags/br.png' },
-    { tmNat:'Netherlands', display:'Holanda',   adj:'Holandés',  flag:'🇳🇱', flagImg:'data/flags/nl.png' },
+    { tmNat:'Spain',       display:'España',    adj:'Español',    flag:'🇪🇸', flagImg:sbStorageUrl('team-flags','es.png') },
+    { tmNat:'England',     display:'Inglaterra', adj:'Inglés',    flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagImg:sbStorageUrl('team-flags','eng.png') },
+    { tmNat:'France',      display:'Francia',   adj:'Francés',   flag:'🇫🇷', flagImg:sbStorageUrl('team-flags','fr.png') },
+    { tmNat:'Argentina',   display:'Argentina', adj:'Argentino', flag:'🇦🇷', flagImg:sbStorageUrl('team-flags','ar.png') },
+    { tmNat:'Germany',     display:'Alemania',  adj:'Alemán',    flag:'🇩🇪', flagImg:sbStorageUrl('team-flags','de.png') },
+    { tmNat:'Brazil',      display:'Brasil',    adj:'Brasileño', flag:'🇧🇷', flagImg:sbStorageUrl('team-flags','br.png') },
+    { tmNat:'Netherlands', display:'Holanda',   adj:'Holandés',  flag:'🇳🇱', flagImg:sbStorageUrl('team-flags','nl.png') },
   ];
 
   /* ────────── CONTINENTES ────────── */
@@ -619,37 +619,37 @@ const Restrictions = (() => {
   /* Estos deben coincidir EXACTAMENTE con las claves de los JSON         */
   const TROPHIES = {
     individual: [
-      { key:'Pichichi La Liga',          display:'Pichichi',            icon:'⚽', imgUrl:'data/trofeos/pichichi.png' },
-      { key:'Bota de Oro Premier League',display:'Bota de Oro Premier', icon:'⚽', imgUrl:'data/trofeos/bota_oro_premier.png' },
-      { key:'Capocannoniere Serie A',    display:'Capocannoniere',      icon:'⚽', imgUrl:'data/trofeos/capocannoniere.png' },
-      { key:'Maximo Goleador Bundesliga',display:'Goleador Bundesliga', icon:'⚽', imgUrl:'data/trofeos/goleador_bundesliga.png' },
-      { key:'Maximo Goleador Ligue 1',   display:'Goleador Ligue 1',    icon:'⚽', imgUrl:'data/trofeos/goleador_ligue1.png' },
-      { key:'Balon de Oro',              display:'Balón de Oro',        icon:'🏅', imgUrl:'data/trofeos/balon_oro.png' },
-      { key:'Bota de Oro Mundial',       display:'Bota de Oro Mundial', icon:'🏅', imgUrl:'data/trofeos/bota_oro_mundial.png' },
-      { key:'Bota de Oro Europea',       display:'Bota de Oro Europea', icon:'🏅', imgUrl:'data/trofeos/bota_oro_europea.png' },
+      { key:'Pichichi La Liga',          display:'Pichichi',            icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','pichichi.png') },
+      { key:'Bota de Oro Premier League',display:'Bota de Oro Premier', icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','bota_oro_premier.png') },
+      { key:'Capocannoniere Serie A',    display:'Capocannoniere',      icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','capocannoniere.png') },
+      { key:'Maximo Goleador Bundesliga',display:'Goleador Bundesliga', icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','goleador_bundesliga.png') },
+      { key:'Maximo Goleador Ligue 1',   display:'Goleador Ligue 1',    icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','goleador_ligue1.png') },
+      { key:'Balon de Oro',              display:'Balón de Oro',        icon:'🏅', imgUrl:sbStorageUrl('trophy-icons','balon_oro.png') },
+      { key:'Bota de Oro Mundial',       display:'Bota de Oro Mundial', icon:'🏅', imgUrl:sbStorageUrl('trophy-icons','bota_oro_mundial.png') },
+      { key:'Bota de Oro Europea',       display:'Bota de Oro Europea', icon:'🏅', imgUrl:sbStorageUrl('trophy-icons','bota_oro_europea.png') },
     ],
     domestic: [
-      { key:'Liga España',    display:'Ganador Liga Española', icon:'🏆', imgUrl:'data/trofeos/liga_espana.png' },
-      { key:'Liga Inglaterra',display:'Ganador Premier League',icon:'🏆', imgUrl:'data/trofeos/liga_inglaterra.png' },
-      { key:'Liga Italia',    display:'Ganador Serie A',       icon:'🏆', imgUrl:'data/trofeos/liga_italia.png' },
-      { key:'Liga Francia',   display:'Ganador Ligue 1',       icon:'🏆', imgUrl:'data/trofeos/liga_francia.png' },
-      { key:'Liga Alemania',  display:'Ganador Bundesliga',    icon:'🏆', imgUrl:'data/trofeos/liga_alemania.png' },
-      { key:'Copa España',    display:'Copa del Rey',          icon:'🏆', imgUrl:'data/trofeos/copa_espana.png' },
-      { key:'Copa Inglaterra',display:'FA Cup',                icon:'🏆', imgUrl:'data/trofeos/copa_inglaterra.png' },
-      { key:'Copa Italia',    display:'Coppa Italia',          icon:'🏆', imgUrl:'data/trofeos/copa_italia.png' },
-      { key:'Copa Francia',   display:'Coupe de France',       icon:'🏆', imgUrl:'data/trofeos/copa_francia.png' },
-      { key:'Copa Alemania',  display:'DFB-Pokal',             icon:'🏆', imgUrl:'data/trofeos/copa_alemania.png' },
+      { key:'Liga España',    display:'Ganador Liga Española', icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_espana.png') },
+      { key:'Liga Inglaterra',display:'Ganador Premier League',icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_inglaterra.png') },
+      { key:'Liga Italia',    display:'Ganador Serie A',       icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_italia.png') },
+      { key:'Liga Francia',   display:'Ganador Ligue 1',       icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_francia.png') },
+      { key:'Liga Alemania',  display:'Ganador Bundesliga',    icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_alemania.png') },
+      { key:'Copa España',    display:'Copa del Rey',          icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_espana.png') },
+      { key:'Copa Inglaterra',display:'FA Cup',                icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_inglaterra.png') },
+      { key:'Copa Italia',    display:'Coppa Italia',          icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_italia.png') },
+      { key:'Copa Francia',   display:'Coupe de France',       icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_francia.png') },
+      { key:'Copa Alemania',  display:'DFB-Pokal',             icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_alemania.png') },
     ],
     international_club: [
-      { key:'Champions League',    display:'Champions League',    icon:'⭐', imgUrl:'data/trofeos/champions.png' },
-      { key:'Europa League',       display:'Europa League',       icon:'⭐', imgUrl:'data/trofeos/europa_league.png' },
-      { key:'Copa Libertadores',   display:'Copa Libertadores',   icon:'⭐', imgUrl:'data/trofeos/copa_libertadores.png' },
-      { key:'Conference League',   display:'Conference League',   icon:'⭐', imgUrl:'data/trofeos/conference_league.png' },
+      { key:'Champions League',    display:'Champions League',    icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','champions.png') },
+      { key:'Europa League',       display:'Europa League',       icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','europa_league.png') },
+      { key:'Copa Libertadores',   display:'Copa Libertadores',   icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','copa_libertadores.png') },
+      { key:'Conference League',   display:'Conference League',   icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','conference_league.png') },
     ],
     national: [
-      { key:'Eurocopa',    display:'Eurocopa',   icon:'🌍', imgUrl:'data/trofeos/eurocopa.png' },
-      { key:'Mundial',     display:'Mundial',    icon:'🌍', imgUrl:'data/trofeos/mundial.png' },
-      { key:'Copa America',display:'Copa América',icon:'🌍', imgUrl:'data/trofeos/copa_america.png' },
+      { key:'Eurocopa',    display:'Eurocopa',   icon:'🌍', imgUrl:sbStorageUrl('trophy-icons','eurocopa.png') },
+      { key:'Mundial',     display:'Mundial',    icon:'🌍', imgUrl:sbStorageUrl('trophy-icons','mundial.png') },
+      { key:'Copa America',display:'Copa América',icon:'🌍', imgUrl:sbStorageUrl('trophy-icons','copa_america.png') },
     ],
   };
 
@@ -767,7 +767,7 @@ const Restrictions = (() => {
 
     /* Entrenadores */
     for (const c of _shuffle(COACHES_LIST, rng)) {
-      candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:`data/coaches/${c.id}.png`, icon:c.icon, family:'coach' });
+      candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:sbStorageUrl('coach-photos', `${c.id}.png`), icon:c.icon, family:'coach' });
     }
 
     /* Compañeros de */
@@ -3960,7 +3960,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['28003','8198','132098','3979','342229','14132','68290','3373','45320','48280',
      '7607','35564','7825','17259','58358','35207','5817','406625','4673','288230',
      '3366','27992','26399','7980','88755','3455','5023','25557','3111','7476',
-     '164770','148455','225083','40433','4360','7767','7663','5958']
+'5958']
       .forEach(id => {
         const p = PLAYERS_DB.find(x => x.id === id);
         if (p && p.img) _preloadImg(p.img);
@@ -3973,5 +3973,5 @@ document.addEventListener('DOMContentLoaded', () => {
   const _preloadImg = (src) => { const img = new Image(); img.src = src; };
   /* Entrenadores (12 fotos) */
   ['67','118','280','523','781','1522','2868','3517','5075','5672','6499','21284']
-    .forEach(id => _preloadImg(`data/coaches/${id}.png`));
+    .forEach(id => _preloadImg(sbStorageUrl('coach-photos', `${id}.png`)));
 });

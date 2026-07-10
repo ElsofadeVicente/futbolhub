@@ -20,3 +20,17 @@ data/performances/
 data/national/
 data/higher-or-lower/
 data/transfermarkt_api_exports/
+
+# Imágenes (escudos/banderas/trofeos/entrenadores) ya subidas a Supabase
+# Storage (team-logos, team-flags, league-logos, trophy-icons, coach-photos).
+# El código de cada juego ya usa las URLs de Storage (js/supabase-config.js
+# -> sbStorageUrl), así que estas copias locales solo quedan como backup:
+# nunca deben subirse a GitHub.
+data/teams/logos/
+data/teams/flags/
+blackjack/data/teams/logos/
+blackjack/data/teams/flags/
+coche/data/logos/
+coche/data/flags/
+coche/data/trofeos/
+coche/data/coaches/
