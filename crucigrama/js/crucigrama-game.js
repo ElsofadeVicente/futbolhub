@@ -78,20 +78,17 @@ async function loadCrucigrama(offset) {
         </div>`;
 
     try {
-        const res = await fetch(`data/${dateStr}.json`);
-        if (!res.ok) throw new Error('not found');
-        crucData = await res.json();
+        const rows = await sbFetch(`crucigrama_puzzles?date=eq.${dateStr}&select=data`);
+        if (!rows.length) throw new Error('not found');
+        crucData = rows[0].data;
     } catch {
         // Fallback: try the most recent available
         try {
-            const fallback = await fetch('data/index.json');
-            if (!fallback.ok) throw new Error('no index');
-            const index = await fallback.json();
-            if (!index.dates || index.dates.length === 0) throw new Error('empty');
-            const latestDate = index.dates[index.dates.length - 1];
-            const res2 = await fetch(`data/${latestDate}.json`);
-            if (!res2.ok) throw new Error('fallback fail');
-            crucData = await res2.json();
+            const latest = await sbFetch(`crucigrama_puzzles?select=date&order=date.desc&limit=1`);
+            if (!latest.length) throw new Error('empty');
+            const rows2 = await sbFetch(`crucigrama_puzzles?date=eq.${latest[0].date}&select=data`);
+            if (!rows2.length) throw new Error('fallback fail');
+            crucData = rows2[0].data;
         } catch {
             document.getElementById('crucigrama-screen').innerHTML = `
                 <button class="back-to-hub-btn" onclick="goToHub()">← VOLVER</button>

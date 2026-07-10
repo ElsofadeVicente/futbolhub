@@ -181,36 +181,18 @@ function towerGetEdition(dateString) {
 }
 
 async function towerFetchJson(dateString) {
-  const res = await fetch(`data/${dateString}.json?v=${encodeURIComponent(TOWER_CACHE_BUSTER)}`, { cache: 'no-store' });
-  if (!res.ok) return null;
+  const rows = await sbFetch(`la_torre_daily?date=eq.${dateString}&select=data`);
+  if (!rows.length) return null;
 
-  const data = await res.json();
+  const data = rows[0].data;
   if (!towerValidateData(data)) return { dateString, data, invalid: true };
   return { dateString, data, invalid: false };
 }
 
-let towerIndexCache = null;
-
-/* Índice real de fechas disponibles (data/index.json). Se usa para saltar
-   directamente a la última fecha publicada en vez de ir probando día a día
-   desde hoy: con TOWER_MAX_FALLBACK_DAYS fijo, cuantos más días pasen sin
-   subir una torre nueva, más lejos queda la última fecha real y el límite
-   se queda corto (ver towerResolveAvailableDay). El índice no tiene ese
-   problema porque no depende de "cuántos días hace de hoy". */
-async function towerLoadIndex() {
-  if (towerIndexCache) return towerIndexCache;
-  try {
-    const res = await fetch(`data/index.json?v=${encodeURIComponent(TOWER_CACHE_BUSTER)}`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('no index');
-    const index = await res.json();
-    if (!Array.isArray(index.dates) || index.dates.length === 0) throw new Error('empty index');
-    towerIndexCache = [...index.dates].sort();
-  } catch {
-    towerIndexCache = [];
-  }
-  return towerIndexCache;
-}
-
+/* Ya no hace falta un índice aparte ni ir probando día a día: Supabase
+   puede devolver directamente la última fecha publicada <= la solicitada
+   con una sola consulta (date=lte.X&order=date.desc), evitando el problema
+   original de TOWER_MAX_FALLBACK_DAYS quedándose corto. */
 async function towerResolveAvailableDay(requestedOffset) {
   const requestedDateString = towerDateString(requestedOffset);
   const exact = await towerFetchJson(requestedDateString);
@@ -225,39 +207,20 @@ async function towerResolveAvailableDay(requestedOffset) {
     };
   }
 
-  // Camino rápido: usar el índice para ir directo a la última fecha
-  // publicada que sea <= la solicitada, sin tener que ir probando día a día.
-  const index = await towerLoadIndex();
-  const candidates = index.filter(d => d <= requestedDateString).reverse();
-  for (const dateString of candidates) {
-    const candidate = await towerFetchJson(dateString);
-    if (candidate && !candidate.invalid) {
-      const candidateDate = towerParseDateString(dateString);
-      return {
-        dateString,
-        data: candidate.data,
-        offset: Math.max(0, Math.floor((towerDateForOffset(0) - candidateDate) / 86400000))
-      };
+  try {
+    const candidates = await sbFetch(`la_torre_daily?date=lte.${requestedDateString}&order=date.desc&limit=10&select=date,data`);
+    for (const row of candidates) {
+      if (towerValidateData(row.data)) {
+        const candidateDate = towerParseDateString(row.date);
+        return {
+          dateString: row.date,
+          data: row.data,
+          offset: Math.max(0, Math.floor((towerDateForOffset(0) - candidateDate) / 86400000))
+        };
+      }
     }
-  }
-
-  // Red de seguridad por si el índice no cargó o está incompleto: probar
-  // día a día hacia atrás como antes.
-  const launchDate = towerParseDateString(TOWER_LAUNCH_DATE);
-  for (let extraDays = 1; extraDays <= TOWER_MAX_FALLBACK_DAYS; extraDays += 1) {
-    const fallbackDate = towerParseDateString(requestedDateString);
-    fallbackDate.setDate(fallbackDate.getDate() - extraDays);
-    if (fallbackDate < launchDate) break;
-
-    const fallbackDateString = towerFormatDate(fallbackDate);
-    const fallback = await towerFetchJson(fallbackDateString);
-    if (fallback && !fallback.invalid) {
-      return {
-        dateString: fallbackDateString,
-        data: fallback.data,
-        offset: Math.max(0, Math.floor((towerDateForOffset(0) - fallbackDate) / 86400000))
-      };
-    }
+  } catch (error) {
+    console.warn('[La Torre] Error consultando Supabase:', error);
   }
 
   return null;

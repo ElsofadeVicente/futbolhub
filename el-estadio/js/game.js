@@ -549,10 +549,10 @@ async function init() {
 
   state.uid = getUid();
 
-  // Cargar estadios
+  // Cargar estadios (Supabase)
   try {
-    const res = await fetch('./data/estadios.json');
-    state.estadios = await res.json();
+    const rows = await sbFetchAll('estadios?select=data');
+    state.estadios = rows.map(r => r.data);
   } catch (e) {
     console.error('No se pudieron cargar los estadios', e);
     return;
