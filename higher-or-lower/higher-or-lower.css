@@ -9,6 +9,7 @@
   --np-paper3:   #e4d3aa;
   --np-ink:      #0f120e;
   --np-red:      #b5221e;
+  --np-green:    #1f7a3d;
   --np-ink-mid:  rgba(15,18,14,0.68);
   --np-ink-soft: rgba(15,18,14,0.16);
   --np-white:    #ffffff;
@@ -373,9 +374,10 @@ a      { text-decoration: none; }
 .hol-choice-btn:active { transform: scale(0.98); }
 
 .hol-choice-btn--higher {
-  background: var(--np-ink);
+  background: var(--np-green);
   color: var(--np-paper);
-  box-shadow: 3px 3px 0 var(--np-red);
+  border-color: var(--np-green);
+  box-shadow: 3px 3px 0 var(--np-ink);
 }
 
 .hol-choice-btn--equal {
@@ -405,13 +407,13 @@ a      { text-decoration: none; }
 .hol-choice-btn.correct-pick {
   opacity: 1 !important;
   transform: scale(1.04) !important;
-  box-shadow: 0 0 0 3px var(--np-red), 3px 3px 0 var(--np-ink) !important;
+  box-shadow: 0 0 0 3px var(--np-green), 3px 3px 0 var(--np-ink) !important;
 }
 
 .hol-choice-btn.wrong-pick {
   opacity: 1 !important;
   transform: scale(1.04) !important;
-  box-shadow: 0 0 0 3px var(--np-ink), 3px 3px 0 var(--np-red) !important;
+  box-shadow: 0 0 0 3px var(--np-red), 3px 3px 0 var(--np-ink) !important;
   background: var(--np-ink) !important;
   color: var(--np-red) !important;
 }
@@ -447,8 +449,8 @@ a      { text-decoration: none; }
   inset: 0;
   z-index: 8;
   border-radius: 0;
-  box-shadow: inset 0 0 0 3px var(--np-red);
-  background: rgba(181,34,30,0.10);
+  box-shadow: inset 0 0 0 3px var(--np-green);
+  background: rgba(31,122,61,0.14);
   animation: flashFade 0.9s ease forwards;
   pointer-events: none;
 }
@@ -459,8 +461,8 @@ a      { text-decoration: none; }
   inset: 0;
   z-index: 8;
   border-radius: 0;
-  box-shadow: inset 0 0 0 3px var(--np-ink);
-  background: rgba(15,18,14,0.10);
+  box-shadow: inset 0 0 0 3px var(--np-red);
+  background: rgba(181,34,30,0.10);
   animation: flashFade 0.9s ease forwards;
   pointer-events: none;
 }

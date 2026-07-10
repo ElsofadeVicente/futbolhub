@@ -36,6 +36,23 @@ function goBackToMenu() {
     currentMatch = null;
 }
 
+// ── NOMBRE DE EQUIPO EN EL MARCADOR ─────────
+// Bug: con un nombre de equipo muy largo en un lado y uno corto en el otro,
+// el marcador (score-display) se descentraba porque el lado largo reclamaba
+// más ancho del que le tocaba en el flex. Ahora el nombre siempre se queda
+// dentro de su mitad (min-width:0 + overflow en CSS) y aquí, además,
+// reducimos el tamaño de letra según la longitud para que quepa entero en
+// vez de cortarse — el marcador nunca se mueve del centro.
+function setTeamName(elId, name) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.textContent = name || '';
+    el.classList.remove('team-name--long', 'team-name--xlong');
+    const len = (name || '').length;
+    if (len > 22)      el.classList.add('team-name--xlong');
+    else if (len > 14) el.classList.add('team-name--long');
+}
+
 // ── ONCE DIARIO ─────────────────────────────
 
 // Nombres de meses en español, usados para construir el nombre del archivo JSON
@@ -346,8 +363,8 @@ async function loadDailyMatch(offsetDays) {
     matchStats         = { guessed: 0, failed: 0, revealed: 0 };
 
     document.getElementById('competition').textContent  = currentMatch.competition;
-    document.getElementById('home-team').textContent    = currentMatch.homeTeam;
-    document.getElementById('away-team').textContent    = currentMatch.awayTeam;
+    setTeamName('home-team', currentMatch.homeTeam);
+    setTeamName('away-team', currentMatch.awayTeam);
     document.getElementById('score').textContent        = currentMatch.score;
     document.getElementById('date').textContent         = currentMatch.date;
     document.getElementById('playing-team').textContent = `ALINEACIÓN: ${currentMatch.playingTeam}`;
@@ -475,8 +492,8 @@ function loadMatch() {
     matchStats         = { guessed: 0, failed: 0, revealed: 0 };
 
     document.getElementById('competition').textContent  = currentMatch.competition;
-    document.getElementById('home-team').textContent    = currentMatch.homeTeam;
-    document.getElementById('away-team').textContent    = currentMatch.awayTeam;
+    setTeamName('home-team', currentMatch.homeTeam);
+    setTeamName('away-team', currentMatch.awayTeam);
     document.getElementById('score').textContent        = currentMatch.score;
     document.getElementById('date').textContent         = currentMatch.date;
     document.getElementById('playing-team').textContent = `ALINEACIÓN: ${currentMatch.playingTeam}`;
@@ -844,14 +861,34 @@ function renderFormation() {
     const LEFT_POS  = new Set(['LM','LW','LWB','ML']);
     const RIGHT_POS = new Set(['RM','RW','RWB','MR']);
 
-    for (let group = 1; group <= 5; group++) {
+    // Formación "de 4 líneas" real: sin CAM (grupo 4 vacío) pero con
+    // mediocampo (3) y ataque (5). En este caso el mediocampo quedaba pegado
+    // a la defensa y todo el hueco vacío se acumulaba entre mediocampo y
+    // ataque. Lo arreglamos partiendo ese hueco en dos mitades, una antes y
+    // otra después del mediocampo, para que quede situado a medio camino
+    // entre donde estaría la línea 3 y la línea 4 de una alineación de 5
+    // líneas — en vez de coincidir exactamente con la línea 3.
+    const isFourLineFormation = !groups.has(4) && groups.has(3) && groups.has(5);
+
+    const slots = isFourLineFormation
+        ? [{ group: 1 }, { group: 2 }, { spacerHalf: true }, { group: 3 }, { spacerHalf: true }, { group: 5 }]
+        : [1, 2, 3, 4, 5].map(group => ({ group }));
+
+    slots.forEach(slot => {
         const lineDiv = document.createElement('div');
 
+        if (slot.spacerHalf) {
+            lineDiv.className = 'line line--spacer line--spacer-half';
+            formationContainer.appendChild(lineDiv);
+            return;
+        }
+
+        const group = slot.group;
         if (!groups.has(group)) {
             // Slot vacío: spacer que ocupa el hueco sin mostrar nada
             lineDiv.className = 'line line--spacer';
             formationContainer.appendChild(lineDiv);
-            continue;
+            return;
         }
 
         lineDiv.className = 'line';
@@ -869,7 +906,7 @@ function renderFormation() {
             lineDiv.appendChild(buildPlayerCard(player, globalIndex));
         });
         formationContainer.appendChild(lineDiv);
-    }
+    });
 }
 
 // =============================================
@@ -1435,22 +1472,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reveal-btn-modal').addEventListener('click', revealPlayerFromModal);
 });
 
-// ── INIT AL CARGAR ──────────────────────────
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Cargar kits editables (data/kits.json) en background
-    loadKitsJson();
-
-    // Mostrar menú del once por defecto
-    hideAllScreens();
-    document.getElementById('once-menu').style.display = 'flex';
-
-    // Actualizar subtítulo del botón diario con la fecha de hoy
-    const subtitleEl = document.getElementById('daily-btn-subtitle');
-    if (subtitleEl) {
-        const months = ['enero','febrero','marzo','abril','mayo','junio',
-                        'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-        const { day, month } = getSpainDate(0);
-        subtitleEl.textContent = `Partidos del ${day} de ${months[month - 1]} · cambia a medianoche`;
-    }
-});
+// ── INIT AL CARGAR ────────────────

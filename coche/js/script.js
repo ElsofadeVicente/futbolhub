@@ -60,6 +60,39 @@ function _chunkFileForId(id) {
   const r = _CHUNK_RANGES.find(([lo,hi]) => n >= lo && n <= hi);
   return r ? `../data/players/chunks/${r[0]}-${r[1]}.json` : null;
 }
+
+/* ── Sustituye a los antiguos fetch() de data/players/chunks/*.json:
+   trae el mismo rango de IDs pero desde la tabla "players" de Supabase,
+   y lo devuelve con la misma forma { "id": {...datos...}, ... } que
+   tenían los archivos JSON, para no tener que tocar el resto del código. ── */
+async function _fetchChunkRangeFromSupabase(cf) {
+  const m = cf.match(/(\d+)-(\d+)\.json$/);
+  if (!m) return null;
+  const [, lo, hi] = m;
+  try {
+    const rows = await sbFetchAll(`players?id=gte.${lo}&id=lte.${hi}&select=id,data`);
+    const obj = {};
+    for (const r of rows) obj[String(r.id)] = r.data;
+    return obj;
+  } catch (e) {
+    console.warn('[Coche] Error cargando jugadores desde Supabase:', e);
+    return null;
+  }
+}
+
+/* ── Sustituye a data/teams/league-teams.json ── */
+async function _fetchLeaguesFromSupabase() {
+  try {
+    const rows = await sbFetchAll('leagues?select=name,data');
+    const obj = {};
+    for (const r of rows) obj[r.name] = r.data;
+    return obj;
+  } catch (e) {
+    console.warn('[Coche] Error cargando ligas desde Supabase:', e);
+    return null;
+  }
+}
+
 async function _getChunkData(id) {
   const sid = String(id);
   if (_playerDataCache[sid]) return _playerDataCache[sid];
@@ -67,13 +100,10 @@ async function _getChunkData(id) {
   if (!cf) return null;
   /* Si no hay cache, o hay cache parcial y el ID no está: fetch completo */
   if (!_chunkCache[cf] || (!_chunkCache[cf][sid] && !_chunkCache[cf].__full)) {
-    try {
-      const r = await fetch(cf);
-      if (!r.ok) return null;
-      const full = await r.json();
-      full.__full = true;
-      _chunkCache[cf] = full;
-    } catch { return null; }
+    const full = await _fetchChunkRangeFromSupabase(cf);
+    if (!full) return null;
+    full.__full = true;
+    _chunkCache[cf] = full;
   }
   _playerDataCache[sid] = _chunkCache[cf]?.[sid] || null;
   return _playerDataCache[sid];
@@ -204,15 +234,14 @@ async function _loadData() {
     fetch(BASE + 'ganadores_seleccion.json').then(r => r.json()),
     fetch(BASE + 'GanadoresLigayCopa.json').then(r => r.json()),
     fetch(BASE + 'premios_individuales.json').then(r => r.json()),
-    fetch('../data/players/name-index.json').then(r => r.json()).catch(() => []),
-    fetch('../data/teams/league-teams.json').then(r => r.json()).catch(() => null),
+    _fetchLeaguesFromSupabase(),
   ];
 
   const chunkPromises = CHUNK_NAMES.map(c => {
     const cf = `${CHUNKS_BASE}${c}.json`;
     /* Si ya está en caché (precarga de DOMContentLoaded), reusar */
     if (_chunkCache[cf]?.__full) return Promise.resolve({ path: cf, data: _chunkCache[cf] });
-    return fetch(cf).then(r => r.ok ? r.json() : null)
+    return _fetchChunkRangeFromSupabase(cf)
       .then(data => ({ path: cf, data }))
       .catch(() => ({ path: cf, data: null }));
   });
@@ -222,7 +251,7 @@ async function _loadData() {
     Promise.all(chunkPromises),
   ]);
 
-  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, nameIdx, leagueData] = metaResults;
+  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData] = metaResults;
 
   /* Poblar _chunkCache y fusionar todos los chunks */
   const allChunkData = {};
@@ -240,7 +269,9 @@ async function _loadData() {
 
   console.log(`✅ Chunks cargados: ${Object.keys(allChunkData).length} jugadores`);
 
-  NAME_INDEX = Array.isArray(nameIdx) ? nameIdx : [];
+  /* Antes se pedía aparte a data/players/name-index.json; ahora usamos
+     los mismos datos que ya hemos traído de Supabase para no duplicar la petición. */
+  NAME_INDEX = Object.entries(allChunkData).map(([id, p]) => [parseInt(id, 10), p.n]);
 
   _teamLeaguePrio = {};
   if (leagueData) {
@@ -1662,6 +1693,12 @@ const App = (() => {
   let _wantReplay      = false;   /* Bug 2: solo vuelves al lobby si pulsas "Jugar de nuevo" */
 
   let _timerInterval  = null;
+  /* Guardamos el inicio real (timestamp) y la duración para poder
+     reconstruir el intervalo si el navegador lo detiene al pasar la
+     app a segundo plano (bug: el temporizador se paraba para siempre
+     al volver de segundo plano en móvil). */
+  let _timerStartAt   = null;
+  let _timerTotalSecs = null;
   const ROUND_SECS    = 60;
   const POINTS_WIN    = 7;   // default
 
@@ -1698,16 +1735,17 @@ const App = (() => {
       }
       let settled = false;
       let worker;
-      /* Timeout de seguridad: si el worker no responde en 15s (cuelgue, bucle
+      /* Timeout de seguridad: si el worker no responde en 6s (cuelgue, bucle
          infinito de generación, etc.), abortamos y caemos al modo sincrónico.
-         Sin esto, "CARGANDO…" se quedaría para siempre. */
+         Sin esto, "CARGANDO…" se quedaría para siempre — y con 15s el usuario
+         llega a pensar que el botón de "siguiente ronda" no ha hecho nada. */
       const killTimer = setTimeout(() => {
         if (settled) return;
         settled = true;
         try { worker && worker.terminate(); } catch(e) {}
         console.warn('[App] Worker timeout — generando restricciones de forma sincrónica');
         try { resolve(Restrictions.generate(seed, db)); } catch(err) { reject(err); }
-      }, 15000);
+      }, 6000);
       const finish = (fn) => {
         if (settled) return;
         settled = true;
@@ -1852,6 +1890,10 @@ const App = (() => {
         <div id="countdown-number" class="countdown-number">${MIN_PRELOAD_SECONDS}</div>
       </div>`;
     overlay.classList.remove('hidden');
+    /* Bug móvil: ocultar por completo el área de envío mientras el overlay
+       está visible, para que nunca puedan solaparse aunque el overlay no
+       cubra el 100% del viewport visible en algunos navegadores móviles. */
+    document.body.classList.add('countdown-active');
 
     const numEl = document.getElementById('countdown-number');
     let dataReady        = false;
@@ -1865,6 +1907,7 @@ const App = (() => {
         doneCalled = true;
         if (_preloadCountdownIv) { clearInterval(_preloadCountdownIv); _preloadCountdownIv=null; }
         overlay.classList.add('hidden');
+        document.body.classList.remove('countdown-active');
         onDone();
       }
     }
@@ -1876,9 +1919,8 @@ const App = (() => {
           const cf = `../data/players/chunks/${c}.json`;
           if (_chunkCache[cf]?.__full) return true;
           try {
-            const r = await fetch(cf);
-            if (!r.ok) return false;
-            const data = await r.json();
+            const data = await _fetchChunkRangeFromSupabase(cf);
+            if (!data) return false;
             data.__full = true;
             _chunkCache[cf] = data;
             return true;
@@ -2005,6 +2047,7 @@ const App = (() => {
         <div id="countdown-number" class="countdown-number">${ONLINE_COUNTDOWN_SECS}</div>
       </div>`;
     overlay.classList.remove('hidden');
+    document.body.classList.add('countdown-active');
     const numEl = document.getElementById('countdown-number');
     const startAt = Date.now();
     let doneCalled = false;
@@ -2017,6 +2060,7 @@ const App = (() => {
         doneCalled = true;
         clearInterval(_onlineCountdownIv); _onlineCountdownIv = null;
         overlay.classList.add('hidden');
+        document.body.classList.remove('countdown-active');
         if (PLAYERS_DB.length > 0) { onDone(); return; }
         _loadGameData()
           .then(() => onDone())
@@ -2747,6 +2791,13 @@ const App = (() => {
   function _startTimer(startAt, totalSecs) {
     _stopTimer();
     const secs = totalSecs || ROUND_SECS;
+    /* Recordar inicio real y duración: son la fuente de verdad. El intervalo
+       de abajo es solo "para repintar la pantalla cada 500ms" — si el
+       navegador deja de llamarlo (pestaña en 2º plano) no pasa nada, porque
+       en cuanto vuelva a llamarse (o lo relancemos nosotros) se recalcula
+       el tiempo restante a partir del reloj real, no de cuántos ticks hubo. */
+    _timerStartAt   = startAt;
+    _timerTotalSecs = secs;
     const tick = () => {
       const elapsed   = Math.floor((Date.now()-startAt)/1000);
       const remaining = Math.max(0, secs-elapsed);
@@ -2769,7 +2820,25 @@ const App = (() => {
   }
   function _stopTimer() {
     if (_timerInterval) { clearInterval(_timerInterval); _timerInterval=null; }
+    _timerStartAt = null; _timerTotalSecs = null;
   }
+  /* Bug móvil: al backgrounder la app (cambiar de app, bloquear pantalla, etc.)
+     algunos navegadores móviles detienen por completo el setInterval del
+     temporizador y no vuelven a llamarlo nunca al volver a primer plano.
+     Como _timerStartAt/_timerTotalSecs guardan el origen real (timestamp),
+     al volver a ser visible simplemente relanzamos el intervalo desde ahí:
+     el tiempo restante se recalcula correctamente aunque hayan pasado
+     minutos en segundo plano (y si ya se agotó, _startTimer lo detecta en
+     el primer tick y dispara el reveal igual que si hubiera seguido corriendo). */
+  document.addEventListener('visibilitychange', () => {
+    /* No comprobamos si _timerInterval sigue "vivo": en el caso exacto que
+       queremos arreglar, el navegador puede dejarlo apuntando a un intervalo
+       ya muerto sin avisar. _startTimer() vuelve a limpiar y crear uno nuevo,
+       así que llamarlo de nuevo es siempre seguro (idempotente). */
+    if (document.visibilityState === 'visible' && _timerStartAt !== null) {
+      _startTimer(_timerStartAt, _timerTotalSecs);
+    }
+  });
 
   /* ════════════════════════════════════════
      ENVIAR RESPUESTA
@@ -3802,6 +3871,7 @@ const App = (() => {
     /* Ocultar overlay de countdown por si quedó visible */
     const overlay = document.getElementById('countdown-overlay');
     if (overlay) overlay.classList.add('hidden');
+    document.body.classList.remove('countdown-active');
     /* Limpiar grid de restricciones y submissions */
     const rg = document.getElementById('restrictions-grid');
     if (rg) rg.innerHTML = '';
@@ -3873,7 +3943,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ].map(c => {
     const cf = `../data/players/chunks/${c}.json`;
     if (_chunkCache[cf]?.__full) return Promise.resolve();
-    return fetch(cf).then(r => r.ok ? r.json() : null).then(data => {
+    return _fetchChunkRangeFromSupabase(cf).then(data => {
       if (data) { data.__full = true; _chunkCache[cf] = data; }
     }).catch(() => {});
   });

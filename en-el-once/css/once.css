@@ -387,7 +387,13 @@ body {
 }
 
 .team-info {
-    flex: 1;
+    /* min-width:0 es la clave para que el marcador nunca se descentre:
+       sin esto, un nombre de equipo largo en un lado reclama más ancho del
+       que le corresponde en el flex (el navegador nunca encoge un flex item
+       por debajo del ancho de su contenido a menos que se lo permitamos
+       explícitamente), empujando el score-display fuera del centro. */
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -404,7 +410,19 @@ body {
     letter-spacing: 1px;
     color: var(--np-ink);
     line-height: 1;
+    /* Nunca desbordar su mitad del marcador: junto con min-width:0 en
+       .team-info de arriba, esto garantiza que el score-display quede
+       siempre centrado sin importar lo largo que sea el nombre. */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+
+/* Nombres largos: en vez de depender solo del recorte con "…", reducimos
+   el tamaño de letra para que quepan enteros siempre que sea posible. */
+.team-name--long  { font-size: clamp(1.05rem, 2.2vw, 1.6rem); letter-spacing: 0.5px; }
+.team-name--xlong { font-size: clamp(0.85rem, 1.7vw, 1.25rem); letter-spacing: 0; }
 
 .score-display {
     font-family: 'Anton', sans-serif;
@@ -539,6 +557,12 @@ body {
     visibility: hidden;
     pointer-events: none;
     min-height: 90px;
+}
+/* Media línea de hueco: se usa en formaciones de 4 líneas (sin CAM) para
+   repartir el hueco vacío en dos mitades alrededor del mediocampo, en vez
+   de dejarlo entero pegado a un lado. Ver renderFormation() en once-game.js */
+.line--spacer-half {
+    min-height: 45px;
 }
 
 .line,
@@ -1064,12 +1088,15 @@ body {
 
     .match-header { padding: 16px 70px 14px; }
     .team-name { font-size: 1.3rem; }
+    .team-name--long  { font-size: 0.95rem; }
+    .team-name--xlong { font-size: 0.75rem; }
     .score-display { font-size: 2.8rem; letter-spacing: 5px; min-width: 80px; }
     .team-badge { display: none; }
 
     .field-container { padding: 16px 8px; min-height: 420px; }
     .formation { gap: 0; height: 380px; }
     .line--spacer { min-height: 60px; }
+    .line--spacer-half { min-height: 30px; }
     .line, .line--cdm, .line--cam, .line--mid {
         flex-wrap: nowrap;
         gap: 6px;
@@ -1118,4 +1145,3 @@ body {
     .guess-row { gap: 4px; }
     .keyboard-row { gap: 3px; }
 }
-

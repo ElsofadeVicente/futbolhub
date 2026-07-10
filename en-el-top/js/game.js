@@ -4,10 +4,7 @@
 'use strict';
 
 // ── Paths ──────────────────────────────────────
-const PATH_QUESTIONS    = 'data/enteltop.json';
-const PATH_NAME_INDEX   = 'data/players/name-index.json';
-const PATH_TEAM_NAMES   = 'data/teams/team-names.json';
-const PATH_LEAGUE_TEAMS = 'data/teams/league-teams.json';
+const PATH_QUESTIONS    = 'data/enteltop.json'; // dataset propio del juego, no viene de Supabase
 const STATS_KEY         = 'enteltop_stats';
 const TODAY_KEY         = 'enteltop_today';
 const TIMER_TIMED       = 120;
@@ -236,14 +233,17 @@ async function init() {
   elStatsCountdown  = document.getElementById('stats-countdown');
 
   try {
-    const [qs, ni, tn, lt] = await Promise.all([
+    const [qs, niRows, tnRows, ltRows] = await Promise.all([
       fetch(PATH_QUESTIONS).then(r => r.json()),
-      fetch(PATH_NAME_INDEX).then(r => r.json()),
-      fetch(PATH_TEAM_NAMES).then(r => r.json()),
-      fetch(PATH_LEAGUE_TEAMS).then(r => r.json()),
+      sbFetchAll('players?select=id,name:data->>n'),
+      sbFetchAll('team_names_index?select=name'),
+      sbFetchAll('leagues?select=name,data'),
     ]);
     _questions = qs;
-    _nameIndex = ni;
+    _nameIndex = niRows.map(r => [r.id, r.name]);
+    const tn = tnRows.map(r => r.name);
+    const lt = {};
+    for (const row of ltRows) lt[row.name] = row.data;
     _teamIndex = buildTeamIndex(tn, lt);
   } catch (e) {
     elLoading.innerHTML = `<p style="color:#b5221e;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.15em;text-align:center">Error al cargar datos.<br>${e.message}</p>`;
@@ -682,13 +682,10 @@ function showEndScreen(won) {
 
   elEnd.classList.remove('hidden');
 
-  // Abrir estadísticas automáticamente solo la primera vez que se termina una
-  // partida en este navegador — a partir de ahí el jugador ya sabe que puede
-  // abrirlas con el botón de estadísticas, y no se le interrumpe cada día.
-  if (!localStorage.getItem('topEndStatsAutoShown')) {
-    localStorage.setItem('topEndStatsAutoShown', '1');
-    setTimeout(openStats, 700);
-  }
+  // Abrir estadísticas automáticamente siempre que termine la partida
+  // (ganada o perdida), tras un breve delay para que se vea primero el
+  // resultado antes de que aparezca el modal encima.
+  setTimeout(openStats, 700);
 }
 
 // ══════════════════════════════════════════════
