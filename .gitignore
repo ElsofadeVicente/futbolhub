@@ -34,3 +34,17 @@ coche/data/logos/
 coche/data/flags/
 coche/data/trofeos/
 coche/data/coaches/
+
+# Datos propios de cada juego ya migrados a Supabase (tablas creadas en la
+# tarea de esquema de "datos propios de cada juego"). El JS de cada juego ya
+# lee de Supabase (sbFetch/sbFetchAll), así que estas copias locales solo
+# quedan como backup/fuente de los scripts de sync: nunca deben subirse a
+# GitHub, igual que las carpetas de arriba.
+crucigrama/data/
+la-torre/data/
+en-el-once/data/
+en-el-top/data/enteltop.json
+el-estadio/data/estadios.json
+mentiroso/js/data.js
+coche/data/*.json
+blackjack/data/blackjack/

@@ -117,11 +117,10 @@ function updateLoadingProgress(loaded, total) {
 }
 
 async function fetchDailyFile(fileName) {
-    const r = await fetch(`./data/once-diario/${fileName}`);
-    if (!r.ok) throw new Error('Archivo no encontrado');
-    const data = await r.json();
-    if (!Array.isArray(data) || data.length === 0) throw new Error('Archivo vacío');
-    return data;
+    const source = 'once-diario/' + fileName.replace(/\.json$/i, '');
+    const rows = await sbFetch(`once_matches?source=eq.${source}&order=idx.asc&select=data`);
+    if (!rows.length) throw new Error('Archivo no encontrado');
+    return rows.map(r => r.data);
 }
 
 /** "Septiembre_2026.json" -> { month: 8 (0-index), year: 2026 } para poder ordenar/comparar. */
@@ -134,18 +133,23 @@ function parseDailyFileName(fileName) {
 }
 
 /**
- * Busca, vía manifest.json, el archivo mensual más reciente que no sea
+ * Busca, vía Supabase (tabla once_matches), el mes más reciente que no sea
  * posterior al mes solicitado (para no "adelantar" partidos que aún no
- * tocan). Si no hay manifest o queda vacío, no hay nada que ofrecer.
+ * tocan). Si no hay datos, no hay nada que ofrecer.
  */
 async function findLatestDailyFile(requestedFileName) {
     const requested = parseDailyFileName(requestedFileName);
-    const r = await fetch('./data/once-diario/manifest.json');
-    if (!r.ok) return null;
-    const manifest = await r.json();
-    if (!Array.isArray(manifest.files) || manifest.files.length === 0) return null;
+    let rows;
+    try {
+        rows = await sbFetchAll(`once_matches?source=like.once-diario/*&select=source`);
+    } catch {
+        return null;
+    }
+    const sources = [...new Set(rows.map(r => r.source))];
+    if (sources.length === 0) return null;
+    const files = sources.map(s => s.replace(/^once-diario\//, '') + '.json');
 
-    const parsed = manifest.files
+    const parsed = files
         .map(f => ({ file: f, info: parseDailyFileName(f) }))
         .filter(x => x.info);
 
@@ -159,6 +163,20 @@ async function findLatestDailyFile(requestedFileName) {
 
     pool.sort((a, b) => (b.info.year - a.info.year) || (b.info.month - a.info.month));
     return pool[0].file;
+}
+
+/* Cada "carpeta" antigua corresponde a un prefijo de "source" en la tabla
+   once_matches (p.ej. "liga/14_15", "champions/finales"). */
+const ONCE_SOURCE_PREFIX = {
+    './data/liga': 'liga/',
+    './data/champions': 'champions/',
+    './data/historico': 'historico/',
+    './data/once-diario': 'once-diario/'
+};
+
+async function fetchMatchesBySourcePrefix(prefix) {
+    const rows = await sbFetchAll(`once_matches?source=like.${prefix}*&order=idx.asc&select=data`);
+    return rows.map(r => r.data);
 }
 
 async function loadMatchData(mode, offsetDays = 0) {
@@ -205,46 +223,14 @@ async function loadMatchData(mode, offsetDays = 0) {
             }
         }
 
-        const knownFiles = {
-            './data/liga': [
-                '14_15.json','15_16.json','16_17.json',
-                '17_18.json','18_19.json','19_20.json',
-                '20_21.json','21_22.json','22_23.json',
-                '23_24.json','24_25.json','25_26.json'
-            ],
-            './data/champions': ['finales.json','semifinales.json','cuartos.json'],
-            './data/historico': ['mundiales.json','eurocopas.json','euroamerica.json']
-        };
-
-        const allUrls = [];
-        for (const folder of folders) {
-            for (const file of (knownFiles[folder] || [])) allUrls.push(`${folder}/${file}`);
-        }
-
-        const manifestUrls = folders.map(f => ({ folder: f, url: `${f}/manifest.json` }));
-        const manifests = await Promise.allSettled(
-            manifestUrls.map(({ url }) => fetch(url).then(r => r.ok ? r.json() : null))
-        );
-        const existingUrls = new Set(allUrls);
-        manifests.forEach((result, i) => {
-            if (result.status === 'fulfilled' && result.value?.files) {
-                const folder = manifestUrls[i].folder;
-                result.value.files.forEach(file => {
-                    const url = `${folder}/${file}`;
-                    if (!existingUrls.has(url)) { allUrls.push(url); existingUrls.add(url); }
-                });
-            }
-        });
-
         let loaded = 0;
-        const total = allUrls.length;
+        const total = folders.length;
         updateLoadingProgress(0, total);
 
         const results = await Promise.allSettled(
-            allUrls.map(url =>
-                fetch(url)
-                    .then(r => r.ok ? r.json() : null)
-                    .catch(() => null)
+            folders.map(folder =>
+                fetchMatchesBySourcePrefix(ONCE_SOURCE_PREFIX[folder])
+                    .catch(() => [])
                     .finally(() => { loaded++; updateLoadingProgress(loaded, total); })
             )
         );
@@ -355,10 +341,7 @@ async function checkDayAvailable(offsetDays) {
     }
 
     try {
-        const r = await fetch(`./data/once-diario/${fileName}`);
-        if (!r.ok) { dailyAvailability[offsetDays] = false; return false; }
-        const data = await r.json();
-        if (!Array.isArray(data) || data.length === 0) { dailyAvailability[offsetDays] = false; return false; }
+        const data = await fetchDailyFile(fileName);
         // Guardar en caché para reutilizar si el usuario navega a ese mes
         dailyPoolCache[fileName] = data;
         const available = (day - 1) < data.length;
@@ -388,18 +371,11 @@ async function loadDailyMatch(offsetDays) {
         } else {
             document.getElementById('loading').style.display = 'block';
             try {
-                const r = await fetch(`./data/once-diario/${neededFile}`);
-                if (r.ok) {
-                    const data = await r.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        dailyPool = data;
-                        dailyLoadedFile = neededFile;
-                        dailyPoolCache[neededFile] = data;
-                        dailyAvailability[offsetDays] = true;
-                    }
-                } else {
-                    dailyAvailability[offsetDays] = false;
-                }
+                const data = await fetchDailyFile(neededFile);
+                dailyPool = data;
+                dailyLoadedFile = neededFile;
+                dailyPoolCache[neededFile] = data;
+                dailyAvailability[offsetDays] = true;
             } catch(e) {
                 dailyAvailability[offsetDays] = false;
             }
@@ -689,14 +665,14 @@ function _fallbackKit(n){
   return { p:main, s:second, pat, sl: pat==='stripes'?second:main, col:second, num:_autoNum(main) };
 }
 
-/* Reglas activas: por defecto las embebidas (KIT_RULES); si data/kits.json
-   existe y es v\u00e1lido, se sustituyen por las del JSON (editable sin tocar c\u00f3digo). */
+/* Reglas activas: por defecto las embebidas (KIT_RULES); si la tabla Supabase
+   once_kits existe y es v\u00e1lida, se sustituyen por las de ah\u00ed (editable sin tocar c\u00f3digo). */
 let _kitRules = KIT_RULES;
 let _gkKit    = GK_KIT;
 
 function loadKitsJson() {
-  fetch('./data/kits.json')
-    .then(r => r.ok ? r.json() : null)
+  sbFetch('once_kits?id=eq.1&select=data')
+    .then(rows => rows.length ? rows[0].data : null)
     .then(data => {
       if (!data) return;
       if (Array.isArray(data.rules)) {
@@ -705,12 +681,12 @@ function loadKitsJson() {
           .map(r => [r.keys.map(k => String(k).toUpperCase()), r.kit]);
         if (rules.length) {
           _kitRules = rules;
-          console.log(`\u2705 Kits cargados desde kits.json: ${rules.length} reglas`);
+          console.log(`\u2705 Kits cargados desde Supabase: ${rules.length} reglas`);
         }
       }
       if (data.gk && data.gk.p) _gkKit = data.gk;
     })
-    .catch(() => { /* sin kits.json: se usan las reglas embebidas */ });
+    .catch(() => { /* sin datos en Supabase: se usan las reglas embebidas */ });
 }
 
 function getKit(team){
@@ -1532,7 +1508,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── INIT AL CARGAR ──────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Cargar kits editables (data/kits.json) en background
+    // Cargar kits editables desde Supabase en background
     loadKitsJson();
 
     // Mostrar menú del once por defecto

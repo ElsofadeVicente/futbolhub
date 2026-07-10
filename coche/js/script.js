@@ -93,6 +93,21 @@ async function _fetchLeaguesFromSupabase() {
   }
 }
 
+/* Tablas propias de Coche con forma {clave, data} (antes eran objetos sueltos
+   en data/*.json: compañeros_principal.json, entrenados_por.json, etc.) —
+   se reconstruyen aquí como el mismo objeto plano {clave: data} de siempre. */
+async function _fetchCocheKeyedTable(table, keyField) {
+  try {
+    const rows = await sbFetchAll(`${table}?select=${keyField},data`);
+    const obj = {};
+    for (const r of rows) obj[String(r[keyField])] = r.data;
+    return obj;
+  } catch (e) {
+    console.warn(`[Coche] Error cargando ${table} desde Supabase:`, e);
+    return {};
+  }
+}
+
 async function _getChunkData(id) {
   const sid = String(id);
   if (_playerDataCache[sid]) return _playerDataCache[sid];
@@ -217,7 +232,6 @@ async function findPlayerAsync(inputName) {
    1b. _loadData  —  Carga y transforma todos los JSON de data/
    ═══════════════════════════════════════════════════════════════ */
 async function _loadData() {
-  const BASE        = 'data/';
   const CHUNKS_BASE = '../data/players/chunks/';
 
   /* ── A: Cargar TODOS los chunks en paralelo junto con los demás JSON ── */
@@ -228,12 +242,12 @@ async function _loadData() {
   ];
 
   const metaPromises = [
-    fetch(BASE + 'compa%C3%B1eros_principal.json').then(r => r.json()),
-    fetch(BASE + 'entrenados_por.json').then(r => r.json()),
-    fetch(BASE + 'ganadores_clubes_internacional.json').then(r => r.json()),
-    fetch(BASE + 'ganadores_seleccion.json').then(r => r.json()),
-    fetch(BASE + 'GanadoresLigayCopa.json').then(r => r.json()),
-    fetch(BASE + 'premios_individuales.json').then(r => r.json()),
+    _fetchCocheKeyedTable('coche_companeros', 'player_id'),
+    _fetchCocheKeyedTable('coche_entrenadores', 'id'),
+    _fetchCocheKeyedTable('coche_ganadores_clubes_intl', 'competition'),
+    _fetchCocheKeyedTable('coche_ganadores_seleccion', 'competition'),
+    _fetchCocheKeyedTable('coche_ganadores_liga_copa', 'competition'),
+    _fetchCocheKeyedTable('coche_premios_individuales', 'premio'),
     _fetchLeaguesFromSupabase(),
   ];
 

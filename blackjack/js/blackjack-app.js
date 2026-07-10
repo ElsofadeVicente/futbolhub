@@ -784,7 +784,7 @@ const App = (() => {
   }
 
   /* ══════════════════════════════════════════
-     POOL — carga de data/blackjack/*.json
+     POOL — carga desde Supabase (tabla blackjack_players)
      ══════════════════════════════════════════ */
   const POOL_FILES = [
     'bundesliga',
@@ -804,28 +804,29 @@ const App = (() => {
     if (_poolData) return _poolData;
     if (_poolPromise) return _poolPromise;
 
-    _poolPromise = Promise.all(
-      POOL_FILES.map(name =>
-        fetch(`data/blackjack/${name}.json`)
-          .then(r => {
-            if (!r.ok) {
-              console.log(`ℹ️ ${name}.json no disponible (${r.status}) — se omite`);
-              return {};
-            }
-            return r.json();
-          })
-          .catch(() => {
-            console.log(`ℹ️ ${name}.json no encontrado — se omite`);
-            return {};
-          })
-      )
-    ).then(results => {
-      _poolData = Object.assign({}, ...results);
-      const total = Object.keys(_poolData).length;
-      if (total === 0) throw new Error('No se encontró ningún archivo de pool en data/blackjack/. Asegúrate de tener al menos uno de: ' + POOL_FILES.join(', '));
-      console.log(`✅ Blackjack pool cargado: ${total} jugadores`);
-      return _poolData;
-    });
+    // Antes venía de data/blackjack/*.json (uno por liga); ahora de la tabla
+    // Supabase blackjack_players (columnas league, player_id, data).
+    _poolPromise = sbFetchAll('blackjack_players?select=league,player_id,data')
+      .then(rows => {
+        const byLeague = {};
+        for (const row of rows) {
+          if (!byLeague[row.league]) byLeague[row.league] = {};
+          byLeague[row.league][String(row.player_id)] = row.data;
+        }
+        const missing = POOL_FILES.filter(name => !byLeague[name]);
+        if (missing.length) {
+          console.log(`ℹ️ Sin jugadores en Supabase para: ${missing.join(', ')} — se omiten`);
+        }
+        _poolData = Object.assign({}, ...Object.values(byLeague));
+        const total = Object.keys(_poolData).length;
+        if (total === 0) throw new Error('No se encontraron jugadores en la tabla Supabase blackjack_players.');
+        console.log(`✅ Blackjack pool cargado: ${total} jugadores`);
+        return _poolData;
+      })
+      .catch(e => {
+        console.error('[Blackjack] Error cargando pool desde Supabase:', e);
+        throw e;
+      });
 
     return _poolPromise;
   }

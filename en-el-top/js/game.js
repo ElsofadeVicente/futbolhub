@@ -4,7 +4,6 @@
 'use strict';
 
 // ── Paths ──────────────────────────────────────
-const PATH_QUESTIONS    = 'data/enteltop.json'; // dataset propio del juego, no viene de Supabase
 const STATS_KEY         = 'enteltop_stats';
 const TODAY_KEY         = 'enteltop_today';
 const TIMER_TIMED       = 120;
@@ -233,13 +232,13 @@ async function init() {
   elStatsCountdown  = document.getElementById('stats-countdown');
 
   try {
-    const [qs, niRows, tnRows, ltRows] = await Promise.all([
-      fetch(PATH_QUESTIONS).then(r => r.json()),
+    const [qRows, niRows, tnRows, ltRows] = await Promise.all([
+      sbFetchAll('top_questions?select=data'),
       sbFetchAll('players?select=id,name:data->>n'),
       sbFetchAll('team_names_index?select=name'),
       sbFetchAll('leagues?select=name,data'),
     ]);
-    _questions = qs;
+    _questions = qRows.map(r => r.data);
     _nameIndex = niRows.map(r => [r.id, r.name]);
     const tn = tnRows.map(r => r.name);
     const lt = {};

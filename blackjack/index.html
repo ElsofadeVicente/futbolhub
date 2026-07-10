@@ -297,9 +297,10 @@
   // Cargar scripts del juego
   const V = '?v=' + Date.now();
   const scripts = [
-    '../../js/shared.js',
-    '../../js/player-data-loader.js',
-    '../../js/extended-data-loader.js',
+    '../js/supabase-config.js',
+    '../js/shared.js',
+    '../js/player-data-loader.js',
+    '../js/extended-data-loader.js',
     'js/blackjack-sets.js' + V,
     'js/blackjack-game.js' + V,
     'js/blackjack-sync.js' + V,
@@ -319,10 +320,6 @@
 
   chain.then(() => {
     if (typeof App !== 'undefined') App.init();
-    // Pre-cargar pools de ligas en background
-    ['bundesliga','eredivisie','laliga','liga-portugal','ligue-1','premier-league','resto-del-mundo','serie-a'].forEach(name => {
-      fetch(`data/blackjack/${name}.json`).catch(() => {});
-    });
   });
 </script>
 
@@ -340,3 +337,4 @@
 </aside>
 </body>
 </html>
+                                                                                                                                                                                                                              
