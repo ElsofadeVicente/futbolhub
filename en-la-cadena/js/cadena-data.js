@@ -1,7 +1,7 @@
 /* =============================================
    CADENA-DATA.JS
    Carga de datos, búsqueda y validación de la
-   cadena Jugador ↔ Equipo
+   cadena Jugador ↔ Equipo — ahora desde Supabase
    ============================================= */
 
 const CadenaData = (() => {
@@ -20,7 +20,7 @@ const CadenaData = (() => {
   /* ── Normalización ── */
   const norm = s =>
     s.toLowerCase()
-     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+     .normalize('NFD').replace(/[̀-ͯ]/g, '')
      .replace(/[^a-z0-9 ]/g, ' ')
      .replace(/\s+/g, ' ')
      .trim();
@@ -43,7 +43,8 @@ const CadenaData = (() => {
   function filterTeams(teams) {
     return (teams || []).filter(t => !isFilialTeam(t));
   }
-  /* ── Chunk helpers ── */
+
+  /* ── Chunk helpers (ahora contra Supabase, no contra archivos JSON) ── */
   const RANGES = [
     [0,99999],[100000,199999],[200000,299999],[300000,399999],[400000,499999],
     [500000,599999],[600000,699999],[700000,799999],[800000,899999],[900000,999999],
@@ -55,11 +56,17 @@ const CadenaData = (() => {
     return r ? `${r[0]}-${r[1]}.json` : null;
   }
 
+  /* Antes hacía fetch(`../data/players/chunks/${cf}`). Ahora trae el mismo
+     rango de IDs desde la tabla "players" de Supabase, devolviendo la misma
+     forma { "id": {...}, ... } que tenía el archivo JSON. */
   async function loadPlayerChunk(cf) {
     if (chunkCache[cf]) return chunkCache[cf];
-    const res = await fetch(`../data/players/chunks/${cf}`);
-    if (!res.ok) throw new Error(`Chunk ${cf}: HTTP ${res.status}`);
-    const data = await res.json();
+    const m = cf.match(/(\d+)-(\d+)\.json$/);
+    if (!m) throw new Error(`Chunk inválido: ${cf}`);
+    const [, lo, hi] = m;
+    const rows = await sbFetchAll(`players?id=gte.${lo}&id=lte.${hi}&select=id,data`);
+    const data = {};
+    for (const r of rows) data[String(r.id)] = r.data;
     chunkCache[cf] = data;
     return data;
   }
@@ -82,18 +89,20 @@ const CadenaData = (() => {
     if (_initPromise) return _initPromise; // carga en curso, esperar
 
     _initPromise = (async () => {
-      const [ni, tn, leagueData] = await Promise.all([
-        fetch('../data/players/name-index.json').then(r => r.json()),
-        fetch('../data/teams/team-names.json').then(r => r.json()),
-        fetch('../data/teams/league-teams.json').then(r => r.json()).catch(() => null),
+      const [niRows, tnRows, leagueRows] = await Promise.all([
+        sbFetchAll('players?select=id,name:data->>n'),
+        sbFetchAll('team_names_index?select=name'),
+        sbFetchAll('leagues?select=name,data').catch(() => null),
       ]);
-      nameIndex = ni;
-      teamNames = tn.filter(t => !isFilialTeam(t));
+
+      nameIndex = niRows.map(r => [r.id, r.name]);
+      teamNames = tnRows.map(r => r.name).filter(t => !isFilialTeam(t));
 
       teamLeaguePrio = {};
-      if (leagueData) {
-        // Estructura: { "La Liga": { priority: 1, teams: [...] }, ... }
-        for (const [, leagueInfo] of Object.entries(leagueData)) {
+      if (leagueRows) {
+        // Estructura equivalente a la de antes: { "La Liga": { priority: 1, teams: [...] }, ... }
+        for (const row of leagueRows) {
+          const leagueInfo = row.data;
           for (const teamName of leagueInfo.teams) {
             const key = norm(teamName);
             if (teamLeaguePrio[key] === undefined || leagueInfo.priority < teamLeaguePrio[key]) {
@@ -102,7 +111,7 @@ const CadenaData = (() => {
           }
         }
       } else {
-        console.warn('⚠️ league-teams.json no disponible, sin prioridad de ligas');
+        console.warn('⚠️ leagues (Supabase) no disponible, sin prioridad de ligas');
       }
 
       console.log(`✅ CadenaData: ${nameIndex.length.toLocaleString()} jugadores, ${teamNames.length.toLocaleString()} equipos`);

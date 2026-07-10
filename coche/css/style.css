@@ -559,8 +559,14 @@ a      { text-decoration: none; }
 /* ═══════════════════════════════════════════
    CUENTA ATRÁS — solo colores, resto intacto
    ═══════════════════════════════════════════ */
-.countdown-overlay { position:fixed; inset:0; z-index:9999; background:var(--np-paper); display:flex; align-items:center; justify-content:center; }
+.countdown-overlay { position:fixed; inset:0; height:100dvh; z-index:9999; background:var(--np-paper); display:flex; align-items:center; justify-content:center; }
 .countdown-overlay.hidden { display:none; }
+/* Bug móvil: además del overlay, ocultamos por completo el área de
+   enviar/input mientras la cuenta atrás está activa. Así, aunque en algún
+   navegador móvil el overlay no cubra el 100% del viewport visible (barra
+   de direcciones dinámica, etc.), el botón de enviar nunca queda visible
+   ni pulsable por debajo de la pantalla de carga. */
+body.countdown-active .input-section { display:none !important; }
 .countdown-inner { text-align:center; }
 .countdown-label { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:6px; color: #000000; margin-bottom:16px; }
 .countdown-number { font-family:'Bebas Neue',sans-serif; font-size:14rem; line-height:1; color:var(--np-ink); text-shadow:none; animation:cPulse 1s ease-in-out infinite; }

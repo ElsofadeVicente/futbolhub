@@ -90,6 +90,9 @@ body::before {
 }
 @media (max-width: 759px) {
   .ad-col { display: none; }
+  /* Evita que iOS/Android hagan zoom automático al enfocar el input
+     (ocurre cuando el font-size del input es menor de 16px) */
+  #ans-input { font-size: 16px; }
 }
 
 /* ── Shared: eyebrow label ───────────────────── */
@@ -1004,12 +1007,4 @@ body::before {
 /* ══════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════ */
-@media (max-width: 480px) {
-  #mode-box { box-shadow: none; }
-  .np-modal { box-shadow: 3px 3px 0 var(--np-ink); }
-}
-
-*, ::before, ::after {
-    margin-left: 0px;
-    margin-top: 0px;
-}
+@media (max-width: 480px
