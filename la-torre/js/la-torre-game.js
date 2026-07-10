@@ -189,6 +189,28 @@ async function towerFetchJson(dateString) {
   return { dateString, data, invalid: false };
 }
 
+let towerIndexCache = null;
+
+/* Índice real de fechas disponibles (data/index.json). Se usa para saltar
+   directamente a la última fecha publicada en vez de ir probando día a día
+   desde hoy: con TOWER_MAX_FALLBACK_DAYS fijo, cuantos más días pasen sin
+   subir una torre nueva, más lejos queda la última fecha real y el límite
+   se queda corto (ver towerResolveAvailableDay). El índice no tiene ese
+   problema porque no depende de "cuántos días hace de hoy". */
+async function towerLoadIndex() {
+  if (towerIndexCache) return towerIndexCache;
+  try {
+    const res = await fetch(`data/index.json?v=${encodeURIComponent(TOWER_CACHE_BUSTER)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('no index');
+    const index = await res.json();
+    if (!Array.isArray(index.dates) || index.dates.length === 0) throw new Error('empty index');
+    towerIndexCache = [...index.dates].sort();
+  } catch {
+    towerIndexCache = [];
+  }
+  return towerIndexCache;
+}
+
 async function towerResolveAvailableDay(requestedOffset) {
   const requestedDateString = towerDateString(requestedOffset);
   const exact = await towerFetchJson(requestedDateString);
@@ -203,6 +225,24 @@ async function towerResolveAvailableDay(requestedOffset) {
     };
   }
 
+  // Camino rápido: usar el índice para ir directo a la última fecha
+  // publicada que sea <= la solicitada, sin tener que ir probando día a día.
+  const index = await towerLoadIndex();
+  const candidates = index.filter(d => d <= requestedDateString).reverse();
+  for (const dateString of candidates) {
+    const candidate = await towerFetchJson(dateString);
+    if (candidate && !candidate.invalid) {
+      const candidateDate = towerParseDateString(dateString);
+      return {
+        dateString,
+        data: candidate.data,
+        offset: Math.max(0, Math.floor((towerDateForOffset(0) - candidateDate) / 86400000))
+      };
+    }
+  }
+
+  // Red de seguridad por si el índice no cargó o está incompleto: probar
+  // día a día hacia atrás como antes.
   const launchDate = towerParseDateString(TOWER_LAUNCH_DATE);
   for (let extraDays = 1; extraDays <= TOWER_MAX_FALLBACK_DAYS; extraDays += 1) {
     const fallbackDate = towerParseDateString(requestedDateString);
@@ -499,7 +539,6 @@ function towerShare() {
 function towerDoShare(text, btn) {
   const feedback = () => {
     if (!btn) return;
-    const orig = btn.textContent;
     btn.textContent = '✓ ¡Copiado!';
     setTimeout(() => { btn.textContent = orig; }, 2000);
   };

@@ -116,6 +116,51 @@ function updateLoadingProgress(loaded, total) {
     if (pctEl) pctEl.textContent = pct + '%';
 }
 
+async function fetchDailyFile(fileName) {
+    const r = await fetch(`./data/once-diario/${fileName}`);
+    if (!r.ok) throw new Error('Archivo no encontrado');
+    const data = await r.json();
+    if (!Array.isArray(data) || data.length === 0) throw new Error('Archivo vacío');
+    return data;
+}
+
+/** "Septiembre_2026.json" -> { month: 8 (0-index), year: 2026 } para poder ordenar/comparar. */
+function parseDailyFileName(fileName) {
+    const m = /^([A-Za-zÀ-ÿ]+)_(\d{4})\.json$/.exec(fileName);
+    if (!m) return null;
+    const month = MONTH_NAMES_ES.findIndex(n => n.toLowerCase() === m[1].toLowerCase());
+    if (month === -1) return null;
+    return { month, year: parseInt(m[2], 10) };
+}
+
+/**
+ * Busca, vía manifest.json, el archivo mensual más reciente que no sea
+ * posterior al mes solicitado (para no "adelantar" partidos que aún no
+ * tocan). Si no hay manifest o queda vacío, no hay nada que ofrecer.
+ */
+async function findLatestDailyFile(requestedFileName) {
+    const requested = parseDailyFileName(requestedFileName);
+    const r = await fetch('./data/once-diario/manifest.json');
+    if (!r.ok) return null;
+    const manifest = await r.json();
+    if (!Array.isArray(manifest.files) || manifest.files.length === 0) return null;
+
+    const parsed = manifest.files
+        .map(f => ({ file: f, info: parseDailyFileName(f) }))
+        .filter(x => x.info);
+
+    const eligible = requested
+        ? parsed.filter(x => x.info.year < requested.year ||
+            (x.info.year === requested.year && x.info.month <= requested.month))
+        : parsed;
+
+    const pool = eligible.length > 0 ? eligible : parsed;
+    if (pool.length === 0) return null;
+
+    pool.sort((a, b) => (b.info.year - a.info.year) || (b.info.month - a.info.month));
+    return pool[0].file;
+}
+
 async function loadMatchData(mode, offsetDays = 0) {
     try {
         let folders = [];
@@ -127,24 +172,36 @@ async function loadMatchData(mode, offsetDays = 0) {
             case 'historico': folders = ['./data/historico']; break;
         }
 
-        // Para modo diario: cargar solo el archivo del mes de hoy
+        // Para modo diario: cargar el archivo del mes de hoy y, si todavía no
+        // se ha subido (el scraper va por detrás del calendario real), caer
+        // al mes disponible más reciente en vez de dejar el modo sin jugar.
         if (mode === 'diario') {
             const fileName = getDailyFileName(0);
             try {
-                const r = await fetch(`./data/once-diario/${fileName}`);
-                if (!r.ok) throw new Error('Archivo no encontrado');
-                const data = await r.json();
-                if (!Array.isArray(data) || data.length === 0) throw new Error('Archivo vacío');
+                const data = await fetchDailyFile(fileName);
                 dailyPool  = data;
                 allMatches = data;
                 dailyLoadedFile = fileName;
                 dailyAvailability[0] = true;
                 updateLoadingProgress(1, 1);
                 return true;
-            } catch(e) {
-                console.error('Error cargando once diario:', e);
-                alert('No hay partidos disponibles para este mes.');
-                return false;
+            } catch (e) {
+                console.warn(`[En el Once] "${fileName}" no disponible, buscando el mes más reciente…`, e);
+                try {
+                    const fallbackFile = await findLatestDailyFile(fileName);
+                    if (!fallbackFile) throw new Error('Sin archivos disponibles');
+                    const data = await fetchDailyFile(fallbackFile);
+                    dailyPool  = data;
+                    allMatches = data;
+                    dailyLoadedFile = fallbackFile;
+                    dailyAvailability[0] = true;
+                    updateLoadingProgress(1, 1);
+                    return true;
+                } catch (e2) {
+                    console.error('Error cargando once diario:', e2);
+                    alert('No hay partidos disponibles para este mes.');
+                    return false;
+                }
             }
         }
 
@@ -155,8 +212,8 @@ async function loadMatchData(mode, offsetDays = 0) {
                 '20_21.json','21_22.json','22_23.json',
                 '23_24.json','24_25.json','25_26.json'
             ],
-            './data/champions': ['finales.json','semifinales.json','cuartos.json','remontadas.json','clasicos.json'],
-            './data/historico': ['mundiales.json','eurocopas.json','olimpiadas.json','euroamerica.json']
+            './data/champions': ['finales.json','semifinales.json','cuartos.json'],
+            './data/historico': ['mundiales.json','eurocopas.json','euroamerica.json']
         };
 
         const allUrls = [];
@@ -1472,4 +1529,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reveal-btn-modal').addEventListener('click', revealPlayerFromModal);
 });
 
-// ── INIT AL CARGAR ────────────────
+// ── INIT AL CARGAR ──────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Cargar kits editables (data/kits.json) en background
+    loadKitsJson();
+
+    // Mostrar menú del once por defecto
+    hideAllScreens();
+    document.getElementById('once-menu').style.display = 'flex';
+
+    // Actualizar subtítulo del botón diario con la fecha de hoy
+    const subtitleEl = document.getElementById('daily-btn-subtitle');
+    if (subtitleEl) {
+        const months = ['enero','febrero','marzo','abril','mayo','junio',
+                        'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        const { day, month } = getSpainDate(0);
+        subtitleEl.textContent = `Partidos del ${day} de ${months[month - 1]} · cambia a medianoche`;
+    }
+});

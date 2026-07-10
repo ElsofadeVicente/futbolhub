@@ -373,7 +373,7 @@ function _matching(restriction, db, minNeeded) {
   return count;
 }
 
-function _buildCandidates(rng) {
+function _buildCandidates(rng, db) {
   const candidates = [];
   for (const nat of _shuffle(NATIONALITIES, rng)) {
     candidates.push({ type:'nationality', value:nat.tmNat, label:nat.adj, imgUrl:nat.flagImg, icon:nat.flag, family:'nationality' });
@@ -397,7 +397,10 @@ function _buildCandidates(rng) {
     candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:`data/coaches/${c.id}.png`, icon:c.icon, family:'coach' });
   }
   for (const p of _shuffle(TEAMMATES_LIST, rng)) {
-    candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display||p.name}`, imgUrl:`data/players/photos/${p.id}.jpg`, icon:p.icon, family:'teammate' });
+    /* La foto viene de la BD de jugadores (Supabase), no de un archivo local:
+       nunca hubo fotos propias en coche/data/players/photos. */
+    const dbPlayer = db.find(x => x.id === p.id);
+    candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display||p.name}`, imgUrl:(dbPlayer && dbPlayer.img) || null, icon:p.icon, family:'teammate' });
   }
   for (const [cont, label] of [['europeo','Europeo'],['americano','Continente Americano'],['africano','Africano'],['asiatico','Asiático']]) {
     candidates.push({ type:'continent', value:cont, label, imgUrl:null, icon:'🌍', family:'continent' });
@@ -649,7 +652,7 @@ function generate(seed, db) {
      En vez de barajar todo el pool y tomar los primeros,
      elegir primero una FAMILIA al azar (todas con igual probabilidad)
      y luego un candidato random de esa familia. */
-  const candidates = _buildCandidates(rng);
+  const candidates = _buildCandidates(rng, db);
   const playable = candidates.filter(r => _matching(r, db) >= (r.type === 'teammate' ? 1 : 2));
 
   /* Agrupar por familia */

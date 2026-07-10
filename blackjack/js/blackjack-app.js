@@ -68,14 +68,9 @@ const App = (() => {
     loadStats?.();
     loadSettings?.();
 
-    // Cargar escudos y banderas — guardar promesa para poder esperarla antes de jugar
-    _assetsPromise = Promise.all([
-      fetch('../data/teams/team-logos.json').then(r => r.json()).catch(() => ({})),
-      fetch('../data/teams/country-flags.json').then(r => r.json()).catch(() => ({})),
-    ]).then(([logos, flags]) => {
-      window._TEAM_LOGOS    = logos;
-      window._COUNTRY_FLAGS = flags;
-    });
+    // Los escudos/banderas se resuelven por ruta local (BlackjackGame._getLogoUrl
+    // / _getFlagUrl), sin JSON ni fetch — no hay nada que precargar aquí.
+    _assetsPromise = Promise.resolve();
 
     // Auto-rellenar código si la URL trae ?sala=XXXXXX
     const urlParams = new URLSearchParams(window.location.search);
@@ -986,16 +981,11 @@ const App = (() => {
     });
   }
 
-  /* ─── Enriquecer setPlayers con _value, img, logoUrl y flagUrl ─── */
+  /* ─── Enriquecer setPlayers con _value e img ───
+     (el escudo/bandera se resuelven por ruta local en blackjack-game.js
+     con _getLogoUrl/_getFlagUrl — aquí no hace falta precargar nada) */
   async function _enrichSetValues(rawPlayers, mode) {
-    // Esperar AMBAS promesas: pool de jugadores Y assets (logos/banderas)
-    const [, [logos, flags]] = await Promise.all([
-      _loadPool(),
-      _assetsPromise
-        ? _assetsPromise.then(() => [window._TEAM_LOGOS || {}, window._COUNTRY_FLAGS || {}])
-        : Promise.resolve([window._TEAM_LOGOS || {}, window._COUNTRY_FLAGS || {}]),
-    ]);
-
+    await _loadPool();
     const pool = _poolData || {};
 
     return rawPlayers.map(p => {
@@ -1008,8 +998,6 @@ const App = (() => {
         nat,
         _value:  poolData ? BlackjackSets.getStatValue(poolData, mode) : (p._value || 0),
         img:     (poolData && poolData.img) ? poolData.img : (p.img || null),
-        logoUrl: logos[club] || null,
-        flagUrl: flags[nat]  || null,
       };
     });
   }
