@@ -772,7 +772,10 @@ const Restrictions = (() => {
 
     /* Compañeros de */
     for (const p of _shuffle(TEAMMATES_LIST, rng)) {
-      candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display || p.name}`, imgUrl:`data/players/photos/${p.id}.jpg`, icon:p.icon, family:'teammate' });
+      /* La foto viene de la BD de jugadores (Supabase), no de un archivo local:
+         nunca hubo fotos propias en coche/data/players/photos. */
+      const dbPlayer = PLAYERS_DB.find(x => x.id === p.id);
+      candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display || p.name}`, imgUrl:(dbPlayer && dbPlayer.img) || null, icon:p.icon, family:'teammate' });
     }
 
     /* Continent */
@@ -3952,19 +3955,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof App !== 'undefined' && App._enrichPlayersDBFromChunks) {
       App._enrichPlayersDBFromChunks();
     }
+    /* Compañeros (38 fotos): la foto viene de PLAYERS_DB (Supabase), no de
+       un archivo local — nunca hubo fotos propias en data/players/photos. */
+    ['28003','8198','132098','3979','342229','14132','68290','3373','45320','48280',
+     '7607','35564','7825','17259','58358','35207','5817','406625','4673','288230',
+     '3366','27992','26399','7980','88755','3455','5023','25557','3111','7476',
+     '164770','148455','225083','40433','4360','7767','7663','5958']
+      .forEach(id => {
+        const p = PLAYERS_DB.find(x => x.id === id);
+        if (p && p.img) _preloadImg(p.img);
+      });
   });
 
-  /* Precargar imágenes de restricciones (entrenadores, compañeros, logos, trofeos, banderas)
+  /* Precargar imágenes de restricciones (entrenadores, logos, trofeos, banderas)
      en background con baja prioridad para que estén en caché del navegador
      cuando la ronda empiece y las tarjetas se revelen */
   const _preloadImg = (src) => { const img = new Image(); img.src = src; };
   /* Entrenadores (12 fotos) */
   ['67','118','280','523','781','1522','2868','3517','5075','5672','6499','21284']
     .forEach(id => _preloadImg(`data/coaches/${id}.png`));
-  /* Compañeros (38 fotos) */
-  ['28003','8198','132098','3979','342229','14132','68290','3373','45320','48280',
-   '7607','35564','7825','17259','58358','35207','5817','406625','4673','288230',
-   '3366','27992','26399','7980','88755','3455','5023','25557','3111','7476',
-   '164770','148455','225083','40433','4360','7767','7663','5958']
-    .forEach(id => _preloadImg(`data/players/photos/${id}.jpg`));
 });

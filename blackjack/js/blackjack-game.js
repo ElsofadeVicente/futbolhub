@@ -629,8 +629,8 @@ const BlackjackGame = (() => {
       ? `<img class="reveal-card-img" src="${player.img}" alt="${player.name}" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="reveal-card-img reveal-card-img--empty">${player.name.charAt(0)}</div>`;
 
-    // Escudo mini
-    const badgeUrl = window._TEAM_LOGOS && player.club ? window._TEAM_LOGOS[player.club] : null;
+    // Escudo mini (misma ruta local que usa la carta principal, sin JSON/fetch)
+    const badgeUrl = _getLogoUrl(player.club);
     const badgeHtml = badgeUrl
       ? `<img class="reveal-card-badge" src="${badgeUrl}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
       : '<span style="width:13px"></span>';

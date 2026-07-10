@@ -62,7 +62,6 @@ const HOL_CONFIG = {
     },
   ],
 
-  dataPath: '../data/higher-or-lower/',
   storageKeyPrefix: 'hol_record_',
 
   categories: {

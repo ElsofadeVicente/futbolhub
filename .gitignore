@@ -4,3 +4,19 @@ Thumbs.db
 __pycache__/
 node_modules/
 *.log
+.vs/
+.editor-backups/
+.tmp.driveupload/
+
+# Datos en bruto (scrapeados) que ya viven en Supabase — quedan en disco
+# como carpeta de trabajo de los scrapers/sync_to_supabase.py, pero nunca
+# deben subirse a GitHub. Las imágenes (logos/escudos/banderas) SÍ siguen
+# en GitHub, por eso no se ignora toda la carpeta data/ entera.
+data/players/
+data/teams/*.json
+data/transfers/
+data/teammates/
+data/performances/
+data/national/
+data/higher-or-lower/
+data/transfermarkt_api_exports/
