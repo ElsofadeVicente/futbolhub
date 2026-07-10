@@ -14,8 +14,8 @@
       "team": "Inter Miami",
       "detail": "Argentina",
       "photo": "",
-      "teamLogo": "../data/teams/logos/Inter_Miami_CF.png",
-      "flag": "../data/teams/flags/ar.png"
+      "teamLogo": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-logos/Inter_Miami_CF.png",
+      "flag": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-flags/ar.png"
     },
     {
       "id": "cristiano",
@@ -26,7 +26,7 @@
       "detail": "Portugal",
       "photo": "",
       "teamLogo": "",
-      "flag": "../data/teams/flags/pt.png"
+      "flag": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-flags/pt.png"
     },
     {
       "id": "modric",
@@ -36,8 +36,8 @@
       "team": "Real Madrid",
       "detail": "Croacia",
       "photo": "",
-      "teamLogo": "../data/teams/logos/Real_Madrid.png",
-      "flag": "../data/teams/flags/hr.png"
+      "teamLogo": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-logos/Real_Madrid.png",
+      "flag": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-flags/hr.png"
     },
     {
       "id": "benzema",
@@ -47,8 +47,8 @@
       "team": "Al Ittihad",
       "detail": "Francia",
       "photo": "",
-      "teamLogo": "../data/teams/logos/Al-Ittihad_Club.png",
-      "flag": "../data/teams/flags/fr.png"
+      "teamLogo": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-logos/Al-Ittihad_Club.png",
+      "flag": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-flags/fr.png"
     },
     {
       "id": "haaland",
@@ -58,8 +58,8 @@
       "team": "Manchester City",
       "detail": "Noruega",
       "photo": "",
-      "teamLogo": "../data/teams/logos/Manchester_City.png",
-      "flag": "../data/teams/flags/no.png"
+      "teamLogo": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-logos/Manchester_City.png",
+      "flag": "https://rssvejgdekwysiseqzkd.supabase.co/storage/v1/object/public/team-flags/no.png"
     }
   ]
 }
