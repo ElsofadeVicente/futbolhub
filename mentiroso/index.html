@@ -254,4 +254,32 @@
   // ya rellenos (antes los ponía ./js/data.js con un <script src>).
   async function loadMentirosoData() {
     try {
-      const [playerRows, statRows] = a
+      const [playerRows, statRows] = await Promise.all([
+        sbFetchAll('mentiroso_players?select=data'),
+        sbFetch('mentiroso_stat_definitions?id=eq.1&select=data'),
+      ]);
+      window.PLAYERS = playerRows.map(r => r.data);
+      window.STAT_DEFINITIONS = statRows.length ? statRows[0].data : [];
+    } catch (e) {
+      console.error('No se pudieron cargar los datos de Mentiroso desde Supabase', e);
+      window.PLAYERS = window.PLAYERS || [];
+      window.STAT_DEFINITIONS = window.STAT_DEFINITIONS || [];
+    }
+  }
+
+  let chain = loadMentirosoData();
+  scripts.forEach((src) => {
+    chain = chain.then(() => new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = () => {
+        console.warn('No se pudo cargar', src);
+        resolve();
+      };
+      document.body.appendChild(script);
+    }));
+  });
+</script>
+</body>
+</html>

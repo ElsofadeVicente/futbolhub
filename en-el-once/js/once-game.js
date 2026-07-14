@@ -1524,3 +1524,4 @@ document.addEventListener('DOMContentLoaded', () => {
         subtitleEl.textContent = `Partidos del ${day} de ${months[month - 1]} · cambia a medianoche`;
     }
 });
+;

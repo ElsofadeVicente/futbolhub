@@ -1007,4 +1007,12 @@ body::before {
 /* ══════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════ */
-@media (max-width: 480px
+@media (max-width: 480px) {
+  #mode-box { box-shadow: none; }
+  .np-modal { box-shadow: 3px 3px 0 var(--np-ink); }
+}
+
+*, ::before, ::after {
+    margin-left: 0px;
+    margin-top: 0px;
+}
