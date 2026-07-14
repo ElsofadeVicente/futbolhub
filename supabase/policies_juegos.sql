@@ -32,4 +32,5 @@ create policy "public read" on coche_entrenadores          for select using (tru
 create policy "public read" on coche_ganadores_clubes_intl for select using (true);
 create policy "public read" on coche_ganadores_seleccion   for select using (true);
 create policy "public read" on coche_ganadores_liga_copa   for select using (true);
-create policy 
+create policy "public read" on coche_premios_individuales  for select using (true);
+create policy "public read" on blackjack_players            for select using (true);

@@ -84,4 +84,13 @@ create table coche_ganadores_liga_copa (
 );
 create table coche_premios_individuales (
   premio text primary key,
-  data
+  data   jsonb not null
+);
+
+-- ─── BLACKJACK — plantillas propias por liga (sustituye a blackjack/data/blackjack/*.json) ─
+create table blackjack_players (
+  league    text   not null,  -- "laliga" | "premier-league" | "bundesliga" | ...
+  player_id bigint not null,
+  data      jsonb  not null,
+  primary key (league, player_id)
+);
