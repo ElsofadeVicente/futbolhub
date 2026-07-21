@@ -549,12 +549,21 @@ async function init() {
 
   state.uid = getUid();
 
-  // Cargar estadios (Supabase)
+  // Cargar estadios
   try {
-    const rows = await sbFetchAll('estadios?select=data');
-    state.estadios = rows.map(r => r.data);
+    const res = await fetch(sbStorageUrl('game-data', 'el-estadio/estadios.json'));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    state.estadios = await res.json();
   } catch (e) {
     console.error('No se pudieron cargar los estadios', e);
+    const btnJugar = document.getElementById('btn-jugar');
+    if (btnJugar) {
+      btnJugar.disabled = true;
+      btnJugar.textContent = 'No disponible';
+      btnJugar.insertAdjacentHTML('afterend',
+        '<p class="menu-desc" style="color:var(--np-red,#b5221e);margin-top:10px;">' +
+        'No se han podido cargar los estadios. Prueba más tarde.</p>');
+    }
     return;
   }
 

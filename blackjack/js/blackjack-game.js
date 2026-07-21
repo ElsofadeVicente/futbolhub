@@ -26,6 +26,7 @@ const BlackjackGame = (() => {
   const CARD_TIMER_SECS  = 8;
   const REVEAL_CARD_MS   = 1800;   // ms entre cada carta en el reveal
   const REVEAL_DELAY_MS  = 600;    // pausa antes de empezar el reveal
+  const BUST_PAUSE_MS    = 1100;   // pausa al pasarte del objetivo antes de mostrar la siguiente carta
 
   /* ═══════════════════════════════════════════
      ESTADO GLOBAL
@@ -154,12 +155,25 @@ const BlackjackGame = (() => {
     h.picked.push(h.cardOrder[state.currentCardIdx]);
     h.total += card._value;
 
-    if (h.total > state.objective && !h.bust) {
+    const justBusted = h.total > state.objective && !h.bust;
+    if (justBusted) {
       h.bust = true;
       _showBustIndicator(h.total);
     }
 
-    _advanceCard(h);
+    if (justBusted) {
+      // Pausa para que se vea el aviso de "te has pasado" en vez de saltar
+      // a la siguiente carta en el mismo instante en que aparece.
+      const btnAdd     = document.getElementById('btn-add');
+      const btnDiscard = document.getElementById('btn-discard');
+      const btnStand   = document.getElementById('btn-stand');
+      if (btnAdd)     btnAdd.disabled     = true;
+      if (btnDiscard) btnDiscard.disabled = true;
+      if (btnStand)   btnStand.disabled   = true;
+      setTimeout(() => _advanceCard(h), BUST_PAUSE_MS);
+    } else {
+      _advanceCard(h);
+    }
   }
 
   /* ── Descartar carta ── */

@@ -52,9 +52,15 @@ function sbStorageSafeKey(name) {
     return String(name).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
 }
 
-/** URL pública de un archivo en Supabase Storage (buckets creados como públicos). */
+/** URL pública de un archivo en Supabase Storage (buckets creados como públicos).
+ *  Admite rutas con subcarpetas ("juego/archivo.json"): cada segmento se
+ *  normaliza y codifica por separado para no convertir "/" en "%2F". */
 function sbStorageUrl(bucket, name) {
-    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(sbStorageSafeKey(name))}`;
+    const key = String(name)
+        .split('/')
+        .map(part => encodeURIComponent(sbStorageSafeKey(part)))
+        .join('/');
+    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${key}`;
 }
 
 if (typeof module !== "undefined" && module.exports) {

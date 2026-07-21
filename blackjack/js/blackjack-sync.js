@@ -26,6 +26,31 @@ const BlackjackSync = (() => {
     }
   }
 
+  /* ─── onDisconnect: solo marca connected:false (partida en curso) ─── */
+  function _onDisconnectSetConnectedFalse(path) {
+    try {
+      if (window._FBOnDisconnect) {
+        const { db, ref } = FB();
+        window._FBOnDisconnect(ref(db, path)).update({ connected: false }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('[Sync] onDisconnect no disponible:', e);
+    }
+  }
+
+  /* Reconfigura qué debe hacer Firebase si ESTE cliente se desconecta a
+     partir de ahora, según el estado de la sala: mismo criterio que
+     disconnect() (líneas arriba), pero aplicado por adelantado porque
+     onDisconnect es un hook servidor que no puede consultar el estado en
+     el momento real del corte. En el lobby, elimina el nodo (no dejar
+     huecos fantasma); con la partida en curso, solo marca desconectado
+     para permitir reconexión sin perder nombre/puntuación. */
+  function rearmOnDisconnect(code, playerId, roomStatus) {
+    const path = `blackjack/rooms/${code}/players/${playerId}`;
+    if (roomStatus === 'waiting') _onDisconnectRemove(path);
+    else _onDisconnectSetConnectedFalse(path);
+  }
+
 
   /* ═══════════════════════════════════════════
      CREAR SALA
@@ -103,6 +128,10 @@ const BlackjackSync = (() => {
         connected: true,
         name,
       });
+      // Recuperar la sesión no vuelve a registrar el onDisconnect por sí solo
+      // (es un hook nuevo del navegador) — rearmarlo aquí para que un
+      // segundo corte de red vuelva a comportarse igual.
+      _onDisconnectRemove(`blackjack/rooms/${code}/players/${playerId}`);
       return true;
     } catch (e) {
       return false;
@@ -634,6 +663,7 @@ const BlackjackSync = (() => {
     closePublicRoom,
     resetToLobby,
     disconnect,
+    rearmOnDisconnect,
     markPlayerActive,
     kickPlayers,
     expirePublicRoom,

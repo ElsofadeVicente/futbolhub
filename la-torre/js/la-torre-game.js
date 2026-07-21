@@ -181,18 +181,17 @@ function towerGetEdition(dateString) {
 }
 
 async function towerFetchJson(dateString) {
-  const rows = await sbFetch(`la_torre_daily?date=eq.${dateString}&select=data`);
-  if (!rows.length) return null;
+  const res = await fetch(sbStorageUrl('game-data', `la-torre/${dateString}.json`));
+  if (!res.ok) return null;
 
-  const data = rows[0].data;
+  const data = await res.json();
   if (!towerValidateData(data)) return { dateString, data, invalid: true };
   return { dateString, data, invalid: false };
 }
 
-/* Ya no hace falta un índice aparte ni ir probando día a día: Supabase
-   puede devolver directamente la última fecha publicada <= la solicitada
-   con una sola consulta (date=lte.X&order=date.desc), evitando el problema
-   original de TOWER_MAX_FALLBACK_DAYS quedándose corto. */
+/* Resuelve la última fecha publicada <= la solicitada usando
+   la-torre/index.json (lista de fechas disponibles), en vez de ir probando
+   día a día uno por uno. */
 async function towerResolveAvailableDay(requestedOffset) {
   const requestedDateString = towerDateString(requestedOffset);
   const exact = await towerFetchJson(requestedDateString);
@@ -208,19 +207,23 @@ async function towerResolveAvailableDay(requestedOffset) {
   }
 
   try {
-    const candidates = await sbFetch(`la_torre_daily?date=lte.${requestedDateString}&order=date.desc&limit=10&select=date,data`);
-    for (const row of candidates) {
-      if (towerValidateData(row.data)) {
-        const candidateDate = towerParseDateString(row.date);
+    const indexRes = await fetch(sbStorageUrl('game-data', 'la-torre/index.json'));
+    if (!indexRes.ok) throw new Error('índice no disponible');
+    const { dates } = await indexRes.json();
+    const candidates = dates.filter(d => d <= requestedDateString).sort().reverse().slice(0, 10);
+    for (const dateString of candidates) {
+      const fetched = await towerFetchJson(dateString);
+      if (fetched && !fetched.invalid) {
+        const candidateDate = towerParseDateString(dateString);
         return {
-          dateString: row.date,
-          data: row.data,
+          dateString,
+          data: fetched.data,
           offset: Math.max(0, Math.floor((towerDateForOffset(0) - candidateDate) / 86400000))
         };
       }
     }
   } catch (error) {
-    console.warn('[La Torre] Error consultando Supabase:', error);
+    console.warn('[La Torre] Error consultando el índice:', error);
   }
 
   return null;
@@ -502,6 +505,7 @@ function towerShare() {
 function towerDoShare(text, btn) {
   const feedback = () => {
     if (!btn) return;
+    const orig = btn.textContent;
     btn.textContent = '✓ ¡Copiado!';
     setTimeout(() => { btn.textContent = orig; }, 2000);
   };

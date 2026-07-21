@@ -804,6 +804,14 @@ body {
 }
 .back-btn:hover { background: var(--np-ink) !important; color: var(--np-paper) !important; transform: none !important; box-shadow: 2px 2px 0 var(--np-ink) !important; }
 
+/* #btn-local-exit-waiting y #btn-local-exit-reveal cuelgan directamente del
+   borde del .screen (a diferencia del de "selecting", que está centrado
+   dentro de .selecting-body con más margen) — con solo 14px quedan pegados
+   a la columna de anuncios (72px) en desktop. Separarlos explícitamente. */
+@media (min-width: 760px) {
+  #btn-local-exit-waiting, #btn-local-exit-reveal { left: 110px !important; }
+}
+
 #screen-selecting, #screen-waiting, #screen-reveal { position: relative; }
 
 .lobby-autotimer { width: 100%; margin-top: 4px; padding: 10px 12px; background: var(--np-paper3); border: 1px solid var(--np-ink-soft); }
