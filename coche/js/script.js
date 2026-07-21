@@ -93,17 +93,15 @@ async function _fetchLeaguesFromSupabase() {
   }
 }
 
-/* Tablas propias de Coche con forma {clave, data} (antes eran objetos sueltos
-   en data/*.json: compañeros_principal.json, entrenados_por.json, etc.) —
-   se reconstruyen aquí como el mismo objeto plano {clave: data} de siempre. */
-async function _fetchCocheKeyedTable(table, keyField) {
+/* Datos propios de Coche (compañeros_principal.json, entrenados_por.json,
+   etc.): archivos planos {clave: data} en Storage, igual que antes. */
+async function _fetchCocheJsonFile(name) {
   try {
-    const rows = await sbFetchAll(`${table}?select=${keyField},data`);
-    const obj = {};
-    for (const r of rows) obj[String(r[keyField])] = r.data;
-    return obj;
+    const res = await fetch(sbStorageUrl('game-data', `coche/${name}`));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
   } catch (e) {
-    console.warn(`[Coche] Error cargando ${table} desde Supabase:`, e);
+    console.warn(`[Coche] Error cargando coche/${name}:`, e);
     return {};
   }
 }
@@ -242,12 +240,12 @@ async function _loadData() {
   ];
 
   const metaPromises = [
-    _fetchCocheKeyedTable('coche_companeros', 'player_id'),
-    _fetchCocheKeyedTable('coche_entrenadores', 'id'),
-    _fetchCocheKeyedTable('coche_ganadores_clubes_intl', 'competition'),
-    _fetchCocheKeyedTable('coche_ganadores_seleccion', 'competition'),
-    _fetchCocheKeyedTable('coche_ganadores_liga_copa', 'competition'),
-    _fetchCocheKeyedTable('coche_premios_individuales', 'premio'),
+    _fetchCocheJsonFile('companeros_principal.json'),
+    _fetchCocheJsonFile('entrenados_por.json'),
+    _fetchCocheJsonFile('ganadores_clubes_internacional.json'),
+    _fetchCocheJsonFile('ganadores_seleccion.json'),
+    _fetchCocheJsonFile('GanadoresLigayCopa.json'),
+    _fetchCocheJsonFile('premios_individuales.json'),
     _fetchLeaguesFromSupabase(),
   ];
 
@@ -3535,7 +3533,7 @@ const App = (() => {
               <span class="submission-status">${sent?'Jugador bloqueado':'Esperando elección'}</span>
             </div>
           </div>
-          <div class="submission-choice ${sent?'':'pending'}">${sent ? chosenName : 'Aún sin bloquear'}</div>
+          <div class="submission-choice ${sent?'':'pending'}">${sent ? _escHtml(chosenName) : 'Aún sin bloquear'}</div>
         </div>
       `;
     }).join('');
@@ -3576,13 +3574,13 @@ const App = (() => {
         const footballerHtml = noSubmit
           ? '<div class="result-no-submit">Sin respuesta</div>'
           : notFound
-            ? `<div class="result-footballer not-found">${r.playerName}</div>
+            ? `<div class="result-footballer not-found">${_escHtml(r.playerName)}</div>
                <div class="result-not-found-hint">⚠ No encontrado en la base de datos</div>`
             : `<div class="result-footballer-row">
                 <div class="result-main-block">
                   ${photoHtml}
                   <div class="result-footballer-info">
-                    <div class="result-footballer">${r.footballer||r.playerName}</div>
+                    <div class="result-footballer">${_escHtml(r.footballer||r.playerName)}</div>
                     <div class="result-match-count"><span class="count-value">${r.matchCount}</span> / ${restrictions?.length||5} restricciones</div>
                   </div>
                 </div>

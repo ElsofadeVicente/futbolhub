@@ -117,10 +117,11 @@ function updateLoadingProgress(loaded, total) {
 }
 
 async function fetchDailyFile(fileName) {
-    const source = 'once-diario/' + fileName.replace(/\.json$/i, '');
-    const rows = await sbFetch(`once_matches?source=eq.${source}&order=idx.asc&select=data`);
-    if (!rows.length) throw new Error('Archivo no encontrado');
-    return rows.map(r => r.data);
+    const res = await fetch(sbStorageUrl('game-data', `en-el-once/once-diario/${fileName}`));
+    if (!res.ok) throw new Error('Archivo no encontrado');
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) throw new Error('Archivo vacío');
+    return data;
 }
 
 /** "Septiembre_2026.json" -> { month: 8 (0-index), year: 2026 } para poder ordenar/comparar. */
@@ -133,21 +134,22 @@ function parseDailyFileName(fileName) {
 }
 
 /**
- * Busca, vía Supabase (tabla once_matches), el mes más reciente que no sea
- * posterior al mes solicitado (para no "adelantar" partidos que aún no
- * tocan). Si no hay datos, no hay nada que ofrecer.
+ * Busca, vía en-el-once/once-diario/manifest.json, el mes más reciente que
+ * no sea posterior al mes solicitado (para no "adelantar" partidos que aún
+ * no tocan). Si no hay datos, no hay nada que ofrecer.
  */
 async function findLatestDailyFile(requestedFileName) {
     const requested = parseDailyFileName(requestedFileName);
-    let rows;
+    let files;
     try {
-        rows = await sbFetchAll(`once_matches?source=like.once-diario/*&select=source`);
+        const res = await fetch(sbStorageUrl('game-data', 'en-el-once/once-diario/manifest.json'));
+        if (!res.ok) throw new Error('manifest no disponible');
+        const manifest = await res.json();
+        files = Array.isArray(manifest.files) ? manifest.files : [];
     } catch {
         return null;
     }
-    const sources = [...new Set(rows.map(r => r.source))];
-    if (sources.length === 0) return null;
-    const files = sources.map(s => s.replace(/^once-diario\//, '') + '.json');
+    if (files.length === 0) return null;
 
     const parsed = files
         .map(f => ({ file: f, info: parseDailyFileName(f) }))
@@ -165,29 +167,55 @@ async function findLatestDailyFile(requestedFileName) {
     return pool[0].file;
 }
 
-/* Cada "carpeta" antigua corresponde a un prefijo de "source" en la tabla
-   once_matches (p.ej. "liga/14_15", "champions/finales"). */
-const ONCE_SOURCE_PREFIX = {
-    './data/liga': 'liga/',
-    './data/champions': 'champions/',
-    './data/historico': 'historico/',
-    './data/once-diario': 'once-diario/'
+/* Lista de archivos conocidos por carpeta (igual que antes de pasar por
+   Supabase). El manifest.json de cada carpeta se suma por si hay archivos
+   nuevos que todavía no estén en esta lista. */
+const ONCE_KNOWN_FILES = {
+    liga: [
+        '14_15.json', '15_16.json', '16_17.json',
+        '17_18.json', '18_19.json', '19_20.json',
+        '20_21.json', '21_22.json', '22_23.json',
+        '23_24.json', '24_25.json', '25_26.json'
+    ],
+    champions: ['finales.json', 'semifinales.json', 'cuartos.json', 'remontadas.json', 'clasicos.json'],
+    historico: ['mundiales.json', 'eurocopas.json', 'olimpiadas.json', 'euroamerica.json']
 };
 
-async function fetchMatchesBySourcePrefix(prefix) {
-    const rows = await sbFetchAll(`once_matches?source=like.${prefix}*&order=idx.asc&select=data`);
-    return rows.map(r => r.data);
+async function fetchMatchesByFolder(folder) {
+    const urls = new Set((ONCE_KNOWN_FILES[folder] || []).map(file => `en-el-once/${folder}/${file}`));
+
+    try {
+        const res = await fetch(sbStorageUrl('game-data', `en-el-once/${folder}/manifest.json`));
+        if (res.ok) {
+            const manifest = await res.json();
+            (manifest.files || []).forEach(file => urls.add(`en-el-once/${folder}/${file}`));
+        }
+    } catch { /* sin manifest: se usan solo los archivos conocidos */ }
+
+    const results = await Promise.allSettled(
+        [...urls].map(path =>
+            fetch(sbStorageUrl('game-data', path))
+                .then(r => r.ok ? r.json() : null)
+                .catch(() => null)
+        )
+    );
+
+    const matches = [];
+    results.forEach(result => {
+        if (result.status === 'fulfilled' && Array.isArray(result.value)) matches.push(...result.value);
+    });
+    return matches;
 }
 
 async function loadMatchData(mode, offsetDays = 0) {
     try {
         let folders = [];
         switch (mode) {
-            case 'diario':    folders = ['./data/once-diario']; break;
-            case 'random':    folders = ['./data/liga', './data/champions', './data/historico']; break;
-            case 'liga':      folders = ['./data/liga'];      break;
-            case 'champions': folders = ['./data/champions']; break;
-            case 'historico': folders = ['./data/historico']; break;
+            case 'diario':    folders = ['once-diario']; break;
+            case 'random':    folders = ['liga', 'champions', 'historico']; break;
+            case 'liga':      folders = ['liga'];      break;
+            case 'champions': folders = ['champions']; break;
+            case 'historico': folders = ['historico']; break;
         }
 
         // Para modo diario: cargar el archivo del mes de hoy y, si todavía no
@@ -229,7 +257,7 @@ async function loadMatchData(mode, offsetDays = 0) {
 
         const results = await Promise.allSettled(
             folders.map(folder =>
-                fetchMatchesBySourcePrefix(ONCE_SOURCE_PREFIX[folder])
+                fetchMatchesByFolder(folder)
                     .catch(() => [])
                     .finally(() => { loaded++; updateLoadingProgress(loaded, total); })
             )
@@ -665,14 +693,14 @@ function _fallbackKit(n){
   return { p:main, s:second, pat, sl: pat==='stripes'?second:main, col:second, num:_autoNum(main) };
 }
 
-/* Reglas activas: por defecto las embebidas (KIT_RULES); si la tabla Supabase
-   once_kits existe y es v\u00e1lida, se sustituyen por las de ah\u00ed (editable sin tocar c\u00f3digo). */
+/* Reglas activas: por defecto las embebidas (KIT_RULES); si en-el-once/kits.json
+   existe y es v\u00e1lido, se sustituyen por las de ah\u00ed (editable sin tocar c\u00f3digo). */
 let _kitRules = KIT_RULES;
 let _gkKit    = GK_KIT;
 
 function loadKitsJson() {
-  sbFetch('once_kits?id=eq.1&select=data')
-    .then(rows => rows.length ? rows[0].data : null)
+  fetch(sbStorageUrl('game-data', 'en-el-once/kits.json'))
+    .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (!data) return;
       if (Array.isArray(data.rules)) {
@@ -681,12 +709,12 @@ function loadKitsJson() {
           .map(r => [r.keys.map(k => String(k).toUpperCase()), r.kit]);
         if (rules.length) {
           _kitRules = rules;
-          console.log(`\u2705 Kits cargados desde Supabase: ${rules.length} reglas`);
+          console.log(`\u2705 Kits cargados desde kits.json: ${rules.length} reglas`);
         }
       }
       if (data.gk && data.gk.p) _gkKit = data.gk;
     })
-    .catch(() => { /* sin datos en Supabase: se usan las reglas embebidas */ });
+    .catch(() => { /* sin kits.json: se usan las reglas embebidas */ });
 }
 
 function getKit(team){
@@ -1409,7 +1437,12 @@ function nextMatch() {
 function giveUp() {
     if (confirm('¿Seguro que quieres revelar todos los jugadores?')) {
         const total = currentMatch.formation.reduce((s, l) => s + l.length, 0);
-        for (let i = 0; i < total; i++) revealedPlayers.add(i);
+        let newlyRevealed = 0;
+        for (let i = 0; i < total; i++) {
+            if (!revealedPlayers.has(i)) { revealedPlayers.add(i); newlyRevealed++; }
+        }
+        matchStats.revealed += newlyRevealed;
+        stats.totalAttempts -= newlyRevealed;
         renderFormation();
         updateRevealedCount();
         stats.currentStreak = 0;

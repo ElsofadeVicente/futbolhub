@@ -232,13 +232,13 @@ async function init() {
   elStatsCountdown  = document.getElementById('stats-countdown');
 
   try {
-    const [qRows, niRows, tnRows, ltRows] = await Promise.all([
-      sbFetchAll('top_questions?select=data'),
+    const [questions, niRows, tnRows, ltRows] = await Promise.all([
+      fetch(sbStorageUrl('game-data', 'en-el-top/enteltop.json')).then(r => r.json()),
       sbFetchAll('players?select=id,name:data->>n'),
       sbFetchAll('team_names_index?select=name'),
       sbFetchAll('leagues?select=name,data'),
     ]);
-    _questions = qRows.map(r => r.data);
+    _questions = questions;
     _nameIndex = niRows.map(r => [r.id, r.name]);
     const tn = tnRows.map(r => r.name);
     const lt = {};

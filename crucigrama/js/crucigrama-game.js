@@ -78,17 +78,30 @@ async function loadCrucigrama(offset) {
         </div>`;
 
     try {
-        const rows = await sbFetch(`crucigrama_puzzles?date=eq.${dateStr}&select=data`);
-        if (!rows.length) throw new Error('not found');
-        crucData = rows[0].data;
+        const res = await fetch(sbStorageUrl('game-data', `crucigrama/${dateStr}.json`));
+        if (!res.ok) throw new Error('not found');
+        crucData = await res.json();
     } catch {
         // Fallback: try the most recent available
         try {
-            const latest = await sbFetch(`crucigrama_puzzles?select=date&order=date.desc&limit=1`);
-            if (!latest.length) throw new Error('empty');
-            const rows2 = await sbFetch(`crucigrama_puzzles?date=eq.${latest[0].date}&select=data`);
-            if (!rows2.length) throw new Error('fallback fail');
-            crucData = rows2[0].data;
+            const fallback = await fetch(sbStorageUrl('game-data', 'crucigrama/index.json'));
+            if (!fallback.ok) throw new Error('no index');
+            const index = await fallback.json();
+            if (!index.dates || index.dates.length === 0) throw new Error('empty');
+            const latestDate = index.dates[index.dates.length - 1];
+            const res2 = await fetch(sbStorageUrl('game-data', `crucigrama/${latestDate}.json`));
+            if (!res2.ok) throw new Error('fallback fail');
+            crucData = await res2.json();
+
+            // El puzzle cargado puede no ser el de "offset" días pedido (p.ej.
+            // el de hoy aún no está subido) — recalcular offset/edición a
+            // partir de la fecha real del puzzle, no de la fecha solicitada.
+            const [ly, lm, ld] = latestDate.split('-').map(Number);
+            const latestUTC = Date.UTC(ly, lm - 1, ld);
+            const now = new Date();
+            const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+            crucOffset  = Math.max(0, Math.round((todayUTC - latestUTC) / 86400000));
+            crucEdition = crucGetEdition(crucOffset);
         } catch {
             document.getElementById('crucigrama-screen').innerHTML = `
                 <button class="back-to-hub-btn" onclick="goToHub()">← VOLVER</button>
