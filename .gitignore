@@ -48,3 +48,6 @@ el-estadio/data/estadios.json
 mentiroso/js/data.js
 coche/data/*.json
 blackjack/data/blackjack/
+
+# Config local de Claude Code (servidor de pruebas, etc.)
+.claude/
