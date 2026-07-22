@@ -450,8 +450,9 @@
        que no las tape. En el hub esas columnas son estáticas (parte del
        grid), así que no se detectan y el círculo se queda en su sitio. */
     function positionClearOfAds() {
+        // .ad-col = la mayoría de juegos; .bj-ad-sidebar = blackjack (misma idea)
         let shift = 0;
-        document.querySelectorAll('.ad-col').forEach(c => {
+        document.querySelectorAll('.ad-col, .bj-ad-sidebar').forEach(c => {
             const cs = getComputedStyle(c);
             if (cs.position !== 'fixed' || cs.display === 'none') return;
             const r = c.getBoundingClientRect();
