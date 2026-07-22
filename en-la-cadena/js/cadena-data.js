@@ -56,17 +56,11 @@ const CadenaData = (() => {
     return r ? `${r[0]}-${r[1]}.json` : null;
   }
 
-  /* Antes hacía fetch(`../data/players/chunks/${cf}`). Ahora trae el mismo
-     rango de IDs desde la tabla "players" de Supabase, devolviendo la misma
-     forma { "id": {...}, ... } que tenía el archivo JSON. */
   async function loadPlayerChunk(cf) {
     if (chunkCache[cf]) return chunkCache[cf];
-    const m = cf.match(/(\d+)-(\d+)\.json$/);
-    if (!m) throw new Error(`Chunk inválido: ${cf}`);
-    const [, lo, hi] = m;
-    const rows = await sbFetchAll(`players?id=gte.${lo}&id=lte.${hi}&select=id,data`);
-    const data = {};
-    for (const r of rows) data[String(r.id)] = r.data;
+    const res = await fetch(sbStorageUrl('player-db', `players/chunks/${cf}`));
+    if (!res.ok) throw new Error(`Chunk no encontrado: ${cf}`);
+    const data = await res.json();
     chunkCache[cf] = data;
     return data;
   }
@@ -89,20 +83,19 @@ const CadenaData = (() => {
     if (_initPromise) return _initPromise; // carga en curso, esperar
 
     _initPromise = (async () => {
-      const [niRows, tnRows, leagueRows] = await Promise.all([
-        sbFetchAll('players?select=id,name:data->>n'),
-        sbFetchAll('team_names_index?select=name'),
-        sbFetchAll('leagues?select=name,data').catch(() => null),
+      const [ni, tn, leagueTeams] = await Promise.all([
+        fetch(sbStorageUrl('player-db', 'players/name-index.json')).then(r => r.json()),
+        fetch(sbStorageUrl('player-db', 'team-names/team-names.json')).then(r => r.json()),
+        fetch(sbStorageUrl('player-db', 'leagues/league-teams.json')).then(r => r.json()).catch(() => null),
       ]);
 
-      nameIndex = niRows.map(r => [r.id, r.name]);
-      teamNames = tnRows.map(r => r.name).filter(t => !isFilialTeam(t));
+      nameIndex = ni;
+      teamNames = tn.filter(t => !isFilialTeam(t));
 
       teamLeaguePrio = {};
-      if (leagueRows) {
-        // Estructura equivalente a la de antes: { "La Liga": { priority: 1, teams: [...] }, ... }
-        for (const row of leagueRows) {
-          const leagueInfo = row.data;
+      if (leagueTeams) {
+        // Estructura: { "La Liga": { priority: 1, teams: [...] }, ... }
+        for (const leagueInfo of Object.values(leagueTeams)) {
           for (const teamName of leagueInfo.teams) {
             const key = norm(teamName);
             if (teamLeaguePrio[key] === undefined || leagueInfo.priority < teamLeaguePrio[key]) {
@@ -111,7 +104,7 @@ const CadenaData = (() => {
           }
         }
       } else {
-        console.warn('⚠️ leagues (Supabase) no disponible, sin prioridad de ligas');
+        console.warn('⚠️ leagues no disponible, sin prioridad de ligas');
       }
 
       console.log(`✅ CadenaData: ${nameIndex.length.toLocaleString()} jugadores, ${teamNames.length.toLocaleString()} equipos`);

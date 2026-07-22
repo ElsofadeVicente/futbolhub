@@ -274,7 +274,6 @@ async function towerEnrichPlayers() {
   if (playersWithIds.length === 0) return;
 
   try {
-    PlayerDB.basePath = '../data/players/';
     await PlayerDB.init();
 
     for (const player of playersWithIds) {
