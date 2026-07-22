@@ -232,18 +232,15 @@ async function init() {
   elStatsCountdown  = document.getElementById('stats-countdown');
 
   try {
-    const [questions, niRows, tnRows, ltRows] = await Promise.all([
+    const [questions, nameIndex, teamNames, leagueTeams] = await Promise.all([
       fetch(sbStorageUrl('game-data', 'en-el-top/enteltop.json')).then(r => r.json()),
-      sbFetchAll('players?select=id,name:data->>n'),
-      sbFetchAll('team_names_index?select=name'),
-      sbFetchAll('leagues?select=name,data'),
+      fetch(sbStorageUrl('player-db', 'players/name-index.json')).then(r => r.json()),
+      fetch(sbStorageUrl('player-db', 'team-names/team-names.json')).then(r => r.json()),
+      fetch(sbStorageUrl('player-db', 'leagues/league-teams.json')).then(r => r.json()),
     ]);
     _questions = questions;
-    _nameIndex = niRows.map(r => [r.id, r.name]);
-    const tn = tnRows.map(r => r.name);
-    const lt = {};
-    for (const row of ltRows) lt[row.name] = row.data;
-    _teamIndex = buildTeamIndex(tn, lt);
+    _nameIndex = nameIndex;
+    _teamIndex = buildTeamIndex(teamNames, leagueTeams);
   } catch (e) {
     elLoading.innerHTML = `<p style="color:#b5221e;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.15em;text-align:center">Error al cargar datos.<br>${e.message}</p>`;
     return;

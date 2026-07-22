@@ -61,34 +61,31 @@ function _chunkFileForId(id) {
   return r ? `../data/players/chunks/${r[0]}-${r[1]}.json` : null;
 }
 
-/* ── Sustituye a los antiguos fetch() de data/players/chunks/*.json:
-   trae el mismo rango de IDs pero desde la tabla "players" de Supabase,
-   y lo devuelve con la misma forma { "id": {...datos...}, ... } que
-   tenían los archivos JSON, para no tener que tocar el resto del código. ── */
+/* ── Carga el chunk de jugadores (bucket player-db) para el rango de IDs
+   que ya calcula _chunkFileForId/CHUNK_NAMES, con la misma forma
+   { "id": {...datos...}, ... } que tenían los archivos JSON originales. ── */
 async function _fetchChunkRangeFromSupabase(cf) {
   const m = cf.match(/(\d+)-(\d+)\.json$/);
   if (!m) return null;
   const [, lo, hi] = m;
   try {
-    const rows = await sbFetchAll(`players?id=gte.${lo}&id=lte.${hi}&select=id,data`);
-    const obj = {};
-    for (const r of rows) obj[String(r.id)] = r.data;
-    return obj;
+    const res = await fetch(sbStorageUrl('player-db', `players/chunks/${lo}-${hi}.json`));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
   } catch (e) {
-    console.warn('[Coche] Error cargando jugadores desde Supabase:', e);
+    console.warn('[Coche] Error cargando jugadores:', e);
     return null;
   }
 }
 
-/* ── Sustituye a data/teams/league-teams.json ── */
+/* ── Antes data/teams/league-teams.json, ahora player-db/leagues/ ── */
 async function _fetchLeaguesFromSupabase() {
   try {
-    const rows = await sbFetchAll('leagues?select=name,data');
-    const obj = {};
-    for (const r of rows) obj[r.name] = r.data;
-    return obj;
+    const res = await fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
   } catch (e) {
-    console.warn('[Coche] Error cargando ligas desde Supabase:', e);
+    console.warn('[Coche] Error cargando ligas:', e);
     return null;
   }
 }

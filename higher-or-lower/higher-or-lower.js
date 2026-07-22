@@ -221,29 +221,36 @@ async function selectMode(modeKey) {
   startNewGame();
 }
 
-/* ── CARGA DE DATOS (ahora desde Supabase, tablas higher_or_lower_*) ── */
+/* ── CARGA DE DATOS (bucket player-db/higher-or-lower/) ── */
 async function loadModeData(mode) {
-  const table = mode.multiFile ? 'higher_or_lower_top_players' : 'higher_or_lower_players';
-  const league = mode.multiFile ? null : mode.key; // el "key" de cada modo coincide con la columna league
-
-  try {
-    const rows = league
-      ? await sbFetchAll(`${table}?league=eq.${encodeURIComponent(league)}&select=player_id,data`)
-      : await sbFetchAll(`${table}?select=player_id,data`); // multiFile: trae las 5 ligas juntas
-
+  if (mode.multiFile) {
     const allPlayers = {};
-    for (const row of rows) {
-      const player = row.data;
-      if (mode.mvMin == null || (player.mv != null && player.mv >= mode.mvMin)) {
-        allPlayers[row.player_id] = player;
+    let loaded = 0;
+    for (const file of mode.files) {
+      try {
+        const res = await fetch(sbStorageUrl('player-db', `higher-or-lower/${mode.folder}${file}`));
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        for (const [id, player] of Object.entries(data)) {
+          if (mode.mvMin == null || (player.mv != null && player.mv >= mode.mvMin)) {
+            allPlayers[id] = player;
+          }
+        }
+        loaded++;
+      } catch (e) {
+        console.warn(`⚠️ [HOL] No se pudo cargar ${mode.folder}${file}:`, e.message);
       }
     }
-    if (Object.keys(allPlayers).length === 0) {
-      console.error(`❌ [HOL] Ningún jugador cargado para el modo "${mode.name}".`);
-    }
+    if (loaded === 0) console.error('❌ [HOL] Ningún archivo cargado.');
     return allPlayers;
+  }
+
+  try {
+    const res = await fetch(sbStorageUrl('player-db', `higher-or-lower/${mode.file}`));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
   } catch (e) {
-    console.error(`❌ [HOL] No se pudo cargar el modo "${mode.name}" desde Supabase:`, e.message);
+    console.error(`❌ [HOL] No se pudo cargar ${mode.file}:`, e.message);
     return {};
   }
 }
