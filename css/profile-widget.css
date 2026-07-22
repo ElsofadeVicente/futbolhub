@@ -144,6 +144,10 @@
 .pw-item:hover { background: rgba(255, 255, 255, .08); }
 
 /* ── Overlay + modal ── */
+/* El display:grid de abajo le ganaría al display:none que el navegador
+   pone con el atributo hidden — sin esta regla el overlay se ve siempre. */
+.pw-overlay[hidden] { display: none; }
+
 .pw-overlay {
   position: fixed;
   inset: 0;
