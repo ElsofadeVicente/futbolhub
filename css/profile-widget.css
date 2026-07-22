@@ -20,6 +20,10 @@
 }
 .pw-root.pw-ready { opacity: 1; }
 
+/* En el hub queda anclado a su sitio inicial (arriba a la derecha del
+   masthead) y hace scroll con la página, en vez de flotar siempre. */
+body.np-body .pw-root { position: absolute; }
+
 /* ── Círculo ── */
 .pw-circle {
   width: 42px;

@@ -445,9 +445,29 @@
     // onAuthStateChange (mantiene un lock interno y puede bloquearse)
     FHAuth.onChange((event) => { setTimeout(() => refresh(event), 0); });
 
+    /* En los juegos hay columnas de anuncios fijas pegadas al borde derecho
+       (.ad-col, position:fixed). Desplazamos el círculo a su izquierda para
+       que no las tape. En el hub esas columnas son estáticas (parte del
+       grid), así que no se detectan y el círculo se queda en su sitio. */
+    function positionClearOfAds() {
+        let shift = 0;
+        document.querySelectorAll('.ad-col').forEach(c => {
+            const cs = getComputedStyle(c);
+            if (cs.position !== 'fixed' || cs.display === 'none') return;
+            const r = c.getBoundingClientRect();
+            if (r.width > 0 && Math.abs(r.right - window.innerWidth) <= 2) {
+                shift = Math.max(shift, r.width);
+            }
+        });
+        root.style.right = shift > 0 ? (shift + 12) + 'px' : '';
+    }
+    window.addEventListener('resize', positionClearOfAds);
+    window.addEventListener('load', positionClearOfAds);
+
     function mount() {
         document.body.appendChild(root);
         document.body.appendChild(overlay);
+        positionClearOfAds();
         refresh('INITIAL');
     }
 
