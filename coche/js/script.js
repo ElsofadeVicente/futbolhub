@@ -1363,20 +1363,20 @@ const Sync = (() => {
   }
   function _genId() { return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
 
-  async function createRoom(hostName) {
+  async function createRoom(hostName, avatar) {
     const {set,serverTimestamp}=FB();
     const code=_genCode(), hostId=_genId();
     await set(_ref(`${ROOMS_PATH}/${code}`),{
       status:'waiting', round:0, pointsToWin:7, roundSecs:60,
       isPublic:false, createdAt:Date.now(), lobbyAt:Date.now(),
-      players:{[hostId]:{name:hostName,score:0,connected:true,isHost:true}},
+      players:{[hostId]:{name:hostName,avatar:avatar||null,score:0,connected:true,isHost:true}},
       restrictions:null, roundSeed:0, roundStartAt:null,
       submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
     });
     return {code, playerId:hostId};
   }
 
-  async function joinRoom(code, playerName) {
+  async function joinRoom(code, playerName, avatar) {
     const {get,update}=FB();
     const snap = await get(_ref(`${ROOMS_PATH}/${code}`));
     if (!snap.exists()) throw new Error('Sala no encontrada');
@@ -1386,12 +1386,12 @@ const Sync = (() => {
     if (count >= 5) throw new Error('Sala llena (máx. 5 jugadores)');
     const playerId = _genId();
     await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
-      name:playerName, score:0, connected:true, isHost:false,
+      name:playerName, avatar:avatar||null, score:0, connected:true, isHost:false,
     });
     return {code, playerId};
   }
 
-  async function findOrCreatePublicRoom(playerName) {
+  async function findOrCreatePublicRoom(playerName, avatar) {
     const {get,set,update}=FB();
     const snap = await get(_ref(MM_PATH));
     const candidates = [];
@@ -1407,7 +1407,7 @@ const Sync = (() => {
           set(_ref(`${MM_PATH}/${code}`), null).catch(()=>{});
           continue;
         }
-        const result = await joinRoom(code, playerName);
+        const result = await joinRoom(code, playerName, avatar);
         const newCount = Object.keys(roomSnap.val().players||{}).length + 1;
         update(_ref(`${MM_PATH}/${code}`),{playerCount:newCount}).catch(()=>{});
         return {...result, isHost:false, isPublic:true};
@@ -1422,7 +1422,7 @@ const Sync = (() => {
       await set(_ref(`${ROOMS_PATH}/${myCode}`),{
         status:'waiting', round:0, pointsToWin:7, roundSecs:60,
         isPublic:true, createdAt:Date.now(), lobbyAt:Date.now(),
-        players:{[myId]:{name:playerName,score:0,connected:true,isHost:true}},
+        players:{[myId]:{name:playerName,avatar:avatar||null,score:0,connected:true,isHost:true}},
         restrictions:null, roundSeed:0, roundStartAt:null,
         submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
       });
@@ -1572,6 +1572,7 @@ const Sync = (() => {
     const resetPlayers = {
       [newHostId]: {
         name: hostPlayer?.name || '…',
+        avatar: hostPlayer?.avatar || null,
         score: 0,
         connected: true,
         isHost: true,
@@ -1593,7 +1594,7 @@ const Sync = (() => {
   }
 
   /* Re-unirse a una sala existente en waiting (para "Jugar de nuevo" de no-hosts) */
-  async function rejoinRoom(code, playerId, playerName) {
+  async function rejoinRoom(code, playerId, playerName, avatar) {
     const {get,update}=FB();
     const snap = await get(_ref(`${ROOMS_PATH}/${code}`));
     if (!snap.exists()) throw new Error('Sala no encontrada');
@@ -1602,7 +1603,7 @@ const Sync = (() => {
     const count = Object.keys(room.players||{}).length;
     if (count >= 5) throw new Error('Sala llena (máx. 5 jugadores)');
     await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
-      name:playerName, score:0, connected:true, isHost:false,
+      name:playerName, avatar:avatar||null, score:0, connected:true, isHost:false,
     });
   }
 
@@ -1992,11 +1993,53 @@ const App = (() => {
     }, 200);
   }
 
+  /* Si hay sesión, ocultar los campos de "Tu nombre" (se usará el usuario)
+     y mostrar un aviso. Reacciona también si entra/sale de la sesión. */
+  function _setupAccountName() {
+    if (!(window.FHAuth && FHAuth.onIdentity)) return;
+    const NAME_INPUTS = ['input-host-name','input-join-name','input-public-name','input-local-name'];
+    FHAuth.onIdentity(id => {
+      NAME_INPUTS.forEach(i => {
+        const el = document.getElementById(i);
+        if (el) el.style.display = id ? 'none' : '';
+      });
+      document.querySelectorAll('.account-name-hint').forEach(h => h.remove());
+      if (id) {
+        NAME_INPUTS.forEach(i => {
+          const el = document.getElementById(i);
+          if (!el) return;
+          const hint = document.createElement('p');
+          hint.className = 'panel-hint account-name-hint';
+          hint.style.margin = '0 0 8px';
+          hint.textContent = 'Entras como @' + id.username;
+          el.parentNode.insertBefore(hint, el);
+        });
+      }
+    });
+  }
+
+  /* ── Cuenta: si hay sesión iniciada, usamos el usuario y su foto y no
+     hace falta pedir el nombre. Si no, se usa el input de siempre. ── */
+  function _accountName(inputId) {
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    if (id && id.username) return id.username;
+    return document.getElementById(inputId)?.value?.trim() || '';
+  }
+  function _accountAvatar() {
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    return (id && id.avatarUrl) || null;
+  }
+  /* HTML de dentro del avatar de un jugador: foto si tiene, si no la inicial */
+  function _avatarInner(p) {
+    if (window.FHAuth && FHAuth.avatarInner) return FHAuth.avatarInner(p && p.name, p && p.avatar);
+    return _escHtml(((p && p.name) || '?').charAt(0).toUpperCase());
+  }
+
   /* ════════════════════════════════════════
      MODO LOCAL — igual que Blackjack
      ════════════════════════════════════════ */
   async function startLocalGame() {
-    const name = document.getElementById('input-local-name')?.value.trim();
+    const name = _accountName('input-local-name');
     if (!name) { _showError('error-local', 'Escribe tu nombre'); return; }
     _clearError('error-local');
 
@@ -2009,7 +2052,7 @@ const App = (() => {
 
       _isLocal=true; _isHost=true; _playerId='local-p1';
       _localName=name; _localRound=0;
-      _players=[{id:'local-p1', name, score:0}];
+      _players=[{id:'local-p1', name, avatar:_accountAvatar(), score:0}];
 
       if (btn) { btn.disabled = false; btn.textContent = 'JUGAR SOLO ▶'; }
 
@@ -2089,6 +2132,7 @@ const App = (() => {
   async function init() {
     _showScreen('screen-menu');
     _preloadDataInBackground();
+    _setupAccountName();
 
     const urlParams = new URLSearchParams(window.location.search);
     const salaCode  = urlParams.get('sala');
@@ -2156,13 +2200,13 @@ const App = (() => {
       _showError('error-private','Firebase no disponible');
       return;
     }
-    const name = document.getElementById('input-host-name')?.value?.trim();
+    const name = _accountName('input-host-name');
     if (!name) { _showError('error-private','Escribe tu nombre'); return; }
     _clearError('error-private');
     const btn = document.querySelector('#panel-private .btn-primary');
     _btnLoad(btn,'CREANDO…');
     try {
-      const {code,playerId} = await Sync.createRoom(name);
+      const {code,playerId} = await Sync.createRoom(name, _accountAvatar());
       _newSession();
       _roomCode=code; _playerId=playerId; _isHost=true; _isPublic=false; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
@@ -2179,7 +2223,7 @@ const App = (() => {
       _showError('error-private','Firebase no disponible');
       return;
     }
-    const name = document.getElementById('input-join-name')?.value?.trim();
+    const name = _accountName('input-join-name');
     const code = document.getElementById('input-join-code')?.value?.trim().toUpperCase();
     if (!name) { _showError('error-private','Escribe tu nombre'); return; }
     if (!code||code.length!==6) { _showError('error-private','Código de 6 caracteres'); return; }
@@ -2187,7 +2231,7 @@ const App = (() => {
     const btn = document.querySelector('#panel-private .btn-secondary');
     _btnLoad(btn,'UNIÉNDOSE…');
     try {
-      const result = await Sync.joinRoom(code, name);
+      const result = await Sync.joinRoom(code, name, _accountAvatar());
       _newSession();
       _roomCode=result.code; _playerId=result.playerId; _isHost=false; _isPublic=false; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
@@ -2204,13 +2248,13 @@ const App = (() => {
       _showError('error-public','Firebase no disponible');
       return;
     }
-    const name = document.getElementById('input-public-name')?.value?.trim();
+    const name = _accountName('input-public-name');
     if (!name) { _showError('error-public','Escribe tu nombre'); return; }
     _clearError('error-public');
     const btn = document.getElementById('btn-find-public');
     _btnLoad(btn,'BUSCANDO…');
     try {
-      const result = await Sync.findOrCreatePublicRoom(name);
+      const result = await Sync.findOrCreatePublicRoom(name, _accountAvatar());
       _newSession();
       _roomCode=result.code; _playerId=result.playerId; _isHost=result.isHost; _isPublic=true; _isLocal=false; _localName=name;
       _saveSession(); _listenRoom(); _showLobby();
@@ -2520,7 +2564,7 @@ const App = (() => {
       const minRoom = {
         ...base,
         isPublic: _isPublic,
-        players: { [_playerId]: { name: _localName || '…', score: 0, connected: true, isHost: _isHost } },
+        players: { [_playerId]: { name: _localName || '…', avatar: _accountAvatar(), score: 0, connected: true, isHost: _isHost } },
       };
       _updateLobbyUI(minRoom);
     } else {
@@ -2555,7 +2599,7 @@ const App = (() => {
         .filter(([,p])=>p.connected!==false)
         .map(([pid,p])=>`
           <div class="lobby-player-row">
-            <div class="lobby-player-avatar">${_escHtml((p.name||'?').charAt(0).toUpperCase())}</div>
+            <div class="lobby-player-avatar">${_avatarInner(p)}</div>
             <span class="lobby-player-name">${_escHtml(p.name)}</span>
             ${p.isHost ? '<span class="lobby-player-host">HOST</span>' : ''}
             ${pid===_playerId ? '<span style="margin-left:auto;font-size:.7rem;opacity:.4;letter-spacing:1px;">← TÚ</span>' : ''}
@@ -3387,7 +3431,7 @@ const App = (() => {
           if (_sessionToken !== token || _roomCode !== room) return;
           if (!current) { showMenu(); return; }   /* sala desapareció */
           if (current.status === 'waiting') {
-            await Sync.rejoinRoom(room, _playerId, _localName);
+            await Sync.rejoinRoom(room, _playerId, _localName, _accountAvatar());
             joined = true;
             break;
           }
@@ -3524,7 +3568,7 @@ const App = (() => {
       return `
         <div class="submission-item ${sent?'submitted':''} ${isMe?'me':''}">
           <div class="submission-item-head">
-            <div class="submission-avatar">${_escHtml((p.name||'?').charAt(0).toUpperCase())}</div>
+            <div class="submission-avatar">${_avatarInner(p)}</div>
             <div class="submission-meta">
               <span class="submission-name">${_escHtml(p.name)}</span>
               <span class="submission-status">${sent?'Jugador bloqueado':'Esperando elección'}</span>

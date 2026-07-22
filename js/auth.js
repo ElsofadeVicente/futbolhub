@@ -271,6 +271,52 @@
         };
     }
 
+    /* ── Identidad para los juegos (nombre público + foto de perfil) ──
+       Los juegos multijugador usan esto para: si hay sesión, no pedir el
+       nombre (usar el username) y mostrar la foto en vez de la inicial.
+       Si NO hay sesión, identity() es null y cada juego sigue igual. */
+    let _identity = null;             // { username, avatarUrl } | null
+    let _identityResolved = false;
+    const _identityCbs = [];
+
+    function _setIdentity(profile, session) {
+        _identity = (session && profile && profile.username)
+            ? { username: profile.username, avatarUrl: profile.avatar_url || null }
+            : null;
+        _identityResolved = true;
+        _identityCbs.forEach(cb => { try { cb(_identity); } catch (e) { console.error(e); } });
+    }
+    async function _refreshIdentity() {
+        const session = await getSession();
+        const profile = session ? await getProfile() : null;
+        _setIdentity(profile, session);
+    }
+    function identity() { return _identity; }
+    /* cb(identity|null): se llama ya (si está resuelta) y en cada cambio de sesión/perfil */
+    function onIdentity(cb) {
+        if (_identityResolved) { try { cb(_identity); } catch (e) { console.error(e); } }
+        _identityCbs.push(cb);
+    }
+
+    function escHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    /* HTML para meter DENTRO del contenedor de avatar que ya tiene cada juego:
+       una <img> si hay foto, o la inicial del nombre si no. */
+    function avatarInner(name, avatarUrl) {
+        if (avatarUrl) {
+            return `<img src="${escHtml(avatarUrl)}" alt="" class="fh-avatar-img" ` +
+                   `style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;">`;
+        }
+        return escHtml((name || '?').charAt(0).toUpperCase());
+    }
+
+    // Mantener la identidad al día con la sesión (y resolverla al cargar)
+    onChange(() => setTimeout(_refreshIdentity, 0));
+    _refreshIdentity();
+
     /* ── API pública ── */
     window.FHAuth = {
         client,
@@ -289,5 +335,9 @@
         validateUsername,
         signOut,
         defaultAvatar,
+        identity,
+        onIdentity,
+        avatarInner,
+        escHtml,
     };
 })();

@@ -13,6 +13,38 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+/* ── Cuenta (FutbolHUB): si hay sesión, usar usuario y foto ── */
+function _accName(inputId) {
+  const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+  if (id && id.username) return id.username;
+  return (document.getElementById(inputId)?.value || '').trim();
+}
+function _accAvatar() {
+  const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+  return (id && id.avatarUrl) || null;
+}
+function _avatarInner(p) {
+  if (window.FHAuth && FHAuth.avatarInner) return FHAuth.avatarInner(p && p.name, p && p.avatar);
+  return escapeHtml(((p && p.name) || '?').charAt(0).toUpperCase());
+}
+function _setupAccountName() {
+  if (!(window.FHAuth && FHAuth.onIdentity)) return;
+  const INPUTS = ['menu-host-name', 'menu-player-name', 'join-name-inline', 'join-name'];
+  FHAuth.onIdentity(id => {
+    INPUTS.forEach(i => { const el = document.getElementById(i); if (el) el.style.display = id ? 'none' : ''; });
+    document.querySelectorAll('.account-name-hint').forEach(h => h.remove());
+    if (id) INPUTS.forEach(i => {
+      const el = document.getElementById(i);
+      if (!el) return;
+      const hint = document.createElement('p');
+      hint.className = 'account-name-hint';
+      hint.style.cssText = 'margin:0 0 8px;opacity:.7;font-size:.8rem;';
+      hint.textContent = 'Entras como @' + id.username;
+      el.parentNode.insertBefore(hint, el);
+    });
+  });
+}
+
 /* ══════════════════════════════════════════════
    CADENAGAME
    La lógica real de turnos/vidas/cadena vive en el bloque
@@ -38,7 +70,7 @@ const CadenaGame = (() => {
     },
 
     /** Host: crea sala en Firebase */
-    async createRoom(players, lives) {
+    async createRoom(players, lives, avatars) {
       const FB = window._FB;
       if (!FB?.configured) { App.showToast('Firebase no configurado', 'error'); return null; }
 
@@ -50,7 +82,7 @@ const CadenaGame = (() => {
         status: 'lobby',
         lives,
         hostId: 0,
-        players: players.map((name, i) => ({ id: i, name, lives, eliminated: false })),
+        players: players.map((name, i) => ({ id: i, name, avatar: (avatars && avatars[i]) || null, lives, eliminated: false })),
         turnIndex: 0,
         chain: [],
         chainLength: 0,
@@ -63,7 +95,7 @@ const CadenaGame = (() => {
     },
 
     /** Joiner: se une a una sala */
-    async joinRoom(code, playerName) {
+    async joinRoom(code, playerName, avatar) {
       const FB = window._FB;
       if (!FB?.configured) throw new Error('Firebase no configurado');
       const { db, ref, get, update, serverTimestamp } = FB;
@@ -74,7 +106,7 @@ const CadenaGame = (() => {
       if (roomData.status !== 'lobby') throw new Error('La partida ya empezó');
 
       const newId = roomData.players.length;
-      const updPlayers = [...roomData.players, { id: newId, name: playerName, lives: roomData.lives, eliminated: false }];
+      const updPlayers = [...roomData.players, { id: newId, name: playerName, avatar: avatar || null, lives: roomData.lives, eliminated: false }];
       await update(rRef, { players: updPlayers });
       this.roomRef = rRef;
       return { roomData: { ...roomData, players: updPlayers }, myId: newId };
@@ -384,12 +416,12 @@ const App = (() => {
   }
 
   /* ── Online: host crea sala ── */
-  async function startOnlineAsHost(names, lives, turnSecs) {
+  async function startOnlineAsHost(names, lives, turnSecs, avatars) {
     showToast('Creando sala…');
     try {
-      const code = await CadenaGame.FBSync.createRoom(names, lives);
+      const code = await CadenaGame.FBSync.createRoom(names, lives, avatars);
       if (!code) return;
-      _enterLobby(code, 0, names[0], lives, names.map((name, i) => ({ id: i, name, lives, eliminated: false })));
+      _enterLobby(code, 0, names[0], lives, names.map((name, i) => ({ id: i, name, avatar: (avatars && avatars[i]) || null, lives, eliminated: false })));
     } catch (err) {
       showToast('Error al crear sala: ' + err.message, 'error');
     }
@@ -406,16 +438,15 @@ const App = (() => {
 
   /* ── Online: unirse ── */
   async function joinRoom() {
-    const nameEl = document.getElementById('join-name-inline') || document.getElementById('join-name');
     const codeEl = document.getElementById('join-code-inline') || document.getElementById('join-code');
-    const name = nameEl?.value.trim();
+    const name = _accName('join-name-inline') || _accName('join-name');
     const code = codeEl?.value.trim().toUpperCase();
     if (!name) { showToast('Escribe tu nombre', 'error'); return; }
     if (!code || code.length !== 6) { showToast('El código debe tener 6 caracteres', 'error'); return; }
 
     showToast('Conectando…');
     try {
-      const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name);
+      const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name, _accAvatar());
       _enterLobby(code, myId, name, roomData.lives, roomData.players);
     } catch (err) {
       showToast(err.message, 'error');
@@ -429,7 +460,7 @@ const App = (() => {
     list.innerHTML = normalized.map((p, i) => {
       const pid = p.id !== null ? p.id : i;
       return `<div class="lobby-player-item">
-        <div class="lobby-player-avatar">${escapeHtml((p.name || '?').charAt(0).toUpperCase())}</div>
+        <div class="lobby-player-avatar">${_avatarInner(p)}</div>
         <span class="lobby-player-name">${escapeHtml(p.name)}</span>
         ${pid === 0 ? '<span class="lobby-player-host">👑 Host</span>' : ''}
         ${pid === myId ? '<span class="lobby-player-host">← Tú</span>' : ''}
@@ -648,7 +679,7 @@ const App = (() => {
   }
 
   async function menuCreateRoom() {
-    const name = (document.getElementById('menu-host-name') || document.getElementById('menu-player-name'))?.value.trim();
+    const name = _accName('menu-host-name') || _accName('menu-player-name');
     if (!name) { _menuError('Escribe tu nombre en «Nueva sala»'); return; }
     if (!window._FB?.configured) { _menuError('Firebase no disponible'); return; }
     selectedLives = _menuLives;
@@ -656,17 +687,17 @@ const App = (() => {
     try {
       await CadenaData.init();
     } catch(e) { _menuError('Error al cargar datos'); return; }
-    await startOnlineAsHost([name], _menuLives, 15);
+    await startOnlineAsHost([name], _menuLives, 15, [_accAvatar()]);
   }
 
   async function menuJoinRoom() {
-    const name = document.getElementById('menu-player-name')?.value.trim();
+    const name = _accName('menu-player-name');
     const code = document.getElementById('menu-join-code')?.value.trim().toUpperCase();
     if (!name) { _menuError('Escribe tu nombre primero'); return; }
     if (!code || code.length !== 6) { _menuError('El código debe tener 6 caracteres'); return; }
     showToast('Conectando…');
     try {
-      const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name);
+      const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name, _accAvatar());
       _enterLobby(code, myId, name, roomData.lives, roomData.players);
     } catch(err) {
       _menuError(err.message);
@@ -697,6 +728,7 @@ const App = (() => {
   /* ── Init ── */
   function init() {
     updateFBStatus();
+    _setupAccountName();
     // Leer ?sala= de la URL para unirse automáticamente
     const params   = new URLSearchParams(window.location.search);
     const salaCode = params.get('sala');

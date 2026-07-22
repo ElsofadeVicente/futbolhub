@@ -16,6 +16,38 @@ const App = (() => {
       .replace(/'/g, '&#39;');
   }
 
+  /* ── Cuenta (FutbolHUB): si hay sesión, usar usuario y foto ── */
+  function _accName(inputId) {
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    if (id && id.username) return id.username;
+    return (document.getElementById(inputId)?.value || '').trim();
+  }
+  function _accAvatar() {
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    return (id && id.avatarUrl) || null;
+  }
+  function _avatarInner(p) {
+    if (window.FHAuth && FHAuth.avatarInner) return FHAuth.avatarInner(p && p.name, p && p.avatar);
+    return escapeHtml(((p && p.name) || '?').charAt(0).toUpperCase());
+  }
+  function _setupAccountName() {
+    if (!(window.FHAuth && FHAuth.onIdentity)) return;
+    const INPUTS = ['input-host-name', 'input-join-name', 'input-public-name', 'input-local-name'];
+    FHAuth.onIdentity(id => {
+      INPUTS.forEach(i => { const el = document.getElementById(i); if (el) el.style.display = id ? 'none' : ''; });
+      document.querySelectorAll('.account-name-hint').forEach(h => h.remove());
+      if (id) INPUTS.forEach(i => {
+        const el = document.getElementById(i);
+        if (!el) return;
+        const hint = document.createElement('p');
+        hint.className = 'account-name-hint';
+        hint.style.cssText = 'margin:0 0 8px;opacity:.7;font-size:.8rem;';
+        hint.textContent = 'Entras como @' + id.username;
+        el.parentNode.insertBefore(hint, el);
+      });
+    });
+  }
+
   /* ─── Estado de la app ─── */
   let _mode      = 'mv';
   let _tab       = 'private';
@@ -66,6 +98,7 @@ const App = (() => {
      ══════════════════════════════════════════ */
   function init() {
     _showScreen('screen-menu');
+    _setupAccountName();
     loadStats?.();
     loadSettings?.();
 
@@ -106,7 +139,7 @@ const App = (() => {
      MODO LOCAL — juego sin Firebase
      ══════════════════════════════════════════ */
   async function startLocalGame() {
-    const name = document.getElementById('input-local-name')?.value.trim();
+    const name = _accName('input-local-name');
     if (!name) { _showError('error-local', 'Escribe tu nombre'); return; }
 
     _clearError('error-local');
@@ -155,7 +188,7 @@ const App = (() => {
       objective:  roundData.objective,
       setPlayers: enriched,
       setSeed:    roundData.setSeed,
-      players:    [{ id: _playerId, name: _localPlayerName, score: myScore }],
+      players:    [{ id: _playerId, name: _localPlayerName, avatar: _accAvatar(), score: myScore }],
       mode:       _mode,
       roomCode:   null,
       isHost:     true,
@@ -168,12 +201,12 @@ const App = (() => {
      CREAR SALA
      ══════════════════════════════════════════ */
   async function createRoom() {
-    const name = document.getElementById('input-host-name')?.value.trim();
+    const name = _accName('input-host-name');
     if (!name) { _showError('error-private', 'Escribe tu nombre'); return; }
 
     try {
       _clearError('error-private');
-      const { code, playerId } = await BlackjackSync.createRoom(name, _mode);
+      const { code, playerId } = await BlackjackSync.createRoom(name, _mode, _accAvatar());
       _roomCode = code;
       _playerId = playerId;
       _isHost   = true;
@@ -189,7 +222,7 @@ const App = (() => {
      UNIRSE A SALA
      ══════════════════════════════════════════ */
   async function joinRoom() {
-    const name = document.getElementById('input-join-name')?.value.trim();
+    const name = _accName('input-join-name');
     const code = document.getElementById('input-join-code')?.value.trim().toUpperCase();
     if (!name) { _showError('error-private', 'Escribe tu nombre'); return; }
     if (!code || code.length !== 6) { _showError('error-private', 'Introduce el código (6 caracteres)'); return; }
@@ -201,7 +234,7 @@ const App = (() => {
 
     try {
       _clearError('error-private');
-      const result = await BlackjackSync.joinRoom(code, name);
+      const result = await BlackjackSync.joinRoom(code, name, _accAvatar());
       _roomCode = result.code;
       _playerId = result.playerId;
       _isHost   = false;
@@ -218,7 +251,7 @@ const App = (() => {
      SALA PÚBLICA
      ══════════════════════════════════════════ */
   async function findPublicRoom() {
-    const name = document.getElementById('input-public-name')?.value.trim();
+    const name = _accName('input-public-name');
     if (!name) { _showError('error-public', 'Escribe tu nombre'); return; }
 
     _cancelWaitPublicInternal();
@@ -236,7 +269,7 @@ const App = (() => {
       const session = _loadSession();
       if (session && session.mode === _mode) {
         try {
-          const ok = await BlackjackSync.tryReconnect(session.code, session.playerId, name);
+          const ok = await BlackjackSync.tryReconnect(session.code, session.playerId, name, _accAvatar());
           if (ok) {
             _roomCode = session.code;
             _playerId = session.playerId;
@@ -266,7 +299,7 @@ const App = (() => {
     if (btn) { btn.disabled = true; btn.textContent = 'BUSCANDO…'; }
 
     try {
-      const result = await BlackjackSync.findOrCreatePublicRoom(name, _mode);
+      const result = await BlackjackSync.findOrCreatePublicRoom(name, _mode, _accAvatar());
       _roomCode = result.code;
       _playerId = result.playerId;
       _isHost   = result.isHost;
@@ -580,7 +613,7 @@ const App = (() => {
     if (listEl) {
       listEl.innerHTML = players.map(([pid, p]) => `
         <div class="lobby-player-row">
-          <div class="lobby-player-avatar">${escapeHtml((p.name || '?').charAt(0).toUpperCase())}</div>
+          <div class="lobby-player-avatar">${_avatarInner(p)}</div>
           <span class="lobby-player-name">${escapeHtml(p.name)}</span>
           ${p.isHost ? '<span class="lobby-player-host">HOST</span>' : ''}
           ${pid === _playerId ? '<span style="margin-left:auto;font-family:\'Rajdhani\',sans-serif;font-size:0.7rem;opacity:0.4;letter-spacing:1px;">← TÚ</span>' : ''}
