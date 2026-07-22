@@ -451,12 +451,15 @@
        grid), así que no se detectan y el círculo se queda en su sitio. */
     function positionClearOfAds() {
         // .ad-col = la mayoría de juegos; .bj-ad-sidebar = blackjack (misma idea)
+        // Usamos clientWidth (sin la barra de scroll): una columna fija a la
+        // derecha llega hasta ese borde, aunque innerWidth sea mayor.
+        const vw = document.documentElement.clientWidth || window.innerWidth;
         let shift = 0;
         document.querySelectorAll('.ad-col, .bj-ad-sidebar').forEach(c => {
             const cs = getComputedStyle(c);
             if (cs.position !== 'fixed' || cs.display === 'none') return;
             const r = c.getBoundingClientRect();
-            if (r.width > 0 && Math.abs(r.right - window.innerWidth) <= 2) {
+            if (r.width > 0 && r.right >= vw - 2) {
                 shift = Math.max(shift, r.width);
             }
         });
