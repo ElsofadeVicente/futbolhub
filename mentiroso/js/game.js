@@ -19,6 +19,36 @@ function escapeHtml(s){
     .replace(/'/g,'&#39;');
 }
 
+/* ── Cuenta (FutbolHUB): si hay sesión, usar usuario y foto ── */
+function _accName(inputId){
+  const id=window.FHAuth&&FHAuth.identity&&FHAuth.identity();
+  if(id&&id.username)return id.username;
+  return (document.getElementById(inputId)?.value||'').trim();
+}
+function _accAvatar(){
+  const id=window.FHAuth&&FHAuth.identity&&FHAuth.identity();
+  return (id&&id.avatarUrl)||null;
+}
+function _avatarInner(p){
+  if(window.FHAuth&&FHAuth.avatarInner)return FHAuth.avatarInner(p&&p.name,p&&p.avatar);
+  return escapeHtml(((p&&p.name)||'?')[0].toUpperCase());
+}
+function _setupAccountName(){
+  if(!(window.FHAuth&&FHAuth.onIdentity))return;
+  const INPUTS=['create-name','join-name','practice-name'];
+  FHAuth.onIdentity(id=>{
+    INPUTS.forEach(i=>{const el=document.getElementById(i);if(el)el.style.display=id?'none':'';});
+    document.querySelectorAll('.account-name-hint').forEach(h=>h.remove());
+    if(id)INPUTS.forEach(i=>{
+      const el=document.getElementById(i);if(!el)return;
+      const hint=document.createElement('p');hint.className='menu-hint account-name-hint';
+      hint.style.cssText='margin:0 0 8px;opacity:.7;font-size:.8rem;';
+      hint.textContent='Entras como @'+id.username;
+      el.parentNode.insertBefore(hint,el);
+    });
+  });
+}
+
 let _toastTimer=null;
 function toast(msg,type){const el=$('#toast');if(!el)return;el.textContent=msg;el.className=`toast show ${type||''}`;clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
 function showScreen(id){$$('.screen').forEach(s=>s.classList.remove('active'));$(id)?.classList.add('active');}
@@ -136,19 +166,19 @@ const Sync=(()=>{
     }catch(e){}
   }
 
-  async function createRoom(hostName,mode,pointsToWin){
+  async function createRoom(hostName,mode,pointsToWin,avatar){
     const{set}=FB();
     const code=genCode(),hostId=genId();
     await set(_ref(`${PATH}/${code}`),{
       game:'mentiroso',status:'waiting',mode,pointsToWin,round:0,seed:0,
       condKey:null,condType:null,condLabel:null,condUnit:null,condThreshold:null,
       actualTotal:null,winners:null,winnerName:null,guesses:null,
-      players:{[hostId]:{name:hostName,score:0,connected:true,isHost:true}},
+      players:{[hostId]:{name:hostName,avatar:avatar||null,score:0,connected:true,isHost:true}},
     });
     _registerPresence(code,hostId);
     return {code,playerId:hostId};
   }
-  async function joinRoom(code,playerName){
+  async function joinRoom(code,playerName,avatar){
     const{get,update}=FB();
     const snap=await get(_ref(`${PATH}/${code}`));
     if(!snap.exists())throw new Error('Sala no encontrada');
@@ -157,7 +187,7 @@ const Sync=(()=>{
     if(room.status!=='waiting')throw new Error('La partida ya ha comenzado');
     if(Object.keys(room.players||{}).length>=8)throw new Error('Sala llena');
     const playerId=genId();
-    await update(_ref(`${PATH}/${code}/players/${playerId}`),{name:playerName,score:0,connected:true,isHost:false});
+    await update(_ref(`${PATH}/${code}/players/${playerId}`),{name:playerName,avatar:avatar||null,score:0,connected:true,isHost:false});
     _registerPresence(code,playerId);
     return {code,playerId};
   }
@@ -282,7 +312,7 @@ function _renderLobby(room){
   const list=$('#lobby-players');list.innerHTML='';
   players.forEach(([pid,p])=>{
     const d=document.createElement('div');d.className=`lobby-player-row${pid===_playerId?' me':''}`;
-    d.innerHTML=`<span class="lobby-player-avatar">${escapeHtml((p.name||'?')[0].toUpperCase())}</span><span class="lobby-player-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>${p.isHost?'<span class="lobby-player-host">HOST</span>':''}`;
+    d.innerHTML=`<span class="lobby-player-avatar">${_avatarInner(p)}</span><span class="lobby-player-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>${p.isHost?'<span class="lobby-player-host">HOST</span>':''}`;
     list.appendChild(d);
   });
   $('#btn-start').disabled=!_isHost||players.length<2;
@@ -577,9 +607,9 @@ const BOT_NAMES=['Bot Pirlo','Bot Xavi','Bot Kanté','Bot Pogba','Bot Vidal','Bo
    club → companero → numero → combo. Tras la 4a se repiten en bucle. */
 const PRACTICE_SEEDS=[2,3,1,4];
 function _startLocal(){
-  const name=($('#practice-name').value||'').trim()||'Tú';
+  const name=_accName('practice-name')||'Tú';
   _local=true;_isHost=true;_playerId='me';_roomCode=null;
-  const players={me:{name,score:0,connected:true,isHost:true}};
+  const players={me:{name,avatar:_accAvatar(),score:0,connected:true,isHost:true}};
   for(let i=0;i<_botsDraft;i++)players['bot'+i]={name:BOT_NAMES[i%BOT_NAMES.length],score:0,connected:true,isHost:false};
   _localRoom={game:'mentiroso',status:'waiting',mode:_modeDraft,pointsToWin:_pointsDraft,round:0,seed:0,players,guesses:{}};
   _localStartRound(1);
@@ -636,22 +666,22 @@ function _localReveal(){
 /* ═══ 8. ACCIONES ══════════════════════════════════════════ */
 async function _createRoom(){
   if(!window._FB?.configured){toast('Firebase no cargado','error');return;}
-  const name=($('#create-name').value||'').trim();
+  const name=_accName('create-name');
   if(!name){toast('Escribe tu nombre','error');return;}
   try{
-    const{code,playerId}=await Sync.createRoom(name,_modeDraft,_pointsDraft);
+    const{code,playerId}=await Sync.createRoom(name,_modeDraft,_pointsDraft,_accAvatar());
     _local=false;_roomCode=code;_playerId=playerId;_isHost=true;
     _saveSession();_unsub=Sync.listenRoom(code,_onRoomUpdate);
   }catch(e){toast(e.message,'error');}
 }
 async function _joinRoom(){
   if(!window._FB?.configured){toast('Firebase no cargado','error');return;}
-  const name=($('#join-name').value||'').trim();
+  const name=_accName('join-name');
   const code=($('#join-code').value||'').trim().toUpperCase();
   if(!name){toast('Escribe tu nombre','error');return;}
   if(code.length<4){toast('Código inválido','error');return;}
   try{
-    const r=await Sync.joinRoom(code,name);
+    const r=await Sync.joinRoom(code,name,_accAvatar());
     _local=false;_roomCode=r.code;_playerId=r.playerId;_isHost=false;
     _saveSession();_unsub=Sync.listenRoom(code,_onRoomUpdate);
   }catch(e){$('#join-error').textContent=e.message;$('#join-error').classList.remove('hidden');}
@@ -716,6 +746,7 @@ function boot(){
   $('#btn-bots-minus')?.addEventListener('click',()=>{_botsDraft=Math.max(1,_botsDraft-1);if($('#practice-bots-value'))$('#practice-bots-value').textContent=_botsDraft;});
   $('#btn-bots-plus')?.addEventListener('click',()=>{_botsDraft=Math.min(5,_botsDraft+1);if($('#practice-bots-value'))$('#practice-bots-value').textContent=_botsDraft;});
   /* Buttons */
+  _setupAccountName();
   $('#btn-create')?.addEventListener('click',_createRoom);
   $('#btn-join')?.addEventListener('click',_joinRoom);
   $('#btn-practice')?.addEventListener('click',_startLocal);

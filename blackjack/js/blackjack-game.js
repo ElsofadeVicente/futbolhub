@@ -743,8 +743,11 @@ const BlackjackGame = (() => {
       .map(p => {
         const h = state.hands[p.id];
         const done = h && (h.standing || h.doneAt);
+        const inner = (window.FHAuth && FHAuth.avatarInner)
+          ? FHAuth.avatarInner(p.name, p.avatar)
+          : escapeHtml(p.name.charAt(0).toUpperCase());
         return `<div class="opp-avatar ${done ? 'opp-done' : 'opp-thinking'}" title="${escapeHtml(p.name)}">
-          ${escapeHtml(p.name.charAt(0).toUpperCase())}
+          ${inner}
         </div>`;
       }).join('');
   }

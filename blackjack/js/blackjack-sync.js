@@ -55,7 +55,7 @@ const BlackjackSync = (() => {
   /* ═══════════════════════════════════════════
      CREAR SALA
      ═══════════════════════════════════════════ */
-  async function createRoom(hostName, mode) {
+  async function createRoom(hostName, mode, avatar) {
     const { set, serverTimestamp } = FB();
     const code = _genCode();
     const hostId = _genId();
@@ -71,7 +71,7 @@ const BlackjackSync = (() => {
       setSeed:        0,
       objective:      0,
       players: {
-        [hostId]: { name: hostName, score: 0, connected: true, isHost: true }
+        [hostId]: { name: hostName, avatar: avatar || null, score: 0, connected: true, isHost: true }
       },
       decisions:      {},
       doneCount:      0,
@@ -86,7 +86,7 @@ const BlackjackSync = (() => {
   /* ═══════════════════════════════════════════
      UNIRSE A SALA
      ═══════════════════════════════════════════ */
-  async function joinRoom(code, playerName) {
+  async function joinRoom(code, playerName, avatar) {
     const { get, update } = FB();
 
     const snap = await get(_ref(`blackjack/rooms/${code}`));
@@ -100,7 +100,7 @@ const BlackjackSync = (() => {
 
     const playerId = _genId();
     await update(_ref(`blackjack/rooms/${code}/players/${playerId}`), {
-      name: playerName, score: 0, connected: true, isHost: false
+      name: playerName, avatar: avatar || null, score: 0, connected: true, isHost: false
     });
     _onDisconnectRemove(`blackjack/rooms/${code}/players/${playerId}`);
 
@@ -112,7 +112,7 @@ const BlackjackSync = (() => {
      Evita duplicados al volver a una sala pública.
      Devuelve true si reconectó, false si falló.
      ═══════════════════════════════════════════ */
-  async function tryReconnect(code, playerId, name) {
+  async function tryReconnect(code, playerId, name, avatar) {
     const { get, update } = FB();
     try {
       const roomSnap = await get(_ref(`blackjack/rooms/${code}`));
@@ -127,6 +127,7 @@ const BlackjackSync = (() => {
       await update(_ref(`blackjack/rooms/${code}/players/${playerId}`), {
         connected: true,
         name,
+        avatar: avatar || null,
       });
       // Recuperar la sesión no vuelve a registrar el onDisconnect por sí solo
       // (es un hook nuevo del navegador) — rearmarlo aquí para que un
@@ -300,7 +301,7 @@ const BlackjackSync = (() => {
      Soporta múltiples salas simultáneas por modo.
      Estructura: blackjack/matchmaking/{mode}/{code}
      ═══════════════════════════════════════════ */
-  async function findOrCreatePublicRoom(playerName, mode) {
+  async function findOrCreatePublicRoom(playerName, mode, avatar) {
     const { get, set, update } = FB();
 
     // ── 1. Buscar salas candidatas en el nodo de matchmaking ──
@@ -346,7 +347,7 @@ const BlackjackSync = (() => {
         }
 
         // Intentar unirse
-        const result = await joinRoom(code, playerName);
+        const result = await joinRoom(code, playerName, avatar);
         // Éxito — actualizar contador (no crítico)
         update(_ref(`blackjack/matchmaking/${mode}/${code}`), {
           playerCount: (roomSnap.val().players
@@ -384,7 +385,7 @@ const BlackjackSync = (() => {
       objective:      0,
       isPublic:       true,
       players: {
-        [myId]: { name: playerName, score: 0, connected: true, isHost: true }
+        [myId]: { name: playerName, avatar: avatar || null, score: 0, connected: true, isHost: true }
       },
       decisions:      {},
       doneCount:      0,
