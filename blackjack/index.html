@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/blackjack.css?v=20260720a" />
+<link rel="stylesheet" href="../css/profile-widget.css">
 </head>
 <body>
 
@@ -298,6 +299,9 @@
   const V = '?v=' + Date.now();
   const scripts = [
     '../js/supabase-config.js',
+    '../js/vendor/supabase-js.min.js',
+    '../js/auth.js',
+    '../js/profile-widget.js',
     '../js/shared.js',
     '../js/player-data-loader.js',
     '../js/extended-data-loader.js',

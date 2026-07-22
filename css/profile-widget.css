@@ -1,0 +1,335 @@
+/* =============================================
+   PROFILE-WIDGET.CSS — Círculo de perfil + login
+   QUIÉN COÑO FALTA
+   Prefijo .pw- para no chocar con los estilos de cada juego.
+   ============================================= */
+
+/* No todos los juegos tienen un reset global de box-sizing: sin esto los
+   anchos al 100% con padding se desbordan en las páginas que no lo traen. */
+.pw-root, .pw-root *,
+.pw-overlay, .pw-overlay * { box-sizing: border-box; }
+
+.pw-root {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 99990;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.pw-root.pw-ready { opacity: 1; }
+
+/* ── Círculo ── */
+.pw-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .35);
+  background: rgba(22, 24, 29, .85);
+  color: #e8e6e1;
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.pw-circle:hover { border-color: rgba(255, 255, 255, .7); transform: scale(1.05); }
+.pw-circle-inner { display: grid; place-items: center; width: 100%; height: 100%; }
+.pw-circle-inner svg { width: 22px; height: 22px; }
+
+.pw-avatar-img,
+.pw-avatar-letter {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ── Desplegable ── */
+.pw-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 230px;
+  background: #16181d;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .55);
+  padding: 8px;
+  animation: pw-drop .15s ease;
+}
+@keyframes pw-drop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pw-login-cta {
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #e8e6e1;
+  color: #16181d;
+  font-weight: 700;
+  font-size: .95rem;
+  cursor: pointer;
+}
+.pw-login-cta:hover { background: #fff; }
+.pw-drop-note {
+  padding: 9px 6px 4px;
+  font-size: .74rem;
+  color: rgba(232, 230, 225, .55);
+  text-align: center;
+}
+
+.pw-drop-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+  margin-bottom: 6px;
+}
+.pw-drop-avatar {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .08);
+  color: #e8e6e1;
+}
+.pw-drop-avatar svg { width: 20px; height: 20px; }
+.pw-drop-id { min-width: 0; }
+.pw-drop-name {
+  color: #e8e6e1;
+  font-weight: 700;
+  font-size: .92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pw-drop-mail {
+  color: rgba(232, 230, 225, .5);
+  font-size: .74rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pw-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: #e8e6e1;
+  font-size: .92rem;
+  cursor: pointer;
+}
+.pw-item:hover { background: rgba(255, 255, 255, .08); }
+
+/* ── Overlay + modal ── */
+.pw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99995;
+  background: rgba(8, 9, 12, .72);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow-y: auto;
+}
+.pw-no-scroll { overflow: hidden; }
+
+.pw-modal {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  background: #16181d;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+  padding: 26px 24px 24px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .6);
+  animation: pw-drop .18s ease;
+  color: #e8e6e1;
+}
+
+.pw-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: 0;
+  color: rgba(232, 230, 225, .55);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.pw-close:hover { color: #fff; }
+.pw-close--text { font-size: .8rem; text-decoration: underline; }
+
+.pw-brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 900;
+  font-size: 1.35rem;
+  text-align: center;
+  margin-bottom: 14px;
+  color: #e8e6e1;
+}
+.pw-brand span { font-style: italic; }
+
+.pw-title { margin: 0 0 8px; font-size: 1.08rem; font-weight: 700; }
+.pw-text  { margin: 0 0 14px; font-size: .86rem; color: rgba(232, 230, 225, .65); line-height: 1.45; }
+
+/* Pestañas Entrar / Crear cuenta */
+.pw-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: rgba(255, 255, 255, .06);
+  border-radius: 9px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+.pw-tab {
+  padding: 8px 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: rgba(232, 230, 225, .6);
+  font-weight: 600;
+  font-size: .88rem;
+  cursor: pointer;
+}
+.pw-tab--on { background: #e8e6e1; color: #16181d; }
+
+/* Formularios */
+.pw-form { display: grid; gap: 12px; }
+.pw-label {
+  display: grid;
+  gap: 5px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: rgba(232, 230, 225, .75);
+}
+.pw-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .05);
+  color: #e8e6e1;
+  font-size: .95rem;
+  font-family: inherit;
+}
+.pw-input:focus { outline: none; border-color: rgba(255, 255, 255, .5); }
+.pw-hint { font-size: .7rem; font-weight: 400; color: rgba(232, 230, 225, .45); }
+
+.pw-msg { font-size: .82rem; line-height: 1.4; min-height: 0; }
+.pw-msg--error { color: #ff7a70; }
+.pw-msg--ok    { color: #6fd58a; }
+
+.pw-primary {
+  padding: 11px;
+  border: 0;
+  border-radius: 8px;
+  background: #e8e6e1;
+  color: #16181d;
+  font-weight: 700;
+  font-size: .95rem;
+  cursor: pointer;
+}
+.pw-primary:hover:not(:disabled) { background: #fff; }
+.pw-primary:disabled { opacity: .6; cursor: wait; }
+
+.pw-linkbtn {
+  display: block;
+  margin: 12px auto 0;
+  background: none;
+  border: 0;
+  color: rgba(232, 230, 225, .6);
+  font-size: .8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.pw-linkbtn:hover { color: #fff; }
+
+.pw-sep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  color: rgba(232, 230, 225, .4);
+  font-size: .75rem;
+}
+.pw-sep::before,
+.pw-sep::after { content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, .12); }
+
+.pw-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, .04);
+  color: #e8e6e1;
+  font-weight: 600;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.pw-google:hover:not(:disabled) { background: rgba(255, 255, 255, .1); }
+.pw-google svg { width: 18px; height: 18px; }
+
+.pw-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.pw-danger {
+  width: 100%;
+  padding: 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 122, 112, .4);
+  background: rgba(255, 122, 112, .08);
+  color: #ff7a70;
+  font-weight: 700;
+  font-size: .92rem;
+  cursor: pointer;
+}
+.pw-danger:hover { background: rgba(255, 122, 112, .16); }
+
+/* En el hub, el bloque "EDICIÓN DIGITAL" del masthead queda justo bajo
+   el círculo: le damos aire por la derecha solo ahí. */
+.np-body .masthead-edition { padding-right: 58px; }
+
+/* ── Móvil ── */
+@media (max-width: 540px) {
+  .pw-root { top: 10px; right: 10px; }
+  .pw-circle { width: 38px; height: 38px; }
+  .pw-modal { padding: 22px 16px 18px; }
+}
