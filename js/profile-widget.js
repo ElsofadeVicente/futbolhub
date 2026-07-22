@@ -240,19 +240,48 @@
     }
 
     function ajustesView() {
+        const changed = !!(profile && profile.username_changed);
         openModal(`
           <div class="pw-brand">Fútbol<span>HUB</span></div>
           <h3 class="pw-title">Ajustes</h3>
+
           <div class="pw-settings-row">
-            <span class="pw-drop-avatar">${avatarHTML()}</span>
+            <span class="pw-drop-avatar pw-avatar-lg">${avatarHTML()}</span>
             <div class="pw-drop-id">
               <div class="pw-drop-name">${esc(displayName())}</div>
               <div class="pw-drop-mail">${esc(session && session.user.email || '')}</div>
             </div>
           </div>
-          <p class="pw-text">Pronto podrás cambiar aquí tu foto y tu nombre de usuario.</p>
+
+          <button class="pw-secondary" type="button" data-action="change-photo">Cambiar foto de perfil</button>
+          <input class="pw-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+          <div class="pw-field-label">Nombre de usuario</div>
+          ${changed
+            ? `<p class="pw-hint">Ya has usado tu único cambio de nombre, así que no se puede volver a cambiar.</p>`
+            : `<button class="pw-secondary" type="button" data-action="change-username">Cambiar nombre de usuario</button>
+               <p class="pw-hint">Solo se puede cambiar <strong>una vez</strong>. Elige bien.</p>`}
+
           <div class="pw-msg"></div>
           <button class="pw-danger" type="button" data-action="logout">Cerrar sesión</button>
+        `);
+    }
+
+    function changeUsernameView() {
+        openModal(`
+          <div class="pw-brand">Fútbol<span>HUB</span></div>
+          <h3 class="pw-title">Cambiar nombre de usuario</h3>
+          <div class="pw-warn">⚠️ Solo puedes cambiar tu nombre <strong>una vez</strong>. Después ya no se podrá modificar. Asegúrate antes de guardar.</div>
+          <form class="pw-form" data-form="change-username">
+            <label class="pw-label">Nuevo nombre de usuario
+              <input class="pw-input" name="username" type="text" maxlength="20"
+                     value="${esc(profile && profile.username || '')}" required>
+              <span class="pw-hint">3-20 caracteres: minúsculas, números, "." y "_".</span>
+            </label>
+            <div class="pw-msg"></div>
+            <button class="pw-primary" type="submit">Guardar cambio definitivo</button>
+          </form>
+          <button class="pw-linkbtn" type="button" data-action="ajustes">← Cancelar</button>
         `);
     }
 
@@ -287,6 +316,13 @@
                 profile = await FHAuth.getProfile(true);
                 closeModal();
                 renderCircle();
+            } else if (kind === 'change-username') {
+                const r = await FHAuth.changeUsername(f.get('username'));
+                if (!r.ok) return setMsg('error', r.error);
+                profile = await FHAuth.getProfile(true);
+                renderCircle();
+                setMsg('ok', 'Nombre de usuario cambiado.');
+                setTimeout(ajustesView, 1200);
             } else if (kind === 'new-password') {
                 const r = await FHAuth.updatePassword(f.get('password'));
                 if (!r.ok) return setMsg('error', r.error);
@@ -342,6 +378,12 @@
             case 'perfil':       toggleDropdown(false); placeholderView('Perfil'); break;
             case 'estadisticas': toggleDropdown(false); placeholderView('Estadísticas'); break;
             case 'ajustes':      toggleDropdown(false); ajustesView(); break;
+            case 'change-username': changeUsernameView(); break;
+            case 'change-photo': {
+                const input = modal.querySelector('.pw-file');
+                if (input) input.click();
+                break;
+            }
             case 'logout':
                 toggleDropdown(false);
                 closeModal();
@@ -359,6 +401,27 @@
         if (!form) return;
         e.preventDefault();
         handleSubmit(form);
+    });
+
+    /* Foto de perfil: al elegir un archivo, subirlo y repintar el avatar */
+    modal.addEventListener('change', async (e) => {
+        const input = e.target.closest('.pw-file');
+        if (!input || !input.files || !input.files[0]) return;
+        const file = input.files[0];
+        input.value = '';               // permite volver a elegir el mismo archivo
+        setMsg('', '');
+        setBusy(true);
+        try {
+            setMsg('', 'Subiendo foto…');
+            const r = await FHAuth.uploadAvatar(file);
+            if (!r.ok) return setMsg('error', r.error);
+            profile = await FHAuth.getProfile(true);
+            renderCircle();
+            ajustesView();              // repinta con la foto nueva
+            setMsg('ok', 'Foto de perfil actualizada.');
+        } finally {
+            setBusy(false);
+        }
     });
 
     /* ─────────────────── Estado de sesión → repintar ─────────────────── */

@@ -327,6 +327,45 @@
 }
 .pw-danger:hover { background: rgba(255, 122, 112, .16); }
 
+/* Botón secundario (cambiar foto / cambiar nombre) */
+.pw-secondary {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, .04);
+  color: #e8e6e1;
+  font-weight: 600;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.pw-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, .1); }
+.pw-secondary:disabled { opacity: .6; cursor: wait; }
+
+.pw-field-label {
+  margin: 16px 0 8px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: rgba(232, 230, 225, .75);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.pw-avatar-lg { flex: 0 0 52px; width: 52px; height: 52px; }
+.pw-avatar-lg .pw-avatar-letter { font-size: 1.5rem; }
+
+.pw-warn {
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 193, 71, .4);
+  background: rgba(255, 193, 71, .1);
+  color: #ffcf6b;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
 /* En el hub, el bloque "EDICIÓN DIGITAL" del masthead queda justo bajo
    el círculo: le damos aire por la derecha solo ahí. */
 .np-body .masthead-edition { padding-right: 58px; }
