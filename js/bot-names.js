@@ -1,9 +1,14 @@
 /* =============================================
    BOT-NAMES.JS
    Nombres de los jugadores automáticos de salas públicas.
-   Fuente principal: tabla `bot_names` de Supabase
-   (ver supabase/bot_names.sql). Si no se puede leer,
-   cae al archivo local data/bot-names.json.
+
+   Fuente principal: bot-names.json en Supabase Storage
+   (bucket game-data), igual que el resto de datos de los
+   juegos. Se edita subiendo el archivo otra vez, sin tocar
+   código ni desplegar.
+
+   Si Storage no responde, cae a la copia local
+   data/bot-names.json que va en el repo.
 
    Si no hay ningún nombre disponible NO se inventa
    ninguno: simplemente no se añaden bots. Es preferible
@@ -13,7 +18,8 @@
 
 const BotNames = (() => {
 
-  const LOCAL_JSON = '../data/bot-names.json';
+  const STORAGE_FILE = 'bot-names.json';           // en el bucket game-data
+  const LOCAL_JSON   = '../data/bot-names.json';   // respaldo dentro del repo
 
   let _names   = null;   // array ya cargado
   let _promise = null;
@@ -41,20 +47,26 @@ const BotNames = (() => {
     return out;
   }
 
-  /* ─── Supabase ─── */
-  async function _fromSupabase() {
-    if (typeof sbFetchAll !== 'function') return null;
-    const rows = await sbFetchAll('bot_names?select=name');
-    return _clean(rows.map(r => r.name));
-  }
-
-  /* ─── JSON local (fallback) ─── */
-  async function _fromLocalJson() {
-    const res = await fetch(LOCAL_JSON, { cache: 'no-cache' });
+  /* ─── Lee y normaliza un JSON de nombres ───
+     Admite tanto ["a","b"] como {"names":["a","b"]} */
+  async function _fetchJson(url) {
+    const res = await fetch(url, { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    // Admite tanto ["a","b"] como {"names":["a","b"]}
     return _clean(Array.isArray(data) ? data : data?.names);
+  }
+
+  /* ─── Supabase Storage (fuente principal) ─── */
+  function _fromStorage() {
+    if (typeof sbStorageUrl !== 'function') {
+      return Promise.reject(new Error('sbStorageUrl no disponible'));
+    }
+    return _fetchJson(sbStorageUrl('game-data', STORAGE_FILE));
+  }
+
+  /* ─── Copia local del repo (respaldo) ─── */
+  function _fromLocalJson() {
+    return _fetchJson(LOCAL_JSON);
   }
 
   /* ═══════════════════════════════════════════
@@ -64,13 +76,13 @@ const BotNames = (() => {
     if (_names)   return Promise.resolve(_names);
     if (_promise) return _promise;
 
-    _promise = _fromSupabase()
+    _promise = _fromStorage()
       .then(list => {
         if (list && list.length) return list;
-        throw new Error('tabla vacía');
+        throw new Error('archivo vacío');
       })
       .catch(e => {
-        console.warn('[BotNames] Supabase no disponible (' + e.message + '), usando JSON local');
+        console.warn('[BotNames] Storage no disponible (' + e.message + '), usando copia local');
         return _fromLocalJson();
       })
       .then(list => {
