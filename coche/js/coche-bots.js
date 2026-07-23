@@ -59,6 +59,8 @@ const CocheBots = (() => {
   let _lobbyBusy    = false;
   let _lastRoundKey = null;
   let _scanToken    = 0;
+  let _pendingAdds  = 0;            // altas de bot programadas pero aún sin escribir
+  const _pendingNames = new Set();  // nombres ya reservados por esas altas
 
   /* ═══════════════════════════════════════════
      LOBBY — mantener el número de bots que toca
@@ -73,12 +75,16 @@ const CocheBots = (() => {
 
     const { humans, bots } = BotCore.split(room.players);
     const want = BotCore.desiredBotCount(humans.length);
-    if (want === bots.length) return;
+
+    // Contar las altas ya programadas pero aún sin escribir, para no repetirlas:
+    // syncLobby corre en cada actualización de sala.
+    const effective = bots.length + _pendingAdds;
+    if (want === effective) return;
 
     _lobbyBusy = true;
     try {
-      if (want > bots.length) await _addBots(code, want - bots.length, room);
-      else                    await _removeBots(code, bots, bots.length - want);
+      if (want > effective)        await _addBots(code, want - effective, room);
+      else if (want < bots.length) await _removeBots(code, bots, bots.length - want);
     } catch (e) {
       console.warn('[Bots] syncLobby error:', e);
     } finally {
@@ -91,13 +97,25 @@ const CocheBots = (() => {
   async function _addBots(code, count, room) {
     const { db, ref, get, update } = window._FB;
 
-    const picks = BotNames.pick(count, Object.values(room.players || {}).map(p => p.name));
+    // Excluir presentes y nombres ya reservados por altas en vuelo.
+    const taken = Object.values(room.players || {}).map(p => p.name).concat([..._pendingNames]);
+    const picks = BotNames.pick(count, taken);
     if (!picks.length) return;
 
     picks.forEach((name, i) => {
       const delay = BotCore.randFloat(1800, 5200) + i * BotCore.randFloat(2500, 6000);
 
+      _pendingAdds++;
+      _pendingNames.add(BotNames.norm(name));
+
       _timers.after(delay, async () => {
+        let released = false;
+        const release = () => {
+          if (released) return;
+          released = true;
+          _pendingAdds = Math.max(0, _pendingAdds - 1);
+          _pendingNames.delete(BotNames.norm(name));
+        };
         try {
           const snap = await get(ref(db, _roomPath(code)));
           if (!snap.exists()) return;
@@ -105,7 +123,7 @@ const CocheBots = (() => {
           if (fresh.status !== 'waiting' || !fresh.isPublic) return;
 
           const s = BotCore.split(fresh.players);
-          if (s.bots.length >= BotCore.desiredBotCount(s.humans.length)) return;
+          if (s.bots.length + (_pendingAdds - 1) >= BotCore.desiredBotCount(s.humans.length)) return;
           if (Object.keys(fresh.players || {}).length >= 5) return;   // tope de la sala
 
           const already = Object.values(fresh.players || {}).map(p => BotNames.norm(p.name));
@@ -118,6 +136,8 @@ const CocheBots = (() => {
           console.log('[Bots] Añadido', name);
         } catch (e) {
           console.warn('[Bots] alta fallida:', e);
+        } finally {
+          release();
         }
       });
     });
@@ -343,6 +363,8 @@ const CocheBots = (() => {
     _scanToken++;
     _lobbyBusy    = false;
     _lastRoundKey = null;
+    _pendingAdds  = 0;
+    _pendingNames.clear();
   }
 
   return { syncLobby, onRound, stop };

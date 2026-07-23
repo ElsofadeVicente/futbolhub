@@ -582,14 +582,57 @@ const App = (() => {
       if (_isHost) {
         // FIX: contar solo jugadores conectados. Si un jugador se cae mid-round
         // (connected: false), nunca reporta done y el reveal quedaba bloqueado.
-        const totalPlayers = Object.values(room.players || {}).filter(p => p.connected !== false).length;
+        const conn         = Object.values(room.players || {}).filter(p => p.connected !== false);
+        const totalPlayers = conn.length;
         const doneCount    = room.doneCount || 0;
         console.log(`[App] doneCount: ${doneCount} / ${totalPlayers}`);
         if (totalPlayers >= 2 && doneCount >= totalPlayers) {
+          _clearBotWatchdog();
           BlackjackSync.startReveal(_roomCode).catch(e => console.error('[App] startReveal error:', e));
+        } else {
+          // Watchdog anti-cuelgue: si SOLO faltan bots por reportar (todos los
+          // humanos ya jugaron), damos un margen corto y forzamos el reveal.
+          // A diferencia de Coche, Blackjack no tiene reloj de ronda que lo
+          // garantice, así que un bot que fallara su reporte dejaría la ronda
+          // colgada para siempre. Nunca corta a un humano: solo actúa cuando
+          // los únicos pendientes son bots.
+          _maybeArmBotWatchdog(room, doneCount, totalPlayers);
         }
       }
     }
+  }
+
+  /* ── Watchdog de reveal (solo host, salas con bots) ── */
+  let _botWatchdog = null;
+
+  function _maybeArmBotWatchdog(room, doneCount, totalPlayers) {
+    if (_botWatchdog) return;                 // ya armado para esta espera
+    if (!room.isPublic) return;               // los bots solo viven en salas públicas
+    const decisions = room.decisions || {};
+    // ¿Han reportado ya todos los humanos conectados?
+    const allHumansDone = Object.entries(room.players || {})
+      .filter(([, p]) => p.connected !== false && !p.isBot)
+      .every(([id]) => decisions[id]);
+    const botsPending = doneCount < totalPlayers;
+    if (!allHumansDone || !botsPending) return;
+
+    _botWatchdog = setTimeout(async () => {
+      _botWatchdog = null;
+      try {
+        const snap = await window._FB.get(window._FB.ref(window._FB.db, `blackjack/rooms/${_roomCode}`));
+        if (!snap.exists()) return;
+        const fresh = snap.val();
+        if (fresh.status !== 'playing') return;   // ya avanzó
+        console.warn('[App] Watchdog: forzando reveal (bots sin reportar a tiempo)');
+        await BlackjackSync.startReveal(_roomCode);
+      } catch (e) {
+        console.warn('[App] Watchdog error:', e);
+      }
+    }, 6000);
+  }
+
+  function _clearBotWatchdog() {
+    if (_botWatchdog) { clearTimeout(_botWatchdog); _botWatchdog = null; }
   }
 
   function _updateLobbyUI(room) {
@@ -982,13 +1025,11 @@ const App = (() => {
     let dataReady    = false;
     let pendingRoom  = null;
 
-    const _stopBar = () => {};   // la transición CSS se detiene sola al ocultar el overlay
 
     _loadPool()
       .then(() => {
         dataReady = true;
         if (countdownDone && pendingRoom) {
-          _stopBar();
           overlay.classList.add('hidden');
           _startRoundNow(pendingRoom);
         }
@@ -997,7 +1038,6 @@ const App = (() => {
         dataReady = true;
         console.warn('[App] Pool load error:', e);
         if (countdownDone && pendingRoom) {
-          _stopBar();
           overlay.classList.add('hidden');
           _startRoundNow(pendingRoom);
         }
@@ -1009,7 +1049,6 @@ const App = (() => {
         clearInterval(iv);
         countdownDone = true;
         if (dataReady && pendingRoom) {
-          _stopBar();
           overlay.classList.add('hidden');
           _startRoundNow(pendingRoom);
         } else if (!dataReady) {
@@ -1024,7 +1063,6 @@ const App = (() => {
     _pendingRoomRef = (r) => {
       pendingRoom = r;
       if (countdownDone && dataReady) {
-        _stopBar();
         overlay.classList.add('hidden');
         _startRoundNow(r);
       }
@@ -1119,6 +1157,7 @@ const App = (() => {
      REVEAL INICIADO (listener Firebase)
      ══════════════════════════════════════════ */
   function _onRevealStart(room) {
+    _clearBotWatchdog();   // la ronda avanzó: cancelar el watchdog pendiente
     _triggerRevealForAll(room);
   }
 
@@ -1223,6 +1262,7 @@ const App = (() => {
     clearInterval(_startCooldownInterval);
     _clearPublicLobbyTimer();
     _playAgainCountdownActive = false;
+    _clearBotWatchdog();
     if (typeof BlackjackBots !== 'undefined') BlackjackBots.stop();
 
     // ── Modo local: no hay Firebase que limpiar ──
@@ -1320,6 +1360,7 @@ const App = (() => {
     clearInterval(_startCooldownInterval);
     _cancelWaitPublicInternal();
     _playAgainCountdownActive = false;
+    _clearBotWatchdog();
     if (typeof BlackjackBots !== 'undefined') BlackjackBots.stop();
 
     if (_unsubRoom) { _unsubRoom(); _unsubRoom = null; }
