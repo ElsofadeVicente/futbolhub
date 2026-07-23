@@ -93,33 +93,16 @@
 <div id="screen-lobby" class="screen" style="position:relative;">
   <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
 
-  <div class="lobby-wrap" style="justify-content:center;min-height:100vh;">
+  <div class="lobby-wrap">
 
     <div class="lobby-code-card">
       <div class="lobby-code-label">Código de sala</div>
       <div class="lobby-code-big" id="lobby-code-display">------</div>
-      <div id="lobby-code-link-display"
-           style="font-family:'Rajdhani',sans-serif;font-size:0.68rem;color:var(--text-light);
-                  opacity:0.35;margin-top:5px;word-break:break-all;padding:0 8px;
-                  text-align:center;letter-spacing:0;line-height:1.4;"></div>
-      <button onclick="App.copyLink()" style="margin-top:6px;background:none;border:none;color:var(--neon-green);font-family:'Rajdhani',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;letter-spacing:1px;">
-        🔗 Copiar enlace
+      <div id="lobby-code-link-display" class="lobby-link-display"></div>
+      <button id="btn-copy-link" onclick="App.copyLink()">
+        🔗 Copiar enlace de invitación
       </button>
     </div>
-
-    <div style="width:100%">
-      <p style="font-family:'Rajdhani',sans-serif;font-size:0.7rem;letter-spacing:2px;color:var(--neon-green);opacity:0.7;text-transform:uppercase;margin-bottom:8px;">Jugadores</p>
-      <div class="lobby-players-list" id="lobby-players-list"></div>
-    </div>
-
-    <div id="lobby-mode-display" style="font-family:'Rajdhani',sans-serif;font-size:0.85rem;color:var(--text-light);opacity:0.5;letter-spacing:1px;text-align:center;"></div>
-
-    <button class="btn-primary" id="btn-start-game" onclick="App.startGame()" style="display:none" disabled>
-      EMPEZAR ▶
-    </button>
-    <p id="lobby-hint" style="font-family:'Rajdhani',sans-serif;font-size:0.8rem;color:var(--text-light);opacity:0.4;text-align:center;letter-spacing:1px;">
-      Esperando jugadores… (mín. 2)
-    </p>
 
     <!-- Contador auto-arranque sala pública -->
     <div id="lobby-autotimer" class="lobby-autotimer hidden">
@@ -127,10 +110,24 @@
         <div class="lobby-autotimer-bar" id="lobby-autotimer-bar"></div>
       </div>
       <div class="lobby-autotimer-text">
-        <span id="lobby-autotimer-label">⏱ La partida arranca en</span>
+        <span id="lobby-autotimer-label">La partida empieza en</span>
         <span id="lobby-autotimer-count" class="lobby-autotimer-count">3:00</span>
       </div>
     </div>
+
+    <div class="lobby-section">
+      <p class="lobby-section-kicker">Jugadores</p>
+      <div class="lobby-players-list" id="lobby-players-list"></div>
+    </div>
+
+    <div id="lobby-mode-display" class="lobby-mode-badge"></div>
+
+    <button class="btn-primary" id="btn-start-game" onclick="App.startGame()" style="display:none" disabled>
+      EMPEZAR ▶
+    </button>
+    <p id="lobby-hint" class="lobby-hint">
+      Esperando jugadores… (mín. 2)
+    </p>
 
   </div>
 </div>
@@ -244,8 +241,11 @@
      ═══════════════════════════════════════════════ -->
 <div id="countdown-overlay" class="countdown-overlay hidden">
   <div class="countdown-inner">
-    <div class="countdown-label">EMPIEZA EN</div>
+    <div class="countdown-label">¡EMPIEZA EN!</div>
     <div class="countdown-number" id="countdown-number">10</div>
+    <div class="countdown-progress-wrap">
+      <div class="countdown-progress-bar" id="countdown-progress-bar"></div>
+    </div>
   </div>
 </div>
 

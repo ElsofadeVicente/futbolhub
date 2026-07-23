@@ -957,21 +957,38 @@ const App = (() => {
 
     const overlay = document.getElementById('countdown-overlay');
     const numEl   = document.getElementById('countdown-number');
+    const barEl   = document.getElementById('countdown-progress-bar');
     if (!overlay || !numEl) return;
 
     const SECS = 10;
     overlay.classList.remove('hidden');
     numEl.textContent = SECS;
 
+    // Barra de progreso que se vacía en 10s (misma idea que Coche). Se anima
+    // con una transición CSS, que avanza por reloj: sigue corriendo aunque la
+    // pestaña esté en segundo plano (a diferencia de requestAnimationFrame).
+    if (barEl) {
+      barEl.classList.remove('done');
+      barEl.style.transition = 'none';
+      barEl.style.width = '100%';
+      // Forzar reflow para que el cambio a 0% se anime desde el 100%
+      void barEl.offsetWidth;
+      barEl.style.transition = `width ${SECS}s linear`;
+      barEl.style.width = '0%';
+    }
+
     let remaining    = SECS;
     let countdownDone = false;
     let dataReady    = false;
     let pendingRoom  = null;
 
+    const _stopBar = () => {};   // la transición CSS se detiene sola al ocultar el overlay
+
     _loadPool()
       .then(() => {
         dataReady = true;
         if (countdownDone && pendingRoom) {
+          _stopBar();
           overlay.classList.add('hidden');
           _startRoundNow(pendingRoom);
         }
@@ -980,6 +997,7 @@ const App = (() => {
         dataReady = true;
         console.warn('[App] Pool load error:', e);
         if (countdownDone && pendingRoom) {
+          _stopBar();
           overlay.classList.add('hidden');
           _startRoundNow(pendingRoom);
         }
@@ -991,10 +1009,12 @@ const App = (() => {
         clearInterval(iv);
         countdownDone = true;
         if (dataReady && pendingRoom) {
+          _stopBar();
           overlay.classList.add('hidden');
           _startRoundNow(pendingRoom);
         } else if (!dataReady) {
-          numEl.textContent = '⏳';
+          numEl.textContent = '¡YA!';
+          if (barEl) { barEl.style.width = '0%'; barEl.classList.add('done'); }
         }
       } else {
         numEl.textContent = remaining;
@@ -1004,6 +1024,7 @@ const App = (() => {
     _pendingRoomRef = (r) => {
       pendingRoom = r;
       if (countdownDone && dataReady) {
+        _stopBar();
         overlay.classList.add('hidden');
         _startRoundNow(r);
       }
