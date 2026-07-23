@@ -19,7 +19,18 @@ function _acNorm(s) {
   return String(s || '').toLowerCase()
     .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    /* Los ap\u00f3strofes desaparecen en vez de convertirse en espacio: as\u00ed
+       "Eto'o" se lee "etoo" y se encuentra escribi\u00e9ndolo sin ap\u00f3strofe,
+       que es como lo escribe todo el mundo. Igual con O'Shea, N'Golo\u2026 */
+    .replace(/['\u2018\u2019\u00b4`\u02bc]/g, '')
     .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/* Versi\u00f3n "pegada": la misma normalizaci\u00f3n pero sin espacios. Permite
+   encontrar a un jugador tanto si escribes el nombre junto como separado
+   ("etoo" / "eto o", "alexanderarnold" / "alexander arnold"). */
+function _acTight(s) {
+  return _acNorm(s).replace(/ /g, '');
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -162,16 +173,20 @@ function _buildPlayerFromChunk(id, chunk) {
    Siempre intenta enriquecer los datos con el chunk para garantizar
    que 'teams' esté completo incluso si _loadData no lo cargó. */
 async function findPlayerAsync(inputName) {
-  const norm = s => String(s||'').toLowerCase()
-    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
-  const n = norm(inputName);
+  /* Misma normalizacion que el autocompletado (_acNorm), para que lo que se ve
+     en la lista de sugerencias sea exactamente lo que se acepta al enviar.
+     El "tight" ignora ademas los espacios: asi "Etoo" encuentra a Eto'o. */
+  const norm  = s => _acNorm(s);
+  const tight = s => _acTight(s);
+  const n  = norm(inputName);
+  const nt = tight(inputName);
   if (!n) return null;
 
-  /* 1. Buscar en PLAYERS_DB — puede haber duplicados por nombre */
+  const sameName = (a) => norm(a) === n || (nt && tight(a) === nt);
+
+  /* 1. Buscar en PLAYERS_DB - puede haber duplicados por nombre */
   const matches = PLAYERS_DB.filter(p =>
-    norm(p.name) === n || (p.aliases||[]).some(a => norm(a) === n)
+    sameName(p.name) || (p.aliases||[]).some(a => sameName(a))
   );
   /* Si hay un solo match, usarlo; si hay varios, preferir el que tiene teammates (companeros_principal) */
   const inDB = matches.length === 1 ? matches[0]
@@ -183,7 +198,7 @@ async function findPlayerAsync(inputName) {
 
   /* Si no está en PLAYERS_DB, buscar ID en NAME_INDEX */
   if (!chunkId) {
-    const entry = NAME_INDEX.find(([, name]) => norm(name) === n);
+    const entry = NAME_INDEX.find(([, name]) => sameName(name));
     if (!entry) return null;
     chunkId = String(entry[0]);
   }
@@ -2005,10 +2020,33 @@ const App = (() => {
 
   /* Si hay sesión, ocultar los campos de "Tu nombre" (se usará el usuario)
      y mostrar un aviso. Reacciona también si entra/sale de la sesión. */
+  /* Empuja mi nombre y mi foto al nodo de la sala.
+     Hace falta porque la identidad (sesión + perfil) se resuelve por red: si
+     entras a la sala antes de que llegue, tu jugador se guarda sin foto y en
+     el lobby sale la inicial para siempre. Al resolverse (o al cambiar de
+     cuenta) lo corregimos sobre la marcha. */
+  function _syncMyIdentityToRoom() {
+    if (_isLocal || !_roomCode || !_playerId) return;
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    if (!id) return;
+    /* Solo escribir si de verdad hay algo que corregir: esta función se llama
+       en cada refresco del lobby y no debe generar una escritura por refresco. */
+    const mine = _lastRoom?.players?.[_playerId];
+    if (mine && mine.name === id.username && (mine.avatar || null) === (id.avatarUrl || null)) return;
+    try {
+      const {db, ref, update} = window._FB;
+      update(ref(db, `restricciones/rooms/${_roomCode}/players/${_playerId}`), {
+        name:   id.username,
+        avatar: id.avatarUrl || null,
+      }).catch(()=>{});
+    } catch(e) {}
+  }
+
   function _setupAccountName() {
     if (!(window.FHAuth && FHAuth.onIdentity)) return;
     const NAME_INPUTS = ['input-host-name','input-join-name','input-public-name','input-local-name'];
     FHAuth.onIdentity(id => {
+      _syncMyIdentityToRoom();
       NAME_INPUTS.forEach(i => {
         const el = document.getElementById(i);
         if (el) el.style.display = id ? 'none' : '';
@@ -2600,6 +2638,7 @@ const App = (() => {
 
   function _updateLobbyUI(room) {
     if (_currentScreen() !== 'screen-lobby') _showScreen('screen-lobby');
+    _syncMyIdentityToRoom();   // por si entramos antes de que resolviera la sesión
     const code = _roomCode || '------';
     const codeEl = document.getElementById('lobby-code-display');
     if (codeEl) codeEl.textContent = code;
@@ -3786,6 +3825,7 @@ const App = (() => {
 
     _acDebounce = setTimeout(async () => {
       const q = _acNorm(value);
+      const qTight = _acTight(value);
 
       /* ── Buscar en NAME_INDEX eliminando duplicados de ID ── */
       let exact = [], starts = [], wordBound = [], contains = [];
@@ -3800,6 +3840,9 @@ const App = (() => {
         else if (n.startsWith(q))       starts.push([sid, name]);
         else if (_acAnyWordStarts(n, q)) wordBound.push([sid, name]);
         else if (n.includes(q))         contains.push([sid, name]);
+        /* Último intento ignorando los espacios, para que "eto o" encuentre
+           a Eto'o y "alexanderarnold" a Alexander-Arnold */
+        else if (qTight && _acTight(name).includes(qTight)) contains.push([sid, name]);
       }
 
       /* También descartar nombres normalizados repetidos (mismo jugador, distinta grafía)

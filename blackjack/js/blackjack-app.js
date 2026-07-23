@@ -30,10 +30,33 @@ const App = (() => {
     if (window.FHAuth && FHAuth.avatarInner) return FHAuth.avatarInner(p && p.name, p && p.avatar);
     return escapeHtml(((p && p.name) || '?').charAt(0).toUpperCase());
   }
+  /* Empuja mi nombre y mi foto al nodo de la sala.
+     Hace falta porque la identidad (sesión + perfil) se resuelve por red: si
+     entras a la sala antes de que llegue, tu jugador se guarda sin foto y en
+     el lobby sale la inicial para siempre. Al resolverse (o al cambiar de
+     cuenta) lo corregimos sobre la marcha. */
+  function _syncMyIdentityToRoom() {
+    if (_isLocal || !_roomCode || !_playerId) return;
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    if (!id) return;
+    /* Solo escribir si de verdad hay algo que corregir: esta función se llama
+       en cada refresco del lobby y no debe generar una escritura por refresco. */
+    const mine = _lastRoomData?.players?.[_playerId];
+    if (mine && mine.name === id.username && (mine.avatar || null) === (id.avatarUrl || null)) return;
+    try {
+      const { db, ref, update } = window._FB;
+      update(ref(db, `blackjack/rooms/${_roomCode}/players/${_playerId}`), {
+        name:   id.username,
+        avatar: id.avatarUrl || null,
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
   function _setupAccountName() {
     if (!(window.FHAuth && FHAuth.onIdentity)) return;
     const INPUTS = ['input-host-name', 'input-join-name', 'input-public-name', 'input-local-name'];
     FHAuth.onIdentity(id => {
+      _syncMyIdentityToRoom();
       INPUTS.forEach(i => { const el = document.getElementById(i); if (el) el.style.display = id ? 'none' : ''; });
       document.querySelectorAll('.account-name-hint').forEach(h => h.remove());
       if (id) INPUTS.forEach(i => {
@@ -432,6 +455,7 @@ const App = (() => {
     document.getElementById('lobby-code-display').textContent = _roomCode;
     document.getElementById('lobby-mode-display').textContent = MODE_LABELS[_mode] || _mode;
     document.getElementById('game-topbar')?.classList.add('hidden');
+    _syncMyIdentityToRoom();   // por si entramos antes de que resolviera la sesión
 
     // Actualizar URL con el código de sala (permite compartir y evita bugs al recargar)
     if (_roomCode) {
