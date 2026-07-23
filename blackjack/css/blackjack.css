@@ -232,46 +232,76 @@ body {
    ══════════════════════════════════════════════ */
 #screen-lobby { justify-content: center; padding: 24px 20px; gap: 14px; }
 
+/* Lobby con el mismo tratamiento que Coche: todo dentro de un marco de
+   periódico (borde + sombra dura), para que los dos juegos se lean igual. */
 .lobby-wrap {
-  width: 100%; max-width: 440px;
-  display: flex; flex-direction: column; gap: 14px;
-  align-items: center; justify-content: center; min-height: 100vh;
+  width: 100%; max-width: 460px;
+  display: flex; flex-direction: column; gap: 12px;
+  align-items: center; justify-content: center;
+  margin: 20px auto; padding: 18px;
+  border: 2px solid var(--np-ink);
+  background: var(--np-paper2);
+  box-shadow: 5px 5px 0 var(--np-ink);
 }
 
 .lobby-code-card {
-  width: 100%; background: var(--np-paper2);
-  border: 2px solid var(--np-ink); padding: 16px 20px 14px;
-  text-align: center; box-shadow: 5px 5px 0 var(--np-ink);
+  width: 100%; background: var(--np-paper);
+  border: 1.5px solid var(--np-ink); padding: 18px 22px;
+  text-align: center; box-shadow: 3px 3px 0 var(--np-ink);
+  display: flex; flex-direction: column; align-items: center;
 }
 
 .lobby-code-label {
-  font-family: 'DM Mono', monospace; font-size: 0.6rem;
-  letter-spacing: 0.34em; color: var(--np-ink-mid);
-  text-transform: uppercase; margin-bottom: 8px; display: block;
+  font-family: 'DM Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.28em; color: var(--np-ink-mid);
+  text-transform: uppercase; margin-bottom: 6px; display: block;
 }
 
 .lobby-code-big {
-  font-family: 'Anton', sans-serif; font-size: 3.6rem;
+  font-family: 'Anton', sans-serif; font-size: 2.8rem;
   letter-spacing: 0.28em; color: var(--np-red); line-height: 1;
 }
 
+.lobby-link-display {
+  font-family: 'DM Mono', monospace; font-size: 0.68rem;
+  color: var(--np-ink-mid); margin-top: 5px; word-break: break-all;
+  padding: 0 8px; text-align: center; line-height: 1.4;
+}
+
+#btn-copy-link {
+  margin-top: 8px; background: none; border: 1px solid var(--np-ink);
+  color: var(--np-ink); font-family: 'DM Mono', monospace;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  padding: 6px 14px; cursor: pointer; text-transform: uppercase;
+}
+#btn-copy-link:hover { background: var(--np-ink); color: var(--np-paper); }
+
+.lobby-section { width: 100%; }
+.lobby-section-kicker {
+  font-family: 'DM Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.22em; color: var(--np-red);
+  text-transform: uppercase; margin-bottom: 8px;
+}
+
 .lobby-players-list {
-  width: 100%; display: flex; flex-direction: column;
-  border: 1px solid var(--np-ink-soft); border-bottom: none;
+  width: 100%; display: flex; flex-direction: column; gap: 5px;
 }
 
 .lobby-player-row {
-  background: var(--np-paper2); border-bottom: 1px solid var(--np-ink-soft);
-  padding: 9px 12px; display: flex; align-items: center; gap: 10px;
+  background: var(--np-paper);
+  border: 1px solid var(--np-ink-soft);
+  border-left: 3px solid var(--np-ink);
+  padding: 10px 14px; display: flex; align-items: center; gap: 10px;
   font-family: 'DM Mono', monospace; font-size: 0.72rem;
   letter-spacing: 0.07em; color: var(--np-ink); text-transform: uppercase;
 }
 
 .lobby-player-avatar {
-  width: 26px; height: 26px; background: var(--np-ink);
+  width: 28px; height: 28px;
+  background: var(--np-paper3); border: 1.5px solid var(--np-ink);
   display: flex; align-items: center; justify-content: center;
   font-family: 'Anton', sans-serif; font-size: 0.8rem;
-  color: var(--np-paper); flex-shrink: 0;
+  color: var(--np-ink); flex-shrink: 0;
   /* Círculo con la foto recortada al centro: overflow oculto para que la
      imagen no se salga del círculo, y object-fit:cover en el <img> para
      que llene sin deformarse (mismo criterio que las redes sociales). */
@@ -284,10 +314,22 @@ body {
   display: block; border-radius: 50%;
 }
 
-.lobby-player-name { flex: 1; }
+.lobby-player-name { flex: 1; color: var(--np-ink); }
 .lobby-player-host {
   font-family: 'DM Mono', monospace; font-size: 0.58rem;
   letter-spacing: 0.14em; color: var(--np-red);
+}
+
+.lobby-mode-badge {
+  font-family: 'DM Mono', monospace; font-size: 0.65rem;
+  color: var(--np-ink-mid); text-align: center;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+.lobby-hint {
+  font-family: 'DM Mono', monospace; font-size: 0.68rem;
+  color: var(--np-ink-mid); text-align: center;
+  letter-spacing: 0.1em; line-height: 1.5;
 }
 
 /* ══════════════════════════════════════════════
@@ -833,12 +875,17 @@ body {
 .lobby-autotimer-count { font-family: 'Anton', sans-serif; font-size: 1.2rem; letter-spacing: 3px; color: var(--np-red); transition: color 0.8s; }
 .lobby-autotimer-count.urgent { color: var(--np-ink); }
 
-.countdown-overlay { position: fixed; inset: 0; z-index: 9999; background: var(--np-paper); display: flex; align-items: center; justify-content: center; }
+/* Cuenta atrás previa a la partida: mismo tratamiento limpio que Coche
+   (número grande centrado sin caja), pero con la tipografía de Blackjack
+   (Anton, la misma del código de sala y el marcador). */
+.countdown-overlay { position: fixed; inset: 0; height: 100dvh; z-index: 9999; background: var(--np-paper); display: flex; align-items: center; justify-content: center; }
 .countdown-overlay.hidden { display: none; }
-.countdown-inner { text-align: center; border: 3.5px solid var(--np-ink); padding: 36px 56px; box-shadow: 8px 8px 0 var(--np-ink); background: var(--np-paper2); position: relative; }
-.countdown-inner::before { content: ''; position: absolute; inset: 6px; border: 1px solid var(--np-ink-soft); pointer-events: none; }
-.countdown-label { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.44em; color: var(--np-ink-mid); text-transform: uppercase; margin-bottom: 8px; }
-.countdown-number { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 900; font-size: clamp(7rem,22vw,13rem); line-height: 0.9; color: var(--np-ink); animation: countPulse 1s ease-in-out infinite; }
+.countdown-inner { text-align: center; }
+.countdown-label { font-family: 'DM Mono', monospace; font-size: 0.8rem; letter-spacing: 0.4em; color: var(--np-ink-mid); text-transform: uppercase; margin-bottom: 14px; }
+.countdown-number { font-family: 'Anton', sans-serif; font-size: clamp(7rem,26vw,14rem); line-height: 0.9; color: var(--np-ink); animation: countPulse 1s ease-in-out infinite; }
+.countdown-progress-wrap { width: 220px; height: 2px; background: var(--np-ink-soft); overflow: hidden; margin: 22px auto 0; }
+.countdown-progress-bar { height: 100%; width: 100%; background: var(--np-red); transition: width 0.25s linear, background 0.4s; }
+.countdown-progress-bar.done { background: var(--np-ink); width: 0%; }
 
 @keyframes countPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.60; } }
 
