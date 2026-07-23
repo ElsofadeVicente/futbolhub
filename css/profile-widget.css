@@ -380,3 +380,103 @@ body.np-body .pw-root { position: absolute; }
   .pw-circle { width: 38px; height: 38px; }
   .pw-modal { padding: 22px 16px 18px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Recortador circular de foto de perfil
+   ═══════════════════════════════════════════════════════ */
+.pw-crop-back {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;                 /* por encima del modal de ajustes */
+  background: rgba(8, 9, 12, .82);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+.pw-crop-modal {
+  width: 100%;
+  max-width: 360px;
+  background: #16181d;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+  padding: 22px 20px 20px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .6);
+  color: #e8e6e1;
+  animation: pw-drop .18s ease;
+}
+.pw-crop-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 16px;
+}
+.pw-crop-stage {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
+  touch-action: none;              /* el gesto lo maneja el arrastre, no el scroll */
+  cursor: grab;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0c0d10;
+}
+.pw-crop-stage:active { cursor: grabbing; }
+.pw-crop-canvas { display: block; }
+/* Máscara: oscurece fuera del círculo y dibuja el borde circular */
+.pw-crop-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(12, 13, 16, .55) inset;
+  /* El agujero circular lo hace el propio box-shadow gigante recortado por
+     un radial-gradient en la máscara: */
+  -webkit-mask: radial-gradient(circle at center, transparent 0, transparent calc(50% - 1px), #000 50%);
+          mask: radial-gradient(circle at center, transparent 0, transparent calc(50% - 1px), #000 50%);
+}
+/* Aro fino blanco marcando el círculo, encima de la máscara */
+.pw-crop-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .55);
+}
+.pw-crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 4px 4px;
+}
+.pw-crop-range { flex: 1; accent-color: #ffcf6b; cursor: pointer; }
+.pw-crop-zi { color: rgba(232, 230, 225, .6); font-weight: 700; line-height: 1; }
+.pw-crop-zi-sm { font-size: .8rem; }
+.pw-crop-zi-lg { font-size: 1.25rem; }
+.pw-crop-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.pw-crop-btn {
+  flex: 1;
+  padding: 11px 12px;
+  border-radius: 9px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.pw-crop-cancel {
+  background: none;
+  border-color: rgba(255, 255, 255, .18);
+  color: rgba(232, 230, 225, .75);
+}
+.pw-crop-cancel:hover { color: #fff; border-color: rgba(255, 255, 255, .35); }
+.pw-crop-ok {
+  background: #ffcf6b;
+  color: #1a1400;
+}
+.pw-crop-ok:hover { background: #ffd77e; }

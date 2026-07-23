@@ -403,17 +403,34 @@
         handleSubmit(form);
     });
 
-    /* Foto de perfil: al elegir un archivo, subirlo y repintar el avatar */
+    /* Foto de perfil: al elegir un archivo, abrir el recortador circular;
+       solo se sube tras confirmar el encuadre. */
     modal.addEventListener('change', async (e) => {
         const input = e.target.closest('.pw-file');
         if (!input || !input.files || !input.files[0]) return;
         const file = input.files[0];
         input.value = '';               // permite volver a elegir el mismo archivo
         setMsg('', '');
+
+        if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
+            return setMsg('error', 'La foto debe ser una imagen (JPG, PNG, WEBP o GIF).');
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            return setMsg('error', 'La imagen es demasiado grande (máximo 20 MB).');
+        }
+
+        let cropped;
+        try {
+            cropped = await openCropper(file);   // Blob cuadrado ya recortado, o null si cancela
+        } catch (err) {
+            return setMsg('error', 'No se pudo leer la imagen.');
+        }
+        if (!cropped) return;   // el usuario canceló
+
         setBusy(true);
         try {
             setMsg('', 'Subiendo foto…');
-            const r = await FHAuth.uploadAvatar(file);
+            const r = await FHAuth.uploadAvatar(cropped);
             if (!r.ok) return setMsg('error', r.error);
             profile = await FHAuth.getProfile(true);
             renderCircle();
@@ -467,6 +484,155 @@
     }
     window.addEventListener('resize', positionClearOfAds);
     window.addEventListener('load', positionClearOfAds);
+
+    /* ═══════════════════════════════════════════════════════════
+       RECORTADOR CIRCULAR DE FOTO DE PERFIL
+       Un recuadro con la foto y una máscara circular encima. Se
+       arrastra y se hace zoom para encuadrar; al confirmar se
+       dibuja el trozo visible en un canvas cuadrado y se devuelve
+       como Blob JPEG listo para subir (mismo criterio que las RRSS:
+       se guarda cuadrado y se muestra en círculo).
+       ═══════════════════════════════════════════════════════════ */
+    const CROP_OUT = 512;   // lado del JPEG resultante
+
+    function openCropper(file) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => start(img, url, resolve, reject);
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('imagen inválida')); };
+            img.src = url;
+        });
+    }
+
+    function start(img, url, resolve, reject) {
+        const back = document.createElement('div');
+        back.className = 'pw-crop-back';
+        back.innerHTML = `
+          <div class="pw-crop-modal" role="dialog" aria-modal="true">
+            <div class="pw-crop-title">Ajusta tu foto</div>
+            <div class="pw-crop-stage">
+              <canvas class="pw-crop-canvas"></canvas>
+              <div class="pw-crop-ring"></div>
+            </div>
+            <div class="pw-crop-zoom">
+              <span class="pw-crop-zi pw-crop-zi-sm">A</span>
+              <input class="pw-crop-range" type="range" min="1" max="4" step="0.01" value="1"
+                     aria-label="Zoom">
+              <span class="pw-crop-zi pw-crop-zi-lg">A</span>
+            </div>
+            <div class="pw-crop-actions">
+              <button class="pw-crop-btn pw-crop-cancel" type="button">Cancelar</button>
+              <button class="pw-crop-btn pw-crop-ok" type="button">Guardar foto</button>
+            </div>
+          </div>`;
+        document.body.appendChild(back);
+
+        const canvas = back.querySelector('.pw-crop-canvas');
+        const range  = back.querySelector('.pw-crop-range');
+        const ctx    = canvas.getContext('2d');
+
+        // Lienzo cuadrado del tamaño real del recuadro (con densidad de pantalla)
+        const V   = Math.min(300, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.7));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.style.width = canvas.style.height = V + 'px';
+        canvas.width = canvas.height = V * dpr;
+        ctx.scale(dpr, dpr);
+
+        const natW = img.naturalWidth, natH = img.naturalHeight;
+        const coverScale = Math.max(V / natW, V / natH);   // escala mínima: la foto cubre el recuadro
+
+        let zoom = 1;                 // 1 = cubrir; hasta 4x
+        let tx = 0, ty = 0;           // esquina sup-izq de la imagen respecto al recuadro (px)
+
+        function dispScale() { return coverScale * zoom; }
+
+        // Mantener la imagen siempre cubriendo el recuadro (sin huecos)
+        function clamp() {
+            const dw = natW * dispScale(), dh = natH * dispScale();
+            const minX = V - dw, minY = V - dh;
+            if (tx > 0) tx = 0; if (tx < minX) tx = minX;
+            if (ty > 0) ty = 0; if (ty < minY) ty = minY;
+        }
+
+        function draw() {
+            clamp();
+            ctx.clearRect(0, 0, V, V);
+            const dw = natW * dispScale(), dh = natH * dispScale();
+            ctx.drawImage(img, tx, ty, dw, dh);
+        }
+
+        // Centrar al abrir
+        function center() {
+            const dw = natW * dispScale(), dh = natH * dispScale();
+            tx = (V - dw) / 2; ty = (V - dh) / 2;
+            draw();
+        }
+        center();
+
+        // ── Arrastrar ──
+        let dragging = false, lastX = 0, lastY = 0;
+        const stage = back.querySelector('.pw-crop-stage');
+        stage.addEventListener('pointerdown', (ev) => {
+            dragging = true; lastX = ev.clientX; lastY = ev.clientY;
+            stage.setPointerCapture(ev.pointerId);
+        });
+        stage.addEventListener('pointermove', (ev) => {
+            if (!dragging) return;
+            tx += ev.clientX - lastX; ty += ev.clientY - lastY;
+            lastX = ev.clientX; lastY = ev.clientY;
+            draw();
+        });
+        const endDrag = () => { dragging = false; };
+        stage.addEventListener('pointerup', endDrag);
+        stage.addEventListener('pointercancel', endDrag);
+
+        // ── Zoom con la rueda, manteniendo el punto bajo el cursor ──
+        stage.addEventListener('wheel', (ev) => {
+            ev.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            applyZoom(zoom * (ev.deltaY < 0 ? 1.08 : 1 / 1.08),
+                      ev.clientX - rect.left, ev.clientY - rect.top);
+        }, { passive: false });
+
+        // ── Zoom con el deslizador (respecto al centro) ──
+        range.addEventListener('input', () => applyZoom(parseFloat(range.value), V / 2, V / 2));
+
+        function applyZoom(nz, px, py) {
+            nz = Math.max(1, Math.min(4, nz));
+            // Punto de imagen bajo (px,py) antes de escalar
+            const s0 = dispScale();
+            const ix = (px - tx) / s0, iy = (py - ty) / s0;
+            zoom = nz;
+            const s1 = dispScale();
+            tx = px - ix * s1; ty = py - iy * s1;
+            range.value = zoom;
+            draw();
+        }
+
+        // ── Cerrar / confirmar ──
+        function cleanup() { URL.revokeObjectURL(url); back.remove(); }
+
+        back.querySelector('.pw-crop-cancel').addEventListener('click', () => { cleanup(); resolve(null); });
+        back.addEventListener('click', (ev) => { if (ev.target === back) { cleanup(); resolve(null); } });
+
+        back.querySelector('.pw-crop-ok').addEventListener('click', () => {
+            clamp();
+            const out = document.createElement('canvas');
+            out.width = out.height = CROP_OUT;
+            const octx = out.getContext('2d');
+            // Trozo de la imagen original que ocupa el recuadro
+            const s = dispScale();
+            const srcX = -tx / s, srcY = -ty / s, srcWH = V / s;
+            octx.drawImage(img, srcX, srcY, srcWH, srcWH, 0, 0, CROP_OUT, CROP_OUT);
+            out.toBlob((blob) => {
+                cleanup();
+                if (!blob) return reject(new Error('no se pudo recortar'));
+                // Nombre y tipo para que uploadAvatar calcule bien la extensión
+                resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+            }, 'image/jpeg', 0.9);
+        });
+    }
 
     function mount() {
         document.body.appendChild(root);
