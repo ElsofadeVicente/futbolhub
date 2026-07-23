@@ -272,6 +272,16 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-family: 'Anton', sans-serif; font-size: 0.8rem;
   color: var(--np-paper); flex-shrink: 0;
+  /* Círculo con la foto recortada al centro: overflow oculto para que la
+     imagen no se salga del círculo, y object-fit:cover en el <img> para
+     que llene sin deformarse (mismo criterio que las redes sociales). */
+  border-radius: 50%;
+  overflow: hidden;
+}
+.lobby-player-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block; border-radius: 50%;
 }
 
 .lobby-player-name { flex: 1; }
