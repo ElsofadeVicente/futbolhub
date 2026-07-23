@@ -106,6 +106,10 @@ const App = (() => {
     // / _getFlagUrl), sin JSON ni fetch — no hay nada que precargar aquí.
     _assetsPromise = Promise.resolve();
 
+    // Nombres de los jugadores automáticos: se piden ya para que la primera
+    // sala pública no tenga que esperar a la red.
+    if (typeof BotNames !== 'undefined') BotNames.load();
+
     // Auto-rellenar código si la URL trae ?sala=XXXXXX
     const urlParams = new URLSearchParams(window.location.search);
     const salaCode  = urlParams.get('sala');
@@ -491,7 +495,10 @@ const App = (() => {
       // desconectado y NO hay ningún host conectado, el primer jugador
       // conectado (orden determinista por id) se autopromociona.
       if ((room.status === 'playing' || room.status === 'reveal' || room.status === 'countdown')) {
-        const connectedP = Object.entries(room.players || {}).filter(([, p]) => p.connected !== false);
+        // Un bot nunca puede heredar el host: no tiene navegador que ejecute
+        // la lógica de la partida.
+        const connectedP = Object.entries(room.players || {})
+          .filter(([, p]) => p.connected !== false && !p.isBot);
         const hasHost = connectedP.some(([, p]) => p.isHost === true);
         if (!hasHost && connectedP.length > 0) {
           const candidate = connectedP.map(([pid]) => pid).sort()[0];
@@ -510,6 +517,13 @@ const App = (() => {
       if (_isHost && !wasHost) {
         const st = BlackjackGame.getState?.();
         if (st) st.isHost = true;
+        // Heredamos también los bots: sin esto sus jugadas se quedarían sin
+        // enviar (las tenía programadas el host anterior) y la ronda no
+        // avanzaría nunca. st.setPlayers ya viene con los valores resueltos.
+        if (room.status === 'playing' && room.isPublic && st?.setPlayers?.length
+            && typeof BlackjackBots !== 'undefined') {
+          BlackjackBots.onRound(_roomCode, room, st.setPlayers);
+        }
         if (room.status === 'reveal') {
           const nxt = document.getElementById('btn-next-round');
           if (nxt) nxt.classList.remove('hidden');
@@ -624,6 +638,11 @@ const App = (() => {
     // ── Timer auto-arranque: corre en TODOS los clientes de sala pública ──
     if (room?.isPublic && room.lobbyAt) {
       _startPublicLobbyTimer(room);
+    }
+
+    // ── Bots: solo el host los gestiona, y solo en salas públicas ──
+    if (_isHost && !_isLocal && room?.isPublic && typeof BlackjackBots !== 'undefined') {
+      BlackjackBots.syncLobby(room, _roomCode);
     }
 
     if (_isHost && startBtn) {
@@ -1020,6 +1039,13 @@ const App = (() => {
 
       const topbar = document.getElementById('game-topbar');
       if (topbar) topbar.classList.remove('hidden');
+
+      // ── Bots: el host programa su jugada para esta ronda ──
+      // Se les pasan los jugadores ya enriquecidos porque necesitan el
+      // valor real de cada carta para decidir.
+      if (_isHost && !_isLocal && room.isPublic && typeof BlackjackBots !== 'undefined') {
+        BlackjackBots.onRound(_roomCode, room, enrichedWithValues);
+      }
     });
   }
 
@@ -1152,6 +1178,7 @@ const App = (() => {
     clearInterval(_startCooldownInterval);
     _clearPublicLobbyTimer();
     _playAgainCountdownActive = false;
+    if (typeof BlackjackBots !== 'undefined') BlackjackBots.stop();
 
     // ── Modo local: no hay Firebase que limpiar ──
     if (_isLocal) {
@@ -1248,6 +1275,7 @@ const App = (() => {
     clearInterval(_startCooldownInterval);
     _cancelWaitPublicInternal();
     _playAgainCountdownActive = false;
+    if (typeof BlackjackBots !== 'undefined') BlackjackBots.stop();
 
     if (_unsubRoom) { _unsubRoom(); _unsubRoom = null; }
     _clearSession();

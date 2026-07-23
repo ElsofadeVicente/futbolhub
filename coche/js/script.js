@@ -1363,6 +1363,14 @@ const Sync = (() => {
   }
   function _genId() { return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
 
+  /* Bots: viven en el mismo nodo players que los humanos, pero no cuentan
+     para mantener la sala viva ni pueden heredar el host (no tienen
+     navegador que ejecute la lógica de la partida). */
+  const _isBot = (p) => !!(p && p.isBot);
+  function _humanIds(players, exceptId) {
+    return Object.keys(players||{}).filter(pid => pid!==exceptId && !_isBot(players[pid]));
+  }
+
   async function createRoom(hostName, avatar) {
     const {set,serverTimestamp}=FB();
     const code=_genCode(), hostId=_genId();
@@ -1626,16 +1634,18 @@ const Sync = (() => {
       const room = snap.val();
       if (room.status==='waiting' || room.status==='resetting') {
         await remove(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`));
-        const remaining = Object.keys(room.players||{}).filter(pid=>pid!==playerId).length;
-        if (remaining===0) {
+        /* Solo los humanos mantienen la sala en pie: si se va el último,
+           se cierra aunque queden bots dentro. */
+        const humans = _humanIds(room.players, playerId);
+        if (humans.length===0) {
           /* Sala vacía → eliminarla (pública o privada) para no dejar basura */
           remove(_ref(`${ROOMS_PATH}/${code}`)).catch(()=>{});
           if (room.isPublic) remove(_ref(`${MM_PATH}/${code}`)).catch(()=>{});
         } else if (room.isPublic) {
-          update(_ref(`${MM_PATH}/${code}`),{playerCount:remaining}).catch(()=>{});
+          update(_ref(`${MM_PATH}/${code}`),{playerCount:humans.length}).catch(()=>{});
         }
-        if (remaining>0 && room.players?.[playerId]?.isHost) {
-          const nextPid = Object.keys(room.players||{}).find(pid=>pid!==playerId);
+        if (humans.length>0 && room.players?.[playerId]?.isHost) {
+          const nextPid = humans[0];
           if (nextPid) update(_ref(`${ROOMS_PATH}/${code}/players/${nextPid}`),{isHost:true}).catch(()=>{});
         }
       } else {
@@ -1644,8 +1654,8 @@ const Sync = (() => {
            promover a otro jugador conectado para que el juego no se congele
            (nadie dispararía reveal / siguiente ronda). */
         if (room.players?.[playerId]?.isHost) {
-          const nextPid = Object.keys(room.players||{})
-            .find(pid => pid!==playerId && room.players[pid]?.connected!==false);
+          const nextPid = _humanIds(room.players, playerId)
+            .find(pid => room.players[pid]?.connected!==false);
           if (nextPid) {
             update(_ref(`${ROOMS_PATH}/${code}/players/${nextPid}`),{isHost:true}).catch(()=>{});
             update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{isHost:false}).catch(()=>{});
@@ -2134,6 +2144,10 @@ const App = (() => {
     _preloadDataInBackground();
     _setupAccountName();
 
+    /* Nombres de los jugadores automáticos: se piden ya para que la
+       primera sala pública no tenga que esperar a la red. */
+    if (typeof BotNames !== 'undefined') BotNames.load();
+
     const urlParams = new URLSearchParams(window.location.search);
     const salaCode  = urlParams.get('sala');
     if (salaCode) {
@@ -2467,6 +2481,18 @@ const App = (() => {
               ? connected.filter(p => _suddenDeathPlayers.includes(p.id)).length
               : connected.length;
             if (expected>0 && (room.doneCount||0)>=expected) _triggerReveal(room);
+            /* Heredamos también los bots: sus respuestas las tenía programadas
+               el host anterior, así que hay que reprogramarlas o la ronda se
+               quedaría esperándolos. Como el reloj ya va por la mitad, se les
+               pasa el tiempo que queda en vez del total de la ronda. */
+            else if (_isPublic && typeof CocheBots !== 'undefined' && _timerStartAt) {
+              const left = Math.max(0, _timerTotalSecs - Math.floor((Date.now()-_timerStartAt)/1000));
+              if (left > 3) CocheBots.onRound({
+                code: _roomCode, room, restrictions: _restrictions,
+                roundSecs: left, isSuddenDeath: _isSuddenDeath,
+                suddenDeathPlayers: _suddenDeathPlayers,
+              });
+            }
           }
           /* Si nos promovieron mientras ya veíamos la pantalla de resultados,
              el botón "SIGUIENTE RONDA" estaba oculto (era de otro host).
@@ -2666,6 +2692,11 @@ const App = (() => {
 
     if (_isHost && _isPublic && room.lobbyAt) _startPublicLobbyTimer(room);
     if (_isPublic && room.lobbyAt) _renderPublicLobbyTimer(room.lobbyAt);
+
+    /* Bots: solo los gestiona el host, y solo en salas públicas */
+    if (_isHost && !_isLocal && _isPublic && _roomCode && typeof CocheBots !== 'undefined') {
+      CocheBots.syncLobby(room, _roomCode);
+    }
   }
 
   /* Timer lobby público */
@@ -2790,6 +2821,19 @@ const App = (() => {
         if (sb) sb.disabled = false;
       }
       _startTimer(Date.now(), secs);
+
+      /* Los bots arrancan su reloj en el mismo instante que el resto:
+         cuando terminan de salir las restricciones. */
+      if (_isHost && !_isLocal && _isPublic && typeof CocheBots !== 'undefined') {
+        CocheBots.onRound({
+          code: _roomCode,
+          room,
+          restrictions: _restrictions,
+          roundSecs: secs,
+          isSuddenDeath: _isSuddenDeath,
+          suddenDeathPlayers: _suddenDeathPlayers,
+        });
+      }
     });
   }
 
@@ -3936,6 +3980,7 @@ const App = (() => {
   }
 
   function _resetState() {
+    if (typeof CocheBots !== 'undefined') CocheBots.stop();
     _roomCode=null; _playerId=null; _isHost=false; _isPublic=false;
     _isLocal=false; _localName=''; _localRound=0;
     _round=0; _players=[]; _restrictions=[];

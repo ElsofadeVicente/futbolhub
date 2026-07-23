@@ -14,6 +14,18 @@ const BlackjackSync = (() => {
     return ref(db, path);
   }
 
+  /* ─── Bots ───
+     Los jugadores automáticos de las salas públicas viven en el mismo
+     nodo players que los humanos, pero no cuentan para decidir si la sala
+     sigue viva ni pueden heredar el host: si el último humano se va, la
+     sala se cierra aunque queden bots dentro. */
+  const _isBot = (p) => !!(p && p.isBot);
+
+  function _humanIds(players, exceptId) {
+    return Object.keys(players || {})
+      .filter(pid => pid !== exceptId && !_isBot(players[pid]));
+  }
+
   /* ─── onDisconnect: elimina nodo cuando el cliente se desconecta ─── */
   function _onDisconnectRemove(path) {
     try {
@@ -440,10 +452,12 @@ const BlackjackSync = (() => {
     for (const [pid, p] of Object.entries(players)) {
       resetPlayers[pid] = {
         name:      p.name,
+        avatar:    p.avatar ?? null,
         score:     0,
         connected: p.connected ?? true,
         isHost:    newHostId ? (pid === newHostId) : (p.isHost ?? false),
       };
+      if (_isBot(p)) resetPlayers[pid].isBot = true;
     }
 
     await update(_ref(`blackjack/rooms/${code}`), {
@@ -502,19 +516,21 @@ const BlackjackSync = (() => {
 
         // Si era sala pública, decrementar el contador de matchmaking
         if (room.isPublic && room.mode) {
-          const remaining = Object.keys(room.players || {}).filter(pid => pid !== playerId).length;
-          if (remaining === 0) {
+          // Los bots no mantienen viva la sala: si no queda ningún humano,
+          // se cierra igual que si estuviera vacía.
+          const humans = _humanIds(room.players, playerId);
+          if (humans.length === 0) {
             // Sala vacía — limpiar nodo de matchmaking también
             remove(_ref(`blackjack/matchmaking/${room.mode}/${code}`)).catch(() => {});
             remove(_ref(`blackjack/rooms/${code}`)).catch(() => {});
           } else {
             update(_ref(`blackjack/matchmaking/${room.mode}/${code}`), {
-              playerCount: remaining,
+              playerCount: humans.length,
             }).catch(() => {});
 
-            // Si era el host, promocionar al siguiente jugador como host
+            // Si era el host, promocionar al siguiente humano como host
             if (room.players?.[playerId]?.isHost) {
-              const nextPid = Object.keys(room.players).find(pid => pid !== playerId);
+              const nextPid = humans[0];
               if (nextPid) {
                 update(_ref(`blackjack/rooms/${code}/players/${nextPid}`), { isHost: true }).catch(() => {});
               }
@@ -523,7 +539,7 @@ const BlackjackSync = (() => {
         } else {
           // Sala privada: si era el host, promocionar al siguiente
           if (room.players?.[playerId]?.isHost) {
-            const nextPid = Object.keys(room.players || {}).find(pid => pid !== playerId);
+            const nextPid = _humanIds(room.players, playerId)[0];
             if (nextPid) {
               update(_ref(`blackjack/rooms/${code}/players/${nextPid}`), { isHost: true }).catch(() => {});
             }
@@ -538,8 +554,8 @@ const BlackjackSync = (() => {
         // otro jugador conectado para que el juego no se congele (nadie
         // dispararía el reveal ni la siguiente ronda).
         if (room.players?.[playerId]?.isHost) {
-          const nextPid = Object.keys(room.players || {})
-            .find(pid => pid !== playerId && room.players[pid]?.connected !== false);
+          const nextPid = _humanIds(room.players, playerId)
+            .find(pid => room.players[pid]?.connected !== false);
           if (nextPid) {
             update(_ref(`blackjack/rooms/${code}/players/${nextPid}`), { isHost: true }).catch(() => {});
             update(_ref(`blackjack/rooms/${code}/players/${playerId}`), { isHost: false }).catch(() => {});
@@ -580,7 +596,8 @@ const BlackjackSync = (() => {
     if (isPublic && mode) {
       try {
         const snap = await get(_ref(`blackjack/rooms/${code}/players`));
-        const remaining = snap.exists() ? Object.keys(snap.val()).length : 0;
+        // Solo los humanos mantienen la sala en pie
+        const remaining = snap.exists() ? _humanIds(snap.val()).length : 0;
         if (remaining === 0) {
           remove(_ref(`blackjack/matchmaking/${mode}/${code}`)).catch(() => {});
           remove(_ref(`blackjack/rooms/${code}`)).catch(() => {});
