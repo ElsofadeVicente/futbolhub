@@ -61,14 +61,18 @@ const BlackjackBots = (() => {
   const C_MIN_FRACTION    = 0.65;   // banda C: del 65 % para arriba
   const E_MAX_OVERSHOOT   = 1.10;   // banda E: pasarse como mucho un 10 %
 
-  /* ─── Ritmo humano al pasar las cartas ─── */
-  const CARD_MS_MIN       = 600;
-  const CARD_MS_MAX       = 2600;
+  /* ─── Ritmo humano al pasar las cartas ───
+     Una ronda de Blackjack la resuelve una persona en pocos segundos, así que
+     los tiempos son cortos: el bot no debe tener al resto esperando. El techo
+     es bajo a propósito (nadie mira 10 cartas durante 45s). */
+  const CARD_MS_MIN       = 350;
+  const CARD_MS_MAX       = 1300;
   const LONG_THINK_CHANCE = 0.10;
-  const LONG_MS_MIN       = 4000;
-  const LONG_MS_MAX       = 7000;
-  const FIRST_CARD_MS     = [400, 1600];
-  const MAX_ROUND_MS      = 45000;  // techo para no dejar colgados a los humanos
+  const LONG_MS_MIN       = 1800;
+  const LONG_MS_MAX       = 3200;
+  const FIRST_CARD_MS     = [300, 1100];
+  const MAX_ROUND_MS      = 16000;  // techo para no dejar colgados a los humanos
+  const REPORT_RETRIES    = 3;      // reintentos del reporte para no colgar la ronda
 
   /* Al clavar o rozar el objetivo, ¿se planta antes de ver el resto? */
   const STAND_CHANCE_CLOSE = 0.8;   // si va por encima del 90 % del objetivo
@@ -78,6 +82,8 @@ const BlackjackBots = (() => {
   const _timers      = BotCore.createTimers();
   let   _lobbyBusy   = false;   // hay un alta/baja de bot en vuelo
   let   _lastRoundKey = null;   // evita programar dos veces la misma ronda
+  let   _pendingAdds  = 0;      // altas de bot programadas pero aún sin escribir
+  const _pendingNames = new Set();  // nombres ya reservados por esas altas
 
   /* ═══════════════════════════════════════════
      PESOS NORMALIZADOS DE LAS BANDAS
@@ -247,14 +253,18 @@ const BlackjackBots = (() => {
     const { humans, bots } = BotCore.split(room.players);
     const want = BotCore.desiredBotCount(humans.length);
 
-    if (want === bots.length) return;
+    // Contar las altas ya programadas pero aún sin escribir, para no volver a
+    // programar las mismas: syncLobby corre en cada actualización de sala y
+    // sin esto dos llamadas seguidas meterían bots de más (o repetidos).
+    const effective = bots.length + _pendingAdds;
+    if (want === effective) return;
 
     _lobbyBusy = true;
     try {
-      if (want > bots.length) {
-        await _addBots(code, want - bots.length, room);
-      } else {
-        await _removeBots(code, bots, bots.length - want, humans.length);
+      if (want > effective) {
+        await _addBots(code, want - effective, room);
+      } else if (want < bots.length) {
+        await _removeBots(code, bots, bots.length - want);
       }
     } catch (e) {
       console.warn('[Bots] syncLobby error:', e);
@@ -266,7 +276,9 @@ const BlackjackBots = (() => {
   async function _addBots(code, count, room) {
     const { db, ref, get, update } = window._FB;
 
-    const taken = Object.values(room.players || {}).map(p => p.name);
+    // Excluir tanto a los presentes como a los nombres ya reservados por altas
+    // en vuelo, para que dos altas solapadas no elijan el mismo nombre.
+    const taken = Object.values(room.players || {}).map(p => p.name).concat([..._pendingNames]);
     const picks = BotNames.pick(count, taken);
     if (!picks.length) return;
 
@@ -275,7 +287,18 @@ const BlackjackBots = (() => {
          de diferencia, como entraría gente de verdad. */
       const delay = BotCore.randFloat(1800, 5200) + i * BotCore.randFloat(2500, 6000);
 
+      // Reservar la plaza y el nombre hasta que el alta se resuelva
+      _pendingAdds++;
+      _pendingNames.add(BotNames.norm(picks[i]));
+
       _timers.after(delay, async () => {
+        let released = false;
+        const release = () => {
+          if (released) return;
+          released = true;
+          _pendingAdds = Math.max(0, _pendingAdds - 1);
+          _pendingNames.delete(BotNames.norm(picks[i]));
+        };
         try {
           /* Releer la sala: en estos segundos puede haber entrado
              o salido gente y el cupo ya no ser el mismo. */
@@ -285,7 +308,7 @@ const BlackjackBots = (() => {
           if (fresh.status !== 'waiting' || !fresh.isPublic) return;
 
           const s = BotCore.split(fresh.players);
-          if (s.bots.length >= BotCore.desiredBotCount(s.humans.length)) return;
+          if (s.bots.length + (_pendingAdds - 1) >= BotCore.desiredBotCount(s.humans.length)) return;
           if (Object.keys(fresh.players || {}).length >= 6) return;
 
           const already = Object.values(fresh.players || {}).map(p => BotNames.norm(p.name));
@@ -303,12 +326,14 @@ const BlackjackBots = (() => {
           console.log('[Bots] Añadido', picks[i]);
         } catch (e) {
           console.warn('[Bots] alta fallida:', e);
+        } finally {
+          release();
         }
       });
     }
   }
 
-  async function _removeBots(code, bots, count, humanCount) {
+  async function _removeBots(code, bots, count) {
     const { db, ref, get, remove } = window._FB;
 
     /* Se van los últimos en entrar */
@@ -370,17 +395,29 @@ const BlackjackBots = (() => {
       console.log(`[Bots] ${room.players[botId].name}: banda ${hand.band}, ` +
                   `total ${hand.total}/${objective}, responde en ${Math.round(timing.delayMs / 1000)}s`);
 
-      _timers.after(timing.delayMs, async () => {
-        try {
-          await BlackjackSync.reportDone(code, botId, {
-            picked:   hand.picked,
-            bust:     hand.bust,
-            standing: timing.standing,
-          });
-        } catch (e) {
-          console.warn('[Bots] reportDone fallido:', e);
-        }
+      _timers.after(timing.delayMs, () => {
+        _reportWithRetry(code, botId, {
+          picked:   hand.picked,
+          bust:     hand.bust,
+          standing: timing.standing,
+        }, REPORT_RETRIES);
       });
+    }
+  }
+
+  /* Reporta la jugada reintentando: si el reporte de un bot fallara y no
+     quedara registrado, la ronda se colgaría (su plaza cuenta para el reveal
+     pero nunca llega su doneCount). El watchdog del host es la última red,
+     pero reintentar aquí evita llegar a ese extremo. */
+  async function _reportWithRetry(code, botId, handData, attemptsLeft) {
+    try {
+      await BlackjackSync.reportDone(code, botId, handData);
+    } catch (e) {
+      console.warn(`[Bots] reportDone fallido (quedan ${attemptsLeft - 1}):`, e);
+      if (attemptsLeft > 1) {
+        _timers.after(BotCore.randFloat(800, 1600), () =>
+          _reportWithRetry(code, botId, handData, attemptsLeft - 1));
+      }
     }
   }
 
@@ -391,6 +428,8 @@ const BlackjackBots = (() => {
     _timers.clear();
     _lobbyBusy    = false;
     _lastRoundKey = null;
+    _pendingAdds  = 0;
+    _pendingNames.clear();
   }
 
   return { syncLobby, onRound, stop, chooseHand };
