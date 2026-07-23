@@ -518,7 +518,9 @@ const App = (() => {
       // Si el host cerró la pestaña (onDisconnect borra su nodo) o quedó
       // desconectado y NO hay ningún host conectado, el primer jugador
       // conectado (orden determinista por id) se autopromociona.
-      if ((room.status === 'playing' || room.status === 'reveal' || room.status === 'countdown')) {
+      // Incluye 'waiting': sin host en el lobby nadie mete bots ni puede
+      // pulsar EMPEZAR, y la sala se quedaba muerta hasta el timeout.
+      if ((room.status === 'playing' || room.status === 'reveal' || room.status === 'countdown' || room.status === 'waiting')) {
         // Un bot nunca puede heredar el host: no tiene navegador que ejecute
         // la lógica de la partida.
         const connectedP = Object.entries(room.players || {})

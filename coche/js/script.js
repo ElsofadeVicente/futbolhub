@@ -1386,6 +1386,35 @@ const Sync = (() => {
     return Object.keys(players||{}).filter(pid => pid!==exceptId && !_isBot(players[pid]));
   }
 
+  /* ── onDisconnect: qué hace Firebase si ESTE cliente se corta ──
+     En el lobby elimina el nodo del jugador (no dejar fantasmas que ocupan
+     hueco, duplican al jugador al volver y, si eran host, congelan la sala);
+     con la partida en curso solo marca connected:false para permitir
+     reconectar sin perder nombre/puntuación. Mismo criterio que Blackjack. */
+  function _onDisconnectRemove(path) {
+    try {
+      if (window._FBOnDisconnect) {
+        const {db,ref}=FB();
+        window._FBOnDisconnect(ref(db,path)).remove().catch(()=>{});
+      }
+    } catch(e) { console.warn('[Sync] onDisconnect no disponible:', e); }
+  }
+  function _onDisconnectSetConnectedFalse(path) {
+    try {
+      if (window._FBOnDisconnect) {
+        const {db,ref}=FB();
+        window._FBOnDisconnect(ref(db,path)).update({connected:false}).catch(()=>{});
+      }
+    } catch(e) { console.warn('[Sync] onDisconnect no disponible:', e); }
+  }
+  /* Rearmar según el estado de la sala (onDisconnect es un hook de servidor:
+     no puede consultar el estado en el momento real del corte). */
+  function rearmOnDisconnect(code, playerId, roomStatus) {
+    const path = `${ROOMS_PATH}/${code}/players/${playerId}`;
+    if (roomStatus==='waiting' || roomStatus==='resetting') _onDisconnectRemove(path);
+    else _onDisconnectSetConnectedFalse(path);
+  }
+
   async function createRoom(hostName, avatar) {
     const {set,serverTimestamp}=FB();
     const code=_genCode(), hostId=_genId();
@@ -1396,6 +1425,7 @@ const Sync = (() => {
       restrictions:null, roundSeed:0, roundStartAt:null,
       submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
     });
+    _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${hostId}`);
     return {code, playerId:hostId};
   }
 
@@ -1411,7 +1441,29 @@ const Sync = (() => {
     await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
       name:playerName, avatar:avatar||null, score:0, connected:true, isHost:false,
     });
+    _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${playerId}`);
     return {code, playerId};
+  }
+
+  /* ── Reconexión: reusar el hueco de una sesión anterior ──
+     Evita el bug de "salgo dos veces en la sala": al recargar la pestaña,
+     el jugador guardado en sessionStorage se reutiliza en vez de crear un
+     segundo nodo con el mismo nombre. Devuelve true si reconectó. */
+  async function tryReconnect(code, playerId, name, avatar) {
+    const {get,update}=FB();
+    try {
+      const roomSnap = await get(_ref(`${ROOMS_PATH}/${code}`));
+      if (!roomSnap.exists()) return false;
+      if (roomSnap.val().status !== 'waiting') return false;
+      const playerSnap = await get(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`));
+      if (!playerSnap.exists()) return false;
+      await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
+        connected:true, name, avatar:avatar||null,
+      });
+      /* Rearmar: la reconexión es un navegador nuevo, el hook anterior murió */
+      _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${playerId}`);
+      return true;
+    } catch(e) { return false; }
   }
 
   async function findOrCreatePublicRoom(playerName, avatar) {
@@ -1430,6 +1482,18 @@ const Sync = (() => {
           set(_ref(`${MM_PATH}/${code}`), null).catch(()=>{});
           continue;
         }
+
+        /* Sala zombie: lleva más de 3 min en lobby sin empezar. Pasaba
+           cuando el host se iba sin pulsar Salir (fantasma): nadie corría
+           su timer de expiración y la sala quedaba atrapando jugadores
+           para siempre. Expirar y seguir buscando. */
+        const lobbyAt = roomSnap.val().lobbyAt || 0;
+        if (lobbyAt > 0 && (Date.now() - lobbyAt) > 3*60*1000) {
+          console.log(`[Sync] Sala zombie detectada (${code}), limpiando…`);
+          expirePublicRoom(code).catch(()=>{});
+          continue;
+        }
+
         const result = await joinRoom(code, playerName, avatar);
         const newCount = Object.keys(roomSnap.val().players||{}).length + 1;
         update(_ref(`${MM_PATH}/${code}`),{playerCount:newCount}).catch(()=>{});
@@ -1449,6 +1513,7 @@ const Sync = (() => {
         restrictions:null, roundSeed:0, roundStartAt:null,
         submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
       });
+      _onDisconnectRemove(`${ROOMS_PATH}/${myCode}/players/${myId}`);
     } catch(e) {
       set(_ref(`${MM_PATH}/${myCode}`), null).catch(()=>{});
       throw e;
@@ -1628,6 +1693,7 @@ const Sync = (() => {
     await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
       name:playerName, avatar:avatar||null, score:0, connected:true, isHost:false,
     });
+    _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${playerId}`);
   }
 
   async function expirePublicRoom(code) {
@@ -1696,6 +1762,7 @@ const Sync = (() => {
     createRoom, joinRoom, findOrCreatePublicRoom, listenRoom,
     startGame, nextRound, submitAnswer, startReveal, setFinished,
     resetToLobby, claimReset, rejoinRoom, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
+    tryReconnect, rearmOnDisconnect,
   };
 })();
 
@@ -2306,6 +2373,22 @@ const App = (() => {
     const btn = document.getElementById('btn-find-public');
     _btnLoad(btn,'BUSCANDO…');
     try {
+      /* Reconectar a la sesión guardada si la hay: al recargar la pestaña
+         el jugador reutiliza su hueco en vez de entrar duplicado a su
+         propia sala (bug de "salgo dos veces"). */
+      const session = _loadSession();
+      if (session?.isPublic && session.code && session.playerId) {
+        const ok = await Sync.tryReconnect(session.code, session.playerId, name, _accountAvatar());
+        if (ok) {
+          _newSession();
+          _roomCode=session.code; _playerId=session.playerId; _isHost=session.isHost===true;
+          _isPublic=true; _isLocal=false; _localName=name;
+          _saveSession(); _listenRoom(); _showLobby();
+          _btnReset(btn,'BUSCAR PARTIDA ▶');
+          return;
+        }
+      }
+
       const result = await Sync.findOrCreatePublicRoom(name, _accountAvatar());
       _newSession();
       _roomCode=result.code; _playerId=result.playerId; _isHost=result.isHost; _isPublic=true; _isLocal=false; _localName=name;
@@ -2490,9 +2573,18 @@ const App = (() => {
     _unsubRoom = Sync.listenRoom(_roomCode, _onRoomUpdate);
   }
 
+  let _lastArmedStatus = null;   // último status para el que se rearmó onDisconnect
+
   function _onRoomUpdate(room) {
     _lastRoom = room;
     if (room.status === 'expired') { _handleKicked('La sala pública expiró por inactividad ⏱️'); return; }
+
+    /* Rearmar onDisconnect al cambiar entre lobby y partida: en el lobby un
+       corte debe liberar el hueco; en partida solo marcar connected:false. */
+    if (!_isLocal && _playerId && _roomCode && room.status !== _lastArmedStatus) {
+      _lastArmedStatus = room.status;
+      Sync.rearmOnDisconnect(_roomCode, _playerId, room.status);
+    }
     if (!_isLocal && _playerId && room.players && !room.players[_playerId]) {
       /* En status waiting/resetting sin nuestro ID: la sala fue reseteada y aún
          no nos hemos re-unido. No expulsar — el jugador se re-unirá al pulsar
@@ -2543,6 +2635,28 @@ const App = (() => {
         }
       }
     }
+    /* ── Failover de host en el LOBBY ──
+       Si el host desapareció (su onDisconnect borró el nodo) o quedó
+       desconectado, la sala se quedaba sin nadie que metiera bots, empezara
+       la partida o la expirara. El primer humano conectado (orden
+       determinista por id) se autopromociona. Los bots nunca heredan. */
+    if (!_isLocal && _playerId && room.status==='waiting' && room.players?.[_playerId]) {
+      const humans = Object.entries(room.players)
+        .filter(([,p]) => !p.isBot && p.connected!==false);
+      const hasHost = humans.some(([,p]) => p.isHost===true);
+      if (!hasHost && humans.length > 0) {
+        const candidate = humans.map(([pid])=>pid).sort()[0];
+        if (candidate === _playerId && !_isHost) {
+          _isHost = true;
+          _saveSession();   // que una recarga posterior recuerde que somos host
+          try {
+            const {db,ref,update}=window._FB;
+            update(ref(db,`restricciones/rooms/${_roomCode}/players/${_playerId}`),{isHost:true}).catch(()=>{});
+          } catch(e) {}
+        }
+      }
+    }
+
     switch(room.status) {
       case 'resetting':
         /* Transición efímera mientras un jugador resetea la sala.
@@ -2729,7 +2843,9 @@ const App = (() => {
       settingsEl.style.display = 'none';
     }
 
-    if (_isHost && _isPublic && room.lobbyAt) _startPublicLobbyTimer(room);
+    /* El timer de expiración corre en TODOS los clientes (no solo el host):
+       con un host fantasma nadie lo ejecutaba y la sala nunca moría. */
+    if (_isPublic && room.lobbyAt) _startPublicLobbyTimer(room);
     if (_isPublic && room.lobbyAt) _renderPublicLobbyTimer(room.lobbyAt);
 
     /* Bots: solo los gestiona el host, y solo en salas públicas */
@@ -2791,7 +2907,15 @@ const App = (() => {
   }
 
   async function _handlePublicRoomExpired() {
-    if (!_isHost || !_roomCode) return;
+    /* Puede dispararlo CUALQUIER cliente, no solo el host: si el host es un
+       fantasma (cerró sin Salir), nadie expiraba la sala y quedaba atrapando
+       jugadores para siempre. Releer la sala primero: si la partida ya
+       empezó mientras tanto, no hay nada que expirar. */
+    if (!_roomCode) return;
+    try {
+      const fresh = await Sync.getRoom(_roomCode);
+      if (!fresh || fresh.status !== 'waiting') return;
+    } catch(e) { return; }
     showToast('⏱️ Sala pública expirada — cerrando…', 'error');
     try { await Sync.expirePublicRoom(_roomCode); } catch(e) {}
     _handleKicked('La sala pública expiró por inactividad ⏱️');
@@ -4024,6 +4148,7 @@ const App = (() => {
 
   function _resetState() {
     if (typeof CocheBots !== 'undefined') CocheBots.stop();
+    _lastArmedStatus=null;
     _roomCode=null; _playerId=null; _isHost=false; _isPublic=false;
     _isLocal=false; _localName=''; _localRound=0;
     _round=0; _players=[]; _restrictions=[];
@@ -4049,6 +4174,9 @@ const App = (() => {
 
   function _saveSession() {
     try { sessionStorage.setItem('coche_session', JSON.stringify({code:_roomCode,playerId:_playerId,isHost:_isHost,isPublic:_isPublic})); } catch(e){}
+  }
+  function _loadSession() {
+    try { const s = sessionStorage.getItem('coche_session'); return s ? JSON.parse(s) : null; } catch(e){ return null; }
   }
   function _clearSession() {
     try { sessionStorage.removeItem('coche_session'); } catch(e){}

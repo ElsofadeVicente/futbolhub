@@ -367,7 +367,7 @@
   import { initializeApp }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getDatabase, ref, set, get, update, onValue, push,
-           serverTimestamp, remove, runTransaction }
+           serverTimestamp, remove, runTransaction, onDisconnect }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
   const FIREBASE_CONFIG = {
@@ -391,6 +391,9 @@
     configured: !!db,
     db, ref, set, get, update, onValue, push, serverTimestamp, remove, runTransaction
   };
+  // Exponer onDisconnect para el Sync de script.js (igual que en Blackjack):
+  // sin esto, cerrar la pestaña deja jugadores fantasma en las salas.
+  window._FBOnDisconnect = onDisconnect;
 
   const s = document.createElement('script');
   s.src = 'js/script.js?v=' + Date.now();
