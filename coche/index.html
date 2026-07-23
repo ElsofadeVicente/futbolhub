@@ -361,6 +361,8 @@
 <script src="../js/vendor/supabase-js.min.js"></script>
 <script src="../js/auth.js?v=20260722g"></script>
 <script src="../js/profile-widget.js?v=20260722g"></script>
+<script src="../js/bot-core.js?v=20260723a"></script>
+<script src="../js/bot-names.js?v=20260723a"></script>
 <script type="module">
   import { initializeApp }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -399,6 +401,13 @@
       _showInitError('script.js cargó pero no expuso _AppReal. Puede haber un error interno en el script.');
       return;
     }
+    // Los bots necesitan Restrictions/PLAYERS_DB/Sync, que viven en script.js,
+    // así que se cargan después. Si fallara, el juego sigue funcionando sin ellos.
+    const b = document.createElement('script');
+    b.src = 'js/coche-bots.js?v=' + Date.now();
+    b.onerror = () => console.warn('⚠️ coche-bots.js no se pudo cargar — sala sin bots');
+    document.body.appendChild(b);
+
     window.App._flush(realApp);
     realApp.init();
   };
