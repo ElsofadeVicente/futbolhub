@@ -9,7 +9,7 @@
    ============================================= */
 'use strict';
 
-const CACHE = 'futbolhub-v1';
+const CACHE = 'futbolhub-v2';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
