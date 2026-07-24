@@ -41,7 +41,7 @@ class ExtendedDB {
         if (this._initPromise) return this._initPromise;
 
         this._initPromise = (async () => {
-            const res = await fetch(sbStorageUrl('player-db', `${this.type}/chunks/manifest.json`));
+            const res = await fetch(sbStorageUrl('player-db', `${this.type}/chunks/manifest.json`), { cache: 'no-cache' });
             if (!res.ok) throw new Error(`[ExtendedDB:${this.type}] HTTP ${res.status} al cargar manifest`);
             this.manifest = await res.json();
         })();
@@ -125,7 +125,7 @@ const NationalDB = {
 
     async init() {
         if (this.data) return;
-        const res = await fetch(sbStorageUrl('player-db', 'national/all.json'));
+        const res = await fetch(sbStorageUrl('player-db', 'national/all.json'), { cache: 'no-cache' });
         if (!res.ok) throw new Error(`[NationalDB] HTTP ${res.status}`);
         this.data = await res.json();
         console.log(`NationalDB cargado: ${Object.keys(this.data).length.toLocaleString()} jugadores`);
@@ -147,7 +147,7 @@ const TeamsDB = {
 
     async init() {
         if (this.data) return;
-        const res = await fetch(sbStorageUrl('player-db', 'teams/details.json'));
+        const res = await fetch(sbStorageUrl('player-db', 'teams/details.json'), { cache: 'no-cache' });
         if (!res.ok) throw new Error(`[TeamsDB] HTTP ${res.status}`);
         this.data = await res.json();
         console.log(`TeamsDB cargado: ${Object.keys(this.data).length.toLocaleString()} equipos`);
@@ -179,7 +179,7 @@ const TeamNamesDB = {
 
     async init() {
         if (this.names) return;
-        const res = await fetch(sbStorageUrl('player-db', 'team-names/team-names.json'));
+        const res = await fetch(sbStorageUrl('player-db', 'team-names/team-names.json'), { cache: 'no-cache' });
         if (!res.ok) throw new Error(`[TeamNamesDB] HTTP ${res.status}`);
         this.names = await res.json();
         console.log(`TeamNamesDB cargado: ${this.names.length.toLocaleString()} nombres de equipo`);

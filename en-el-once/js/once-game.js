@@ -117,7 +117,7 @@ function updateLoadingProgress(loaded, total) {
 }
 
 async function fetchDailyFile(fileName) {
-    const res = await fetch(sbStorageUrl('game-data', `en-el-once/once-diario/${fileName}`));
+    const res = await fetch(sbStorageUrl('game-data', `en-el-once/once-diario/${fileName}`), { cache: 'no-cache' });
     if (!res.ok) throw new Error('Archivo no encontrado');
     const data = await res.json();
     if (!Array.isArray(data) || data.length === 0) throw new Error('Archivo vacío');
@@ -142,7 +142,7 @@ async function findLatestDailyFile(requestedFileName) {
     const requested = parseDailyFileName(requestedFileName);
     let files;
     try {
-        const res = await fetch(sbStorageUrl('game-data', 'en-el-once/once-diario/manifest.json'));
+        const res = await fetch(sbStorageUrl('game-data', 'en-el-once/once-diario/manifest.json'), { cache: 'no-cache' });
         if (!res.ok) throw new Error('manifest no disponible');
         const manifest = await res.json();
         files = Array.isArray(manifest.files) ? manifest.files : [];
@@ -185,7 +185,7 @@ async function fetchMatchesByFolder(folder) {
     const urls = new Set((ONCE_KNOWN_FILES[folder] || []).map(file => `en-el-once/${folder}/${file}`));
 
     try {
-        const res = await fetch(sbStorageUrl('game-data', `en-el-once/${folder}/manifest.json`));
+        const res = await fetch(sbStorageUrl('game-data', `en-el-once/${folder}/manifest.json`), { cache: 'no-cache' });
         if (res.ok) {
             const manifest = await res.json();
             (manifest.files || []).forEach(file => urls.add(`en-el-once/${folder}/${file}`));
@@ -194,7 +194,7 @@ async function fetchMatchesByFolder(folder) {
 
     const results = await Promise.allSettled(
         [...urls].map(path =>
-            fetch(sbStorageUrl('game-data', path))
+            fetch(sbStorageUrl('game-data', path), { cache: 'no-cache' })
                 .then(r => r.ok ? r.json() : null)
                 .catch(() => null)
         )
@@ -699,7 +699,7 @@ let _kitRules = KIT_RULES;
 let _gkKit    = GK_KIT;
 
 function loadKitsJson() {
-  fetch(sbStorageUrl('game-data', 'en-el-once/kits.json'))
+  fetch(sbStorageUrl('game-data', 'en-el-once/kits.json'), { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (!data) return;

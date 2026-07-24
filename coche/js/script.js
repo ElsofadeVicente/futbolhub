@@ -80,7 +80,7 @@ async function _fetchChunkRangeFromSupabase(cf) {
   if (!m) return null;
   const [, lo, hi] = m;
   try {
-    const res = await fetch(sbStorageUrl('player-db', `players/chunks/${lo}-${hi}.json`));
+    const res = await fetch(sbStorageUrl('player-db', `players/chunks/${lo}-${hi}.json`), { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
@@ -92,7 +92,7 @@ async function _fetchChunkRangeFromSupabase(cf) {
 /* ── Antes data/teams/league-teams.json, ahora player-db/leagues/ ── */
 async function _fetchLeaguesFromSupabase() {
   try {
-    const res = await fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'));
+    const res = await fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'), { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
@@ -105,7 +105,7 @@ async function _fetchLeaguesFromSupabase() {
    etc.): archivos planos {clave: data} en Storage, igual que antes. */
 async function _fetchCocheJsonFile(name) {
   try {
-    const res = await fetch(sbStorageUrl('game-data', `coche/${name}`));
+    const res = await fetch(sbStorageUrl('game-data', `coche/${name}`), { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {

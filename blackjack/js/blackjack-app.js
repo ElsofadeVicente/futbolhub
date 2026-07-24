@@ -964,7 +964,7 @@ const App = (() => {
 
     _poolPromise = Promise.all(
       POOL_FILES.map(name =>
-        fetch(sbStorageUrl('game-data', `blackjack/${name}.json`))
+        fetch(sbStorageUrl('game-data', `blackjack/${name}.json`), { cache: 'no-cache' })
           .then(r => {
             if (!r.ok) {
               console.log(`ℹ️ ${name}.json no disponible (${r.status}) — se omite`);
