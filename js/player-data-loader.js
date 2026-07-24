@@ -37,7 +37,7 @@ const PlayerDB = {
         if (this.initialized) return;
 
         try {
-            const response = await fetch(sbStorageUrl('player-db', 'players/meta.json'));
+            const response = await fetch(sbStorageUrl('player-db', 'players/meta.json'), { cache: 'no-cache' });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -77,7 +77,7 @@ const PlayerDB = {
 
         // Cargar desde Storage
         try {
-            const response = await fetch(sbStorageUrl('player-db', `players/${chunkFile}`));
+            const response = await fetch(sbStorageUrl('player-db', `players/${chunkFile}`), { cache: 'no-cache' });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

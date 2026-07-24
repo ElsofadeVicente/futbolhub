@@ -181,7 +181,7 @@ function towerGetEdition(dateString) {
 }
 
 async function towerFetchJson(dateString) {
-  const res = await fetch(sbStorageUrl('game-data', `la-torre/${dateString}.json`));
+  const res = await fetch(sbStorageUrl('game-data', `la-torre/${dateString}.json`), { cache: 'no-cache' });
   if (!res.ok) return null;
 
   const data = await res.json();
@@ -207,7 +207,7 @@ async function towerResolveAvailableDay(requestedOffset) {
   }
 
   try {
-    const indexRes = await fetch(sbStorageUrl('game-data', 'la-torre/index.json'));
+    const indexRes = await fetch(sbStorageUrl('game-data', 'la-torre/index.json'), { cache: 'no-cache' });
     if (!indexRes.ok) throw new Error('índice no disponible');
     const { dates } = await indexRes.json();
     const candidates = dates.filter(d => d <= requestedDateString).sort().reverse().slice(0, 10);

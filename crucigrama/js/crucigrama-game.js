@@ -78,18 +78,18 @@ async function loadCrucigrama(offset) {
         </div>`;
 
     try {
-        const res = await fetch(sbStorageUrl('game-data', `crucigrama/${dateStr}.json`));
+        const res = await fetch(sbStorageUrl('game-data', `crucigrama/${dateStr}.json`), { cache: 'no-cache' });
         if (!res.ok) throw new Error('not found');
         crucData = await res.json();
     } catch {
         // Fallback: try the most recent available
         try {
-            const fallback = await fetch(sbStorageUrl('game-data', 'crucigrama/index.json'));
+            const fallback = await fetch(sbStorageUrl('game-data', 'crucigrama/index.json'), { cache: 'no-cache' });
             if (!fallback.ok) throw new Error('no index');
             const index = await fallback.json();
             if (!index.dates || index.dates.length === 0) throw new Error('empty');
             const latestDate = index.dates[index.dates.length - 1];
-            const res2 = await fetch(sbStorageUrl('game-data', `crucigrama/${latestDate}.json`));
+            const res2 = await fetch(sbStorageUrl('game-data', `crucigrama/${latestDate}.json`), { cache: 'no-cache' });
             if (!res2.ok) throw new Error('fallback fail');
             crucData = await res2.json();
 

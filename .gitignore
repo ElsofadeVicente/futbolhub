@@ -51,3 +51,7 @@ blackjack/data/blackjack/
 
 # Config local de Claude Code (servidor de pruebas, etc.)
 .claude/
+
+# Clave secreta y caché de admin/sync_supabase.py — NUNCA subir a git.
+admin/.supabase_secret
+admin/.sync_cache.json

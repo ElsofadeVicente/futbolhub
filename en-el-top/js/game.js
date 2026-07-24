@@ -233,10 +233,10 @@ async function init() {
 
   try {
     const [questions, nameIndex, teamNames, leagueTeams] = await Promise.all([
-      fetch(sbStorageUrl('game-data', 'en-el-top/enteltop.json')).then(r => r.json()),
-      fetch(sbStorageUrl('player-db', 'players/name-index.json')).then(r => r.json()),
-      fetch(sbStorageUrl('player-db', 'team-names/team-names.json')).then(r => r.json()),
-      fetch(sbStorageUrl('player-db', 'leagues/league-teams.json')).then(r => r.json()),
+      fetch(sbStorageUrl('game-data', 'en-el-top/enteltop.json'), { cache: 'no-cache' }).then(r => r.json()),
+      fetch(sbStorageUrl('player-db', 'players/name-index.json'), { cache: 'no-cache' }).then(r => r.json()),
+      fetch(sbStorageUrl('player-db', 'team-names/team-names.json'), { cache: 'no-cache' }).then(r => r.json()),
+      fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'), { cache: 'no-cache' }).then(r => r.json()),
     ]);
     _questions = questions;
     _nameIndex = nameIndex;
