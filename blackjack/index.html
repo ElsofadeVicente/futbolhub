@@ -95,7 +95,7 @@
 
   <div class="lobby-wrap">
 
-    <div class="lobby-code-card">
+    <div class="lobby-code-card" id="lobby-code-card">
       <div class="lobby-code-label">Código de sala</div>
       <div class="lobby-code-big" id="lobby-code-display">------</div>
       <div id="lobby-code-link-display" class="lobby-link-display"></div>
@@ -103,6 +103,9 @@
         🔗 Copiar enlace de invitación
       </button>
     </div>
+
+    <!-- Badge de sala pública (en vez del código, como en Coche) -->
+    <div id="lobby-public-badge" class="lobby-public-badge" style="display:none;">🌐 Sala Pública</div>
 
     <!-- Contador auto-arranque sala pública -->
     <div id="lobby-autotimer" class="lobby-autotimer hidden">
