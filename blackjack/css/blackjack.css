@@ -326,14 +326,12 @@ body {
   letter-spacing: 0.12em; text-transform: uppercase;
 }
 
-/* Badge de sala pública: ocupa el sitio del código en partidas públicas. */
+/* Badge de sala pública: texto pequeño debajo de los jugadores, idéntico al
+   de Coche (lobby-mode-badge). */
 .lobby-public-badge {
-  width: 100%; box-sizing: border-box;
-  background: var(--np-paper); border: 1.5px solid var(--np-ink);
-  box-shadow: 3px 3px 0 var(--np-ink);
-  padding: 14px; text-align: center;
-  font-family: 'Anton', sans-serif; font-size: 1.1rem;
-  letter-spacing: 0.14em; color: var(--np-red); text-transform: uppercase;
+  font-family: 'DM Mono', monospace; font-size: 0.65rem;
+  color: var(--np-ink-mid); text-align: center;
+  letter-spacing: 0.12em; text-transform: uppercase;
 }
 
 .lobby-hint {
