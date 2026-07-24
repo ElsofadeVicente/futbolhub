@@ -77,6 +77,7 @@ const App = (() => {
   let _roomCode  = null;
   let _playerId  = null;
   let _isHost    = false;
+  let _isPublic  = false;   // sala pública: oculta el código y muestra el badge (como Coche)
   let _unsubRoom = null;
   let _localScores = {};
   let _lastRoomPlayers = {};
@@ -237,6 +238,7 @@ const App = (() => {
       _roomCode = code;
       _playerId = playerId;
       _isHost   = true;
+      _isPublic = false;
       _saveSession();
       _listenRoom();
       _showLobby();
@@ -265,6 +267,7 @@ const App = (() => {
       _roomCode = result.code;
       _playerId = result.playerId;
       _isHost   = false;
+      _isPublic = false;
       _saveSession();
       _listenRoom();
       _showLobby();
@@ -301,6 +304,7 @@ const App = (() => {
             _roomCode = session.code;
             _playerId = session.playerId;
             _isHost   = session.isHost;
+            _isPublic = true;
             _listenRoom();
             _showLobby();
             if (btn) { btn.disabled = false; btn.textContent = 'BUSCAR PARTIDA ▶'; }
@@ -330,6 +334,7 @@ const App = (() => {
       _roomCode = result.code;
       _playerId = result.playerId;
       _isHost   = result.isHost;
+      _isPublic = true;
       _saveSession();
       _listenRoom();
       _showLobby();
@@ -450,24 +455,38 @@ const App = (() => {
   /* ══════════════════════════════════════════
      LOBBY
      ══════════════════════════════════════════ */
+  /* Sala pública: se oculta el código (no hay nada que compartir) y se
+     muestra el badge "Sala Pública", igual que en Coche. Un helper para
+     aplicarlo desde _showLobby y _updateLobbyUI sin duplicar. */
+  function _applyPublicChrome(isPublic) {
+    const card  = document.getElementById('lobby-code-card');
+    const badge = document.getElementById('lobby-public-badge');
+    if (card)  card.style.display  = isPublic ? 'none'  : '';
+    if (badge) badge.style.display = isPublic ? 'block' : 'none';
+  }
+
   function _showLobby() {
     _showScreen('screen-lobby');
     document.getElementById('lobby-code-display').textContent = _roomCode;
     document.getElementById('lobby-mode-display').textContent = MODE_LABELS[_mode] || _mode;
     document.getElementById('game-topbar')?.classList.add('hidden');
+    _applyPublicChrome(_isPublic);
     _syncMyIdentityToRoom();   // por si entramos antes de que resolviera la sesión
 
-    // Actualizar URL con el código de sala (permite compartir y evita bugs al recargar)
-    if (_roomCode) {
+    // Solo las salas privadas ponen el código en la URL (para compartir).
+    // En públicas no hay código que compartir, como en Coche.
+    if (_roomCode && !_isPublic) {
       const newUrl = window.location.pathname + '?sala=' + _roomCode;
       history.pushState({ sala: _roomCode }, '', newUrl);
+    } else if (_isPublic) {
+      history.replaceState({}, '', window.location.pathname);
     }
 
-    // Mostrar enlace completo a la sala
+    // Mostrar enlace completo a la sala (solo privadas)
     const linkEl = document.getElementById('lobby-code-link-display');
     if (linkEl) {
       const base = window.location.origin + window.location.pathname;
-      linkEl.textContent = `${base}?sala=${_roomCode}`;
+      linkEl.textContent = _isPublic ? '' : `${base}?sala=${_roomCode}`;
     }
 
     _loadPool().catch(e => console.warn('[App] Precarga pool falló:', e));
@@ -662,6 +681,12 @@ const App = (() => {
       playAgainBtn.textContent = '🔄 Jugar de nuevo';
     }
 
+    // La sala es la fuente de verdad de si es pública (cubre reconexión y
+    // cualquier ruta que no pasara por los setters). Aplicar el chrome
+    // (código oculto + badge) en cada actualización, como hace Coche.
+    if (typeof room.isPublic === 'boolean') _isPublic = room.isPublic;
+    _applyPublicChrome(_isPublic);
+
     const activeScreen = document.querySelector('.screen.active');
     if (!activeScreen || activeScreen.id !== 'screen-lobby') {
       _showScreen('screen-lobby');
@@ -669,13 +694,16 @@ const App = (() => {
       const linkEl = document.getElementById('lobby-code-link-display');
       if (linkEl) {
         const base = window.location.origin + window.location.pathname;
-        linkEl.textContent = `${base}?sala=${_roomCode}`;
+        linkEl.textContent = _isPublic ? '' : `${base}?sala=${_roomCode}`;
       }
       document.getElementById('lobby-mode-display').textContent = MODE_LABELS[_mode] || _mode;
       document.getElementById('game-topbar')?.classList.add('hidden');
-      // Asegurar que la URL refleje la sala actual
-      if (_roomCode && !window.location.search.includes(_roomCode)) {
+      // La URL solo refleja el código en salas privadas (en públicas no hay
+      // nada que compartir, igual que en Coche).
+      if (_roomCode && !_isPublic && !window.location.search.includes(_roomCode)) {
         history.replaceState({ sala: _roomCode }, '', window.location.pathname + '?sala=' + _roomCode);
+      } else if (_isPublic && window.location.search) {
+        history.replaceState({}, '', window.location.pathname);
       }
     }
 
@@ -1289,6 +1317,7 @@ const App = (() => {
     _roomCode = null;
     _playerId = null;
     _isHost   = false;
+    _isPublic = false;
     showMenu();
   }
 
@@ -1371,6 +1400,7 @@ const App = (() => {
     _roomCode = null;
     _playerId = null;
     _isHost   = false;
+    _isPublic = false;
 
     // Asegurarse de salir del juego limpiamente
     document.getElementById('game-topbar')?.classList.add('hidden');
