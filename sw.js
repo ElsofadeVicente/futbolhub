@@ -9,7 +9,12 @@
    ============================================= */
 'use strict';
 
-const CACHE = 'futbolhub-v3';
+const CACHE = 'futbolhub-v4';
+
+/* Imágenes externas que queremos disponibles offline (La Carrera):
+   escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
+   inmutables → cache-first aunque sean de otro origen (respuesta opaca). */
+const EXTERNAL_IMG_HOSTS = ['tmssl.akamaized.net', 'img.a.transfermarkt.technology'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -40,7 +45,26 @@ self.addEventListener('fetch', (e) => {
 
   const url = new URL(req.url);
 
-  // No interceptar peticiones a otros orígenes (Firebase, tiles de OSM,
+  // Escudos y retratos externos de La Carrera → cache-first (offline).
+  if (EXTERNAL_IMG_HOSTS.includes(url.hostname)) {
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const key = url.origin + url.pathname;
+      const hit = await cache.match(key);
+      if (hit) return hit;
+      try {
+        const res = await fetch(req);
+        // Cachea también respuestas opacas (no-cors) de las CDNs de imágenes.
+        if (res && (res.ok || res.type === 'opaque')) cache.put(key, res.clone());
+        return res;
+      } catch (err) {
+        return hit || Response.error();
+      }
+    })());
+    return;
+  }
+
+  // No interceptar el resto de orígenes (Firebase, tiles de OSM,
   // Street View, CDNs…) — que sigan su curso normal.
   if (url.origin !== self.location.origin) return;
 

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Carrera — FutbolHUB</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/carrera.css?v=20260725c">
+  <link rel="stylesheet" href="../css/profile-widget.css?v=20260722g">
+</head>
+<body>
+
+  <!-- SIDEBARS DE ANUNCIOS — solo visibles en desktop ≥760px -->
+  <aside class="ad-col ad-col--left">
+    <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+    <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  </aside>
+  <aside class="ad-col ad-col--right">
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+    <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+    <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  </aside>
+
+  <!-- ── Carga ───────────────────────────────────────────────── -->
+  <div id="loading-screen">
+    <div class="spin"></div>
+    <p>Cargando carrera de hoy…</p>
+  </div>
+
+  <!-- ── Pantalla de inicio ──────────────────────────────────── -->
+  <div id="intro-screen" class="hidden">
+    <div id="mode-box">
+
+      <div id="mode-art">
+        <img src="../img/hub/carrera.svg" alt="La Carrera"
+             onerror="this.parentElement.classList.add('mode-art--fallback')">
+        <div id="mode-art-overlay">
+          <span class="eyebrow">
+            <span class="eyebrow-num">№ 04</span>
+            <span class="eyebrow-sep">·</span>
+            <span class="eyebrow-cat">Diario</span>
+          </span>
+        </div>
+      </div>
+
+      <div id="mode-body">
+        <a href="../" id="mode-back">← Volver al Hub</a>
+
+        <h1 id="mode-title">La Carrera</h1>
+        <p id="mode-desc">Se te revela la carrera de un futbolista club a club. Adivina de quién se trata con las mínimas pistas.</p>
+
+        <div class="mode-rule"></div>
+
+        <button id="start-game-btn">Jugar →</button>
+
+        <button id="stats-open-btn" class="stats-link-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
+          </svg>
+          Ver mis estadísticas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Juego ───────────────────────────────────────────────── -->
+  <div id="game-screen" class="hidden">
+    <main id="game-main">
+
+      <div id="top-bar">
+        <a href="../" id="game-back">← Hub</a>
+        <span id="attempt-badge">Intento 1 / 1</span>
+        <span id="archive-tag" class="hidden">Archivo</span>
+      </div>
+
+      <h1 id="question-title">¿Qué futbolista tuvo esta carrera?</h1>
+
+      <div id="career-wrap"></div>
+
+      <div id="input-area">
+        <div id="input-wrap">
+          <input id="ans-input" type="text"
+                 placeholder="Escribe el nombre del futbolista…"
+                 autocomplete="off" spellcheck="false" />
+          <div id="sug-box"></div>
+        </div>
+        <button id="skip-btn" title="Pasar">Pasar</button>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── Pantalla final ──────────────────────────────────────── -->
+  <div id="end-screen" class="hidden">
+    <div id="end-box">
+      <div class="eyebrow">
+        <span class="eyebrow-num">№ 04</span>
+        <span class="eyebrow-sep">·</span>
+        <span class="eyebrow-cat">Resultado del día</span>
+      </div>
+      <div id="end-emoji"></div>
+      <h2 id="end-title"></h2>
+      <p id="end-sub"></p>
+
+      <div id="reveal">
+        <div id="reveal-photo"><img id="reveal-img" alt=""></div>
+        <div id="reveal-name"></div>
+      </div>
+
+      <div id="end-career"></div>
+
+      <div id="end-actions">
+        <button id="share-btn" class="btn-ink">📤 Compartir</button>
+        <button id="end-stats-btn" class="btn-ink">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
+          </svg>
+          Estadísticas
+        </button>
+        <a href="../" class="btn-ghost">← Volver al Hub</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Navegación de ediciones (días) ──────────────────────── -->
+  <div id="day-nav" class="hidden">
+    <button id="nav-first" title="Primera edición">«</button>
+    <button id="nav-prev" title="Anterior">‹</button>
+    <span id="nav-label">#1</span>
+    <button id="nav-next" title="Siguiente">›</button>
+    <button id="nav-last" title="Hoy">»</button>
+  </div>
+
+  <!-- ── Modal: Estadísticas ─────────────────────────────────── -->
+  <div id="stats-overlay" class="overlay hidden">
+    <div class="np-modal np-modal--wide">
+      <button id="stats-close-btn" class="close-btn">✕</button>
+      <div class="eyebrow" style="margin-bottom:6px;">
+        <span class="eyebrow-num">LA CARRERA</span>
+        <span class="eyebrow-sep">·</span>
+        <span class="eyebrow-cat">Historial</span>
+      </div>
+      <h2 id="stats-heading">Estadísticas</h2>
+      <div id="stats-nums"></div>
+      <div id="stats-hist-wrap">
+        <div id="stats-hist-title">Intentos hasta acertar</div>
+        <div id="stats-hist-bars"></div>
+        <div id="stats-hist-labels"></div>
+      </div>
+      <div id="stats-countdown" class="stats-countdown"></div>
+    </div>
+  </div>
+
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/vendor/supabase-js.min.js"></script>
+  <script src="../js/auth.js?v=20260722g"></script>
+  <script src="../js/profile-widget.js?v=20260722g"></script>
+  <script src="js/carrera.js?v=20260726a"></script>
+</body>
+</html>

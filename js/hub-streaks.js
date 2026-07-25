@@ -48,11 +48,11 @@
   /* ── Estado de un día por juego: 'win' | 'loss' | null (no jugado) ── */
   const GAMES = [
     {
-      href: 'la-torre',
+      href: 'la-carrera',
       today: madridToday,
       stateFor(day) {
-        const s = readJSON(`tower_${day.replace(/-/g, '')}`);
-        if (!s || !s.finished) return null;
+        const s = readJSON(`carrera_day_${day}`);
+        if (!s || typeof s.won !== 'boolean') return null;
         return s.won ? 'win' : 'loss';
       },
     },
