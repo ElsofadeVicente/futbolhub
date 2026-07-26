@@ -125,7 +125,94 @@ function samesClub(reserveName, otherName) {
   return false;
 }
 
+// ── Método nuevo: usa el ID de club de performances (tid) + mainClubId (m) ──
+// Etapas desde transfers (orden/límites), partidos/goles/escudo/nombre desde
+// performances. Separa etapas distintas en el mismo club (Kaká, Ronaldo) y da
+// el escudo correcto siempre. Si los datos aún no traen tid, usa el respaldo.
 function buildCareer(transfersArr, perfArr) {
+  if (!perfArr || !perfArr.length) return [];
+  if (!perfArr.some(r => r.tid)) return buildCareerLegacy(transfersArr, perfArr);
+
+  // 1) Etapas desde transfers (Transfer/Loan), de la más antigua a la más nueva
+  const stints = [];
+  const tr = transfersArr || [];
+  for (let i = tr.length - 1; i >= 0; i--) {
+    const m = tr[i];
+    if (m.type !== 'Transfer' && m.type !== 'Loan') continue;
+    const tid = String(m.tid);
+    if (tid === '123' || tid === '515' || !m.tid) continue;   // Retirado / Sin club
+    stints.push({ tid, start: seasonStartYear(m.s) || (m.d ? +String(m.d).slice(0, 4) : 0),
+                  loan: m.type === 'Loan', app: 0, g: 0, seasons: new Set() });
+  }
+
+  // 2) Agregar performances por (temporada, tid); nombre y parent(m) por tid
+  const byKey = new Map();
+  const tidInfo = new Map();
+  for (const r of perfArr) {
+    if (!r.tid) continue;
+    const tid = String(r.tid);
+    const season = seasonStartYear(r.s);
+    const k = season + '|' + tid;
+    if (!byKey.has(k)) byKey.set(k, { season, tid, app: 0, g: 0 });
+    const o = byKey.get(k); o.app += (r.app || 0); o.g += (r.g || 0);
+    if (!tidInfo.has(tid)) tidInfo.set(tid, { name: r.tn || ('#' + tid), m: r.m ? String(r.m) : null });
+  }
+
+  // 3) Asignar cada (temporada,tid) a su etapa; lo que no case → sintéticas
+  const unmatched = new Map();
+  for (const { season, tid, app, g } of byKey.values()) {
+    const cands = stints.filter(s => s.tid === tid && s.start <= season + 1);
+    if (cands.length) {
+      const st = cands.reduce((a, b) => (a.start >= b.start ? a : b));
+      st.app += app; st.g += g; st.seasons.add(season);
+    } else {
+      if (!unmatched.has(tid)) unmatched.set(tid, { app: 0, g: 0, seasons: new Set() });
+      const u = unmatched.get(tid); u.app += app; u.g += g; u.seasons.add(season);
+    }
+  }
+  for (const [tid, u] of unmatched) {
+    if (u.app >= 2) stints.push({ tid, start: Math.min(...u.seasons), loan: false, app: u.app, g: u.g, seasons: u.seasons });
+  }
+
+  // 4) Quedarse con etapas reales (≥2 partidos); nombre/parent/años/escudo
+  let rows = stints.filter(s => s.app >= 2 && s.seasons.size);
+  rows.forEach(s => {
+    const info = tidInfo.get(s.tid) || {};
+    s.name = info.name || ('#' + s.tid);
+    s.parent = info.m || null;
+    s.startY = Math.min(...s.seasons); s.endY = Math.max(...s.seasons);
+  });
+  rows.sort((a, b) => a.startY - b.startY || a.endY - b.endY);
+
+  // 5) Fusionar etapas consecutivas del mismo club (Messi: una sola Barcelona)
+  const merged = [];
+  for (const s of rows) {
+    const prev = merged[merged.length - 1];
+    // Solo fusionar si es el mismo club Y contiguo (sin hueco de años): así dos
+    // etapas separadas en el mismo club (Santi Mina en el Celta) NO se funden.
+    if (prev && prev.tid === s.tid && s.startY - prev.endY <= 1) {
+      prev.app += s.app; prev.g += s.g; s.seasons.forEach(x => prev.seasons.add(x));
+      prev.endY = Math.max(prev.endY, s.endY); prev.loan = prev.loan && s.loan;
+    } else merged.push(s);
+  }
+  rows = merged;
+  rows.forEach(s => {
+    s.clubId = /^\d+$/.test(s.tid) ? +s.tid : s.tid;
+    s.years = s.startY === s.endY ? `${s.startY}` : `${s.startY}-${s.endY}`;
+  });
+
+  // 6) Juveniles fuera; filiales fuera si el jugador jugó en el primer equipo
+  //    (enlace fiable por mainClubId; respaldo por nombre).
+  rows = rows.filter(s => !isYouth(s.name));
+  const present = new Set(rows.map(s => s.tid));
+  return rows.filter(s => {
+    if (s.parent && present.has(String(s.parent))) return false;            // filial + primer equipo presente
+    if (isReserve(s.name) && rows.some(o => o !== s && !isReserve(o.name) && samesClub(s.name, o.name))) return false;
+    return true;
+  });
+}
+
+function buildCareerLegacy(transfersArr, perfArr) {
   if (!perfArr || !perfArr.length) return [];
 
   // Llegadas desde transfers → dan id de club (escudo) + marca de cesión
