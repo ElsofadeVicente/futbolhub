@@ -68,7 +68,7 @@ function uniformChunkFile(id) {
   const lo = Math.floor(id / 100000) * 100000;
   return `${lo}-${lo + 99999}.json`;
 }
-async function fetchJson(url, cache = 'force-cache') {
+async function fetchJson(url, cache = 'no-cache') {
   const r = await fetch(url, { cache });
   if (!r.ok) throw new Error(`HTTP ${r.status} → ${url}`);
   return r.json();
@@ -205,11 +205,14 @@ function buildCareer(transfersArr, perfArr) {
   //    (enlace fiable por mainClubId; respaldo por nombre).
   rows = rows.filter(s => !isYouth(s.name));
   const present = new Set(rows.map(s => s.tid));
-  return rows.filter(s => {
+  rows = rows.filter(s => {
     if (s.parent && present.has(String(s.parent))) return false;            // filial + primer equipo presente
     if (isReserve(s.name) && rows.some(o => o !== s && !isReserve(o.name) && samesClub(s.name, o.name))) return false;
     return true;
   });
+
+  // Normalizar nombres de campo al mismo formato que espera renderTable/legacy.
+  return rows.map(s => ({ name: s.name, apps: s.app, goals: s.g, years: s.years, clubId: s.clubId, loan: s.loan }));
 }
 
 function buildCareerLegacy(transfersArr, perfArr) {
