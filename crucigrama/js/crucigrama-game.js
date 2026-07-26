@@ -82,21 +82,26 @@ async function loadCrucigrama(offset) {
         if (!res.ok) throw new Error('not found');
         crucData = await res.json();
     } catch {
-        // Fallback: try the most recent available
+        // Fallback: el día pedido no existe (hueco de calendario, o el de hoy
+        // aún no está subido). Usar la edición disponible más cercana SIN
+        // pasarse de la fecha pedida — nunca la más reciente de todas, o
+        // "← Anterior" en un hueco (p.ej. fin de semana) saltaría al
+        // crucigrama más nuevo en vez de retroceder al día válido anterior.
         try {
             const fallback = await fetch(sbStorageUrl('game-data', 'crucigrama/index.json'), { cache: 'no-cache' });
             if (!fallback.ok) throw new Error('no index');
             const index = await fallback.json();
             if (!index.dates || index.dates.length === 0) throw new Error('empty');
-            const latestDate = index.dates[index.dates.length - 1];
-            const res2 = await fetch(sbStorageUrl('game-data', `crucigrama/${latestDate}.json`), { cache: 'no-cache' });
+            const notAfter = index.dates.filter(d => d <= dateStr);
+            const chosenDate = notAfter.length ? notAfter[notAfter.length - 1] : index.dates[0];
+            const res2 = await fetch(sbStorageUrl('game-data', `crucigrama/${chosenDate}.json`), { cache: 'no-cache' });
             if (!res2.ok) throw new Error('fallback fail');
             crucData = await res2.json();
 
-            // El puzzle cargado puede no ser el de "offset" días pedido (p.ej.
-            // el de hoy aún no está subido) — recalcular offset/edición a
-            // partir de la fecha real del puzzle, no de la fecha solicitada.
-            const [ly, lm, ld] = latestDate.split('-').map(Number);
+            // El puzzle cargado puede no ser el de "offset" días pedido —
+            // recalcular offset/edición a partir de la fecha real del puzzle,
+            // no de la fecha solicitada.
+            const [ly, lm, ld] = chosenDate.split('-').map(Number);
             const latestUTC = Date.UTC(ly, lm - 1, ld);
             const now = new Date();
             const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
@@ -737,10 +742,21 @@ function crucRevealWord() {
     if (!crucSelectedWord || !crucData) return;
     crucUsedReveal = true;
     const w = crucSelectedWord;
-    crucGetWordCells(w).forEach(({ row, col }, i) => {
+    const cells = crucGetWordCells(w);
+    cells.forEach(({ row, col }, i) => {
         crucUserGrid[`${row},${col}`] = crucNormalize(w.answer[i]);
     });
-    crucSolvedWords.add(w.id);
+    // Comprobar también las palabras cruzadas que comparten celda con la
+    // revelada: rellenar sus letras puede completarlas "de rebote" y hay
+    // que marcarlas resueltas igual que hace crucHandleKey/crucRevealLetter.
+    const checked = new Set();
+    cells.forEach(({ row, col }) => {
+        crucGetWordsAtCell(row, col).forEach(ww => {
+            if (checked.has(ww.id)) return;
+            checked.add(ww.id);
+            crucCheckWordSolved(ww);
+        });
+    });
     const countEl = document.getElementById('cruc-solved-count');
     if (countEl) countEl.textContent = crucSolvedWords.size;
     refreshAllCells();

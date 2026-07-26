@@ -330,7 +330,6 @@ function _seatChip(pid,p,opts){
   const{isMe,isTurn,guess,canKick}=opts;
   const chip=document.createElement('div');
   chip.className=`seat${isMe?' me':''}${isTurn?' active':''}${p.connected===false?' off':''}`;
-  const photo=`https://tmssl.akamaized.net/images/foto/small/x.jpg`; // sin foto real de jugador-persona
   const ini=escapeHtml((p.name||'?')[0].toUpperCase());
   let state;
   if(guess!==undefined&&guess!==null) state=`<span class="seat-bet">${guess}</span>`;

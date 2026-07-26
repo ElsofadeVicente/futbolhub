@@ -151,7 +151,10 @@ function buildCareer(transfersArr, perfArr) {
   if (!perfArr || !perfArr.length) return [];
   if (!perfArr.some(r => r.tid)) return buildCareerLegacy(transfersArr, perfArr);
 
-  // 1) Etapas desde transfers (Transfer/Loan), de la más antigua a la más nueva
+  // 1) Etapas desde transfers (Transfer/Loan), de la más antigua a la más nueva.
+  //    Todo fichaje/cesión real cuenta como etapa aunque acabe en 0 partidos
+  //    (p.ej. fichado y vendido sin debutar); el nombre de respaldo sale del
+  //    propio fichaje (tn).
   const stints = [];
   const tr = transfersArr || [];
   for (let i = tr.length - 1; i >= 0; i--) {
@@ -160,7 +163,7 @@ function buildCareer(transfersArr, perfArr) {
     const tid = String(m.tid);
     if (tid === '123' || tid === '515' || !m.tid) continue;   // Retirado / Sin club
     stints.push({ tid, start: seasonStartYear(m.s) || (m.d ? +String(m.d).slice(0, 4) : 0),
-                  loan: m.type === 'Loan', app: 0, g: 0, seasons: new Set() });
+                  loan: m.type === 'Loan', app: 0, g: 0, seasons: new Set(), name: m.tn || ('#' + tid) });
   }
 
   // 2) Agregar performances por (temporada, tid); nombre y parent(m) por tid
@@ -176,7 +179,9 @@ function buildCareer(transfersArr, perfArr) {
     if (!tidInfo.has(tid)) tidInfo.set(tid, { name: r.tn || ('#' + tid), m: r.m ? String(r.m) : null });
   }
 
-  // 3) Asignar cada (temporada,tid) a su etapa; lo que no case → sintéticas
+  // 3) Asignar cada (temporada,tid) a su etapa; lo que no case → sintéticas.
+  //    Toda etapa sin fichaje registrado también cuenta si hay datos de
+  //    actuaciones para ese club, sin exigir un mínimo de partidos.
   const unmatched = new Map();
   for (const { season, tid, app, g } of byKey.values()) {
     const cands = stints.filter(s => s.tid === tid && s.start <= season + 1);
@@ -189,16 +194,18 @@ function buildCareer(transfersArr, perfArr) {
     }
   }
   for (const [tid, u] of unmatched) {
-    if (u.app >= 2) stints.push({ tid, start: Math.min(...u.seasons), loan: false, app: u.app, g: u.g, seasons: u.seasons });
+    stints.push({ tid, start: Math.min(...u.seasons), loan: false, app: u.app, g: u.g, seasons: u.seasons });
   }
 
-  // 4) Quedarse con etapas reales (≥2 partidos); nombre/parent/años/escudo
-  let rows = stints.filter(s => s.app >= 2 && s.seasons.size);
+  // 4) Quedarse con TODAS las etapas (fichaje real o actuaciones reales);
+  //    sin actuaciones, el año sale del propio fichaje.
+  let rows = stints;
   rows.forEach(s => {
     const info = tidInfo.get(s.tid) || {};
-    s.name = info.name || ('#' + s.tid);
+    s.name = info.name || s.name || ('#' + s.tid);
     s.parent = info.m || null;
-    s.startY = Math.min(...s.seasons); s.endY = Math.max(...s.seasons);
+    s.startY = s.seasons.size ? Math.min(...s.seasons) : s.start;
+    s.endY = s.seasons.size ? Math.max(...s.seasons) : s.start;
   });
   rows.sort((a, b) => a.startY - b.startY || a.endY - b.endY);
 
@@ -336,7 +343,12 @@ function recordResult(won, attempts) {
 function saveTodayResult() {
   try {
     const day = getTodayMadrid();
-    localStorage.setItem(TODAY_KEY, JSON.stringify({ date: day, id: _target.id, attempts: _attempt, won: _won }));
+    // Se guarda también la carrera tal cual se jugó (no solo el id del
+    // jugador): si transfers/performances de ese jugador se corrigen en la
+    // base de datos más tarde el mismo día, volver a la pantalla de
+    // resultado no debe recalcular una carrera distinta a la que realmente
+    // se jugó (mismo criterio que el fix de "El Estadio").
+    localStorage.setItem(TODAY_KEY, JSON.stringify({ date: day, id: _target.id, attempts: _attempt, won: _won, career: _target.career }));
     // Registro por fecha (no se sobreescribe) — lo usa el hub para la racha.
     localStorage.setItem(`carrera_day_${day}`, JSON.stringify({ won: _won }));
   } catch {}
@@ -369,6 +381,7 @@ let elLoading, elIntro, elGame, elEnd;
 let elStartBtn, elStatsOpen;
 let elNav, elNavFirst, elNavPrev, elNavNext, elNavLast, elNavLabel;
 let elAttempt, elArchiveTag, elCareer, elInput, elSug, elSkip;
+let _docClickBound = false;
 let elEndEmoji, elEndTitle, elEndSub, elRevealImg, elRevealName, elEndCareer, elEndStats, elShare;
 let elStatsOverlay, elStatsClose, elStatsNums, elHistBars, elHistLabels, elCountdown;
 
@@ -478,9 +491,6 @@ function playCurrent() {
 /* Navega a otra edición (desde el juego o el final) y la carga de cero. */
 function goEdition(idx) {
   idx = Math.max(0, Math.min(_editions.length - 1, idx));
-  if (idx === _idx && _ended === false && elGame && !elGame.classList.contains('hidden')) {
-    // ya estás en esa edición jugando
-  }
   _idx = idx;
   playCurrent();
 }
@@ -532,6 +542,13 @@ async function prepareAndPlay(date, saved) {
   elLoading.classList.add('hidden');
 
   if (saved) {   // partida de hoy ya jugada → mostrar resultado
+    // Preferir la carrera guardada junto al resultado (la que se jugó de
+    // verdad) sobre la recién recalculada, por si los datos del jugador
+    // cambiaron entre medias.
+    if (Array.isArray(saved.career) && saved.career.length) {
+      _target.career = saved.career;
+      _total = saved.career.length;
+    }
     _attempt = saved.attempts; _won = saved.won; _ended = true; _statsSaved = true;
     _visible = _total;
     showEnd();
@@ -625,7 +642,14 @@ function bindGameEvents() {
       else if (_acItems.length)            submitSug(_acItems[0]);
     }
   });
-  document.addEventListener('click', e => { if (!elSug.contains(e.target) && e.target !== elInput) closeSug(); });
+  // bindGameEvents() se llama en cada startGame() (cada edición/reintento).
+  // elInput/elSug son variables de módulo reasignadas más arriba, así que el
+  // closure siempre lee el valor vigente — basta con registrar este listener
+  // una sola vez en toda la sesión en vez de acumularlo en document.
+  if (!_docClickBound) {
+    document.addEventListener('click', e => { if (!elSug.contains(e.target) && e.target !== elInput) closeSug(); });
+    _docClickBound = true;
+  }
 
   const ns = elSkip.cloneNode(true); elSkip.parentNode.replaceChild(ns, elSkip); elSkip = ns;
   elSkip.addEventListener('click', () => { if (!_ended) onWrong(); });

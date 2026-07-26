@@ -177,6 +177,12 @@ function saveDailyPlayed(total) {
       total,
       scores:  state.scores,
       guesses: state.guesses,
+      // Guardamos también qué estadios fueron las rondas reales: si
+      // estadios.json cambia de contenido/orden más tarde el mismo día
+      // (el dataset se puede editar en caliente), volver a barajar con la
+      // semilla del día ya no reproduciría las mismas rondas y el resultado
+      // se mostraría emparejado con estadios equivocados.
+      rondas:  state.rondas,
       ts: Date.now(),
     }));
   } catch {}
@@ -200,6 +206,12 @@ function startGame() {
       && played.scores.length === TOTAL_RONDAS && played.guesses.length === TOTAL_RONDAS) {
     state.scores      = played.scores;
     state.guesses     = played.guesses;
+    // Preferir los estadios realmente jugados (guardados junto al resultado)
+    // sobre el pool recién barajado: si el dataset se editó entre medias,
+    // recalcular con la semilla de hoy ya no da las mismas rondas.
+    if (Array.isArray(played.rondas) && played.rondas.length === TOTAL_RONDAS) {
+      state.rondas = played.rondas;
+    }
     state.rondaActual = TOTAL_RONDAS;
     mostrarFin(true);
     return;

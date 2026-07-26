@@ -36,6 +36,19 @@ const BlackjackGame = (() => {
   let cardTimerStart    = 0;
   let _persistedScores  = {};   // scores acumulados entre rondas, nunca se resetean
 
+  /* ── Timers de animación pendientes (bust pause, reveal, fin de partida…) ──
+     Igual que en Higher-or-Lower: "← Salir" durante una animación no recarga
+     la página, solo vuelve al menú. Sin cancelar estos timeouts/intervals,
+     uno huérfano puede disparar más tarde sobre la partida NUEVA que el
+     jugador ya haya empezado (state es una variable de módulo compartida). */
+  let _pendingTimers = [];
+  function _setTimeout(fn, ms) { const id = setTimeout(fn, ms); _pendingTimers.push(id); return id; }
+  function _setInterval(fn, ms) { const id = setInterval(fn, ms); _pendingTimers.push(id); return id; }
+  function _cancelPendingTimers() {
+    _pendingTimers.forEach(id => { clearTimeout(id); clearInterval(id); });
+    _pendingTimers = [];
+  }
+
   /* ── Estado inicial de partida ── */
   function freshState(players, mode, roomCode, isHost, myPlayerId) {
     return {
@@ -170,7 +183,7 @@ const BlackjackGame = (() => {
       if (btnAdd)     btnAdd.disabled     = true;
       if (btnDiscard) btnDiscard.disabled = true;
       if (btnStand)   btnStand.disabled   = true;
-      setTimeout(() => _advanceCard(h), BUST_PAUSE_MS);
+      _setTimeout(() => _advanceCard(h), BUST_PAUSE_MS);
     } else {
       _advanceCard(h);
     }
@@ -255,7 +268,7 @@ const BlackjackGame = (() => {
     _showPhase('reveal');
     _buildRevealUI();
 
-    setTimeout(() => {
+    _setTimeout(() => {
       _runRevealAnimation();
     }, REVEAL_DELAY_MS);
   }
@@ -276,10 +289,10 @@ const BlackjackGame = (() => {
     const maxCards = Math.max(...playerCards.map(p => p.cards.length), 0);
 
     let step = 0;
-    const iv = setInterval(() => {
+    const iv = _setInterval(() => {
       if (step >= maxCards) {
         clearInterval(iv);
-        setTimeout(_finalizeReveal, 800);
+        _setTimeout(_finalizeReveal, 800);
         return;
       }
 
@@ -313,10 +326,10 @@ const BlackjackGame = (() => {
       ? eligible.reduce((best, p) => (p.score > best.score ? p : best), eligible[0])
       : null;
     if (winner) {
-      setTimeout(() => _endGame(winner), 2000);
+      _setTimeout(() => _endGame(winner), 2000);
     } else {
       // Botón siguiente ronda: solo host, aparece después de que el reveal haya terminado
-      setTimeout(() => {
+      _setTimeout(() => {
         const btn = document.getElementById('btn-next-round');
         if (btn && state.isHost) btn.classList.remove('hidden');
       }, 1800);
@@ -417,7 +430,7 @@ const BlackjackGame = (() => {
     cardTimerStart = Date.now();
     _updateTimerUI(CARD_TIMER_SECS);
 
-    cardTimerInterval = setInterval(() => {
+    cardTimerInterval = _setInterval(() => {
       const elapsed   = (Date.now() - cardTimerStart) / 1000;
       const remaining = Math.max(0, CARD_TIMER_SECS - elapsed);
       _updateTimerUI(remaining);
@@ -793,7 +806,8 @@ const BlackjackGame = (() => {
     checkAllDone: _checkAllDone,
     updateOpponentActivity: _updateOpponentActivity,
     updateScoreboard: _updateScoreboard,
-    resetScores: () => { _persistedScores = {}; state = null; },
+    resetScores: () => { _cancelPendingTimers(); _stopCardTimer(); _persistedScores = {}; state = null; },
+    cancelPendingTimers: () => { _cancelPendingTimers(); _stopCardTimer(); },
 
     // Constantes expuestas
     CARDS_PER_ROUND,

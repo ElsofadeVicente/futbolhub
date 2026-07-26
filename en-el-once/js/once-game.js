@@ -13,6 +13,7 @@ let currentPlayerIndex = null;
 let revealedPlayers = new Set();
 let failedPlayers = new Set();
 let currentGuess = [];
+let guessLocked = false; // true mientras se anima/cierra un acierto o un fallo definitivo
 let playerAttempts = {};
 let playerGuessHistory = {};
 
@@ -460,6 +461,11 @@ function updateDailyHeader(offsetDays, prevAvailable = false) {
         const pt = document.getElementById('playing-team');
         pt.parentNode.insertBefore(headerEl, pt.nextSibling);
     }
+    // El placeholder estático del HTML trae style="display:none"; si no se
+    // limpia aquí, la cabecera nunca se ve la primera vez que se juega al
+    // diario en la sesión (solo se veía si antes se había jugado un modo
+    // no-diario, que sí elimina el nodo entero).
+    headerEl.style.display = '';
 
     const canGoBack    = prevAvailable;      // hay archivo para el día anterior
     const canGoForward = offsetDays > 0;     // no estamos ya en hoy
@@ -980,6 +986,7 @@ function openGuessModal(playerIndex) {
 
     currentPlayerIndex = playerIndex;
     currentGuess       = [];
+    guessLocked        = false;
     const isReadOnly   = failedPlayers.has(playerIndex);
 
     if (!playerAttempts[playerIndex])     playerAttempts[playerIndex] = 0;
@@ -1140,6 +1147,7 @@ function getKnownName(fullName) {
 
 function handleKeyPress(key) {
     if (failedPlayers.has(currentPlayerIndex)) return;
+    if (guessLocked) return;
     const player     = getPlayerByIndex(currentPlayerIndex);
     const targetName = onceNormalizeText(removeSpecialChars(getKnownName(player.name)));
 
@@ -1169,6 +1177,10 @@ function checkGuess() {
     const guessWord  = currentGuess.join('');
 
     if (guessWord === targetName) {
+        // Evita que un segundo Enter durante la animación (currentGuess sigue
+        // lleno hasta que se cierra el modal) vuelva a ejecutar esta rama y
+        // duplique el punto/historial.
+        guessLocked = true;
         if (!playerGuessHistory[currentPlayerIndex]) playerGuessHistory[currentPlayerIndex] = [];
         playerGuessHistory[currentPlayerIndex].push({
             guess: guessWord, status: new Array(targetName.length).fill('correct')
@@ -1209,6 +1221,7 @@ function checkGuess() {
     playerAttempts[currentPlayerIndex]++;
 
     if (currentRow >= 6) {
+        guessLocked = true;
         setTimeout(() => { revealPlayer(currentPlayerIndex, true); closeGuessModal(); updateOnceStats('failed'); }, 1000);
     }
 }
@@ -1442,7 +1455,10 @@ function giveUp() {
             if (!revealedPlayers.has(i)) { revealedPlayers.add(i); newlyRevealed++; }
         }
         matchStats.revealed += newlyRevealed;
-        stats.totalAttempts -= newlyRevealed;
+        // Cuentan como intentos fallidos (nunca se sumaron a totalAttempts al
+        // revelarse, a diferencia de los aciertos/fallos que pasan por
+        // updateOnceStats) — restar aquí dejaba el contador global negativo.
+        stats.totalAttempts += newlyRevealed;
         renderFormation();
         updateRevealedCount();
         stats.currentStreak = 0;
