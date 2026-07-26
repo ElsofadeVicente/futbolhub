@@ -118,18 +118,38 @@ function careerTokens(s) {
   return norm(s).split(' ').filter(t => t.length >= 2);
 }
 
+// Clubes ficticios de Transfermarkt (Retirado / Sin club / Career break / Unknown)
+const _PSEUDO_CLUB_TIDS = new Set(['123', '515', '2113', '75']);
+
 // ── Reglas de filiales y juveniles ──
 // Juveniles / sub-19 / U18 / academias: NUNCA entran.
-const _YOUTH_RE = /\b(u-?\s?(1[3-9]|2[0-3])|sub-?\s?\d{1,2}|under\s?\d{2}|youth|yth|jugend|juvenil(es)?|primavera|nachwuchs|cantera|academy)\b/;
-function isYouth(name) { return _YOUTH_RE.test(norm(name)); }
+const _YOUTH_RE = /\b(u-?\s?(1[3-9]|2[0-3])|sub-?\s?\d{1,2}|under\s?\d{2}|onder\s?\d{2}|youth|yth|jugend|jeugd|juvenil(es)?|primavera|nachwuchs|cantera|academy)\b/;
+function isYouth(name) {
+  const n = norm(name);
+  if (/ y$/.test(n)) return true;   // Transfermarkt abrevia "equipo juvenil" como "... Y"
+  return _YOUTH_RE.test(n);
+}
 
-// Filial / equipo B / II / Castilla / Atlètic / reservas / amateurs.
+// Filial / equipo B / II / Castilla / Atlètic / reservas / amateurs / Jong.
 function isReserve(name) {
   const n = norm(name);
   if (/\bii\b/.test(n) || / b$/.test(n) || / c$/.test(n)) return true;
-  if (/\b(castilla|atletic|reserves?|amateure?|bis)\b/.test(n)) return true;
+  if (/\b(castilla|atletic|reserves?|res|amateur(e|s)?|amat|bis|jong|promesas)\b/.test(n)) return true;
   return false;
 }
+
+// Filiales cuyo nombre NO comparte ninguna palabra reconocible con el club
+// matriz (o de forma inconsistente según el registro), así que ni el regex de
+// arriba ni el emparejamiento por nombre los detecta: tid del filial -> tid
+// del club matriz. Confirmado con casos reales de la base.
+const _RESERVE_PARENT = {
+  '6665': '621',    // CD Basconia -> Athletic
+  '6688': '621',    // Bilbao Athletic / Bilbao B -> Athletic
+  '44822': '681',   // Real Sociedad C / Berio -> Real Sociedad
+  '5649': '1084',   // A. Malagueño / Málaga B -> Málaga CF
+  '14707': '2497',  // Oviedo Vetusta / Oviedo B -> Real Oviedo
+  '11603': '897',   // Deportivo B / Depor Fabril -> Dep. La Coruña
+};
 // Tokens "distintivos" del club (fuera palabras genéricas y marcas de filial).
 const _CLUB_STOP = new Set(['fc','cf','ac','as','sc','sv','ss','us','ud','cd','rc','afc','sd','cp','ca',
   'de','la','el','real','club','calcio','the','ii','b','c','castilla','atletic','reserves','reserve','amateure','amateur','bis']);
@@ -138,8 +158,15 @@ function distinctiveTokens(name) {
 }
 // ¿el filial y el club siguiente son el mismo club (promoción al primer equipo)?
 function samesClub(reserveName, otherName) {
-  const a = new Set(distinctiveTokens(reserveName));
-  for (const t of distinctiveTokens(otherName)) if (a.has(t)) return true;
+  const ta = distinctiveTokens(reserveName), tb = distinctiveTokens(otherName);
+  if (ta.some(t => tb.includes(t))) return true;
+  // Transfermarkt abrevia el nombre del filial con apóstrofo (p.ej. "Indep'te"
+  // de "Independiente"): solo en ese caso basta con que sea prefijo de la
+  // palabra completa. Nombres completos normales (sin apóstrofo) exigen
+  // coincidencia exacta, para no confundir clubes distintos que comparten
+  // una palabra genérica (p.ej. "Atlético Madrid" / "Atlético Nacional").
+  if (reserveName.includes("'") && ta.some(x => tb.some(y => x.length >= 4 && y.startsWith(x)))) return true;
+  if (otherName.includes("'") && tb.some(y => ta.some(x => y.length >= 4 && x.startsWith(y)))) return true;
   return false;
 }
 
@@ -161,7 +188,7 @@ function buildCareer(transfersArr, perfArr) {
     const m = tr[i];
     if (m.type !== 'Transfer' && m.type !== 'Loan') continue;
     const tid = String(m.tid);
-    if (tid === '123' || tid === '515' || !m.tid) continue;   // Retirado / Sin club
+    if (_PSEUDO_CLUB_TIDS.has(tid) || !m.tid) continue;
     stints.push({ tid, start: seasonStartYear(m.s) || (m.d ? +String(m.d).slice(0, 4) : 0),
                   loan: m.type === 'Loan', app: 0, g: 0, seasons: new Set(), name: m.tn || ('#' + tid) });
   }
@@ -172,6 +199,7 @@ function buildCareer(transfersArr, perfArr) {
   for (const r of perfArr) {
     if (!r.tid) continue;
     const tid = String(r.tid);
+    if (_PSEUDO_CLUB_TIDS.has(tid)) continue;
     const season = seasonStartYear(r.s);
     const k = season + '|' + tid;
     if (!byKey.has(k)) byKey.set(k, { season, tid, app: 0, g: 0 });
@@ -203,13 +231,60 @@ function buildCareer(transfersArr, perfArr) {
   rows.forEach(s => {
     const info = tidInfo.get(s.tid) || {};
     s.name = info.name || s.name || ('#' + s.tid);
-    s.parent = info.m || null;
+    s.parent = info.m || _RESERVE_PARENT[s.tid] || null;
     s.startY = s.seasons.size ? Math.min(...s.seasons) : s.start;
     s.endY = s.seasons.size ? Math.max(...s.seasons) : s.start;
   });
   rows.sort((a, b) => a.startY - b.startY || a.endY - b.endY);
 
-  // 5) Fusionar etapas consecutivas del mismo club (Messi: una sola Barcelona)
+  // 5) Filtros (antes de fusionar, para que un filial intercalado no rompa la
+  //    fusión de dos etapas reales del mismo club, p.ej. Agüero-Independiente).
+  //    Juveniles fuera. Filiales fuera si el jugador jugó en el primer equipo
+  //    (enlace fiable por mainClubId; respaldo por nombre): sus AÑOS se anexan
+  //    a la etapa del primer equipo para no dejar un "hueco" de inactividad
+  //    falso (p.ej. Borja Iglesias jugando en el Celta Fortuna entre medias).
+  //    Filial sin ni un partido y sin club matriz reconocible: no cuenta
+  //    (p.ej. Yuri Berchiche y el Tottenham Res. en el que nunca debutó).
+  rows = rows.filter(s => !isYouth(s.name));
+  const present = new Set(rows.map(s => s.tid));
+
+  // los AÑOS del filial se anexan al club matriz, pero NO sus partidos ni
+  // goles: son del filial, no del primer equipo.
+  function absorb(target, s) {
+    s.seasons.forEach(x => target.seasons.add(x));
+    target.startY = Math.min(target.startY, s.startY); target.endY = Math.max(target.endY, s.endY);
+  }
+  // de entre varias etapas del club matriz (idas y vueltas de cesión), la que
+  // ya estaba activa cuando terminó el filial; si el filial es posterior a
+  // todas, la más cercana en el tiempo.
+  function pickTarget(cands, s) {
+    const eligible = cands.filter(o => o.startY <= s.endY + 1);
+    if (eligible.length) return eligible.reduce((a, b) => (a.startY >= b.startY ? a : b));
+    return cands.reduce((a, b) => (Math.abs(a.startY - s.startY) <= Math.abs(b.startY - s.startY) ? a : b));
+  }
+
+  const kept = [];
+  for (const s of rows) {
+    if (s.parent && present.has(String(s.parent))) {
+      const cands = rows.filter(o => o !== s && o.tid === String(s.parent));
+      if (cands.length) { absorb(pickTarget(cands, s), s); continue; }
+    }
+    kept.push(s);
+  }
+  rows = kept;
+
+  const final = [];
+  for (const s of rows) {
+    if (isReserve(s.name)) {
+      const cands = rows.filter(o => o !== s && !isReserve(o.name) && samesClub(s.name, o.name));
+      if (cands.length) { absorb(pickTarget(cands, s), s); continue; }
+      if (!s.app && !s.g) continue;
+    }
+    final.push(s);
+  }
+  rows = final;
+
+  // 6) Fusionar etapas consecutivas del mismo club (Messi: una sola Barcelona)
   const merged = [];
   for (const s of rows) {
     const prev = merged[merged.length - 1];
@@ -224,16 +299,6 @@ function buildCareer(transfersArr, perfArr) {
   rows.forEach(s => {
     s.clubId = /^\d+$/.test(s.tid) ? +s.tid : s.tid;
     s.years = s.startY === s.endY ? `${s.startY}` : `${s.startY}-${s.endY}`;
-  });
-
-  // 6) Juveniles fuera; filiales fuera si el jugador jugó en el primer equipo
-  //    (enlace fiable por mainClubId; respaldo por nombre).
-  rows = rows.filter(s => !isYouth(s.name));
-  const present = new Set(rows.map(s => s.tid));
-  rows = rows.filter(s => {
-    if (s.parent && present.has(String(s.parent))) return false;            // filial + primer equipo presente
-    if (isReserve(s.name) && rows.some(o => o !== s && !isReserve(o.name) && samesClub(s.name, o.name))) return false;
-    return true;
   });
 
   // Normalizar nombres de campo al mismo formato que espera renderTable/legacy.
