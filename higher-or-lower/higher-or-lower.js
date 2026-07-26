@@ -90,7 +90,18 @@ const HOL = {
   currentMode: null,
   isAnimating: false,
   gameOver: false,
+  pendingTimers: [],
 };
+
+/* Cancela cualquier setTimeout de transición/game-over en vuelo.
+   Necesario porque "← Volver" durante la partida no recarga la página:
+   si se pulsa a mitad de la animación de acierto/fallo, el setTimeout huérfano
+   disparaba chainTransition()/triggerGameOver() más tarde sobre la partida
+   nueva que el jugador ya hubiera empezado. */
+function cancelPendingTimers() {
+  HOL.pendingTimers.forEach(id => clearTimeout(id));
+  HOL.pendingTimers.length = 0;
+}
 
 let DOM = {};
 
@@ -181,6 +192,8 @@ function buildModeMenu() {
 }
 
 function showModeMenu() {
+  cancelPendingTimers();
+  HOL.isAnimating = false;
   buildModeMenu();
   DOM.modeMenu.classList.add('active');
   DOM.game.classList.remove('active');
@@ -396,9 +409,9 @@ function handleChoice(choice) {
   if (isCorrect) {
     HOL.score++;
     DOM.scoreValue.textContent = HOL.score;
-    setTimeout(() => chainTransition(), 1400);
+    HOL.pendingTimers.push(setTimeout(() => chainTransition(), 1400));
   } else {
-    setTimeout(() => triggerGameOver(), 1600);
+    HOL.pendingTimers.push(setTimeout(() => triggerGameOver(), 1600));
   }
 }
 
@@ -410,7 +423,7 @@ function chainTransition() {
   DOM.leftPanel.classList.add('sliding-out');
   DOM.rightPanel.classList.add('sliding-out');
 
-  setTimeout(() => {
+  HOL.pendingTimers.push(setTimeout(() => {
     HOL.leftPlayer  = HOL.rightPlayer;
     HOL.rightPlayer = pickRandomPlayer(HOL.leftPlayer);
 
@@ -422,7 +435,7 @@ function chainTransition() {
     DOM.rightPanel.classList.add('sliding-in');
 
     HOL.isAnimating = false;
-  }, 450);
+  }, 450));
 }
 
 function triggerGameOver() {

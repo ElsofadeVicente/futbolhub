@@ -113,8 +113,17 @@ body::before {
 #mode-art-overlay .eyebrow-num, #mode-art-overlay .eyebrow-sep { color: rgba(244, 234, 210, 0.85); }
 #mode-art-overlay .eyebrow-cat { color: #f4b89a; }
 #mode-body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 12px; border-top: 2px solid var(--np-ink); }
-#mode-back { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--np-ink-mid); text-decoration: none; transition: color 0.18s; }
-#mode-back:hover { color: var(--np-red); }
+/* Mismo tratamiento visual que .back-btn de Coche: caja con borde y sombra dura. */
+#mode-back {
+  align-self: flex-start; display: inline-flex; align-items: center;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; text-decoration: none;
+  color: var(--np-ink); background: var(--np-paper2);
+  border: 1px solid var(--np-ink); padding: 5px 10px;
+  box-shadow: 2px 2px 0 var(--np-ink);
+  transition: background 0.12s, color 0.12s;
+}
+#mode-back:hover { background: var(--np-ink); color: var(--np-paper); }
 #mode-title { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1.0; color: var(--np-ink); letter-spacing: -0.01em; }
 #mode-desc { font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: var(--np-ink-mid); }
 .mode-rule { height: 1px; background: var(--np-ink-soft); }
@@ -164,8 +173,16 @@ body::before {
 #day-nav button:disabled { opacity: .28; cursor: not-allowed; }
 #nav-label { font-family: var(--font-display); font-size: .95rem; letter-spacing: .05em; min-width: 96px; text-align: center; }
 #top-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; padding-top: 8px; }
-#game-back { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--np-ink-mid); text-decoration: none; transition: color 0.15s; }
-#game-back:hover { color: var(--np-red); }
+#game-back {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; text-decoration: none;
+  color: var(--np-ink); background: var(--np-paper2);
+  border: 1px solid var(--np-ink); padding: 4px 9px;
+  box-shadow: 2px 2px 0 var(--np-ink);
+  transition: background 0.12s, color 0.12s;
+}
+#game-back:hover { background: var(--np-ink); color: var(--np-paper); }
 #attempt-badge { font-family: var(--font-display); font-size: 1rem; color: var(--np-red); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
 #archive-tag { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--np-ink-mid); border: 1px solid var(--np-ink-soft); padding: 3px 6px; }
 

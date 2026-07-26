@@ -236,17 +236,25 @@ body::before {
   border-top: 2px solid var(--np-ink);
 }
 
-/* Volver */
+/* Volver — mismo tratamiento visual que .back-btn de Coche: caja con borde y sombra dura. */
 #mode-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.2em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--np-ink-mid);
+  color: var(--np-ink);
+  background: var(--np-paper2);
+  border: 1px solid var(--np-ink);
+  padding: 5px 10px;
+  box-shadow: 2px 2px 0 var(--np-ink);
   text-decoration: none;
-  transition: color 0.18s;
+  transition: background 0.12s, color 0.12s;
 }
-#mode-back:hover { color: var(--np-red); }
+#mode-back:hover { background: var(--np-ink); color: var(--np-paper); }
 
 /* Título */
 #mode-title {
@@ -396,15 +404,22 @@ body::before {
 }
 
 #game-back {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.18em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--np-ink-mid);
+  color: var(--np-ink);
+  background: var(--np-paper2);
+  border: 1px solid var(--np-ink);
+  padding: 4px 9px;
+  box-shadow: 2px 2px 0 var(--np-ink);
   text-decoration: none;
-  transition: color 0.15s;
+  transition: background 0.12s, color 0.12s;
 }
-#game-back:hover { color: var(--np-red); }
+#game-back:hover { background: var(--np-ink); color: var(--np-paper); }
 
 #score-badge {
   font-family: var(--font-display);
@@ -1010,9 +1025,4 @@ body::before {
 @media (max-width: 480px) {
   #mode-box { box-shadow: none; }
   .np-modal { box-shadow: 3px 3px 0 var(--np-ink); }
-}
-
-*, ::before, ::after {
-    margin-left: 0px;
-    margin-top: 0px;
 }

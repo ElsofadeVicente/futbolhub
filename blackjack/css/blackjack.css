@@ -355,6 +355,10 @@ body {
   flex-shrink: 0;
   position: sticky; top: 0; z-index: 10;
 }
+/* Sin esta regla, la barra "Objetivo" se veía siempre (incl. en el menú),
+   porque la clase .hidden que añade/quita blackjack-app.js no tenía
+   ningún efecto sobre .game-topbar. */
+.game-topbar.hidden { display: none; }
 
 /* Objetivo centrado — columna 2 */
 .topbar-objective {

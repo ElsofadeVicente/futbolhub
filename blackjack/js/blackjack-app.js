@@ -1308,6 +1308,7 @@ const App = (() => {
       return;
     }
 
+    BlackjackGame.cancelPendingTimers?.();
     if (_roomCode && _playerId) {
       BlackjackSync.disconnect(_roomCode, _playerId).catch(() => {});
     }
