@@ -266,8 +266,10 @@ body::before {
 .sug-item.active { background: var(--np-ink); color: var(--np-paper); }
 .sug-item.active .sug-name { color: var(--np-paper); }
 .sug-item.active .sug-highlight { color: #f4b89a; }
-.sug-name { flex: 1; color: var(--np-ink); }
+.sug-name { flex: 0 1 auto; color: var(--np-ink); }
 .sug-highlight { color: var(--np-red); font-weight: 700; }
+.sug-meta { flex-shrink: 0; margin-left: auto; padding-left: 12px; font-family: var(--font-mono); font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--np-ink-mid); white-space: nowrap; }
+.sug-item.active .sug-meta { color: rgba(244, 184, 154, .95); }
 
 /* ── Pantalla final ──────────────────────────── */
 #end-screen {

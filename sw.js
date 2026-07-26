@@ -9,7 +9,7 @@
    ============================================= */
 'use strict';
 
-const CACHE = 'futbolhub-v4';
+const CACHE = 'futbolhub-v5';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son

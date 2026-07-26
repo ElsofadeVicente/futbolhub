@@ -90,6 +90,24 @@ async function loadPerformances(id, manifest) {
   } catch { return null; }
 }
 
+// ── Lookup de jugador para el autocompletado (posición/nación/nacimiento) ──
+// Cachea el chunk uniforme completo por archivo, para desambiguar homónimos
+// (Luis Suárez, Rafinha…) sin descargar el mismo chunk varias veces.
+const _acChunkCache = {};   // archivo → objeto chunk completo { id: {...} }
+const _acPlayerCache = {};  // id → datos del jugador (o null)
+async function acGetPlayer(id) {
+  const sid = String(id);
+  if (sid in _acPlayerCache) return _acPlayerCache[sid];
+  const file = uniformChunkFile(id);
+  if (!_acChunkCache[file]) {
+    try { _acChunkCache[file] = await fetchJson(sbStorageUrl('player-db', `players/chunks/${file}`)); }
+    catch { _acChunkCache[file] = {}; }
+  }
+  const d = _acChunkCache[file][sid] || null;
+  _acPlayerCache[sid] = d;
+  return d;
+}
+
 // ══════════════════════════════════════════════
 //  CONSTRUIR LA CARRERA (runtime)
 //  Une performances (partidos/goles por equipo) con
@@ -344,7 +362,7 @@ let _target = null;       // { id, name, img, career:[] }
 let _total = 0, _attempt = 1, _visible = 1;
 let _ended = false, _won = false, _isToday = false, _statsSaved = false;
 
-let _acItems = [], _acIdx = -1, _acDebounce = null, _cdInterval = null;
+let _acItems = [], _acIdx = -1, _acDebounce = null, _cdInterval = null, _acSeq = 0;
 
 // ── Refs ──
 let elLoading, elIntro, elGame, elEnd;
@@ -618,19 +636,87 @@ function wordBoundaryMatch(n, q) {
   for (let i = 0; i < w.length; i++) if (w.slice(i).join(' ').startsWith(q)) return true;
   return false;
 }
-function buildSug(query) {
+// Etiqueta de posición mostrada en cada sugerencia (igual que Coche).
+const POS_LABEL = { GK: 'Portero', DEF: 'Defensa', MID: 'Centrocampista', FWD: 'Delantero' };
+
+async function buildSug(query) {
+  const seq = ++_acSeq;
   const q = norm(query);
+
+  // 1) Candidatos por nombre, sin IDs repetidos.
   let exact = [], starts = [], word = [], contains = [];
+  const seenIds = new Set();
   for (const [id, name] of _nameIndex) {
+    const sid = String(id);
+    if (seenIds.has(sid)) continue;
+    seenIds.add(sid);
     const n = norm(name);
-    if (n === q) exact.push([id, name]);
-    else if (n.startsWith(q)) starts.push([id, name]);
-    else if (wordBoundaryMatch(n, q)) word.push([id, name]);
-    else if (n.includes(q)) contains.push([id, name]);
-    if (exact.length + starts.length + word.length >= 10 && contains.length >= 4) break;
+    if (n === q) exact.push([sid, name]);
+    else if (n.startsWith(q)) starts.push([sid, name]);
+    else if (wordBoundaryMatch(n, q)) word.push([sid, name]);
+    else if (n.includes(q)) contains.push([sid, name]);
+    if (exact.length + starts.length + word.length >= 12 && contains.length >= 6) break;
   }
-  const items = [...exact, ...starts, ...word, ...contains].slice(0, 8).map(([id, name]) => ({ id, name }));
-  renderSug(items, query);
+  const tagged = [
+    ...exact.map(([id, name])    => ({ id, name, cat: 0 })),
+    ...starts.map(([id, name])   => ({ id, name, cat: 1 })),
+    ...word.map(([id, name])     => ({ id, name, cat: 2 })),
+    ...contains.map(([id, name]) => ({ id, name, cat: 3 })),
+  ];
+
+  // Previsualización rápida (síncrona): nombre solo, para que Enter funcione ya.
+  renderSug(tagged.slice(0, 8).map(t => ({ ...t, disambig: '' })), query);
+
+  // 2) Cargar datos (posición/nación/nacimiento/partidos) para ordenar y desambiguar.
+  const FETCH_LIMIT = 40;
+  const slice = tagged.slice(0, FETCH_LIMIT);
+  const data = await Promise.all(slice.map(t => acGetPlayer(t.id)));
+  if (seq !== _acSeq) return;   // una consulta más nueva ya reemplazó a ésta
+
+  const withData = slice.map((t, i) => {
+    const d = data[i] || {};
+    return {
+      ...t,
+      apps:      typeof d.apps === 'number' ? d.apps : 0,
+      pos:       d.p || '',
+      nat:       d.nat || '',
+      birthYear: d.b ? parseInt(d.b, 10) : null,
+      h:         d.h ? Math.round(parseFloat(d.h)) : 0,
+    };
+  });
+
+  // 3) Ordenar: categoría → partidos jugados (el más conocido primero).
+  withData.sort((a, b) => (a.cat - b.cat) || ((b.apps || 0) - (a.apps || 0)));
+
+  // 4) Deduplicar por huella (mismo jugador indexado con dos IDs).
+  const seenFp = new Set();
+  const deduped = [];
+  for (const item of withData) {
+    const fp = `${norm(item.name)}|${item.birthYear || ''}|${item.nat || ''}|${item.h || 0}`;
+    if (seenFp.has(fp)) continue;
+    seenFp.add(fp);
+    deduped.push(item);
+    if (deduped.length >= 8) break;
+  }
+
+  // 5) Desambiguación en cascada para homónimos: Posición → Nación → Año nac.
+  const finalItems = deduped.map((item, _, arr) => {
+    const sameName = arr.filter(o => norm(o.name) === norm(item.name));
+    const tags = [];
+    const posLabel = POS_LABEL[item.pos] || item.pos || '';
+    if (posLabel) tags.push(posLabel);
+    if (sameName.length > 1) {
+      const samePos = sameName.filter(o => o.pos === item.pos);
+      if (samePos.length > 1 && item.nat) {
+        tags.push(item.nat);
+        const sameNat = samePos.filter(o => o.nat === item.nat);
+        if (sameNat.length > 1 && item.birthYear) tags.push('n. ' + item.birthYear);
+      }
+    }
+    return { ...item, disambig: tags.join(' · ') };
+  });
+
+  renderSug(finalItems, query);
 }
 function renderSug(items, query) {
   _acItems = items; _acIdx = items.length ? 0 : -1;
@@ -639,7 +725,8 @@ function renderSug(items, query) {
   items.forEach((item, i) => {
     const div = document.createElement('div');
     div.className = 'sug-item' + (i === 0 ? ' active' : '');
-    div.innerHTML = `<span class="sug-name">${highlight(item.name, query)}</span>`;
+    const meta = item.disambig ? `<span class="sug-meta">${escHtml(item.disambig)}</span>` : '';
+    div.innerHTML = `<span class="sug-name">${highlight(item.name, query)}</span>${meta}`;
     div.addEventListener('mousedown', e => { e.preventDefault(); submitSug(item); });
     div.addEventListener('mousemove', () => setAcIdx(i));
     elSug.appendChild(div);
@@ -660,7 +747,10 @@ function submitSug(item) { closeSug(); elInput.value = ''; if (!_ended) guess(it
 //  LÓGICA DE ADIVINAR
 // ══════════════════════════════════════════════
 function guess(name, id) {
-  const correct = (id && String(id) === String(_target.id)) || norm(name) === norm(_target.name);
+  // El jugador objetivo está identificado por su ID: al elegir de la lista se
+  // compara por ID, así un homónimo (otro "Luis Suárez") NO cuenta como acierto.
+  // Solo se recurre al nombre si por lo que sea no llegó un ID.
+  const correct = id ? String(id) === String(_target.id) : norm(name) === norm(_target.name);
   if (correct) { _won = true; endGame(); }
   else onWrong();
 }
