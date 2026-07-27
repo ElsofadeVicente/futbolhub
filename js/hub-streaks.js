@@ -1,17 +1,26 @@
 /* =============================================
-   HUB-STREAKS.JS — Badges de racha 🔥 en el hub
+   HUB-STREAKS.JS — Rachas 🔥 de los juegos diarios
    QUIÉN COÑO FALTA
 
    Lee el progreso diario de cada juego en localStorage
-   y pinta un círculo con la racha (días seguidos ganados)
-   en la esquina superior izquierda de su tarjeta.
+   (que js/progress-sync.js mantiene igual en todos tus
+   dispositivos) y pinta un círculo con la racha —días
+   seguidos ganados— en la esquina superior izquierda de
+   su tarjeta del hub.
 
    Claves que lee (escritas por cada juego):
-     La Torre     → tower_YYYYMMDD          {finished, won}
+     La Carrera   → carrera_day_YYYY-MM-DD  {won}
      Crucigrama   → cruc_YYYYMMDD           {completed, clean}
      En el Top    → enteltop_day_YYYY-MM-DD {score}
      En el Once   → oncediario_YYYYMMDD     {matchStats:{guessed}}
      El Estadio   → estadio_daily_YYYY-MM-DD {total}   (racha de días jugados)
+
+   Fuera del hub no hay tarjetas que pintar, pero el archivo
+   se carga igual porque expone window.FHStreaks, que usa el
+   perfil (js/profile-widget.js) para enseñar la racha y lo
+   jugado hoy:
+     FHStreaks.list()  → [{href, label, streak, today}]
+                          today = {state:'win'|'loss', detail:'…'} | null
    ============================================= */
 (function () {
   'use strict';
@@ -49,46 +58,76 @@
   const GAMES = [
     {
       href: 'la-carrera',
+      label: 'La Carrera',
       today: madridToday,
       stateFor(day) {
         const s = readJSON(`carrera_day_${day}`);
         if (!s || typeof s.won !== 'boolean') return null;
         return s.won ? 'win' : 'loss';
       },
+      detailFor(day) {
+        const s = readJSON(`carrera_day_${day}`);
+        if (!s || typeof s.won !== 'boolean') return null;
+        return s.won ? 'Acertado' : 'Fallado';
+      },
     },
     {
       href: 'crucigrama',
+      label: 'Crucigrama',
       today: localToday,
       stateFor(day) {
         const s = readJSON(`cruc_${day.replace(/-/g, '')}`);
         if (!s || !s.completed) return null;
         return s.clean === false ? 'loss' : 'win';   // con ayudas no cuenta como victoria
       },
+      detailFor(day) {
+        const s = readJSON(`cruc_${day.replace(/-/g, '')}`);
+        if (!s || !s.completed) return null;
+        return s.clean === false ? 'Completado con ayudas' : 'Completado sin ayudas';
+      },
     },
     {
       href: 'en-el-top',
+      label: 'En el Top',
       today: madridToday,
       stateFor(day) {
         const s = readJSON(`enteltop_day_${day}`);
         if (!s || typeof s.score !== 'number') return null;
         return s.score === 10 ? 'win' : 'loss';
       },
+      detailFor(day) {
+        const s = readJSON(`enteltop_day_${day}`);
+        if (!s || typeof s.score !== 'number') return null;
+        return `${s.score} de 10`;
+      },
     },
     {
       href: 'en-el-once',
+      label: 'En el Once',
       today: madridToday,
       stateFor(day) {
         const s = readJSON(`oncediario_${day.replace(/-/g, '')}`);
         if (!s || !s.matchStats) return null;
         return s.matchStats.guessed === 11 ? 'win' : 'loss';
       },
+      detailFor(day) {
+        const s = readJSON(`oncediario_${day.replace(/-/g, '')}`);
+        if (!s || !s.matchStats) return null;
+        return `${s.matchStats.guessed} de 11`;
+      },
     },
     {
       href: 'el-estadio',
+      label: 'El Estadio',
       today: localToday,
       stateFor(day) {
         const s = readJSON(`estadio_daily_${day}`);
         return s ? 'win' : null;   // racha de días jugados
+      },
+      detailFor(day) {
+        const s = readJSON(`estadio_daily_${day}`);
+        if (!s) return null;
+        return typeof s.total === 'number' ? `${s.total.toLocaleString('es-ES')} puntos` : 'Jugado';
       },
     },
   ];
@@ -143,15 +182,21 @@
   function render() {
     injectStyles();
     for (const game of GAMES) {
-      const streak = computeStreak(game);
-      if (streak < 1) continue;
       const card = document.querySelector(`a.np-card[href*="${game.href}"]`);
-      if (!card || card.querySelector('.hub-streak-badge')) continue;
-      const badge = document.createElement('div');
-      badge.className = 'hub-streak-badge';
+      if (!card) continue;
+      const streak = computeStreak(game);
+      let badge = card.querySelector('.hub-streak-badge');
+      /* Sin racha, fuera el círculo: al bajar el progreso de la cuenta
+         (js/progress-sync.js) esto se repinta, y una racha que ya no
+         existe no puede quedarse pegada de la pasada anterior. */
+      if (streak < 1) { if (badge) badge.remove(); continue; }
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'hub-streak-badge';
+        card.appendChild(badge);
+      }
       badge.title = `Racha: ${streak} día${streak !== 1 ? 's' : ''} seguido${streak !== 1 ? 's' : ''}`;
       badge.innerHTML = `<span>${streak}</span><span class="hs-fire">🔥</span>`;
-      card.appendChild(badge);
     }
   }
 
@@ -160,4 +205,25 @@
   } else {
     render();
   }
+
+  /* El progreso de la cuenta llega por red, después de pintar: cuando
+     baja (o cambia al entrar/salir de la sesión) hay que repintar. */
+  window.addEventListener('fh-progress', render);
+
+  /* ── API para el resto de la web (el perfil la usa) ── */
+  window.FHStreaks = {
+    list() {
+      return GAMES.map(game => {
+        const day    = game.today();
+        const state  = game.stateFor(day);
+        const detail = state ? (game.detailFor ? game.detailFor(day) : null) : null;
+        return {
+          href:   game.href,
+          label:  game.label,
+          streak: computeStreak(game),
+          today:  state ? { state, detail } : null,
+        };
+      });
+    },
+  };
 })();

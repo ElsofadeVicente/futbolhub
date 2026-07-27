@@ -480,3 +480,27 @@ body.np-body .pw-root { position: absolute; }
   color: #1a1400;
 }
 .pw-crop-ok:hover { background: #ffd77e; }
+
+/* ── Estadísticas (lo jugado hoy y las rachas) ── */
+.pw-stats-list {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.pw-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  font-size: .86rem;
+  background: rgba(255, 255, 255, .03);
+}
+.pw-stats-row + .pw-stats-row { border-top: 1px solid rgba(255, 255, 255, .07); }
+.pw-stats-name { color: #e8e6e1; font-weight: 600; }
+.pw-stats-val  { color: rgba(232, 230, 225, .7); white-space: nowrap; }
+.pw-stats-val--win  { color: #7ddc9a; }
+.pw-stats-val--loss { color: rgba(232, 230, 225, .55); }
