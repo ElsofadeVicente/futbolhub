@@ -9,15 +9,41 @@
    ============================================= */
 'use strict';
 
-const CACHE = 'futbolhub-v5';
+const CACHE = 'futbolhub-v6';
 
-/* Imágenes externas que queremos disponibles offline (La Carrera):
+/* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
-   inmutables → cache-first aunque sean de otro origen (respuesta opaca). */
+   inmutables → cache-first aunque sean de otro origen (respuesta opaca).
+
+   OJO con las respuestas opacas: una petición de <img> a otro dominio va
+   en modo no-cors, así que la respuesta llega SIEMPRE con status 0 y
+   ok=false, dé el servidor un 200 o un 404. Es decir: desde aquí no se
+   puede distinguir una foto buena de un fallo puntual (un 429 por pedir
+   muchas de golpe, un corte de red…). Guardar el fallo en una caché
+   cache-first lo vuelve permanente: esa foto ya no vuelve a cargar nunca
+   en ese dispositivo, aunque el jugador sí tenga foto en la base.
+
+   Por eso quien avisa de que una entrada está mal es la página, que sí lo
+   sabe (le salta el onerror de la <img>): js/img-heal.js la borra de aquí
+   y reintenta. Ver también el mensaje 'drop-image' de abajo. */
 const EXTERNAL_IMG_HOSTS = ['tmssl.akamaized.net', 'img.a.transfermarkt.technology'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
+});
+
+/* La página avisa de una imagen que no ha cargado: fuera de la caché,
+   para que el siguiente intento vaya a la red y se guarde la buena. */
+self.addEventListener('message', (e) => {
+  const data = e.data;
+  if (!data || data.type !== 'drop-image' || !data.url) return;
+  e.waitUntil((async () => {
+    try {
+      const url = new URL(data.url);
+      const cache = await caches.open(CACHE);
+      await cache.delete(url.origin + url.pathname);
+    } catch (err) { /* url rara: nada que borrar */ }
+  })());
 });
 
 self.addEventListener('activate', (e) => {
@@ -54,7 +80,9 @@ self.addEventListener('fetch', (e) => {
       if (hit) return hit;
       try {
         const res = await fetch(req);
-        // Cachea también respuestas opacas (no-cors) de las CDNs de imágenes.
+        // Cachea también respuestas opacas (no-cors) de las CDNs de imágenes:
+        // no hay forma de mirar dentro, así que si la foto viene mal la
+        // borrará la página con el mensaje 'drop-image'.
         if (res && (res.ok || res.type === 'opaque')) cache.put(key, res.clone());
         return res;
       } catch (err) {

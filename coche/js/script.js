@@ -1466,6 +1466,27 @@ const Sync = (() => {
     } catch(e) { return false; }
   }
 
+  /* ── Volver a primer plano tras un corte ──
+     Al irse la app a segundo plano (cambiar de app, bloquear la pantalla)
+     el móvil cierra el socket de Firebase y salta el onDisconnect: en
+     partida deja al jugador con connected:false. Al volver, Firebase
+     reconecta solo pero NADIE vuelve a poner connected:true, así que el
+     jugador se queda de fantasma: no cuenta para el recuento de respuestas
+     y en el lobby desaparece de la lista. Además el onDisconnect ya se
+     consumió, así que hay que volver a armarlo. */
+  async function resume(code, playerId, roomStatus) {
+    const {get,update}=FB();
+    try {
+      const snap = await get(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`));
+      if (!snap.exists()) return false;
+      if (snap.val().connected === false) {
+        await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`), {connected:true});
+      }
+      rearmOnDisconnect(code, playerId, roomStatus);
+      return true;
+    } catch(e) { console.warn('[Sync] resume error:', e); return false; }
+  }
+
   async function findOrCreatePublicRoom(playerName, avatar) {
     const {get,set,update}=FB();
     const snap = await get(_ref(MM_PATH));
@@ -1762,7 +1783,7 @@ const Sync = (() => {
     createRoom, joinRoom, findOrCreatePublicRoom, listenRoom,
     startGame, nextRound, submitAnswer, startReveal, setFinished,
     resetToLobby, claimReset, rejoinRoom, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
-    tryReconnect, rearmOnDisconnect,
+    tryReconnect, rearmOnDisconnect, resume,
   };
 })();
 
@@ -2613,13 +2634,14 @@ const App = (() => {
             if (expected>0 && (room.doneCount||0)>=expected) _triggerReveal(room);
             /* Heredamos también los bots: sus respuestas las tenía programadas
                el host anterior, así que hay que reprogramarlas o la ronda se
-               quedaría esperándolos. Como el reloj ya va por la mitad, se les
-               pasa el tiempo que queda en vez del total de la ronda. */
+               quedaría esperándolos. Se les pasa el reloj real de la ronda
+               (inicio + duración): ellos mismos reparten lo que quede. */
             else if (_isPublic && typeof CocheBots !== 'undefined' && _timerStartAt) {
-              const left = Math.max(0, _timerTotalSecs - Math.floor((Date.now()-_timerStartAt)/1000));
+              const left = _timerTotalSecs - Math.floor((Date.now()-_timerStartAt)/1000);
               if (left > 3) CocheBots.onRound({
                 code: _roomCode, room, restrictions: _restrictions,
-                roundSecs: left, isSuddenDeath: _isSuddenDeath,
+                roundSecs: _timerTotalSecs, startAt: _timerStartAt,
+                isSuddenDeath: _isSuddenDeath,
                 suddenDeathPlayers: _suddenDeathPlayers,
               });
             }
@@ -2705,6 +2727,11 @@ const App = (() => {
           _startOnlineRound(room);
         } else {
           _renderSubmissions(_players, room.submissions||{});
+          /* Si una persona ya ha bloqueado a su futbolista, los bots que
+             falten se dan prisa (2-10 s) en vez de agotar su turno. */
+          if (_isHost && _isPublic && !_isLocal && typeof CocheBots !== 'undefined') {
+            CocheBots.onHumanAnswer(room);
+          }
           if (_isHost && !_revealTriggered) {
             const connected = _players.filter(p=>p.connected!==false);
             /* Bug 3: En muerte súbita solo contar submissions de los jugadores empatados */
@@ -2983,16 +3010,21 @@ const App = (() => {
         if (pi) pi.disabled = false;
         if (sb) sb.disabled = false;
       }
-      _startTimer(Date.now(), secs);
+      const startedAt = Date.now();
+      _startTimer(startedAt, secs);
 
       /* Los bots arrancan su reloj en el mismo instante que el resto:
-         cuando terminan de salir las restricciones. */
+         cuando terminan de salir las restricciones. Se les pasa ese
+         instante (no solo la duración) para que su hora de responder
+         sea un punto del reloj de la ronda y no un temporizador suelto
+         que el móvil pueda congelar al irse a segundo plano. */
       if (_isHost && !_isLocal && _isPublic && typeof CocheBots !== 'undefined') {
         CocheBots.onRound({
           code: _roomCode,
           room,
           restrictions: _restrictions,
           roundSecs: secs,
+          startAt: startedAt,
           isSuddenDeath: _isSuddenDeath,
           suddenDeathPlayers: _suddenDeathPlayers,
         });
@@ -3094,14 +3126,72 @@ const App = (() => {
      minutos en segundo plano (y si ya se agotó, _startTimer lo detecta en
      el primer tick y dispara el reveal igual que si hubiera seguido corriendo). */
   document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    /* Lo primero, los bots: sus temporizadores venían congelados y puede
+       que a varios les tocara responder hace rato. Así llegan sus
+       respuestas ANTES de que el reloj de abajo cierre la ronda. */
+    if (_isHost && _isPublic && !_isLocal && typeof CocheBots !== 'undefined') {
+      CocheBots.catchUp();
+    }
     /* No comprobamos si _timerInterval sigue "vivo": en el caso exacto que
        queremos arreglar, el navegador puede dejarlo apuntando a un intervalo
        ya muerto sin avisar. _startTimer() vuelve a limpiar y crear uno nuevo,
        así que llamarlo de nuevo es siempre seguro (idempotente). */
-    if (document.visibilityState === 'visible' && _timerStartAt !== null) {
+    if (_timerStartAt !== null) {
       _startTimer(_timerStartAt, _timerTotalSecs);
     }
+    _handleResume();
   });
+  window.addEventListener('online', _handleResume);
+
+  /* ════════════════════════════════════════
+     VOLVER A LA PARTIDA
+
+     Al volver de segundo plano hay que reparar tres cosas que el corte
+     de conexión deja rotas: nuestro connected:false (el onDisconnect ya
+     saltó), el onDisconnect gastado, y la pantalla, que puede haberse
+     quedado en un estado del que no se sale sola.
+     ════════════════════════════════════════ */
+  let _resuming = false;
+  async function _handleResume() {
+    if (_isLocal || !_roomCode || !_playerId) return;
+    if (_resuming) return;
+    _resuming = true;
+    const token = _sessionToken;
+    const room  = _roomCode;
+    try {
+      const status = _lastRoom?.status || 'playing';
+      await Sync.resume(room, _playerId, status);
+      if (_sessionToken !== token || _roomCode !== room) return;
+      /* Releer la sala: si mientras estábamos fuera cambió algo que el
+         listener no nos llegó a entregar, aquí se pone todo al día. */
+      const fresh = await Sync.getRoom(room);
+      if (_sessionToken !== token || _roomCode !== room) return;
+      if (fresh) _onRoomUpdate(fresh);
+    } catch(e) {
+      console.warn('[App] resume error:', e);
+    } finally {
+      _resuming = false;
+      _unstickNextRoundBtn();
+    }
+  }
+
+  /* Red de seguridad del botón "SIGUIENTE RONDA".
+     nextRound() lo oculta y deshabilita nada más pulsarlo y solo lo
+     devuelve si la escritura en Firebase falla de forma visible. Si el
+     corte pilla justo ahí (la escritura se pierde al irse la app a
+     segundo plano), la sala se queda en 'reveal' y el botón, escondido:
+     la partida no puede avanzar y no hay forma de desbloquearla. */
+  function _unstickNextRoundBtn() {
+    if (_isLocal || !_isHost) return;
+    if (_lastRoom?.status !== 'reveal') return;
+    if (_currentScreen() !== 'screen-results') return;
+    if (_finishedDelayTimer) return;          // hay cuenta atrás de ganador
+    const nxt = document.getElementById('btn-next-round');
+    if (!nxt) return;
+    nxt.classList.remove('hidden');
+    nxt.disabled = false;
+  }
 
   /* ════════════════════════════════════════
      ENVIAR RESPUESTA
@@ -3191,6 +3281,15 @@ const App = (() => {
        de todos los jugadores están disponibles (evita el bug de "Sin respuesta") */
     let freshRoom = room;
     try {
+      /* Bots que acaban de vencer (típico al volver de segundo plano: sus
+         temporizadores estaban congelados y su turno ya había pasado).
+         Se les deja terminar antes de cerrar la ronda para que no salga
+         "Sin respuesta" por un problema del móvil del host. */
+      if (_isPublic && typeof CocheBots !== 'undefined' && CocheBots.pending()) {
+        CocheBots.catchUp();
+        await CocheBots.settle(3000);
+        if (!_live()) { _revealTriggered=false; return; }
+      }
       /* Pequeña espera para que Firebase propague todas las submissions */
       await new Promise(resolve => setTimeout(resolve, 500));
       if (!_live()) { _revealTriggered=false; return; }
@@ -3456,6 +3555,15 @@ const App = (() => {
     const _reenableBtn = () => {
       if (nxtBtn) { nxtBtn.disabled = false; nxtBtn.classList.remove('hidden'); }
     };
+    /* Vigilante: si en 12 s la sala no ha pasado a 'playing' (escritura
+       perdida por un corte, worker atascado…), devolver el botón en vez de
+       dejar la partida bloqueada sin nada que pulsar. */
+    setTimeout(() => {
+      if (!_live()) return;
+      if (_lastRoom?.status === 'reveal' && _currentScreen() === 'screen-results' && !_finishedDelayTimer) {
+        _reenableBtn();
+      }
+    }, 12000);
     const ptw = _onlinePointsToWin || POINTS_WIN;
 
     /* Muerte súbita online — normalmente ya se detecta y anuncia en

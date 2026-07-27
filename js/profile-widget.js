@@ -231,6 +231,50 @@
         `);
     }
 
+    /* ── Estadísticas: lo jugado hoy y la racha de cada juego diario ──
+       Los datos salen de FHStreaks (js/hub-streaks.js), que lee el mismo
+       progreso que js/progress-sync.js mantiene igual en todos tus
+       dispositivos. Por eso esta pantalla enseña lo mismo entres desde
+       donde entres, que era justo lo que faltaba. */
+    function estadisticasView() {
+        const games = (window.FHStreaks && FHStreaks.list()) || [];
+        const jugados = games.filter(g => g.today);
+
+        const hoyHTML = games.length === 0
+            ? `<p class="pw-text">No se han podido leer las partidas.</p>`
+            : jugados.length === 0
+                ? `<p class="pw-text">Hoy todavía no has jugado a ningún diario.</p>`
+                : `<ul class="pw-stats-list">` + jugados.map(g => `
+                     <li class="pw-stats-row">
+                       <span class="pw-stats-name">${esc(g.label)}</span>
+                       <span class="pw-stats-val pw-stats-val--${g.today.state}">
+                         ${g.today.state === 'win' ? '✅' : '❌'} ${esc(g.today.detail || '')}
+                       </span>
+                     </li>`).join('') + `</ul>`;
+
+        const conRacha = games.filter(g => g.streak > 0);
+        const rachaHTML = conRacha.length === 0
+            ? `<p class="pw-text">Aún no tienes ninguna racha viva. Gana un día y empieza a contar.</p>`
+            : `<ul class="pw-stats-list">` + conRacha.map(g => `
+                 <li class="pw-stats-row">
+                   <span class="pw-stats-name">${esc(g.label)}</span>
+                   <span class="pw-stats-val">${g.streak} 🔥</span>
+                 </li>`).join('') + `</ul>`;
+
+        openModal(`
+          <div class="pw-brand">Fútbol<span>HUB</span></div>
+          <h3 class="pw-title">Estadísticas</h3>
+
+          <div class="pw-field-label">Hoy · ${esc(jugados.length)} de ${esc(games.length)} jugados</div>
+          ${hoyHTML}
+
+          <div class="pw-field-label">Rachas</div>
+          ${rachaHTML}
+
+          <p class="pw-hint">Se guardan en tu cuenta: entra desde otro dispositivo y siguen aquí.</p>
+        `);
+    }
+
     function placeholderView(title) {
         openModal(`
           <div class="pw-brand">Fútbol<span>HUB</span></div>
@@ -376,7 +420,7 @@
                 break;
             }
             case 'perfil':       toggleDropdown(false); placeholderView('Perfil'); break;
-            case 'estadisticas': toggleDropdown(false); placeholderView('Estadísticas'); break;
+            case 'estadisticas': toggleDropdown(false); estadisticasView(); break;
             case 'ajustes':      toggleDropdown(false); ajustesView(); break;
             case 'change-username': changeUsernameView(); break;
             case 'change-photo': {
