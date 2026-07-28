@@ -111,7 +111,14 @@ a      { text-decoration: none; }
   padding: clamp(20px,3.5vh,52px) 20px clamp(14px,2.5vh,28px);
   gap: clamp(8px,1.4vh,16px);
   position: relative;
-  min-height: 100%;
+  /* Antes "min-height:100%": con contenido más alto que el viewport (la
+     liga semanal puede tener hasta 50 filas) crecía sin límite y el
+     overflow-y:auto de .screen nunca llegaba a activarse — el body tiene
+     overflow:hidden, así que lo que sobraba quedaba invisible e
+     inalcanzable con scroll. Con "height:100%" el alto queda fijado al
+     viewport y el propio overflow-y:auto de .screen scrollea de verdad. */
+  height: 100%;
+  overflow-y: auto;
 }
 #screen-menu.active { display: flex; }
 
@@ -560,3 +567,233 @@ a      { text-decoration: none; }
 @media (max-width: 400px) {
   .result-score-big, .end-score-big { font-size: 2.6rem; }
 }
+
+/* ══════════════════════════════════════════════
+   LIGA COMPETITIVA
+   ══════════════════════════════════════════════ */
+.btn-liga {
+  background: var(--np-red); color: var(--np-paper);
+  border: none; border-radius: 0;
+  padding: 12px 24px;
+  font-family: 'Anton', sans-serif;
+  font-size: 0.9rem; letter-spacing: 0.2em;
+  text-transform: uppercase; width: 100%;
+  box-shadow: 3px 3px 0 var(--np-ink);
+  transition: opacity 0.15s;
+  display: block; text-align: center;
+}
+.btn-liga:hover { opacity: 0.88; }
+
+/* Panel de liga EMBEBIDO en el menú, debajo de "Jugar" / "Volver al Hub".
+   Sin scroll propio: es parte del flujo de la página, así que se ve
+   entera bajando con el scroll normal de la pantalla. */
+.liga-inline {
+  max-width: 560px;
+  margin: 8px auto 0;
+  padding: 20px 18px 40px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.liga-inline-head {
+  display: flex; flex-direction: column; gap: 4px;
+  padding-bottom: 12px; border-bottom: 2.5px solid var(--np-ink);
+}
+.liga-inline-kicker {
+  font-family: 'Anton', sans-serif;
+  font-size: 1.3rem; letter-spacing: 0.03em;
+  text-transform: uppercase; color: var(--np-ink);
+}
+.liga-inline-sub {
+  font-family: 'DM Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 0.04em; color: var(--np-ink-mid);
+}
+
+/* Pestañas */
+.liga-tabs { display: flex; gap: 8px; }
+.liga-tab {
+  flex: 1;
+  background: var(--np-paper2); color: var(--np-ink);
+  border: 1.5px solid var(--np-ink);
+  padding: 9px 8px;
+  font-family: 'DM Mono', monospace; font-size: 0.64rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  transition: background 0.15s, color 0.15s;
+}
+.liga-tab--on { background: var(--np-ink); color: var(--np-paper); }
+
+/* Insignia de tramo: escudo real de la categoría + nombre */
+.liga-tramo-badge {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Anton', sans-serif;
+  font-size: 1.15rem; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--np-ink); color: var(--np-paper);
+  padding: 8px 14px; align-self: flex-start;
+  box-shadow: 3px 3px 0 var(--np-red);
+}
+.liga-tramo-logo {
+  width: 30px; height: 30px; object-fit: contain;
+  background: var(--np-paper); border-radius: 3px; padding: 2px;
+  flex: 0 0 auto;
+}
+.liga-tramo-emoji-fallback { font-size: 1.3rem; line-height: 1; }
+.liga-top-sub, .liga-empty {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem;
+  line-height: 1.5; color: var(--np-ink-mid);
+}
+.liga-empty { text-align: center; padding: 22px 8px; }
+.liga-loading {
+  font-family: 'DM Mono', monospace; font-size: 0.75rem;
+  color: var(--np-ink-mid); text-align: center; padding: 30px 0;
+}
+
+/* Leyenda de zonas — debajo de la tabla: cuadraditos del mismo color que el
+   borde izquierdo de cada fila (verde ascenso / negro permanencia / rojo
+   descenso), no texto con flechas. */
+.liga-leyenda {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  padding-top: 4px;
+}
+.liga-leg {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'DM Mono', monospace; font-size: 0.66rem;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--np-ink-mid);
+}
+.liga-sq {
+  width: 11px; height: 11px; flex: 0 0 auto;
+  border: 1px solid var(--np-ink); font-style: normal;
+}
+.liga-sq--sube  { background: #1a7a3a; }
+.liga-sq--queda { background: var(--np-ink); }
+.liga-sq--baja  { background: var(--np-red); }
+
+/* Lista de clasificación */
+.liga-list {
+  display: flex; flex-direction: column; gap: 2px;
+  border: 1px solid var(--np-ink-soft);
+}
+.liga-row {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 12px;
+  background: var(--np-paper);
+  border-left: 4px solid transparent;
+}
+.liga-row--sube  { border-left-color: #1a7a3a; background: rgba(26,122,58,0.06); }
+.liga-row--baja  { border-left-color: var(--np-red); background: rgba(181,34,30,0.05); }
+.liga-row--yo    { outline: 2px solid var(--np-ink); outline-offset: -2px; }
+.liga-row--podio { background: rgba(181,34,30,0.06); }
+.liga-pos {
+  font-family: 'Anton', sans-serif; font-size: 1rem;
+  color: var(--np-ink); min-width: 26px; text-align: center;
+}
+.liga-av {
+  width: 30px; height: 30px; flex: 0 0 30px;
+  border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Anton', sans-serif; font-size: 0.85rem;
+  color: #fff; text-transform: uppercase;
+  border: 1.5px solid var(--np-ink);
+}
+.liga-av .fh-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.liga-name {
+  flex: 1; min-width: 0;
+  font-family: 'Rajdhani', sans-serif; font-weight: 600;
+  font-size: 0.95rem; color: var(--np-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.liga-name em { font-style: normal; color: var(--np-red); font-weight: 700; }
+.liga-pts {
+  font-family: 'DM Mono', monospace; font-size: 0.85rem;
+  font-weight: 500; color: var(--np-ink);
+}
+
+/* Versión bloqueada (sin sesión): lista borrosa + tarjeta de login */
+.liga-locked { position: relative; min-height: 260px; }
+.liga-blur {
+  filter: blur(5px); opacity: 0.55; pointer-events: none;
+  user-select: none;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.liga-blur .liga-row { border-left-color: transparent; }
+.liga-lock-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px;
+}
+.liga-lock-card {
+  background: var(--np-paper); border: 2px solid var(--np-ink);
+  box-shadow: 5px 5px 0 var(--np-red);
+  padding: 22px 20px; max-width: 340px; text-align: center;
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
+.liga-lock-icon { font-size: 1.8rem; }
+.liga-lock-title {
+  font-family: 'Anton', sans-serif; font-size: 1.2rem;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--np-ink);
+}
+.liga-lock-text {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem;
+  line-height: 1.5; color: var(--np-ink-mid);
+}
+.liga-lock-card .btn-primary { margin-top: 4px; }
+
+/* ── Animación "cómo subes en el ranking" (pantalla de fin) ── */
+.liga-climb {
+  background: var(--np-paper2); border: 2px solid var(--np-ink);
+  box-shadow: 4px 4px 0 var(--np-red);
+  padding: 16px 18px; margin: 4px 0 6px;
+  display: flex; flex-direction: column; gap: 10px;
+  animation: liga-climb-in 0.35s ease-out;
+}
+@keyframes liga-climb-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.liga-climb-kicker {
+  font-family: 'DM Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--np-ink-mid);
+}
+.liga-climb-row { display: flex; align-items: center; gap: 18px; }
+.liga-climb-pos {
+  display: flex; align-items: center; gap: 8px;
+}
+.liga-climb-pos-label {
+  font-family: 'DM Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--np-ink-mid);
+  writing-mode: horizontal-tb;
+}
+.liga-climb-pos-num {
+  font-family: 'Anton', sans-serif; font-size: 1.9rem; line-height: 1;
+  color: var(--np-ink); transition: color 0.3s;
+}
+.liga-climb-pos-num--after { color: var(--np-red); }
+.liga-climb-arrow {
+  font-family: 'Anton', sans-serif; font-size: 1.3rem; color: var(--np-ink-mid);
+}
+.liga-climb-track {
+  position: relative; width: 14px; height: 130px; flex: 0 0 14px;
+  background: var(--np-paper); border: 1.5px solid var(--np-ink);
+  margin-left: auto;
+}
+.liga-climb-zone { position: absolute; left: 0; right: 0; }
+.liga-climb-zone--sube { top: 0;    height: 20%; background: rgba(26,122,58,0.28); }
+.liga-climb-zone--baja { bottom: 0; height: 20%; background: rgba(181,34,30,0.22); }
+.liga-climb-marker {
+  position: absolute; left: 50%; top: 0;
+  width: 16px; height: 16px; margin-left: -8px; margin-top: -8px;
+  border-radius: 50%; background: var(--np-red); border: 2px solid var(--np-ink);
+  box-shadow: 0 0 0 3px rgba(181,34,30,0.22);
+  transition: top 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.liga-climb-pts {
+  font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--np-ink);
+}
+.liga-climb-pts span {
+  font-family: 'Anton', sans-serif; font-size: 1.15rem; color: var(--np-red);
+}
+.liga-climb-msg {
+  font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.95rem;
+  color: var(--np-ink);
+}
+.liga-climb-msg--sube { color: #1a7a3a; }
+.liga-climb-msg--baja { color: var(--np-red); }

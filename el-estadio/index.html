@@ -64,6 +64,22 @@
       <button class="btn-primary" id="btn-jugar">Jugar →</button>
       <a href="../" class="btn-secondary">← Volver al Hub</a>
     </div>
+
+    <!-- Liga semanal — visible en el propio menú, debajo de los botones.
+         Se ve entera haciendo scroll (no es un panel con scroll interno). -->
+    <div class="liga-inline" id="liga-inline">
+      <div class="liga-inline-head">
+        <span class="liga-inline-kicker">🏆 FutbolHUB · Liga semanal</span>
+        <span class="liga-inline-sub" id="liga-subtitle">Compite cada día · asciende cada semana</span>
+      </div>
+
+      <div class="liga-tabs">
+        <button class="liga-tab liga-tab--on" data-tab="division" type="button">Mi división</button>
+        <button class="liga-tab" data-tab="top100" type="button">🏆 Top 100 Mundial</button>
+      </div>
+
+      <div id="liga-body"><!-- lo rellena game.js --></div>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════
@@ -147,11 +163,32 @@
         <div class="end-grade" id="end-grade"></div>
       </div>
 
+      <!-- Animación: cómo te mueves en la liga semanal al subir hoy tu resultado -->
+      <div class="liga-climb" id="liga-climb" hidden>
+        <span class="liga-climb-kicker">🏆 Tu liga semanal</span>
+        <div class="liga-climb-row">
+          <div class="liga-climb-pos">
+            <span class="liga-climb-pos-label">Puesto</span>
+            <span class="liga-climb-pos-num" id="liga-climb-before">—</span>
+            <span class="liga-climb-arrow">→</span>
+            <span class="liga-climb-pos-num liga-climb-pos-num--after" id="liga-climb-after">—</span>
+          </div>
+          <div class="liga-climb-track" id="liga-climb-track">
+            <div class="liga-climb-zone liga-climb-zone--sube"></div>
+            <div class="liga-climb-zone liga-climb-zone--baja"></div>
+            <div class="liga-climb-marker" id="liga-climb-marker"></div>
+          </div>
+        </div>
+        <div class="liga-climb-pts"><span id="liga-climb-pts-num">0</span> puntos esta semana</div>
+        <div class="liga-climb-msg" id="liga-climb-msg"></div>
+      </div>
+
       <div id="end-map"></div>
 
       <div class="end-rounds" id="end-rounds"></div>
 
       <div class="end-actions">
+        <button class="btn-liga" id="btn-liga-fin" hidden>🏆 Ver clasificación completa</button>
         <button class="btn-primary" id="btn-compartir">📤 Compartir resultado</button>
         <button class="btn-primary" id="btn-jugar-de-nuevo">Jugar de nuevo →</button>
         <a href="../" class="btn-secondary">← Volver al Hub</a>
@@ -164,6 +201,7 @@
   <script src="../js/supabase-config.js"></script>
   <script src="../js/vendor/supabase-js.min.js"></script>
   <script src="../js/auth.js?v=20260722g"></script>
+  <script src="../js/liga.js?v=20260728a"></script>
   <script src="../js/progress-sync.js?v=20260727a"></script>
   <script src="../js/hub-streaks.js?v=20260727a"></script>
   <script src="../js/img-heal.js?v=20260727a"></script>
