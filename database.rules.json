@@ -1,0 +1,99 @@
+{
+  // ======================================================================
+  // REGLAS DE SEGURIDAD — Firebase Realtime Database (FutbolHUB)
+  //
+  // Los juegos multijugador NO usan Firebase Auth: todos los clientes son
+  // anónimos (solo la apiKey pública). Por eso la seguridad aquí NO es por
+  // usuario, sino por FORMA: se abre únicamente la rama de cada juego y se
+  // deniega todo lo demás. Mejora clave frente al estado anterior, en el que
+  // "blackjack" y "restricciones" estaban abiertos (.read/.write: true) en la
+  // raíz de su nodo: cualquiera podía DESCARGAR o BORRAR todas las salas.
+  //
+  // Firebase admite comentarios // y /* */ en las reglas (no es JSON estricto).
+  //
+  // CÓMO DESPLEGAR:
+  //   Firebase Console → Realtime Database → pestaña "Reglas" → pegar → Publicar
+  //   (o desde la CLI:  firebase deploy --only database)
+  // ======================================================================
+  "rules": {
+
+    // Denegado por defecto: nadie puede leer/escribir en la raíz ni en nodos
+    // desconocidos. Cada juego, más abajo, abre solo la rama que necesita.
+    ".read": false,
+    ".write": false,
+
+    // COCHE y EL MENTIROSO comparten este nodo (se distinguen por room.game).
+    "restricciones": {
+      "rooms": {
+        // Lectura/escritura SOLO si conoces el código de sala (6 chars). Así
+        // nadie puede listar todas las salas ni descargar los usernames de
+        // partidas ajenas leyendo el nodo entero.
+        "$code": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "matchmaking": {
+        // Índice público de salas en espera: solo {code, status, playerCount},
+        // sin datos personales. Coche lo lee entero para emparejar.
+        ".read": true,
+        "$code": {
+          ".write": true
+        }
+      }
+    },
+
+    // BLACKJACK — salas + matchmaking por modo (blackjack/matchmaking/{mode}/{code}).
+    "blackjack": {
+      "rooms": {
+        "$code": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "matchmaking": {
+        "$mode": {
+          // Se lee el nodo del modo entero para buscar sala; solo {code,
+          // status, playerCount}, sin datos personales.
+          ".read": true,
+          "$code": {
+            ".write": true
+          }
+        }
+      }
+    },
+
+    // EN LA CADENA — usa el nodo raíz "rooms".
+    "rooms": {
+      "$code": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
+    // EL ESTADIO — puntuación diaria por usuario anónimo.
+    "el-estadio": {
+      "scores": {
+        "$fecha": {
+          "$uid": {
+            ".read": true,
+            ".write": true,
+            // Solo se admite {total:number, ts:number}: impide inyectar basura
+            // o usar esta rama como almacén arbitrario.
+            ".validate": "newData.hasChildren(['total','ts']) && newData.child('total').isNumber() && newData.child('ts').isNumber()"
+          }
+        }
+      }
+    },
+
+    // Nodo heredado (ninguna parte del código lo usa hoy). Se conserva con su
+    // regla original por si acaso: al exigir auth.uid y no haber login de
+    // Firebase, queda de facto cerrado.
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    }
+  }
+}

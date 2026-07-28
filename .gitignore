@@ -57,3 +57,6 @@ admin/.supabase_secret
 admin/.sync_cache.json
 admin/.club_names_cache.json
 admin/.comp_names_cache.json
+
+# Logs de tandas de admin/update_chunks.py
+admin/logs/
