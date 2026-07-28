@@ -64,6 +64,7 @@
     ];
 
     const META_KEY    = 'fh_progress_meta';   // clave → cuándo cambió aquí
+    const OWNER_KEY   = 'fh_progress_owner';   // de qué cuenta es el progreso local
     const MAX_VALUE   = 40 * 1024;            // no subir valores enormes
     const MAX_DAYS    = 400;                  // días sueltos que se conservan
     const POLL_MS     = 4000;                 // cada cuánto se mira si cambió algo
@@ -110,6 +111,19 @@
             if (v != null) out[k] = v;
         }
         return out;
+    }
+
+    /* Borra del navegador TODO el progreso seguido (días, contadores, récords)
+       y sus marcas de tiempo. Se usa al cambiar de cuenta: el localStorage es
+       del navegador, no de la cuenta, así que sin esto una cuenta hereda los
+       días, rachas y bloqueos diarios de la que jugó antes en el mismo equipo. */
+    function clearTrackedLocal() {
+        for (const k of localKeys()) { try { localStorage.removeItem(k); } catch { /* nada */ } }
+        try { localStorage.removeItem(META_KEY); } catch { /* nada */ }
+        lastSignature = null;
+        /* Repintar rachas del hub / perfil: lo recién borrado no debe quedarse
+           pegado en pantalla de la sesión anterior. */
+        notify();
     }
 
     /* ── Marcas de tiempo por clave ──
@@ -364,14 +378,32 @@
         if (e.key && ruleFor(e.key)) { dirty = true; schedulePush(); }
     });
 
-    /* Sesión: al entrar se baja y se mezcla; al salir se deja de vigilar
-       (el localStorage sigue ahí, pero ya no es de nadie). */
-    FHAuth.onIdentity((id) => {
-        if (id) {
+    /* Sesión: al entrar se baja y se mezcla; al salir se deja de vigilar.
+       El "dueño" (id de la cuenta) se guarda en el navegador para detectar
+       cambios de cuenta. Nos basamos en la SESIÓN, no en identity(), porque
+       una cuenta recién creada puede tener sesión sin username todavía. */
+    FHAuth.onIdentity(async () => {
+        let owner = null;
+        try { const s = await FHAuth.getSession(); owner = s ? s.user.id : null; }
+        catch { owner = null; }
+        const prevOwner = lsGet(OWNER_KEY);
+
+        if (owner) {
+            /* Entra una cuenta. Si el navegador guardaba el progreso de OTRA,
+               se borra antes de sincronizar: si no, la mezcla lo heredaría
+               (rachas y bloqueo del diario de la cuenta anterior). */
+            if (prevOwner && prevOwner !== owner) clearTrackedLocal();
+            lsSet(OWNER_KEY, owner);
             lastSignature = null;
             sync().then(() => { lastSignature = signature(snapshot()); });
             startPolling();
         } else {
+            /* Cierra sesión. Si había una cuenta dueña del progreso local, se
+               borra para que quien entre luego (u otra cuenta) no lo herede. */
+            if (prevOwner) {
+                clearTrackedLocal();
+                try { localStorage.removeItem(OWNER_KEY); } catch { /* nada */ }
+            }
             stopPolling();
         }
     });
