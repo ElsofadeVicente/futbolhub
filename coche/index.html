@@ -17,12 +17,12 @@
      LAYOUT NEWSPAPER: anuncios | juego | anuncios
      ═══════════════════════════════════════════ -->
 <!-- Columnas de anuncios fixed -->
-<aside class="ad-col ad-col--left">
+<aside class="ad-col ad-col--left" aria-hidden="true">
   <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
   <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
   <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
 </aside>
-<aside class="ad-col ad-col--right">
+<aside class="ad-col ad-col--right" aria-hidden="true">
   <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
   <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
   <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
@@ -339,7 +339,7 @@
       '<span style="font-size:1.3rem;flex-shrink:0">🚨</span>' +
       '<div><strong>ERROR DE INICIALIZACIÓN:</strong> ' + msg +
       '<br><span style="opacity:.75">Abre la consola del navegador (F12 → Console) para ver el error exacto.</span></div>' +
-      '<button onclick="this.parentElement.remove()" style="margin-left:auto;background:transparent;border:none;color:#fca5a5;font-size:1.2rem;cursor:pointer;flex-shrink:0">✕</button>';
+      '<button aria-label="Quitar" onclick="this.parentElement.remove()" style="margin-left:auto;background:transparent;border:none;color:#fca5a5;font-size:1.2rem;cursor:pointer;flex-shrink:0">✕</button>';
     document.body.appendChild(el);
   }
 

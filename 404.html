@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Página no encontrada — FutbolHUB</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#16181d">
+<style>
+  /* Autocontenido a propósito: una 404 puede servirse desde cualquier ruta
+     rota, así que no dependemos de CSS/fuentes externas (que con rutas
+     relativas no cargarían) ni de nada que requiera consentimiento. */
+  :root { --ink:#16181d; --ink-soft:#5b5f66; --paper:#f4efe3; --accent:#b5221e; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .wrap { max-width: 560px; }
+  .kicker {
+    font-family: 'Courier New', monospace;
+    letter-spacing: .18em; text-transform: uppercase;
+    font-size: 12px; color: var(--ink-soft);
+    border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+    padding: 8px 0; margin-bottom: 28px;
+  }
+  .code {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 900; font-size: clamp(72px, 22vw, 150px);
+    line-height: .9; margin: 0; letter-spacing: -.04em;
+  }
+  h1 { font-size: clamp(22px, 6vw, 32px); margin: 12px 0 8px; }
+  p { color: var(--ink-soft); font-size: 17px; line-height: 1.5; margin: 0 auto 28px; max-width: 42ch; }
+  .btn {
+    display: inline-block; text-decoration: none;
+    background: var(--ink); color: var(--paper);
+    font-family: Arial, Helvetica, sans-serif; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase; font-size: 14px;
+    padding: 14px 28px; border-radius: 2px;
+  }
+  .btn:hover { background: var(--accent); }
+  .foot {
+    margin-top: 40px; font-family: 'Courier New', monospace;
+    font-size: 12px; color: var(--ink-soft); letter-spacing: .1em;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#f4efe3; --ink-soft:#a7abb2; --paper:#16181d; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="kicker">FutbolHUB · Edición digital</div>
+    <p class="code">404</p>
+    <h1>Esta jugada no existe</h1>
+    <p>La página que buscas se ha ido a los vestuarios. Puede que el enlace esté roto o que la hayamos movido.</p>
+    <a class="btn" href="/">← Volver a la portada</a>
+    <div class="foot">10 JUEGOS DIARIOS DE FÚTBOL</div>
+  </main>
+</body>
+</html>

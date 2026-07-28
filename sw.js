@@ -9,7 +9,7 @@
    ============================================= */
 'use strict';
 
-const CACHE = 'futbolhub-v6';
+const CACHE = 'futbolhub-v7';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
@@ -92,8 +92,9 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // No interceptar el resto de orígenes (Firebase, tiles de OSM,
-  // Street View, CDNs…) — que sigan su curso normal.
+  // No interceptar el resto de orígenes (Firebase, tiles de OSM, Street View,
+  // CDNs, y también anuncios/analítica como AdSense) — que sigan su curso
+  // normal y NUNCA se cacheen aquí.
   if (url.origin !== self.location.origin) return;
 
   // Clave de caché SIN query: varios juegos usan cache-busting (?v=timestamp)
