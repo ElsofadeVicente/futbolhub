@@ -427,20 +427,20 @@ function mostrarFin(alreadyPlayed = false) {
     updateStats(total);
     saveScoreFirebase(total);
     saveDailyPlayed(total);
+    // Subir ya el progreso al perfil (racha + stats), sin esperar al sondeo
+    // periódico: si cierras sesión justo después, no se pierde.
+    if (window.FHProgress) { try { FHProgress.push(); } catch { /* nada */ } }
   }
 
   /* Liga competitiva: si hay sesión, subir el resultado al ranking (solo la
-     primera vez del día) con animación de cómo te mueves en tu división.
-     Sin sesión, botón oculto y sin animación. */
+     primera vez del día). La animación de "cómo subes" se ve luego en la
+     propia clasificación (las filas se reordenan). Sin sesión, botón oculto. */
   const ligaFinBtn = document.getElementById('btn-liga-fin');
-  const ligaClimb  = document.getElementById('liga-climb');
   if (ligaLoggedIn()) {
     if (ligaFinBtn) ligaFinBtn.hidden = false;
-    if (!alreadyPlayed) runLigaClimb(total);
-    else if (ligaClimb) ligaClimb.hidden = true;
+    if (!alreadyPlayed) submitLigaDaily(total);
   } else {
     if (ligaFinBtn) ligaFinBtn.hidden = true;
-    if (ligaClimb) ligaClimb.hidden = true;
   }
 
   /* Bloquear "Jugar de nuevo" hasta mañana */
@@ -620,19 +620,35 @@ async function renderLigaInline() {
     body.innerHTML = ligaTop100HTML(await FHLiga.top100(JUEGO_LIGA));
     return;
   }
+
+  /* Si acabas de jugar y el menú está a la vista, pinta la clasificación con
+     la foto de "después" y anima el reordenamiento desde la de "antes". La
+     animación se consume aquí para que no se repita al volver a entrar. */
+  const menuVisible = document.getElementById('screen-menu')?.classList.contains('active');
+  if (pendingLigaClimb && menuVisible) {
+    const climb = pendingLigaClimb;
+    pendingLigaClimb = null;
+    if (climb.after && Array.isArray(climb.after.clasificacion) && climb.after.clasificacion.length) {
+      body.innerHTML = ligaClimbBannerHTML(climb.before, climb.after) + ligaDivisionHTML(climb.after);
+      ligaAnimateReorder(body, climb.before, climb.after);
+      return;
+    }
+  }
+
   const data = await FHLiga.panel(JUEGO_LIGA);
   if (!data || data.auth === false) { body.innerHTML = ligaBloqueadoHTML(); return; }
   body.innerHTML = ligaDivisionHTML(data);
 }
 
 /* Botón "Ver clasificación completa" en la pantalla de fin: vuelve al
-   menú (donde vive la liga) y baja el scroll hasta ella. */
+   menú (donde vive la liga) y baja el scroll hasta ella. Muestra primero el
+   menú para que renderLigaInline pueda medir y animar el reordenamiento. */
 function goToLigaInline() {
   ligaTab = 'division';
   document.querySelectorAll('.liga-tab').forEach(b =>
     b.classList.toggle('liga-tab--on', b.dataset.tab === 'division'));
-  renderLigaInline();
   showScreen('screen-menu');
+  renderLigaInline();
   requestAnimationFrame(() => {
     document.getElementById('liga-inline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -722,7 +738,7 @@ function ligaDivisionHTML(data) {
     const zona = (p.pos <= sube && data.tramo < 7) ? 'sube'
                : (p.pos > n - baja && data.tramo > 0) ? 'baja' : '';
     return `
-      <div class="liga-row ${zona ? 'liga-row--' + zona : ''} ${yo ? 'liga-row--yo' : ''}">
+      <div class="liga-row ${zona ? 'liga-row--' + zona : ''} ${yo ? 'liga-row--yo' : ''}" data-uid="${ligaEsc(p.user_id)}">
         <span class="liga-pos">${p.pos}</span>
         ${ligaAvatar(p.username, p.avatar_url)}
         <span class="liga-name">${ligaEsc(p.username || 'jugador')}${yo ? ' <em>(tú)</em>' : ''}</span>
@@ -753,94 +769,112 @@ function ligaTop100HTML(data) {
   return head + `<div class="liga-list">${rows}</div>`;
 }
 
-/* ── Animación: "cómo subes en el ranking" al terminar el diario ──
-   Se lee la posición ANTES de enviar el resultado, se envía, se lee la
-   posición DESPUÉS, y se anima el marcador + el contador de puntos del
-   "antes" al "después". Si es tu primer día en la división de esta
-   semana no hay "antes": se anima directamente a tu puesto de entrada. */
-function ligaCountUp(el, from, to, ms = 900) {
-  if (!el) return;
-  const t0 = performance.now();
-  const df = to - from;
-  function step(now) {
-    const p = Math.min(1, (now - t0) / ms);
-    const eased = 1 - Math.pow(1 - p, 3);   // ease-out cúbica
-    el.textContent = Math.round(from + df * eased).toLocaleString('es-ES');
-    if (p < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-  // Red de seguridad: si la pestaña pierde el foco a media animación, los
-  // navegadores pausan requestAnimationFrame. Sin esto el número podría
-  // quedarse a medias en vez de terminar en el total real.
-  setTimeout(() => { el.textContent = to.toLocaleString('es-ES'); }, ms + 120);
-}
+/* ── Envío del diario + animación de reordenamiento ──
+   Al terminar se lee la clasificación ANTES de enviar, se envía el resultado
+   y se lee DESPUÉS. Ambas fotos se guardan en pendingLigaClimb; la animación
+   NO se ve aquí (pantalla de fin) sino cuando abres la clasificación: las
+   filas arrancan en su puesto de antes y se deslizan al de después (tu casilla
+   sube y las que adelantas bajan). Se reproduce una sola vez. */
+let pendingLigaClimb = null;   // { before, after } | null
 
-function ligaSetMarker(pos, n) {
-  const marker = document.getElementById('liga-climb-marker');
-  if (!marker || !n) return;
-  const pct = n <= 1 ? 0 : ((pos - 1) / (n - 1)) * 100;
-  marker.style.top = pct + '%';
-}
-
-async function runLigaClimb(total) {
-  const card = document.getElementById('liga-climb');
-  if (!card || !window.FHLiga || !ligaLoggedIn()) return;
+async function submitLigaDaily(total) {
+  if (!window.FHLiga || !ligaLoggedIn()) return;
   try {
     const before = await FHLiga.panel(JUEGO_LIGA);
     await FHLiga.enviarDiario(JUEGO_LIGA, total);
     const after = await FHLiga.panel(JUEGO_LIGA);
-    if (!after || after.auth === false) return;
-
-    const listA = Array.isArray(after.clasificacion) ? after.clasificacion : [];
-    const n = listA.length;
-    const meA = listA.find(p => p.user_id === after.yo);
-    if (!meA) return;
-
-    const listB = (before && Array.isArray(before.clasificacion)) ? before.clasificacion : [];
-    const meB = listB.find(p => p.user_id === (before && before.yo));
-    const esNuevo   = !meB;
-    const posBefore = esNuevo ? meA.pos : meB.pos;
-    const ptsBefore = esNuevo ? 0 : meB.puntos;
-    const sube = after.sube || 10, baja = after.baja || 10;
-
-    const elBefore = document.getElementById('liga-climb-before');
-    const elAfter  = document.getElementById('liga-climb-after');
-    const elPts    = document.getElementById('liga-climb-pts-num');
-    const elMsg    = document.getElementById('liga-climb-msg');
-
-    card.hidden = false;
-    elBefore.textContent = esNuevo ? '—' : posBefore;
-    elAfter.textContent  = esNuevo ? meA.pos : posBefore;
-    ligaSetMarker(posBefore, n);
-
-    // Deja ver el punto de partida un instante antes de animar la subida.
-    setTimeout(() => {
-      elAfter.textContent = meA.pos;
-      ligaSetMarker(meA.pos, n);
-      ligaCountUp(elPts, ptsBefore, meA.puntos);
-
-      const zonaSube = meA.pos <= sube && after.tramo < 7;
-      const zonaBaja = meA.pos > n - baja && after.tramo > 0;
-      if (esNuevo) {
-        elMsg.textContent = '🆕 Has entrado en tu división esta semana';
-        elMsg.className = 'liga-climb-msg';
-      } else if (zonaSube) {
-        elMsg.textContent = '🟢 Estás en zona de ascenso';
-        elMsg.className = 'liga-climb-msg liga-climb-msg--sube';
-      } else if (zonaBaja) {
-        elMsg.textContent = '🔴 Estás en zona de descenso';
-        elMsg.className = 'liga-climb-msg liga-climb-msg--baja';
-      } else {
-        elMsg.textContent = `Sigues en ${FHLiga.tramoInfo(after.tramo).nombre}`;
-        elMsg.className = 'liga-climb-msg';
-      }
-    }, 650);
-
-    // El panel del menú puede estar pintado con datos de antes de jugar.
-    renderLigaInline();
+    if (after && after.auth !== false) {
+      pendingLigaClimb = { before, after };
+    }
+    // No se repinta el menú aquí (estás en la pantalla de fin): la animación
+    // queda pendiente y se reproduce al abrir la clasificación (goToLigaInline).
   } catch (e) {
-    console.warn('[liga] Animación de ranking falló:', e);
+    console.warn('[liga] Envío del diario falló:', e);
   }
+}
+
+/* Reordena las filas ya pintadas (en orden final) desde su posición anterior
+   hasta la actual, técnica FLIP: cada fila se coloca con un translateY que la
+   lleva a donde estaba, y luego se anima ese desplazamiento a 0. */
+function ligaAnimateReorder(container, before, after) {
+  const rows = Array.from(container.querySelectorAll('.liga-row'));
+  if (rows.length < 2) return;
+
+  const bList = (before && Array.isArray(before.clasificacion)) ? before.clasificacion : [];
+  const bPos  = new Map(bList.map(p => [p.user_id, p.pos]));
+
+  // Separación vertical entre filas consecutivas (alto de fila + gap).
+  const stride = rows[1].offsetTop - rows[0].offsetTop;
+  if (!stride) return;
+
+  let algoSeMueve = false;
+  rows.forEach((row, i) => {
+    const uid      = row.getAttribute('data-uid');
+    const posAhora = i + 1;
+    const posAntes = bPos.get(uid);
+    let delta;
+    if (posAntes == null) {
+      // Fila nueva (no estaba en la foto de antes): entra desde abajo.
+      row.style.opacity = '0';
+      delta = stride * 1.5;
+      algoSeMueve = true;
+    } else {
+      delta = (posAntes - posAhora) * stride;   // dónde estaba − dónde está
+      if (delta) algoSeMueve = true;
+    }
+    row.classList.add('liga-row--reorder');
+    row.style.transition = 'none';
+    row.style.transform  = `translateY(${delta}px)`;
+  });
+
+  const limpiar = () => rows.forEach(r => {
+    r.style.transition = ''; r.style.transform = ''; r.style.opacity = '';
+    r.classList.remove('liga-row--reorder', 'liga-row--climbing');
+  });
+
+  if (!algoSeMueve) { limpiar(); return; }
+
+  // Resalta tu fila mientras se mueve, para seguirla con la vista.
+  const myUid = after && after.yo;
+  const myRow = rows.find(r => r.getAttribute('data-uid') === myUid);
+
+  // Forzar reflow con las filas ya "colocadas" en su sitio antiguo…
+  void container.offsetHeight;
+  // …y ahora animarlas a su sitio real.
+  requestAnimationFrame(() => {
+    rows.forEach(row => {
+      row.style.transition = 'transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.5s ease';
+      row.style.transform  = 'translateY(0)';
+      row.style.opacity    = '';
+    });
+    if (myRow) myRow.classList.add('liga-row--climbing');
+  });
+
+  setTimeout(limpiar, 1050);
+}
+
+/* Banner "has subido/bajado X puestos" que precede al reordenamiento. */
+function ligaClimbBannerHTML(before, after) {
+  const bList = (before && Array.isArray(before.clasificacion)) ? before.clasificacion : [];
+  const aList = (after  && Array.isArray(after.clasificacion))  ? after.clasificacion  : [];
+  const meA = aList.find(p => p.user_id === (after && after.yo));
+  if (!meA) return '';
+  const meB = bList.find(p => p.user_id === (before && before.yo));
+  if (!meB) {
+    return `<div class="liga-climb-banner"><span class="lcb-delta">🆕</span>
+      <span>Has entrado en tu división · puesto ${meA.pos}</span></div>`;
+  }
+  const diff = meB.pos - meA.pos;   // +subes, −bajas, 0 igual
+  if (diff > 0) {
+    return `<div class="liga-climb-banner"><span class="lcb-delta">▲ ${diff}</span>
+      <span>Subes al puesto ${meA.pos}</span></div>`;
+  }
+  if (diff < 0) {
+    return `<div class="liga-climb-banner lcb-down"><span class="lcb-delta">▼ ${-diff}</span>
+      <span>Bajas al puesto ${meA.pos}</span></div>`;
+  }
+  return `<div class="liga-climb-banner"><span class="lcb-delta">=</span>
+    <span>Sigues en el puesto ${meA.pos}</span></div>`;
 }
 
 /* ══════════════════════════════════════════════
