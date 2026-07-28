@@ -429,6 +429,20 @@ function mostrarFin(alreadyPlayed = false) {
     saveDailyPlayed(total);
   }
 
+  /* Liga competitiva: si hay sesión, subir el resultado al ranking (solo la
+     primera vez del día) con animación de cómo te mueves en tu división.
+     Sin sesión, botón oculto y sin animación. */
+  const ligaFinBtn = document.getElementById('btn-liga-fin');
+  const ligaClimb  = document.getElementById('liga-climb');
+  if (ligaLoggedIn()) {
+    if (ligaFinBtn) ligaFinBtn.hidden = false;
+    if (!alreadyPlayed) runLigaClimb(total);
+    else if (ligaClimb) ligaClimb.hidden = true;
+  } else {
+    if (ligaFinBtn) ligaFinBtn.hidden = true;
+    if (ligaClimb) ligaClimb.hidden = true;
+  }
+
   /* Bloquear "Jugar de nuevo" hasta mañana */
   const againBtn = document.getElementById('btn-jugar-de-nuevo');
   if (againBtn) {
@@ -548,6 +562,288 @@ async function saveScoreFirebase(total) {
 }
 
 /* ══════════════════════════════════════════════
+   LIGA COMPETITIVA — divisiones semanales + Top 100 Mundial
+   Datos en js/liga.js (window.FHLiga). Aquí solo: subir el resultado del
+   día al ranking y pintar el panel (clasificación con fotos, Top 100 y la
+   versión borrosa con "inicia sesión" para quien no ha entrado).
+   ══════════════════════════════════════════════ */
+const JUEGO_LIGA = 'el-estadio';
+let ligaTab = 'division';
+
+function ligaLoggedIn() {
+  return !!(window.FHAuth && FHAuth.identity && FHAuth.identity());
+}
+
+function ligaEsc(s) {
+  return (window.FHAuth && FHAuth.escHtml)
+    ? FHAuth.escHtml(s)
+    : String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+/* Avatar redondo: foto de perfil si la hay, o inicial sobre color fijo
+   (misma lógica que el hub, reutilizando los helpers de auth.js). */
+function ligaAvatar(username, avatarUrl) {
+  const d = (FHAuth.defaultAvatar ? FHAuth.defaultAvatar(username) : { color: '#7f8c8d' });
+  const inner = FHAuth.avatarInner
+    ? FHAuth.avatarInner(username, avatarUrl)
+    : ligaEsc((username || '?').charAt(0).toUpperCase());
+  return `<span class="liga-av" style="background:${d.color}">${inner}</span>`;
+}
+
+/* Días que quedan hasta el cierre (lunes de la semana + 7). */
+function ligaDiasRestantes(semanaStr) {
+  try {
+    const [y, m, d] = String(semanaStr).split('-').map(Number);
+    const cierre = new Date(y, m - 1, d + 7);   // lunes siguiente 00:00 local
+    return Math.max(0, Math.ceil((cierre - new Date()) / 86400000));
+  } catch { return null; }
+}
+
+function setLigaTab(tab) {
+  ligaTab = tab;
+  document.querySelectorAll('.liga-tab').forEach(b =>
+    b.classList.toggle('liga-tab--on', b.dataset.tab === tab));
+  renderLigaInline();
+}
+
+/* Pinta el panel de liga que vive DENTRO del menú (debajo de "Jugar" y
+   "Volver al Hub"): se ve entera con scroll, no hace falta abrir nada. */
+async function renderLigaInline() {
+  const body = document.getElementById('liga-body');
+  if (!body) return;
+
+  if (!ligaLoggedIn() || !window.FHLiga) { body.innerHTML = ligaBloqueadoHTML(); return; }
+  body.innerHTML = `<p class="liga-loading">Cargando…</p>`;
+
+  if (ligaTab === 'top100') {
+    body.innerHTML = ligaTop100HTML(await FHLiga.top100(JUEGO_LIGA));
+    return;
+  }
+  const data = await FHLiga.panel(JUEGO_LIGA);
+  if (!data || data.auth === false) { body.innerHTML = ligaBloqueadoHTML(); return; }
+  body.innerHTML = ligaDivisionHTML(data);
+}
+
+/* Botón "Ver clasificación completa" en la pantalla de fin: vuelve al
+   menú (donde vive la liga) y baja el scroll hasta ella. */
+function goToLigaInline() {
+  ligaTab = 'division';
+  document.querySelectorAll('.liga-tab').forEach(b =>
+    b.classList.toggle('liga-tab--on', b.dataset.tab === 'division'));
+  renderLigaInline();
+  showScreen('screen-menu');
+  requestAnimationFrame(() => {
+    document.getElementById('liga-inline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+/* Sin sesión: lista de ejemplo borrosa + tarjeta para iniciar sesión.
+   El botón data-action="open-login" lo captura el profile-widget. */
+function ligaBloqueadoHTML() {
+  const demo = [
+    ['Cristiano', '44.980'], ['Messi', '43.100'], ['Iniesta', '41.250'],
+    ['Xavi', '39.800'], ['Casillas', '38.400'], ['Puyol', '36.900'],
+  ].map((r, i) => `
+    <div class="liga-row">
+      <span class="liga-pos">${i + 1}</span>
+      <span class="liga-av" style="background:#7f8c8d">${ligaEsc(r[0].charAt(0))}</span>
+      <span class="liga-name">${ligaEsc(r[0])}</span>
+      <span class="liga-pts">${r[1]}</span>
+    </div>`).join('');
+  return `
+    <div class="liga-locked">
+      <div class="liga-blur" aria-hidden="true">${demo}</div>
+      <div class="liga-lock-overlay">
+        <div class="liga-lock-card">
+          <span class="liga-lock-icon">🔒</span>
+          <p class="liga-lock-title">Ranking semanal</p>
+          <p class="liga-lock-text">Inicia sesión para entrar al ranking semanal, competir por ascender de división y aspirar al Top 100 mundial.</p>
+          <button class="btn-primary" type="button" data-action="open-login">Iniciar sesión</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* Insignia de tramo: escudo real de la categoría (Transfermarkt para las
+   españolas, los trofeos que ya usa La Carrera para las europeas/Mundial)
+   + nombre. Si la imagen no carga, cae en el emoji para no dejar un hueco roto. */
+function ligaTramoBadgeHTML(info) {
+  return `
+    <div class="liga-tramo-badge">
+      <img class="liga-tramo-logo" src="${ligaEsc(info.logo)}" alt=""
+           onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${info.emoji}',className:'liga-tramo-emoji-fallback'}))">
+      <span>${ligaEsc(info.nombre)}</span>
+    </div>`;
+}
+
+/* Leyenda de zonas — cuadraditos de color a juego con el borde de cada fila
+   (verde ascenso / negro permanencia / rojo descenso), debajo de la tabla.
+   En Mundial (tramo 7) solo se muestra descenso; en Tercera (tramo 0) solo ascenso. */
+function ligaLeyendaHTML(tramo, sube, baja) {
+  const partes = [];
+  if (tramo === 7) {
+    // Mundial: solo se baja
+    partes.push(`<span class="liga-leg"><i class="liga-sq liga-sq--baja"></i>Descienden ${baja}</span>`);
+  } else if (tramo === 0) {
+    // Tercera: solo se sube
+    partes.push(`<span class="liga-leg"><i class="liga-sq liga-sq--sube"></i>Ascienden ${sube}</span>`);
+    partes.push(`<span class="liga-leg"><i class="liga-sq liga-sq--queda"></i>Permanencia</span>`);
+  } else {
+    // Resto: subida, permanencia y bajada
+    partes.push(`<span class="liga-leg"><i class="liga-sq liga-sq--sube"></i>Ascienden ${sube}</span>`);
+    partes.push(`<span class="liga-leg"><i class="liga-sq liga-sq--queda"></i>Permanencia</span>`);
+    partes.push(`<span class="liga-leg"><i class="liga-sq liga-sq--baja"></i>Descienden ${baja}</span>`);
+  }
+  return `<div class="liga-leyenda">${partes.join('')}</div>`;
+}
+
+function ligaDivisionHTML(data) {
+  const info = FHLiga.tramoInfo(data.tramo);
+  const dias = ligaDiasRestantes(data.semana);
+  const lista = Array.isArray(data.clasificacion) ? data.clasificacion : [];
+  const n = lista.length;
+  const sube = data.sube || 10, baja = data.baja || 10;
+
+  const sub = document.getElementById('liga-subtitle');
+  if (sub) {
+    sub.textContent = `${info.emoji} ${info.nombre}` +
+      (dias != null ? ` · ${dias} día${dias === 1 ? '' : 's'} para el cierre` : '');
+  }
+
+  if (!n) {
+    return `
+      ${ligaTramoBadgeHTML(info)}
+      <p class="liga-empty">Aún no has jugado esta semana.<br>Juega la partida diaria para entrar en tu división y empezar a sumar.</p>`;
+  }
+
+  const rows = lista.map(p => {
+    const yo   = p.user_id === data.yo;
+    const zona = (p.pos <= sube && data.tramo < 7) ? 'sube'
+               : (p.pos > n - baja && data.tramo > 0) ? 'baja' : '';
+    return `
+      <div class="liga-row ${zona ? 'liga-row--' + zona : ''} ${yo ? 'liga-row--yo' : ''}">
+        <span class="liga-pos">${p.pos}</span>
+        ${ligaAvatar(p.username, p.avatar_url)}
+        <span class="liga-name">${ligaEsc(p.username || 'jugador')}${yo ? ' <em>(tú)</em>' : ''}</span>
+        <span class="liga-pts">${Number(p.puntos).toLocaleString('es-ES')}</span>
+      </div>`;
+  }).join('');
+
+  return `
+    ${ligaTramoBadgeHTML(info)}
+    <div class="liga-list">${rows}</div>
+    ${ligaLeyendaHTML(data.tramo, sube, baja)}`;
+}
+
+function ligaTop100HTML(data) {
+  const lista = (data && Array.isArray(data.top100)) ? data.top100 : [];
+  const info = FHLiga.tramoInfo(7);
+  const head = `${ligaTramoBadgeHTML({ ...info, nombre: 'Top 100 · Mundial' })}`;
+  if (!lista.length) {
+    return head + `<p class="liga-empty">Todavía no hay nadie en el Top 100 este mes.<br>Llega al tramo Mundial y compite por entrar.</p>`;
+  }
+  const rows = lista.map(p => `
+      <div class="liga-row ${p.puesto <= 3 ? 'liga-row--podio' : ''}">
+        <span class="liga-pos">${p.puesto}</span>
+        ${ligaAvatar(p.username, p.avatar_url)}
+        <span class="liga-name">${ligaEsc(p.username || 'jugador')}</span>
+        <span class="liga-pts">${Number(p.puntos).toLocaleString('es-ES')}</span>
+      </div>`).join('');
+  return head + `<div class="liga-list">${rows}</div>`;
+}
+
+/* ── Animación: "cómo subes en el ranking" al terminar el diario ──
+   Se lee la posición ANTES de enviar el resultado, se envía, se lee la
+   posición DESPUÉS, y se anima el marcador + el contador de puntos del
+   "antes" al "después". Si es tu primer día en la división de esta
+   semana no hay "antes": se anima directamente a tu puesto de entrada. */
+function ligaCountUp(el, from, to, ms = 900) {
+  if (!el) return;
+  const t0 = performance.now();
+  const df = to - from;
+  function step(now) {
+    const p = Math.min(1, (now - t0) / ms);
+    const eased = 1 - Math.pow(1 - p, 3);   // ease-out cúbica
+    el.textContent = Math.round(from + df * eased).toLocaleString('es-ES');
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  // Red de seguridad: si la pestaña pierde el foco a media animación, los
+  // navegadores pausan requestAnimationFrame. Sin esto el número podría
+  // quedarse a medias en vez de terminar en el total real.
+  setTimeout(() => { el.textContent = to.toLocaleString('es-ES'); }, ms + 120);
+}
+
+function ligaSetMarker(pos, n) {
+  const marker = document.getElementById('liga-climb-marker');
+  if (!marker || !n) return;
+  const pct = n <= 1 ? 0 : ((pos - 1) / (n - 1)) * 100;
+  marker.style.top = pct + '%';
+}
+
+async function runLigaClimb(total) {
+  const card = document.getElementById('liga-climb');
+  if (!card || !window.FHLiga || !ligaLoggedIn()) return;
+  try {
+    const before = await FHLiga.panel(JUEGO_LIGA);
+    await FHLiga.enviarDiario(JUEGO_LIGA, total);
+    const after = await FHLiga.panel(JUEGO_LIGA);
+    if (!after || after.auth === false) return;
+
+    const listA = Array.isArray(after.clasificacion) ? after.clasificacion : [];
+    const n = listA.length;
+    const meA = listA.find(p => p.user_id === after.yo);
+    if (!meA) return;
+
+    const listB = (before && Array.isArray(before.clasificacion)) ? before.clasificacion : [];
+    const meB = listB.find(p => p.user_id === (before && before.yo));
+    const esNuevo   = !meB;
+    const posBefore = esNuevo ? meA.pos : meB.pos;
+    const ptsBefore = esNuevo ? 0 : meB.puntos;
+    const sube = after.sube || 10, baja = after.baja || 10;
+
+    const elBefore = document.getElementById('liga-climb-before');
+    const elAfter  = document.getElementById('liga-climb-after');
+    const elPts    = document.getElementById('liga-climb-pts-num');
+    const elMsg    = document.getElementById('liga-climb-msg');
+
+    card.hidden = false;
+    elBefore.textContent = esNuevo ? '—' : posBefore;
+    elAfter.textContent  = esNuevo ? meA.pos : posBefore;
+    ligaSetMarker(posBefore, n);
+
+    // Deja ver el punto de partida un instante antes de animar la subida.
+    setTimeout(() => {
+      elAfter.textContent = meA.pos;
+      ligaSetMarker(meA.pos, n);
+      ligaCountUp(elPts, ptsBefore, meA.puntos);
+
+      const zonaSube = meA.pos <= sube && after.tramo < 7;
+      const zonaBaja = meA.pos > n - baja && after.tramo > 0;
+      if (esNuevo) {
+        elMsg.textContent = '🆕 Has entrado en tu división esta semana';
+        elMsg.className = 'liga-climb-msg';
+      } else if (zonaSube) {
+        elMsg.textContent = '🟢 Estás en zona de ascenso';
+        elMsg.className = 'liga-climb-msg liga-climb-msg--sube';
+      } else if (zonaBaja) {
+        elMsg.textContent = '🔴 Estás en zona de descenso';
+        elMsg.className = 'liga-climb-msg liga-climb-msg--baja';
+      } else {
+        elMsg.textContent = `Sigues en ${FHLiga.tramoInfo(after.tramo).nombre}`;
+        elMsg.className = 'liga-climb-msg';
+      }
+    }, 650);
+
+    // El panel del menú puede estar pintado con datos de antes de jugar.
+    renderLigaInline();
+  } catch (e) {
+    console.warn('[liga] Animación de ranking falló:', e);
+  }
+}
+
+/* ══════════════════════════════════════════════
    INIT
    ══════════════════════════════════════════════ */
 let _inited = false;
@@ -592,6 +888,14 @@ async function init() {
     startGame();
   });
   document.getElementById('btn-compartir')?.addEventListener('click', estadioShare);
+
+  // Liga competitiva: panel inline en el menú (bajo "Jugar"/"Volver al Hub")
+  document.getElementById('btn-liga-fin')?.addEventListener('click', goToLigaInline);
+  document.querySelectorAll('.liga-tab').forEach(b =>
+    b.addEventListener('click', () => setLigaTab(b.dataset.tab)));
+  // Si el usuario inicia/cierra sesión desde el modal, refrescar el panel
+  // en el sitio (de borroso a real, o al revés) sin recargar la página.
+  if (window.FHAuth && FHAuth.onIdentity) FHAuth.onIdentity(() => renderLigaInline());
 
   // Expandir el mapa al pinchar (solo expande — nunca colapsa, para que
   // colocar la chincheta no cierre el panel). Se colapsa solo al pasar de ronda.
