@@ -310,6 +310,11 @@ body.np-body .np-layout .ad-col {
   letter-spacing: 0.22em; color: var(--np-ink-mid);
   text-transform: uppercase;
 }
+.np-footer-link {
+  color: var(--np-ink-mid); text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.np-footer-link:hover { color: var(--np-red); }
 
 /* ══════════════════════════════════════════════
    RESPONSIVE

@@ -53,25 +53,6 @@ function getMsUntilMadridMidnight() {
   return Math.max(0, (86400 - elapsed) * 1000);
 }
 
-// ── Pregunta diaria (hora española) ───────────
-// Usa el mismo hash entero determinista que shared.js (getDailyMatchIndex) en
-// vez de un simple "días % total": con un módulo directo, el orden de
-// preguntas es una rotación 0,1,2,3... totalmente predecible con solo mirar
-// el JSON; el hash mezcla el índice manteniendo el resultado 100% determinista
-// para la misma fecha (igual para todos los usuarios).
-function getDailyQuestion(questions) {
-  if (!questions || !questions.length) return null;
-  const dateStr = getTodayMadrid();
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const seed = y * 10000 + m * 100 + d;
-  let hash = seed;
-  hash = ((hash >>> 16) ^ hash) * 0x45d9f3b;
-  hash = ((hash >>> 16) ^ hash) * 0x45d9f3b;
-  hash = (hash >>> 16) ^ hash;
-  const idx = Math.abs(hash) % questions.length;
-  return questions[idx];
-}
-
 // ── Formato M:SS ───────────────────────────────
 function formatTime(t) {
   const m = Math.floor(t / 60);
@@ -169,7 +150,6 @@ function buildTeamIndex(teamNames, leagueTeams) {
 // ══════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════
-let _questions     = [];
 let _question      = null;
 let _nameIndex     = [];
 let _teamIndex     = [];
@@ -180,20 +160,27 @@ let _timerInterval = null;
 let _ended         = false;
 let _statsSaved    = false;
 
+let _days     = {};   // { "AAAA-MM-DD": entry } de todos los meses cargados
+let _editions = [];   // fechas jugables (<= hoy), ASCENDENTE (edición 1 = la más antigua)
+let _idx      = 0;    // índice de la edición actual dentro de _editions
+let _isToday  = false;
+
 let _acItems    = [];
 let _acIdx      = -1;
 let _acDebounce = null;
 let _cdInterval = null;
+let _docClickBound = false;
 
 // ── Refs ───────────────────────────────────────
 let elLoading, elMode, elGame, elEnd;
 let elModeOpts, elStartGameBtn, elStatsOpenBtn;
 let elTimerTrack, elTimerFill, elTimerNum;
-let elScore, elTitle, elRowsWrap;
+let elScore, elTitle, elRowsWrap, elArchiveTag;
 let elInput, elSugBox, elGiveup;
 let elEndEmoji, elEndTitle, elEndSub, elEndQ, elEndRows, elEndStatsBtn;
 let elGiveupOverlay, elGiveupYes, elGiveupNo;
 let elStatsOverlay, elStatsClose, elStatsNums, elStatsHistBars, elStatsHistLabels, elStatsCountdown;
+let elNav, elNavFirst, elNavPrev, elNavNext, elNavLast, elNavLabel;
 
 // ══════════════════════════════════════════════
 //  INIT
@@ -230,15 +217,22 @@ async function init() {
   elStatsHistBars   = document.getElementById('stats-hist-bars');
   elStatsHistLabels = document.getElementById('stats-hist-labels');
   elStatsCountdown  = document.getElementById('stats-countdown');
+  elArchiveTag      = document.getElementById('archive-tag');
+  elNav             = document.getElementById('day-nav');
+  elNavFirst        = document.getElementById('nav-first');
+  elNavPrev         = document.getElementById('nav-prev');
+  elNavNext         = document.getElementById('nav-next');
+  elNavLast         = document.getElementById('nav-last');
+  elNavLabel        = document.getElementById('nav-label');
 
+  const today = getTodayMadrid();
   try {
-    const [questions, nameIndex, teamNames, leagueTeams] = await Promise.all([
-      fetch(sbStorageUrl('game-data', 'en-el-top/enteltop.json'), { cache: 'no-cache' }).then(r => r.json()),
+    const [, nameIndex, teamNames, leagueTeams] = await Promise.all([
+      loadAllMonths(today),
       fetch(sbStorageUrl('player-db', 'players/name-index.json'), { cache: 'no-cache' }).then(r => r.json()),
       fetch(sbStorageUrl('player-db', 'team-names/team-names.json'), { cache: 'no-cache' }).then(r => r.json()),
       fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'), { cache: 'no-cache' }).then(r => r.json()),
     ]);
-    _questions = questions;
     _nameIndex = nameIndex;
     _teamIndex = buildTeamIndex(teamNames, leagueTeams);
   } catch (e) {
@@ -246,19 +240,31 @@ async function init() {
     return;
   }
 
-  _question = getDailyQuestion(_questions);
-  if (!_question) {
-    elLoading.innerHTML = '<p style="color:#b5221e;font-family:\'DM Mono\',monospace;font-size:12px;letter-spacing:.15em;text-align:center">No hay preguntas disponibles.</p>';
+  _editions = Object.keys(_days)
+    .filter(d => d <= today && _days[d] && _days[d].id)
+    .sort();   // ascendente: edición 1 = la más antigua
+
+  if (!_editions.length) {
+    elLoading.innerHTML = '<p style="color:#b5221e;font-family:\'DM Mono\',monospace;font-size:12px;letter-spacing:.15em;text-align:center">No hay preguntas disponibles todavía.</p>';
     return;
   }
-  _question._normMap = buildNormMap(_question.top10);
+
+  // Al entrar, la de HOY (o la más reciente disponible).
+  _idx = _editions.indexOf(today);
+  if (_idx < 0) _idx = _editions.length - 1;
 
   // Siempre vincular modales (necesario tanto para partida nueva como ya jugada)
   bindModalEvents();
+  elNavFirst.addEventListener('click', () => goEdition(0));
+  elNavPrev .addEventListener('click', () => goEdition(_idx - 1));
+  elNavNext .addEventListener('click', () => goEdition(_idx + 1));
+  elNavLast .addEventListener('click', () => goEdition(_editions.length - 1));
 
-  // ¿Ya jugaste hoy?
+  prepareQuestion(_idx);
+
+  // ¿Ya jugaste la edición de hoy?
   const todayResult = loadTodayResult();
-  if (todayResult && todayResult.questionId === _question.id) {
+  if (_isToday && todayResult && todayResult.questionId === _question.id) {
     _found      = new Set(todayResult.found);
     _ended      = true;
     _statsSaved = true;
@@ -270,6 +276,63 @@ async function init() {
   bindModeScreenEvents();
   elLoading.classList.add('hidden');
   elMode.classList.remove('hidden');
+}
+
+/* Carga el mes actual y los anteriores (hasta 3 fallos seguidos), para poder
+   navegar "muy para atrás" a través de meses. */
+async function loadAllMonths(today) {
+  let [y, m] = today.slice(0, 7).split('-').map(Number);
+  let misses = 0;
+  for (let k = 0; k < 36 && misses < 3; k++) {
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    try {
+      const res = await fetch(sbStorageUrl('game-data', `en-el-top/${key}.json`), { cache: 'no-cache' });
+      if (res.ok) { const j = await res.json(); Object.assign(_days, j.days || j); misses = 0; }
+      else misses++;
+    } catch { misses++; }
+    m--; if (m < 1) { m = 12; y--; }
+  }
+}
+
+/* Prepara la pregunta de la edición idx (sin arrancar la partida). */
+function prepareQuestion(idx) {
+  const date = _editions[idx];
+  _question = _days[date];
+  _question._normMap = buildNormMap(_question.top10);
+  _isToday = (date === getTodayMadrid());
+}
+
+/* Navega a otra edición (desde el juego o el final) y la carga de cero,
+   salvo que sea la de hoy y ya esté jugada: entonces muestra ese resultado
+   guardado en vez de reiniciar la partida (igual que la-carrera). */
+function goEdition(idx) {
+  idx = Math.max(0, Math.min(_editions.length - 1, idx));
+  _idx = idx;
+  prepareQuestion(_idx);
+
+  const todayResult = _isToday ? loadTodayResult() : null;
+  if (todayResult && todayResult.questionId === _question.id) {
+    _found      = new Set(todayResult.found);
+    _ended      = true;
+    _statsSaved = true;
+    showEndScreen(todayResult.score === 10);
+    return;
+  }
+
+  startGame();
+}
+
+function renderNav() {
+  if (!elNav) return;
+  const n = _editions.length;
+  const atStart = _idx <= 0, atEnd = _idx >= n - 1;
+  elNavFirst.disabled = atStart;
+  elNavPrev.disabled  = atStart;
+  elNavNext.disabled  = atEnd;
+  elNavLast.disabled  = atEnd;
+  const date = _editions[_idx];
+  const [, mo, da] = date.split('-');
+  elNavLabel.textContent = `#${_idx + 1}` + (_isToday ? ' · Hoy' : ` · ${da}/${mo}`);
 }
 
 function questionType() {
@@ -332,6 +395,9 @@ function startGame() {
   elMode.classList.add('hidden');
   elEnd.classList.add('hidden');
   elGame.classList.remove('hidden');
+  elNav.classList.remove('hidden');
+  renderNav();
+  elArchiveTag.classList.toggle('hidden', _isToday);
 
   if (_mode === 'normal') {
     elTimerTrack.classList.add('hidden');
@@ -487,9 +553,17 @@ function bindGameEvents() {
     }
   });
 
-  document.addEventListener('click', e => {
-    if (!elSugBox.contains(e.target) && e.target !== elInput) closeSug();
-  });
+  // bindGameEvents() se llama en cada startGame() (cada edición navegada), no
+  // solo una vez: elInput/elSugBox son variables de módulo reasignadas más
+  // arriba, así que el closure siempre lee el valor vigente — basta con
+  // registrar este listener una sola vez en toda la sesión en vez de
+  // acumularlo en document (mismo fix que la-carrera).
+  if (!_docClickBound) {
+    document.addEventListener('click', e => {
+      if (!elSugBox.contains(e.target) && e.target !== elInput) closeSug();
+    });
+    _docClickBound = true;
+  }
 
   const newGiveup = elGiveup.cloneNode(true);
   elGiveup.parentNode.replaceChild(newGiveup, elGiveup);
@@ -641,7 +715,7 @@ function endGame(won) {
   elInput.disabled = true;
   elGiveup.disabled = true;
 
-  if (!_statsSaved) {
+  if (_isToday && !_statsSaved) {
     _statsSaved = true;
     recordResult(_found.size);
     saveTodayResult(_question.id, [..._found], _found.size);
@@ -677,6 +751,8 @@ function showEndScreen(won) {
   }
 
   elEnd.classList.remove('hidden');
+  elNav.classList.remove('hidden');
+  renderNav();
 
   // Abrir estadísticas automáticamente siempre que termine la partida
   // (ganada o perdida), tras un breve delay para que se vea primero el

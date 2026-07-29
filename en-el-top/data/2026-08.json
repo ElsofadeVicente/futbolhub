@@ -1,0 +1,400 @@
+{
+  "month": "2026-08",
+  "days": {
+    "2026-08-01": {
+      "id": "jugadores-que-mas-se-han-enfrentado-a-lionel-messi-mqdo6ol3",
+      "q": "Jugadores que mas se han enfrentado a Lionel Messi",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Sergio Ramos",
+          "nat": "ES",
+          "id": "25557",
+          "v": 44
+        },
+        {
+          "r": 2,
+          "n": "Diego Godín",
+          "nat": "UY",
+          "id": "54928",
+          "v": 43
+        },
+        {
+          "r": 3,
+          "n": "Karim Benzema",
+          "nat": "FR",
+          "id": "18922",
+          "v": 41
+        },
+        {
+          "r": 4,
+          "n": "Cristiano Ronaldo",
+          "nat": "PT",
+          "id": "8198",
+          "v": 36
+        },
+        {
+          "r": 5,
+          "n": "Jesús Navas",
+          "nat": "ES",
+          "id": "15956",
+          "v": 34
+        },
+        {
+          "r": 6,
+          "n": "Marcelo",
+          "nat": "BR",
+          "id": "44501",
+          "v": 33
+        },
+        {
+          "r": 7,
+          "n": "Raúl García",
+          "nat": "ES",
+          "id": "34601",
+          "v": 33
+        },
+        {
+          "r": 8,
+          "n": "Koke",
+          "nat": "ES",
+          "id": "74229",
+          "v": 30
+        },
+        {
+          "r": 9,
+          "n": "Juanfran Torres",
+          "nat": "ES",
+          "id": "16635",
+          "v": 29
+        },
+        {
+          "r": 10,
+          "n": "Gabi",
+          "nat": "ES",
+          "id": "22969",
+          "v": 29
+        }
+      ]
+    },
+    "2026-08-02": {
+      "id": "jugadores-con-mas-partidos-junto-a-mason-greenwood-mqdoym1e",
+      "q": "Jugadores con mas partidos junto a Mason Greenwood",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Harry Maguire",
+          "nat": "GB-ENG",
+          "id": "177907",
+          "v": 107
+        },
+        {
+          "r": 2,
+          "n": "Aaron Wan-Bissaka",
+          "nat": "CD",
+          "id": "477758",
+          "v": 101
+        },
+        {
+          "r": 3,
+          "n": "Victor Lindelöf",
+          "nat": "SE",
+          "id": "184573",
+          "v": 92
+        },
+        {
+          "r": 4,
+          "n": "Fred",
+          "nat": "BR",
+          "id": "191614",
+          "v": 92
+        },
+        {
+          "r": 5,
+          "n": "David de Gea",
+          "nat": "ES",
+          "id": "59377",
+          "v": 91
+        },
+        {
+          "r": 6,
+          "n": "Marcus Rashford",
+          "nat": "GB-ENG",
+          "id": "258923",
+          "v": 85
+        },
+        {
+          "r": 7,
+          "n": "Bruno Fernandes",
+          "nat": "PT",
+          "id": "240306",
+          "v": 84
+        },
+        {
+          "r": 8,
+          "n": "Luke Shaw",
+          "nat": "GB-ENG",
+          "id": "183288",
+          "v": 81
+        },
+        {
+          "r": 9,
+          "n": "Scott McTominay",
+          "nat": "GB-SCT",
+          "id": "315969",
+          "v": 80
+        },
+        {
+          "r": 10,
+          "n": "Pierre-Emile Højbjerg",
+          "nat": "DK",
+          "id": "167799",
+          "v": 73
+        }
+      ]
+    },
+    "2026-08-03": {
+      "id": "equipos-contra-los-que-lionel-messi-ha-marcado-mas-goles-mqdozc50",
+      "q": "Equipos contra los que Lionel Messi ha marcado mas goles",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "team",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Sevilla FC",
+          "nat": "ES",
+          "id": "368",
+          "v": 38
+        },
+        {
+          "r": 2,
+          "n": "Atlético de Madrid",
+          "nat": "ES",
+          "id": "13",
+          "v": 32
+        },
+        {
+          "r": 3,
+          "n": "Valencia CF",
+          "nat": "ES",
+          "id": "1049",
+          "v": 31
+        },
+        {
+          "r": 4,
+          "n": "Athletic Bilbao",
+          "nat": "ES",
+          "id": "621",
+          "v": 29
+        },
+        {
+          "r": 5,
+          "n": "Real Madrid",
+          "nat": "ES",
+          "id": "418",
+          "v": 26
+        },
+        {
+          "r": 6,
+          "n": "Real Betis Balompié",
+          "nat": "ES",
+          "id": "150",
+          "v": 26
+        },
+        {
+          "r": 7,
+          "n": "CA Osasuna",
+          "nat": "ES",
+          "id": "331",
+          "v": 25
+        },
+        {
+          "r": 8,
+          "n": "RCD Espanyol Barcelona",
+          "nat": "ES",
+          "id": "714",
+          "v": 25
+        },
+        {
+          "r": 9,
+          "n": "Levante UD",
+          "nat": "ES",
+          "id": "3368",
+          "v": 24
+        },
+        {
+          "r": 10,
+          "n": "Getafe CF",
+          "nat": "ES",
+          "id": "3709",
+          "v": 21
+        }
+      ]
+    },
+    "2026-08-04": {
+      "id": "equipos-contra-los-que-lionel-messi-ha-dado-mas-asistencias-mqdoziik",
+      "q": "Equipos contra los que Lionel Messi ha dado mas asistencias",
+      "unit": "asistencias",
+      "hint": "nat",
+      "type": "team",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Levante UD",
+          "nat": "ES",
+          "id": "3368",
+          "v": 20
+        },
+        {
+          "r": 2,
+          "n": "Sevilla FC",
+          "nat": "ES",
+          "id": "368",
+          "v": 20
+        },
+        {
+          "r": 3,
+          "n": "Getafe CF",
+          "nat": "ES",
+          "id": "3709",
+          "v": 15
+        },
+        {
+          "r": 4,
+          "n": "Real Madrid",
+          "nat": "ES",
+          "id": "418",
+          "v": 14
+        },
+        {
+          "r": 5,
+          "n": "RCD Espanyol Barcelona",
+          "nat": "ES",
+          "id": "714",
+          "v": 14
+        },
+        {
+          "r": 6,
+          "n": "Celta de Vigo",
+          "nat": "ES",
+          "id": "940",
+          "v": 13
+        },
+        {
+          "r": 7,
+          "n": "Valencia CF",
+          "nat": "ES",
+          "id": "1049",
+          "v": 12
+        },
+        {
+          "r": 8,
+          "n": "Athletic Bilbao",
+          "nat": "ES",
+          "id": "621",
+          "v": 12
+        },
+        {
+          "r": 9,
+          "n": "Villarreal CF",
+          "nat": "ES",
+          "id": "1050",
+          "v": 11
+        },
+        {
+          "r": 10,
+          "n": "Atlético de Madrid",
+          "nat": "ES",
+          "id": "13",
+          "v": 10
+        }
+      ]
+    },
+    "2026-08-05": {
+      "id": "equipos-contra-los-que-lionel-messi-ha-jugado-mas-partidos-mqdozkk1",
+      "q": "Equipos contra los que Lionel Messi ha jugado mas partidos",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "team",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Real Madrid",
+          "nat": "ES",
+          "id": "418",
+          "v": 48
+        },
+        {
+          "r": 2,
+          "n": "Sevilla FC",
+          "nat": "ES",
+          "id": "368",
+          "v": 44
+        },
+        {
+          "r": 3,
+          "n": "Atlético de Madrid",
+          "nat": "ES",
+          "id": "13",
+          "v": 43
+        },
+        {
+          "r": 4,
+          "n": "Athletic Bilbao",
+          "nat": "ES",
+          "id": "621",
+          "v": 43
+        },
+        {
+          "r": 5,
+          "n": "Valencia CF",
+          "nat": "ES",
+          "id": "1049",
+          "v": 38
+        },
+        {
+          "r": 6,
+          "n": "RCD Espanyol Barcelona",
+          "nat": "ES",
+          "id": "714",
+          "v": 35
+        },
+        {
+          "r": 7,
+          "n": "Villarreal CF",
+          "nat": "ES",
+          "id": "1050",
+          "v": 28
+        },
+        {
+          "r": 8,
+          "n": "Getafe CF",
+          "nat": "ES",
+          "id": "3709",
+          "v": 28
+        },
+        {
+          "r": 9,
+          "n": "Real Sociedad",
+          "nat": "ES",
+          "id": "681",
+          "v": 28
+        },
+        {
+          "r": 10,
+          "n": "Real Betis Balompié",
+          "nat": "ES",
+          "id": "150",
+          "v": 26
+        }
+      ]
+    }
+  }
+}
