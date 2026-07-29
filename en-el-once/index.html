@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 
 <!-- Estilos -->
-<link rel="stylesheet" href="./css/once.css?v=20260705c">
+<link rel="stylesheet" href="./css/once.css?v=20260729a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
@@ -42,7 +42,14 @@
     </svg>
     <span>MENÚ</span>
   </button>
-  
+
+  <button class="menu-stats-btn" onclick="showStatsModal()" title="Tus estadísticas" aria-label="Tus estadísticas">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>
+    </svg>
+    <span>STATS</span>
+  </button>
+
   <h1 class="mode-title">EN EL ONCE</h1>
   
   <div class="mode-buttons">
@@ -99,22 +106,6 @@
 <!-- ========================================== -->
 <div id="game" style="display:none;">
   
-  <!-- Navegación días anteriores (solo para modo diario) -->
-  <div id="daily-header" class="daily-header" style="display:none;">
-    <div class="daily-nav">
-      <!-- Este contenido inicial se sustituye por updateDailyHeader() en cuanto carga
-           el partido diario; se deja funcional (navigateDaily, no navigateDay) por si
-           llegara a verse antes de esa sustitución. -->
-      <button class="daily-nav-btn" id="prev-day-btn" onclick="navigateDaily(1)">← Anterior</button>
-      <div class="daily-edition">
-        <div class="daily-label">EDICIÓN</div>
-        <div class="daily-number" id="daily-number">1</div>
-        <div class="daily-past-badge" id="daily-past-badge" style="display:none;">ARCHIVO</div>
-      </div>
-      <button class="daily-nav-btn disabled" id="next-day-btn" disabled>Siguiente →</button>
-    </div>
-  </div>
-
   <div class="match-header">
     <button class="home-btn" id="home-btn" onclick="goBackToMenu()">← MENÚ</button>
     <div class="competition-name" id="competition"></div>
@@ -191,6 +182,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Navegación de ediciones del diario (fija abajo, solo modo diario) -->
+  <div id="day-nav" class="hidden">
+    <button id="nav-first" title="Edición más antigua" aria-label="Edición más antigua" onclick="navigateDailyFirst()">«</button>
+    <button id="nav-prev" title="Anterior" onclick="navigateDailyStep(1)">‹</button>
+    <div class="daily-edition">
+      <span class="daily-label">ONCE DIARIO</span>
+      <span class="daily-number" id="nav-label">HOY</span>
+    </div>
+    <button id="nav-next" title="Siguiente" onclick="navigateDailyStep(-1)">›</button>
+    <button id="nav-last" title="Hoy" aria-label="Hoy" onclick="navigateDaily(0)">»</button>
+  </div>
 </div>
 
 <!-- Modal de completado -->
@@ -219,7 +222,26 @@
            el JS lo localiza con querySelector('.completion-buttons .next-btn') -->
       <button class="next-btn" onclick="nextMatch()">Siguiente partido →</button>
       <button class="next-btn" id="once-share-btn" onclick="onceShare()">📤 Compartir</button>
+      <button class="give-up-btn" onclick="closeCompletionModal(); showStatsModal();">📊 Estadísticas</button>
       <button class="give-up-btn" onclick="closeCompletionModal()">Ver alineación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de estadísticas -->
+<div id="stats-modal" class="completion-modal">
+  <div class="completion-content">
+    <div class="completion-title">📊 TUS ESTADÍSTICAS</div>
+    <div class="completion-stats" id="stats-top"></div>
+    <div class="stats-dist-wrap">
+      <div class="stats-dist-title">Aciertos por partida (de 11)</div>
+      <div class="stats-dist" id="stats-dist"></div>
+    </div>
+    <div class="stats-empty" id="stats-empty" style="display:none;">
+      Aún no has jugado ningún Once Diario. ¡Juega el de hoy y vuelve!
+    </div>
+    <div class="completion-buttons">
+      <button class="give-up-btn" onclick="closeStatsModal()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -233,6 +255,6 @@
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260727a"></script>
 <script src="../js/shared.js"></script>
-<script src="./js/once-game.js?v=20260706a"></script>
+<script src="./js/once-game.js?v=20260729a"></script>
 </body>
 </html>

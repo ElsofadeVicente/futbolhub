@@ -31,6 +31,7 @@ function hideAllScreens() {
 
 function goBackToMenu() {
     hideAllScreens();
+    hideDailyNav();
     document.getElementById('once-menu').style.display = 'flex';
     // Reset estado
     currentMode = null;
@@ -52,6 +53,48 @@ function setTeamName(elId, name) {
     const len = (name || '').length;
     if (len > 22)      el.classList.add('team-name--xlong');
     else if (len > 14) el.classList.add('team-name--long');
+}
+
+// ── Escudos de equipo ───────────────────────
+// El campo homeBadge/awayBadge puede ser:
+//   · una URL (escudo real, p.ej. de Transfermarkt) → se pinta como <img>
+//   · un emoji (datos antiguos) → se pinta como texto
+// Cuando hay escudo real, marcamos .team-info con .has-crest para que el CSS
+// muestre el escudo grande y el nombre pequeño debajo. Si el escudo falla al
+// cargar, volvemos automáticamente al nombre grande de siempre (fallback).
+function isCrestUrl(v) {
+    return typeof v === 'string' && /^https?:\/\//i.test(v.trim());
+}
+
+function setTeamBadge(badgeElId, badgeVal, teamName) {
+    const badgeEl = document.getElementById(badgeElId);
+    if (!badgeEl) return;
+    const info = badgeEl.closest('.team-info');
+    badgeEl.innerHTML = '';
+    badgeEl.textContent = '';
+
+    // Escudo: primero el guardado en el propio partido (URL exacta); si no, el
+    // del mapa central escudos.json por nombre de equipo (cubre datos antiguos).
+    const crestUrl = isCrestUrl(badgeVal) ? badgeVal.trim() : getCrest(teamName);
+
+    if (crestUrl) {
+        if (info) info.classList.add('has-crest');
+        const img = document.createElement('img');
+        img.className = 'team-crest';
+        img.src = crestUrl;
+        img.alt = teamName || '';
+        img.loading = 'eager';
+        // Si el escudo no carga (y img-heal ya agotó sus reintentos), quitamos
+        // .has-crest para recuperar el nombre grande centrado.
+        img.addEventListener('error', () => {
+            if (info) info.classList.remove('has-crest');
+            badgeEl.innerHTML = '';
+        });
+        badgeEl.appendChild(img);
+    } else {
+        if (info) info.classList.remove('has-crest');
+        if (badgeVal) badgeEl.textContent = badgeVal;   // emoji de respaldo
+    }
 }
 
 // ── ONCE DIARIO ─────────────────────────────
@@ -92,6 +135,117 @@ function saveDailyResult(offsetDays, result) {
 function loadDailyResult(offsetDays) {
     const raw = localStorage.getItem(getDailyKey(offsetDays));
     return raw ? JSON.parse(raw) : null;
+}
+
+// =============================================
+// ESTADÍSTICAS DEL ONCE DIARIO
+// =============================================
+
+/**
+ * Recorre TODAS las partidas del Once Diario guardadas en localStorage
+ * (oncediario_AAAAMMDD) y calcula las estadísticas. Se usa el propio historial
+ * como fuente de verdad —no un contador aparte— para que las cifras cuadren
+ * siempre con lo que el jugador ve en el archivo de ediciones.
+ */
+function computeOnceStats() {
+    const days = [];               // [{ key, ymd, guessed }] ordenado por fecha
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('oncediario_')) continue;
+        const ymd = key.slice('oncediario_'.length);
+        if (!/^\d{8}$/.test(ymd)) continue;
+        let data;
+        try { data = JSON.parse(localStorage.getItem(key)); } catch { continue; }
+        if (!data) continue;
+        const guessed = Number(data.matchStats?.guessed ?? 0);
+        days.push({ ymd, guessed: Math.max(0, Math.min(11, guessed)) });
+    }
+    days.sort((a, b) => a.ymd.localeCompare(b.ymd));
+
+    // Distribución 0..11
+    const dist = new Array(12).fill(0);
+    days.forEach(d => { dist[d.guessed]++; });
+
+    const played = days.length;
+    const perfect = dist[11];
+    const totalGuessed = days.reduce((s, d) => s + d.guessed, 0);
+    const avg = played ? totalGuessed / played : 0;
+
+    // Rachas de días CONSECUTIVOS jugados (la racha del diario es de asistencia,
+    // no de acierto: se juega cada día). Se compara con el día natural anterior.
+    const toDate = ymd => new Date(+ymd.slice(0, 4), +ymd.slice(4, 6) - 1, +ymd.slice(6, 8));
+    let best = 0, run = 0, prev = null;
+    days.forEach(d => {
+        const cur = toDate(d.ymd);
+        if (prev && Math.round((cur - prev) / 86400000) === 1) run++;
+        else run = 1;
+        if (run > best) best = run;
+        prev = cur;
+    });
+
+    // Racha actual: solo cuenta si la última partida es de hoy o de ayer
+    let current = 0;
+    if (days.length) {
+        const todayYmd = getDailyKey(0).slice('oncediario_'.length);
+        const yestYmd  = getDailyKey(1).slice('oncediario_'.length);
+        const lastYmd  = days[days.length - 1].ymd;
+        if (lastYmd === todayYmd || lastYmd === yestYmd) {
+            current = 1;
+            for (let i = days.length - 1; i > 0; i--) {
+                const d1 = toDate(days[i].ymd), d0 = toDate(days[i - 1].ymd);
+                if (Math.round((d1 - d0) / 86400000) === 1) current++;
+                else break;
+            }
+        }
+    }
+
+    return { played, perfect, avg, dist, current, best, days };
+}
+
+function showStatsModal() {
+    const s = computeOnceStats();
+    const pctPerfect = s.played ? Math.round((s.perfect / s.played) * 100) : 0;
+
+    const tile = (value, label) =>
+        `<div class="completion-stat"><div class="completion-stat-value">${value}</div>` +
+        `<div class="completion-stat-label">${label}</div></div>`;
+
+    document.getElementById('stats-top').innerHTML =
+        tile(s.played, 'Jugadas') +
+        tile(s.avg ? s.avg.toFixed(1) : '0', 'Media /11') +
+        tile(s.current, 'Racha') +
+        tile(s.best, 'Mejor racha');
+
+    const emptyEl = document.getElementById('stats-empty');
+    const distWrap = document.querySelector('.stats-dist-wrap');
+    if (!s.played) {
+        emptyEl.style.display = 'block';
+        distWrap.style.display = 'none';
+    } else {
+        emptyEl.style.display = 'none';
+        distWrap.style.display = 'block';
+
+        // La barra más alta marca el 100% del ancho disponible
+        const max = Math.max(...s.dist);
+        const todayYmd = getDailyKey(0).slice('oncediario_'.length);
+        const todayEntry = s.days.find(d => d.ymd === todayYmd);
+        let rows = '';
+        for (let n = 11; n >= 0; n--) {
+            const count = s.dist[n];
+            const pct = max ? Math.max(count ? 8 : 0, (count / max) * 100) : 0;
+            const isCurrent = todayEntry && todayEntry.guessed === n && count > 0;
+            const cls = 'stats-dist-row' + (isCurrent ? ' sd-current' : '') + (count === 0 ? ' sd-zero' : '');
+            rows += `<div class="${cls}"><span class="sd-label">${n}</span>` +
+                    `<span class="sd-bar-wrap"><span class="sd-bar" style="display:inline-block;width:${pct}%">${count}</span></span></div>`;
+        }
+        document.getElementById('stats-dist').innerHTML = rows;
+    }
+
+    document.getElementById('stats-modal').classList.add('active');
+}
+
+function closeStatsModal() {
+    document.getElementById('stats-modal').classList.remove('active');
 }
 
 /**
@@ -304,6 +458,13 @@ function shuffleArray(array) {
  */
 function getDailyMatchForOffset(offsetDays) {
     const { day } = getSpainDate(offsetDays);
+    // Si las entradas traen el día explícito (_day, lo escribe la herramienta
+    // de curación admin/generar_once_diario.py), se busca por día real: así el
+    // calendario funciona aunque falte algún día intermedio. Si no (datos
+    // antiguos sin _day, p.ej. Septiembre), se cae al índice posicional de
+    // siempre: posición 0 = día 1, etc.
+    const byDay = dailyPool.find(m => m && Number(m._day) === day);
+    if (byDay) return byDay;
     const index = Math.min(day - 1, dailyPool.length - 1);
     return dailyPool[index];
 }
@@ -431,8 +592,8 @@ async function loadDailyMatch(offsetDays) {
     document.getElementById('date').textContent         = currentMatch.date;
     document.getElementById('playing-team').textContent = `ALINEACIÓN: ${currentMatch.playingTeam}`;
 
-    if (currentMatch.homeBadge) document.getElementById('home-badge').textContent = currentMatch.homeBadge;
-    if (currentMatch.awayBadge) document.getElementById('away-badge').textContent = currentMatch.awayBadge;
+    setTeamBadge('home-badge', currentMatch.homeBadge, currentMatch.homeTeam);
+    setTeamBadge('away-badge', currentMatch.awayBadge, currentMatch.awayTeam);
 
     document.getElementById('next-match-btn').style.display = 'none';
 
@@ -453,49 +614,54 @@ async function loadDailyMatch(offsetDays) {
 }
 
 function updateDailyHeader(offsetDays, prevAvailable = false) {
-    let headerEl = document.getElementById('daily-header');
-    if (!headerEl) {
-        headerEl = document.createElement('div');
-        headerEl.id        = 'daily-header';
-        headerEl.className = 'daily-header';
-        const pt = document.getElementById('playing-team');
-        pt.parentNode.insertBefore(headerEl, pt.nextSibling);
-    }
-    // El placeholder estático del HTML trae style="display:none"; si no se
-    // limpia aquí, la cabecera nunca se ve la primera vez que se juega al
-    // diario en la sesión (solo se veía si antes se había jugado un modo
-    // no-diario, que sí elimina el nodo entero).
-    headerEl.style.display = '';
+    const navEl = document.getElementById('day-nav');
+    if (!navEl) return;
+
+    document.body.classList.add('daily-nav-active');
+    navEl.classList.remove('hidden');
 
     const canGoBack    = prevAvailable;      // hay archivo para el día anterior
     const canGoForward = offsetDays > 0;     // no estamos ya en hoy
-    const isToday      = offsetDays === 0;
 
     const dateLabel = getDailyDateLabel(offsetDays);
-    const pastLabel = isToday ? '' : offsetDays === 1 ? 'AYER' : `HACE ${offsetDays} DÍAS`;
 
-    headerEl.innerHTML = `
-        <div class="daily-nav">
-            <button class="daily-nav-btn${canGoBack ? '' : ' disabled'}"
-                    ${canGoBack ? `onclick="navigateDaily(${offsetDays + 1})"` : 'disabled'}>
-                ← Anterior
-            </button>
-            <div class="daily-edition">
-                <span class="daily-label">ONCE DIARIO</span>
-                <span class="daily-number">${dateLabel}</span>
-                ${pastLabel ? `<span class="daily-past-badge">${pastLabel}</span>` : ''}
-            </div>
-            <button class="daily-nav-btn${canGoForward ? '' : ' disabled'}"
-                    ${canGoForward ? `onclick="navigateDaily(${offsetDays - 1})"` : 'disabled'}>
-                ${offsetDays === 1 ? 'Hoy →' : 'Siguiente →'}
-            </button>
-        </div>
-    `;
+    document.getElementById('nav-label').textContent = dateLabel;
+    const firstBtn = document.getElementById('nav-first');
+    const prevBtn  = document.getElementById('nav-prev');
+    const nextBtn  = document.getElementById('nav-next');
+    const lastBtn  = document.getElementById('nav-last');
+    firstBtn.disabled = !canGoBack;
+    prevBtn.disabled  = !canGoBack;
+    nextBtn.disabled  = !canGoForward;
+    lastBtn.disabled  = !canGoForward;
+}
+
+function hideDailyNav() {
+    document.body.classList.remove('daily-nav-active');
+    const navEl = document.getElementById('day-nav');
+    if (navEl) navEl.classList.add('hidden');
 }
 
 async function navigateDaily(newOffset) {
     if (newOffset < 0 || newOffset > 30) return;
     await loadDailyMatch(newOffset);
+}
+
+async function navigateDailyStep(delta) {
+    await navigateDaily(dailyOffset + delta);
+}
+
+// Salta a la edición más antigua disponible, comprobando hacia atrás desde
+// el límite de 30 días (los resultados se cachean en dailyAvailability, así
+// que repetir esta comprobación al navegar no supone refetchear nada).
+async function navigateDailyFirst() {
+    let target = dailyOffset;
+    for (let offset = dailyOffset + 1; offset <= 30; offset++) {
+        const available = await checkDayAvailable(offset);
+        if (available) target = offset;
+        else break;
+    }
+    if (target !== dailyOffset) await loadDailyMatch(target);
 }
 
 function renderFormationFromSaved(saved) {
@@ -565,13 +731,12 @@ function loadMatch() {
     document.getElementById('date').textContent         = currentMatch.date;
     document.getElementById('playing-team').textContent = `ALINEACIÓN: ${currentMatch.playingTeam}`;
 
-    if (currentMatch.homeBadge) document.getElementById('home-badge').textContent = currentMatch.homeBadge;
-    if (currentMatch.awayBadge) document.getElementById('away-badge').textContent = currentMatch.awayBadge;
+    setTeamBadge('home-badge', currentMatch.homeBadge, currentMatch.homeTeam);
+    setTeamBadge('away-badge', currentMatch.awayBadge, currentMatch.awayTeam);
 
     document.getElementById('next-match-btn').style.display = 'inline-block';
 
-    const dh = document.getElementById('daily-header');
-    if (dh) dh.remove();
+    hideDailyNav();
 
     renderFormation();
     updateRevealedCount();
@@ -727,6 +892,44 @@ function getKit(team){
   const n=(team||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
   for(const [keys,kit] of _kitRules){ if(keys.some(k=>n.includes(k))) return kit; }
   return _fallbackKit(n);
+}
+
+/* \u2500\u2500 ESCUDOS por equipo \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+   Mapa central en-el-once/escudos.json (nombre de equipo -> URL del escudo).
+   Permite mostrar escudos en TODOS los partidos \u2014incluso los antiguos que
+   guardan un emoji en homeBadge/awayBadge\u2014 sin reescribir sus JSON: el juego
+   busca aqu\u00ed el escudo por el nombre del equipo. Mismo emparejamiento que los
+   kits (nombre normalizado + includes de cada clave). El scraper del calendario
+   (admin/generar_once_diario.py) va rellenando este archivo solo. */
+let _crestRules = [];   // [[keys(may\u00fasculas), url], ...]
+
+function loadEscudosJson() {
+  fetch(sbStorageUrl('game-data', 'en-el-once/escudos.json'), { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data || !Array.isArray(data.teams)) return;
+      const rules = data.teams
+        .filter(t => Array.isArray(t.keys) && t.keys.length && typeof t.crest === 'string' && /^https?:\/\//i.test(t.crest))
+        .map(t => [t.keys.map(k => String(k).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()), t.crest.trim()]);
+      if (rules.length) {
+        _crestRules = rules;
+        // Si ya hay un partido en pantalla, refrescar sus escudos ahora que el
+        // mapa est\u00e1 disponible (evita que el primer partido se quede sin escudo).
+        if (currentMatch && document.getElementById('game') &&
+            document.getElementById('game').style.display !== 'none') {
+          setTeamBadge('home-badge', currentMatch.homeBadge, currentMatch.homeTeam);
+          setTeamBadge('away-badge', currentMatch.awayBadge, currentMatch.awayTeam);
+        }
+      }
+    })
+    .catch(() => { /* sin escudos.json: se usa el emoji/nombre de siempre */ });
+}
+
+function getCrest(team){
+  if (!_crestRules.length) return null;
+  const n = (team || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  for (const [keys, url] of _crestRules) { if (keys.some(k => n.includes(k))) return url; }
+  return null;
 }
 
 function _pattern(pat, main, second, K){
@@ -1393,15 +1596,127 @@ function onceShare() {
     const r = matchStats.revealed || 0;
     const rest = Math.max(0, 11 - g - f - r);
     const squares = '🟩'.repeat(g) + '🟨'.repeat(f) + '⬛'.repeat(r + rest);
-    const header = (currentMode === 'diario')
-        ? `En el Once FutbolHUB · ${getDailyDateLabel(dailyOffset)}`
-        : 'En el Once FutbolHUB';
+    const dateLabel = (currentMode === 'diario') ? ` · ${getDailyDateLabel(dailyOffset)}` : '';
+    const url = window.location.origin + window.location.pathname;
     const text =
-        `${header}\n` +
+        `En el Once ⚽${dateLabel}\n` +
         `${currentMatch.homeTeam} ${currentMatch.score} ${currentMatch.awayTeam}\n` +
-        `${g}/11 aciertos\n${squares}\n` +
-        window.location.origin + window.location.pathname;
-    onceDoShare(text, document.getElementById('once-share-btn'));
+        `🎯 ${g}/11\n${squares}\n${url}`;
+    onceShareWithImage(text);
+}
+
+/** Intenta compartir una IMAGEN con los escudos del partido; si no se puede
+ *  (navegador sin compartir-archivos, escudos no disponibles o canvas
+ *  "tainted" por CORS), cae al compartir de texto de siempre. */
+async function onceShareWithImage(text) {
+    const btn = document.getElementById('once-share-btn');
+    let file = null;
+    try { file = await buildOnceShareImage(); } catch (e) { file = null; }
+
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], text });
+            return;
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;   // el usuario canceló
+        }
+    }
+    onceDoShare(text, btn);
+}
+
+function _crestFor(team, badge) {
+    return isCrestUrl(badge) ? badge.trim() : getCrest(team);
+}
+
+function _loadCrossImg(src) {
+    return new Promise((resolve, reject) => {
+        if (!src) { reject(new Error('sin escudo')); return; }
+        const im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = () => resolve(im);
+        im.onerror = () => reject(new Error('no carga'));
+        im.src = src;
+    });
+}
+
+/** Dibuja una tarjeta 1080×566 (ratio social) con escudos, equipos, resultado
+ *  y marca. Devuelve un File PNG o lanza si algo falla (para caer a texto). */
+async function buildOnceShareImage() {
+    if (!currentMatch) throw new Error('sin partido');
+    const g = matchStats.guessed || 0, f = matchStats.failed || 0, r = matchStats.revealed || 0;
+    const rest = Math.max(0, 11 - g - f - r);
+
+    const homeImg = await _loadCrossImg(_crestFor(currentMatch.homeTeam, currentMatch.homeBadge));
+    const awayImg = await _loadCrossImg(_crestFor(currentMatch.awayTeam, currentMatch.awayBadge));
+
+    const W = 1080, H = 566;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const x = c.getContext('2d');
+
+    // Fondo
+    const bg = x.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#171a21');
+    bg.addColorStop(1, '#0d0f14');
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    x.strokeStyle = 'rgba(200,168,75,0.55)'; x.lineWidth = 6;
+    x.strokeRect(3, 3, W - 6, H - 6);
+
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+
+    // Cabecera
+    x.fillStyle = '#c8a84b';
+    x.font = '700 40px Anton, Impact, sans-serif';
+    x.fillText('EN EL ONCE', W / 2, 62);
+    if (currentMode === 'diario') {
+        x.fillStyle = 'rgba(255,255,255,0.6)';
+        x.font = '600 24px Rajdhani, Arial, sans-serif';
+        x.fillText(getDailyDateLabel(dailyOffset).toUpperCase(), W / 2, 104);
+    }
+
+    // Escudos + equipos + marcador
+    const cy = 240, crest = 150;
+    const drawCrest = (img, cx) => {
+        const ratio = img.width && img.height ? img.width / img.height : 1;
+        let w = crest, h = crest;
+        if (ratio > 1) h = crest / ratio; else w = crest * ratio;
+        x.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+    };
+    drawCrest(homeImg, 250);
+    drawCrest(awayImg, 830);
+
+    x.fillStyle = '#fff';
+    x.font = '700 34px Anton, Impact, sans-serif';
+    x.fillText(currentMatch.score || '', W / 2, cy);
+
+    x.font = '700 26px Rajdhani, Arial, sans-serif';
+    const clip = (s) => (s || '').length > 20 ? s.slice(0, 19) + '…' : (s || '');
+    x.fillText(clip(currentMatch.homeTeam).toUpperCase(), 250, cy + crest / 2 + 30);
+    x.fillText(clip(currentMatch.awayTeam).toUpperCase(), 830, cy + crest / 2 + 30);
+
+    // Resultado 11 cuadros
+    const cols = ['#3ecf6b', '#e8c341', '#3a3f4b'];
+    const seq = [].concat(Array(g).fill(0), Array(f).fill(1), Array(r + rest).fill(2));
+    const sq = 54, gap = 8, totalW = 11 * sq + 10 * gap, sx = (W - totalW) / 2, sy = 400;
+    for (let i = 0; i < 11; i++) {
+        x.fillStyle = cols[seq[i] ?? 2];
+        const px = sx + i * (sq + gap);
+        x.beginPath();
+        if (x.roundRect) x.roundRect(px, sy, sq, sq, 10); else x.rect(px, sy, sq, sq);
+        x.fill();
+    }
+
+    // Marcador de aciertos + marca
+    x.fillStyle = '#fff';
+    x.font = '700 32px Rajdhani, Arial, sans-serif';
+    x.fillText(`🎯 ${g}/11`, W / 2, 512);
+    x.fillStyle = 'rgba(200,168,75,0.9)';
+    x.font = '600 22px Rajdhani, Arial, sans-serif';
+    x.fillText('futbolhub.es', W / 2, 545);
+
+    const blob = await new Promise((res, rej) =>
+        c.toBlob(b => b ? res(b) : rej(new Error('toBlob null')), 'image/png'));
+    return new File([blob], 'en-el-once.png', { type: 'image/png' });
 }
 
 function onceDoShare(text, btn) {
@@ -1557,8 +1872,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── INIT AL CARGAR ──────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Cargar kits editables desde Supabase en background
+    // Cargar kits y escudos editables desde Supabase en background
     loadKitsJson();
+    loadEscudosJson();
 
     // Mostrar menú del once por defecto
     hideAllScreens();
