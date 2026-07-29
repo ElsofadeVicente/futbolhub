@@ -780,8 +780,19 @@ let pendingLigaClimb = null;   // { before, after } | null
 async function submitLigaDaily(total) {
   if (!window.FHLiga || !ligaLoggedIn()) return;
   try {
+    // No mandamos el total: mandamos las PISTAS (qué estadio tocó cada ronda
+    // y dónde pusimos el pin) y el servidor recalcula la puntuación con las
+    // coords reales. Así el número no se puede falsear desde la consola.
+    const pistas = state.rondas.map((est, i) => {
+      const g = state.guesses[i] || {};
+      return { id: est.id, lat: g.lat, lng: g.lng };
+    });
+    if (pistas.length !== TOTAL_RONDAS || pistas.some(p => !p.id || p.lat == null || p.lng == null)) {
+      console.warn('[liga] Partida incompleta, no se sube a la liga.');
+      return;
+    }
     const before = await FHLiga.panel(JUEGO_LIGA);
-    await FHLiga.enviarDiario(JUEGO_LIGA, total);
+    await FHLiga.enviarDiario(JUEGO_LIGA, { pistas });
     const after = await FHLiga.panel(JUEGO_LIGA);
     if (after && after.auth !== false) {
       pendingLigaClimb = { before, after };

@@ -21,7 +21,11 @@
    API (window.FHLiga):
      TRAMOS                → nombres/insignias de los 8 tramos (0..7).
      tramoInfo(n)          → { nombre, corto, emoji } del tramo n.
-     enviarDiario(juego,t) → sube el total del día. Devuelve {tramo,...}|null.
+     enviarDiario(juego,d) → sube el resultado del día. El servidor RECALCULA
+                             la puntuación: pásale d = { pistas: [{id,lat,lng}
+                             × 5] } (lo que jugaste: estadio + dónde pusiste el
+                             pin) y él saca el total con las coords reales.
+                             Devuelve {tramo,...}|null.
      panel(juego)          → clasificación de tu división. {auth:false} si no
                              hay sesión. null si falla.
      top100(juego)         → Top 100 mensual de Mundial. null si falla.
@@ -56,12 +60,18 @@
         return TRAMOS[i];
     }
 
-    async function enviarDiario(juego, total) {
+    async function enviarDiario(juego, datos) {
         try {
-            const { data, error } = await client.rpc('liga_enviar_diario', {
-                p_juego: juego,
-                p_puntos: Math.round(Number(total) || 0),
-            });
+            // El servidor recalcula la puntuación desde las pistas: nunca
+            // mandamos el total (ver supabase/setup_liga_recompute.sql).
+            const params = { p_juego: juego };
+            if (datos && Array.isArray(datos.pistas)) {
+                params.p_pistas = datos.pistas;
+            } else {
+                console.warn('[FHLiga] enviarDiario sin pistas: no se sube nada.');
+                return null;
+            }
+            const { data, error } = await client.rpc('liga_enviar_diario', params);
             if (error) { console.warn('[FHLiga] enviarDiario:', error.message); return null; }
             return data;
         } catch (e) {
