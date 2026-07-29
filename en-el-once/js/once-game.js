@@ -210,10 +210,14 @@ function showStatsModal() {
         `<div class="completion-stat"><div class="completion-stat-value">${value}</div>` +
         `<div class="completion-stat-label">${label}</div></div>`;
 
+    // "Racha de días" para no confundirla con la "Racha de aciertos" (jugadores
+    // adivinados seguidos) que se muestra en el modal de fin de partida — son
+    // dos métricas distintas y podían leerse como contradictorias con la misma
+    // etiqueta "Racha".
     document.getElementById('stats-top').innerHTML =
         tile(s.played, 'Jugadas') +
         tile(s.avg ? s.avg.toFixed(1) : '0', 'Media /11') +
-        tile(s.current, 'Racha') +
+        tile(s.current, 'Racha de días') +
         tile(s.best, 'Mejor racha');
 
     const emptyEl = document.getElementById('stats-empty');
@@ -1549,7 +1553,7 @@ function showCompletionModal() {
 
     const streakEl = document.getElementById('comp-streak');
     if (stats.currentStreak >= 3 && (currentMode !== 'diario' || dailyOffset === 0)) {
-        streakEl.textContent = `🔥 Racha actual: ${stats.currentStreak}`; streakEl.style.display = 'block';
+        streakEl.textContent = `🔥 Racha de aciertos: ${stats.currentStreak}`; streakEl.style.display = 'block';
     } else { streakEl.style.display = 'none'; }
 
     document.querySelector('.completion-title').textContent =

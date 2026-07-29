@@ -97,15 +97,14 @@ body {
 .ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
 
 @media (min-width: 760px) {
-    .once-menu-screen, .mode-selection, #game { margin-left: 72px; margin-right: 72px; }
+    .once-menu-screen, #game { margin-left: 72px; margin-right: 72px; }
 }
 @media (max-width: 759px) {
     .ad-col { display: none; }
 }
 
 /* ===================== MENÚ PRINCIPAL ===================== */
-.once-menu-screen,
-.mode-selection {
+.once-menu-screen {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -353,7 +352,7 @@ body {
     transform: none;
 }
 
-/* .home-btn es position:fixed (ignora el margin-push de #game/.mode-selection),
+/* .home-btn es position:fixed (ignora el margin-push de #game),
    hay que desplazarlo a mano para que no quede debajo de la columna de anuncios.
    Esta regla debe ir DESPUÉS de la definición base de .home-btn: al tener la
    misma especificidad, si fuera anterior en el archivo el navegador aplicaría
@@ -593,10 +592,7 @@ body {
     min-height: 45px;
 }
 
-.line,
-.line--cdm,
-.line--cam,
-.line--mid {
+.line {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -696,15 +692,6 @@ body {
 }
 .revealed-name--long { font-size: 0.55rem; letter-spacing: 0; }
 .revealed-name.failed-reveal { color: #c0392b; }
-
-.attempts-counter {
-    background: rgba(0,0,0,0.35);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.68rem;
-    font-weight: bold;
-}
 
 /* ═══════════════════════════════════════════
    FIN BLOQUE NO TOCAR (campo/camisetas)
@@ -914,11 +901,6 @@ body {
     transition: all 0.3s;
     font-family: 'Anton', sans-serif;
     color: var(--np-ink);
-}
-.letter-cell.space-cell {
-    border: none;
-    background: transparent;
-    width: 18px;
 }
 .wordle-space { width: 14px; display: inline-block; }
 .letter-cell.special-char-cell {
@@ -1166,7 +1148,7 @@ body {
     .formation { gap: 0; height: 380px; }
     .line--spacer { min-height: 60px; }
     .line--spacer-half { min-height: 30px; }
-    .line, .line--cdm, .line--cam, .line--mid {
+    .line {
         flex-wrap: nowrap;
         gap: 6px;
         justify-content: center;
@@ -1190,7 +1172,6 @@ body {
     .revealed-name { font-size: 0.6rem; }
 
     .letter-cell { width: 40px; height: 46px; font-size: 1.4rem; }
-    .letter-cell.space-cell { width: 14px; }
 
     .key { min-width: 28px; height: 44px; font-size: 0.88rem; }
     .key.wide { min-width: 50px; }
@@ -1206,7 +1187,6 @@ body {
 
 @media (max-width: 400px) {
     .letter-cell { width: 35px; height: 40px; font-size: 1.2rem; }
-    .letter-cell.space-cell { width: 11px; }
     .key { min-width: 25px; height: 40px; font-size: 0.8rem; }
     .jersey { width: 46px; height: 52px; }
     .player-card { flex: 0 1 calc((100vw - 22px) / 5); }
