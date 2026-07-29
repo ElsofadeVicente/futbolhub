@@ -251,7 +251,11 @@
   <div>
     <div class="panel">
       <h2>Cargar datos existentes</h2>
-      <label>Pega aquí el contenido de <code>kits.json</code> (o cualquier JSON con la misma forma) y pulsa "Cargar JSON"</label>
+
+      <label>Opción A — Cargar el archivo <code>kits.json</code> desde el disco (funciona siempre, incluso abriendo este editor con doble clic)</label>
+      <input type="file" id="kit-file" accept=".json,application/json">
+
+      <label>Opción B — Pega aquí el contenido de <code>kits.json</code> (o cualquier JSON con la misma forma) y pulsa "Cargar JSON"</label>
       <textarea id="json-input" rows="8" placeholder='{"gk": {...}, "rules": [{"keys": ["REAL MADRID"], "kit": {...}}]}'></textarea>
       <div class="btn-row">
         <button class="btn" id="btn-load-json">📥 Cargar JSON en el editor</button>
@@ -503,36 +507,88 @@ function loadRuleIntoForm(idx) {
 
 $('filter-teams').addEventListener('input', renderTeamsGrid);
 
+/* ── Aplicar un objeto de datos (gk + rules) al editor ── */
+function applyKitsData(data, sourceLabel) {
+  if (!data || typeof data !== 'object') {
+    setStatus('load-status', '✗ El JSON no tiene la forma esperada (falta el objeto raíz).', 'err');
+    return false;
+  }
+  if (data.gk && data.gk.p) state.gk = data.gk;
+  if (Array.isArray(data.rules)) {
+    state.rules = data.rules
+      .filter(r => Array.isArray(r.keys) && r.keys.length && r.kit && r.kit.p)
+      .map(r => ({ keys: r.keys.map(k => String(k).toUpperCase()), kit: r.kit }));
+  } else {
+    setStatus('load-status', '✗ El JSON no tiene un array "rules".', 'err');
+    return false;
+  }
+  editingIndex = null;
+  renderTeamsGrid();
+  syncJsonOutput();
+  setStatus('load-status', `✓ Cargado${sourceLabel ? ' desde ' + sourceLabel : ''}: ${state.rules.length} equipos + kit de portero.`, 'ok');
+  return true;
+}
+
 /* ── Cargar JSON pegado ── */
 $('btn-load-json').addEventListener('click', () => {
   const raw = $('json-input').value.trim();
-  if (!raw) { setStatus('load-status', 'Pega primero el JSON en el cuadro de arriba.', 'err'); return; }
+  if (!raw) { setStatus('load-status', 'Pega primero el JSON en el cuadro de arriba (o usa el selector de archivo de la Opción A).', 'err'); return; }
   try {
-    const data = JSON.parse(raw);
-    if (data.gk && data.gk.p) state.gk = data.gk;
-    if (Array.isArray(data.rules)) {
-      state.rules = data.rules
-        .filter(r => Array.isArray(r.keys) && r.keys.length && r.kit && r.kit.p)
-        .map(r => ({ keys: r.keys.map(k => String(k).toUpperCase()), kit: r.kit }));
-    }
-    editingIndex = null;
-    renderTeamsGrid();
-    syncJsonOutput();
-    setStatus('load-status', `✓ Cargado: ${state.rules.length} equipos + kit de portero.`, 'ok');
+    applyKitsData(JSON.parse(raw), null);
   } catch (e) {
     setStatus('load-status', '✗ JSON inválido: ' + e.message, 'err');
   }
 });
 
-$('btn-fetch-current').addEventListener('click', () => {
-  fetch('../en-el-once/data/kits.json')
-    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
-    .then(data => {
+/* ── Opción A: leer kits.json directamente del disco (siempre funciona) ── */
+$('kit-file').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
       $('json-input').value = JSON.stringify(data, null, 2);
-      setStatus('load-status', '✓ kits.json actual cargado en el cuadro de pegado — pulsa "Cargar JSON en el editor" para aplicarlo.', 'ok');
+      applyKitsData(data, `“${file.name}”`);
+    } catch (err) {
+      setStatus('load-status', '✗ Ese archivo no es un JSON válido: ' + err.message, 'err');
+    }
+  };
+  reader.onerror = () => setStatus('load-status', '✗ No se pudo leer el archivo.', 'err');
+  reader.readAsText(file);
+});
+
+/* Rutas candidatas para localizar kits.json cuando el editor se sirve por http.
+   admin/jersey-editor.html está junto a en-el-once/, pero el editor puede
+   servirse desde la raíz del proyecto o desde /admin, así que probamos varias. */
+const KITS_PATHS = [
+  '../en-el-once/data/kits.json',
+  './en-el-once/data/kits.json',
+  '/en-el-once/data/kits.json',
+  'en-el-once/data/kits.json',
+];
+
+function fetchKitsAny() {
+  let i = 0;
+  const tryNext = () => {
+    if (i >= KITS_PATHS.length) return Promise.reject(new Error('no encontrado'));
+    const path = KITS_PATHS[i++];
+    return fetch(path, { cache: 'no-cache' })
+      .then(r => r.ok ? r.json().then(j => ({ data: j, path })) : Promise.reject())
+      .catch(tryNext);
+  };
+  return tryNext();
+}
+
+$('btn-fetch-current').addEventListener('click', () => {
+  setStatus('load-status', 'Buscando kits.json…', '');
+  fetchKitsAny()
+    .then(({ data, path }) => {
+      $('json-input').value = JSON.stringify(data, null, 2);
+      applyKitsData(data, path);
     })
-    .catch(e => {
-      setStatus('load-status', '✗ No se pudo cargar automáticamente (' + e.message + '). Si estás abriendo este archivo directamente (file://), copia y pega el contenido de en-el-once/data/kits.json a mano en el cuadro de arriba.', 'err');
+    .catch(() => {
+      setStatus('load-status', '✗ No se pudo cargar automáticamente. Estás abriendo el editor con doble clic (file://) y el navegador bloquea la lectura de archivos locales. Usa la Opción A de arriba para elegir en-el-once/data/kits.json desde el disco.', 'err');
     });
 });
 
@@ -569,21 +625,16 @@ updatePreview();
 renderTeamsGrid();
 syncJsonOutput();
 /* Intentar precargar el kits.json actual del proyecto automáticamente si es posible
-   (funciona si este archivo se sirve por http/https; en file:// fallará en silencio) */
-fetch('../en-el-once/data/kits.json')
-  .then(r => r.ok ? r.json() : Promise.reject())
-  .then(data => {
-    if (data.gk && data.gk.p) state.gk = data.gk;
-    if (Array.isArray(data.rules)) {
-      state.rules = data.rules
-        .filter(r => Array.isArray(r.keys) && r.keys.length && r.kit && r.kit.p)
-        .map(r => ({ keys: r.keys.map(k => String(k).toUpperCase()), kit: r.kit }));
-    }
-    renderTeamsGrid();
-    syncJsonOutput();
-    setStatus('load-status', `✓ kits.json actual cargado automáticamente (${state.rules.length} equipos).`, 'ok');
+   (funciona si este archivo se sirve por http/https; en file:// fallará en silencio
+   y el admin usará la Opción A —selector de archivo— o pegará el JSON a mano) */
+fetchKitsAny()
+  .then(({ data, path }) => {
+    $('json-input').value = JSON.stringify(data, null, 2);
+    applyKitsData(data, path + ' (automático)');
   })
-  .catch(() => { /* sin servidor local: el admin puede pegar el JSON a mano */ });
+  .catch(() => {
+    setStatus('load-status', 'ℹ️ No se pudo autocargar kits.json (probablemente estás en file://). Usa la Opción A de arriba para elegirlo desde el disco.', '');
+  });
 </script>
 </body>
 </html>

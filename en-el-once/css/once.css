@@ -131,6 +131,21 @@ body {
 }
 .menu-back-btn:hover { background: var(--np-ink); color: var(--np-paper); transform: none; }
 
+/* Botón de estadísticas — gemelo del de volver, pero en la esquina derecha */
+.menu-stats-btn {
+    position: absolute;
+    top: 18px; right: 18px;
+    z-index: 10;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
+    color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
+    border: 1px solid var(--np-ink); background: var(--np-paper2);
+    border-radius: 0; box-shadow: 2px 2px 0 var(--np-ink);
+    transition: background 0.12s, color 0.12s;
+    cursor: pointer;
+}
+.menu-stats-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+
 .mode-title {
     font-family: 'Anton', sans-serif;
     font-size: clamp(3.2rem, 9vw, 5.5rem);
@@ -267,61 +282,38 @@ body {
     color: var(--np-ink);
 }
 
-/* ===================== DAILY HEADER ===================== */
-.daily-header {
-    background: var(--np-paper2);
-    border-bottom: 2px solid var(--np-ink);
-    padding: 10px 20px;
+/* ===================== DAILY NAV (al final del contenido) ===================== */
+#day-nav {
+    background: var(--np-ink); color: var(--np-paper);
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    padding: 7px 12px; height: 46px;
 }
-.daily-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
+#day-nav.hidden { display: none; }
+#day-nav button {
+    background: transparent; color: var(--np-paper);
+    border: 1px solid rgba(244,234,210,.3); border-radius: 0;
+    font-family: 'DM Mono', monospace; font-size: 1rem; line-height: 1;
+    padding: 5px 11px; cursor: pointer; min-width: 34px; transition: background .15s;
 }
-.daily-nav-btn {
-    background: var(--np-paper);
-    border: 1px solid var(--np-ink);
-    color: var(--np-ink);
-    padding: 6px 14px;
-    border-radius: 0;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    box-shadow: 2px 2px 0 var(--np-ink);
-    transition: background 0.2s, color 0.2s;
-}
-.daily-nav-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+#day-nav button:hover:not(:disabled) { background: rgba(244,234,210,.16); }
+#day-nav button:disabled { opacity: .28; cursor: not-allowed; }
 .daily-edition { text-align: center; }
 .daily-label {
     font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.3em;
-    color: var(--text-muted);
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: rgba(244,234,210,.65);
     text-transform: uppercase;
+    display: block;
 }
 .daily-number {
     font-family: 'Anton', sans-serif;
-    font-size: 1.3rem;
-    color: var(--np-ink);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-.daily-past-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    background: var(--np-ink);
+    font-size: 1rem;
     color: var(--np-paper);
-    border: 1px solid var(--np-ink);
-    padding: 1px 8px;
-    border-radius: 0;
-    font-weight: 700;
     letter-spacing: 1.5px;
+    text-transform: uppercase;
+    min-width: 96px;
     display: inline-block;
-    margin-top: 2px;
 }
 
 /* ===================== MATCH HEADER ===================== */
@@ -402,7 +394,43 @@ body {
 .team-info:first-child { align-items: flex-end; padding-right: 24px; }
 .team-info:last-child  { align-items: flex-start; padding-left: 24px; }
 
+/* Sin escudo real (datos con emoji/antiguos): se mantiene oculto y manda el
+   nombre grande de siempre. */
 .team-badge { display: none; }
+
+/* Con escudo real (.has-crest lo pone el JS cuando homeBadge/awayBadge es una
+   URL): el escudo pasa a ser el protagonista y el nombre queda pequeño y
+   CENTRADO justo debajo del escudo (no pegado al marcador). */
+.team-info.has-crest {
+    align-items: center;   /* centra escudo y nombre entre sí, no contra el score */
+    text-align: center;
+}
+.team-info.has-crest:first-child,
+.team-info.has-crest:last-child {
+    align-items: center;
+}
+.team-info.has-crest .team-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+.team-info.has-crest .team-crest {
+    display: block;
+    width: clamp(38px, 6.4vw, 58px);
+    height: clamp(38px, 6.4vw, 58px);
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
+}
+.team-info.has-crest .team-name {
+    font-family: 'Rajdhani', 'Anton', sans-serif;
+    font-size: clamp(0.62rem, 1.35vw, 0.85rem) !important;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    opacity: 0.82;
+    max-width: 100%;
+}
 
 .team-name {
     font-family: 'Anton', sans-serif;
@@ -1042,6 +1070,46 @@ body {
     color: var(--text-muted);
     margin-bottom: 20px;
 }
+/* ── ESTADÍSTICAS: distribución de aciertos ── */
+.stats-dist-wrap { margin: 4px 0 20px; text-align: left; }
+.stats-dist-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    text-align: center;
+}
+.stats-dist { display: flex; flex-direction: column; gap: 3px; }
+.stats-dist-row {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace; font-size: 0.66rem;
+}
+.stats-dist-row .sd-label {
+    width: 1.4rem; text-align: right; color: var(--text-muted); flex: none;
+}
+.stats-dist-row .sd-bar-wrap { flex: 1; min-width: 0; }
+.stats-dist-row .sd-bar {
+    background: var(--np-ink);
+    color: var(--np-paper);
+    padding: 1px 5px;
+    min-width: 1.4rem;
+    text-align: right;
+    font-weight: 700;
+    transition: width 0.4s ease;
+}
+/* La fila del último resultado se resalta en verde */
+.stats-dist-row.sd-current .sd-bar { background: var(--correct); color: #08210f; }
+.stats-dist-row.sd-zero .sd-bar { background: rgba(15,18,14,0.18); color: var(--text-muted); }
+
+.stats-empty {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
 .completion-buttons {
     display: flex;
     flex-direction: column;
@@ -1082,6 +1150,8 @@ body {
 @media (max-width: 600px) {
     .menu-back-btn { top: 12px; left: 12px; padding: 6px 12px; font-size: 0.85rem; }
     .menu-back-btn span { display: none; }
+    .menu-stats-btn { top: 12px; right: 12px; padding: 6px 12px; font-size: 0.85rem; }
+    .menu-stats-btn span { display: none; }
     .mode-title { font-size: 2.6rem; letter-spacing: 6px; }
     .mode-btn { padding: 14px 16px; }
     .mode-btn-title { font-size: 1.35rem; }
@@ -1129,6 +1199,10 @@ body {
     .modal-content { padding: 20px 14px; }
     .stats-bar { justify-content: center; }
     .btn-group { justify-content: center; width: 100%; }
+
+    .next-btn, .give-up-btn { padding: 8px 14px; font-size: 0.72rem; }
+    .reveal-btn-modal { padding: 5px 10px; font-size: 0.6rem; }
+    .back-btn { padding: 5px; }
 }
 
 @media (max-width: 400px) {
