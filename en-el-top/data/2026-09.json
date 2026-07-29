@@ -1,0 +1,558 @@
+{
+  "month": "2026-09",
+  "days": {
+    "2026-09-01": {
+      "id": "equipos-que-mas-jugadores-han-aportado-al-mundial-2026-mqdlwfza",
+      "q": "Equipos que mas jugadores han aportado al Mundial 2026",
+      "unit": "jugadores",
+      "hint": "nat",
+      "type": "team",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Manchester City",
+          "nat": "GB-ENG",
+          "id": null,
+          "v": 19
+        },
+        {
+          "r": 2,
+          "n": "Bayern Munich",
+          "nat": "DE",
+          "id": null,
+          "v": 17
+        },
+        {
+          "r": 3,
+          "n": "Arsenal FC",
+          "nat": "GB-ENG",
+          "id": null,
+          "v": 16
+        },
+        {
+          "r": 4,
+          "n": "Paris Saint-Germain",
+          "nat": "FR",
+          "id": null,
+          "v": 16
+        },
+        {
+          "r": 5,
+          "n": "FC Barcelona",
+          "nat": "ES",
+          "id": null,
+          "v": 15
+        },
+        {
+          "r": 6,
+          "n": "Al-Hilal SFC",
+          "nat": "SA",
+          "id": null,
+          "v": 12
+        },
+        {
+          "r": 7,
+          "n": "Atlético de Madrid",
+          "nat": "ES",
+          "id": null,
+          "v": 12
+        },
+        {
+          "r": 8,
+          "n": "Crystal Palace",
+          "nat": "GB-ENG",
+          "id": null,
+          "v": 12
+        },
+        {
+          "r": 9,
+          "n": "Manchester United",
+          "nat": "GB-ENG",
+          "id": null,
+          "v": 12
+        },
+        {
+          "r": 10,
+          "n": "Borussia Dortmund",
+          "nat": "DE",
+          "id": null,
+          "v": 11
+        }
+      ]
+    },
+    "2026-09-02": {
+      "id": "jugadores-con-mas-partidos-junto-a-xavi-ms5u7ceu",
+      "q": "Jugadores con mas partidos junto a Xavi",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Carles Puyol",
+          "nat": "ES",
+          "id": "7594",
+          "v": 621
+        },
+        {
+          "r": 2,
+          "n": "Andrés Iniesta",
+          "nat": "ES",
+          "id": "7600",
+          "v": 486
+        },
+        {
+          "r": 3,
+          "n": "Víctor Valdés",
+          "nat": "ES",
+          "id": "7589",
+          "v": 476
+        },
+        {
+          "r": 4,
+          "n": "Lionel Messi",
+          "nat": "AR",
+          "id": "28003",
+          "v": 399
+        },
+        {
+          "r": 5,
+          "n": "Sergio Busquets",
+          "nat": "ES",
+          "id": "65230",
+          "v": 314
+        },
+        {
+          "r": 6,
+          "n": "Gerard Piqué",
+          "nat": "ES",
+          "id": "18944",
+          "v": 312
+        },
+        {
+          "r": 7,
+          "n": "Dani Alves",
+          "nat": "BR",
+          "id": "15951",
+          "v": 290
+        },
+        {
+          "r": 8,
+          "n": "Pedro",
+          "nat": "ES",
+          "id": "65278",
+          "v": 274
+        },
+        {
+          "r": 9,
+          "n": "Phillip Cocu",
+          "nat": "NL",
+          "id": "5198",
+          "v": 204
+        },
+        {
+          "r": 10,
+          "n": "Rafa Márquez",
+          "nat": "MX",
+          "id": "2904",
+          "v": 204
+        }
+      ]
+    },
+    "2026-09-03": {
+      "id": "maximos-goleadores-de-premier-league-2016-17-ms5u82y5",
+      "q": "Maximos goleadores de Premier League 2016/17",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Harry Kane",
+          "nat": "GB-ENG",
+          "id": "132098",
+          "v": 29
+        },
+        {
+          "r": 2,
+          "n": "Romelu Lukaku",
+          "nat": "BE",
+          "id": "96341",
+          "v": 25
+        },
+        {
+          "r": 3,
+          "n": "Alexis Sánchez",
+          "nat": "CL",
+          "id": "40433",
+          "v": 24
+        },
+        {
+          "r": 4,
+          "n": "Sergio Agüero",
+          "nat": "AR",
+          "id": "26399",
+          "v": 20
+        },
+        {
+          "r": 5,
+          "n": "Diego Costa",
+          "nat": "ES",
+          "id": "44779",
+          "v": 20
+        },
+        {
+          "r": 6,
+          "n": "Dele Alli",
+          "nat": "GB-ENG",
+          "id": "207929",
+          "v": 18
+        },
+        {
+          "r": 7,
+          "n": "Zlatan Ibrahimović",
+          "nat": "SE",
+          "id": "3455",
+          "v": 17
+        },
+        {
+          "r": 8,
+          "n": "Joshua King",
+          "nat": "NO",
+          "id": "91059",
+          "v": 16
+        },
+        {
+          "r": 9,
+          "n": "Eden Hazard",
+          "nat": "BE",
+          "id": "50202",
+          "v": 16
+        },
+        {
+          "r": 10,
+          "n": "Fernando Llorente",
+          "nat": "ES",
+          "id": "35564",
+          "v": 15
+        }
+      ]
+    },
+    "2026-09-04": {
+      "id": "jugadores-mas-utilizados-por-pep-guardiola-en-manchester-cit-ms5u8vee",
+      "q": "Jugadores mas utilizados por Pep Guardiola en Manchester City",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Bernardo Silva",
+          "nat": "PT",
+          "id": "241641",
+          "v": 460
+        },
+        {
+          "r": 2,
+          "n": "Kevin De Bruyne",
+          "nat": "BE",
+          "id": "88755",
+          "v": 381
+        },
+        {
+          "r": 3,
+          "n": "Ederson",
+          "nat": "BR",
+          "id": "238223",
+          "v": 372
+        },
+        {
+          "r": 4,
+          "n": "Phil Foden",
+          "nat": "GB-ENG",
+          "id": "406635",
+          "v": 369
+        },
+        {
+          "r": 5,
+          "n": "İlkay Gündoğan",
+          "nat": "DE",
+          "id": "53622",
+          "v": 358
+        },
+        {
+          "r": 6,
+          "n": "Kyle Walker",
+          "nat": "GB-ENG",
+          "id": "95424",
+          "v": 319
+        },
+        {
+          "r": 7,
+          "n": "Rodri",
+          "nat": "ES",
+          "id": "357565",
+          "v": 298
+        },
+        {
+          "r": 8,
+          "n": "John Stones",
+          "nat": "GB-ENG",
+          "id": "186590",
+          "v": 295
+        },
+        {
+          "r": 9,
+          "n": "Raheem Sterling",
+          "nat": "GB-ENG",
+          "id": "134425",
+          "v": 292
+        },
+        {
+          "r": 10,
+          "n": "Rúben Dias",
+          "nat": "PT",
+          "id": "258004",
+          "v": 255
+        }
+      ]
+    },
+    "2026-09-05": {
+      "id": "maximos-goleadores-de-la-historia-de-la-seleccion-espanola-ms5uaolo",
+      "q": "Maximos goleadores de la historia de la Selección Española",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "David Villa",
+          "nat": "ES",
+          "id": "7980",
+          "v": 59
+        },
+        {
+          "r": 2,
+          "n": "Raúl",
+          "nat": "ES",
+          "id": "7349",
+          "v": 44
+        },
+        {
+          "r": 3,
+          "n": "Fernando Torres",
+          "nat": "ES",
+          "id": "7767",
+          "v": 38
+        },
+        {
+          "r": 4,
+          "n": "Álvaro Morata",
+          "nat": "ES",
+          "id": "128223",
+          "v": 37
+        },
+        {
+          "r": 5,
+          "n": "David Silva",
+          "nat": "ES",
+          "id": "35518",
+          "v": 35
+        },
+        {
+          "r": 6,
+          "n": "Mikel Oyarzabal",
+          "nat": "ES",
+          "id": "351478",
+          "v": 30
+        },
+        {
+          "r": 7,
+          "n": "Fernando Hierro",
+          "nat": "ES",
+          "id": "7513",
+          "v": 29
+        },
+        {
+          "r": 8,
+          "n": "Fernando Morientes",
+          "nat": "ES",
+          "id": "7531",
+          "v": 27
+        },
+        {
+          "r": 9,
+          "n": "Emilio Butragueño",
+          "nat": "ES",
+          "id": "117598",
+          "v": 26
+        },
+        {
+          "r": 10,
+          "n": "Ferran Torres",
+          "nat": "ES",
+          "id": "398184",
+          "v": 25
+        }
+      ]
+    },
+    "2026-09-06": {
+      "id": "jugadores-con-mas-partidos-entrenados-por-jose-mourinho-ms5ubfvn",
+      "q": "Jugadores con mas partidos entrenados por José Mourinho",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Ricardo Carvalho",
+          "nat": "PT",
+          "id": "9828",
+          "v": 293
+        },
+        {
+          "r": 2,
+          "n": "John Terry",
+          "nat": "GB-ENG",
+          "id": "3160",
+          "v": 267
+        },
+        {
+          "r": 3,
+          "n": "Frank Lampard",
+          "nat": "GB-ENG",
+          "id": "3163",
+          "v": 215
+        },
+        {
+          "r": 4,
+          "n": "Paulo Ferreira",
+          "nat": "PT",
+          "id": "9832",
+          "v": 212
+        },
+        {
+          "r": 5,
+          "n": "Nemanja Matić",
+          "nat": "RS",
+          "id": "74683",
+          "v": 209
+        },
+        {
+          "r": 6,
+          "n": "Petr Cech",
+          "nat": "CZ",
+          "id": "5658",
+          "v": 196
+        },
+        {
+          "r": 7,
+          "n": "Chris Smalling",
+          "nat": "GB-ENG",
+          "id": "103427",
+          "v": 188
+        },
+        {
+          "r": 8,
+          "n": "Didier Drogba",
+          "nat": "CI",
+          "id": "3924",
+          "v": 187
+        },
+        {
+          "r": 9,
+          "n": "Cristiano Ronaldo",
+          "nat": "PT",
+          "id": "8198",
+          "v": 164
+        },
+        {
+          "r": 10,
+          "n": "Mesut Özil",
+          "nat": "DE",
+          "id": "35664",
+          "v": 157
+        }
+      ]
+    },
+    "2026-09-07": {
+      "id": "equipos-contra-los-que-lionel-messi-ha-marcado-mas-goles-ms5ud744",
+      "q": "Equipos contra los que Lionel Messi ha marcado mas goles",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "team",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Sevilla FC",
+          "nat": "ES",
+          "id": "368",
+          "v": 38
+        },
+        {
+          "r": 2,
+          "n": "Atlético de Madrid",
+          "nat": "ES",
+          "id": "13",
+          "v": 32
+        },
+        {
+          "r": 3,
+          "n": "Valencia CF",
+          "nat": "ES",
+          "id": "1049",
+          "v": 31
+        },
+        {
+          "r": 4,
+          "n": "Athletic Bilbao",
+          "nat": "ES",
+          "id": "621",
+          "v": 29
+        },
+        {
+          "r": 5,
+          "n": "Real Madrid",
+          "nat": "ES",
+          "id": "418",
+          "v": 26
+        },
+        {
+          "r": 6,
+          "n": "Real Betis Balompié",
+          "nat": "ES",
+          "id": "150",
+          "v": 26
+        },
+        {
+          "r": 7,
+          "n": "CA Osasuna",
+          "nat": "ES",
+          "id": "331",
+          "v": 25
+        },
+        {
+          "r": 8,
+          "n": "RCD Espanyol Barcelona",
+          "nat": "ES",
+          "id": "714",
+          "v": 25
+        },
+        {
+          "r": 9,
+          "n": "Levante UD",
+          "nat": "ES",
+          "id": "3368",
+          "v": 24
+        },
+        {
+          "r": 10,
+          "n": "Getafe CF",
+          "nat": "ES",
+          "id": "3709",
+          "v": 21
+        }
+      ]
+    }
+  }
+}

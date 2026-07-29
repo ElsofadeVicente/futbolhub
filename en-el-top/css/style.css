@@ -391,7 +391,7 @@ body::before {
 #game-main {
   max-width: 640px;
   margin: 0 auto;
-  padding: 8px 16px 90px;
+  padding: 8px 16px 132px;
 }
 
 /* Top bar */
@@ -399,9 +399,37 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   margin-bottom: 8px;
   padding-top: 8px;
 }
+
+#archive-tag {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--np-ink-mid);
+  border: 1px solid var(--np-ink-soft);
+  padding: 3px 6px;
+}
+
+/* ── Navegación de ediciones ─────────────────── */
+#day-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 55;
+  background: var(--np-ink); color: var(--np-paper);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 7px 12px; height: 46px;
+}
+#day-nav button {
+  background: transparent; color: var(--np-paper);
+  border: 1px solid rgba(244,234,210,.3); border-radius: 0;
+  font-family: var(--font-mono); font-size: 1rem; line-height: 1;
+  padding: 5px 11px; cursor: pointer; min-width: 34px; transition: background .15s;
+}
+#day-nav button:hover:not(:disabled) { background: rgba(244,234,210,.16); }
+#day-nav button:disabled { opacity: .28; cursor: not-allowed; }
+#nav-label { font-family: var(--font-display); font-size: .95rem; letter-spacing: .05em; min-width: 96px; text-align: center; }
 
 #game-back {
   display: inline-flex;
@@ -596,7 +624,7 @@ body::before {
    ══════════════════════════════════════════════ */
 #input-area {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 46px; left: 0; right: 0;
   background: linear-gradient(to top, var(--np-paper) 75%, transparent);
   padding: 10px 16px 14px;
   display: flex;
@@ -604,13 +632,14 @@ body::before {
   align-items: flex-end;
   z-index: 50;
 }
-/* #timer-track y #input-area son position:fixed, así que el margin-push de
-   #game-screen no los afecta: hay que desplazarlos a mano. Esta regla debe ir
-   DESPUÉS de sus definiciones base (arriba): con la misma especificidad, si
-   fuera anterior en el archivo el navegador aplicaría la base (left/right:0)
-   por ir después en el cascade, dejando la barra por detrás de los anuncios. */
+/* #timer-track, #input-area y #day-nav son position:fixed, así que el
+   margin-push de #game-screen no los afecta: hay que desplazarlos a mano.
+   Esta regla debe ir DESPUÉS de sus definiciones base (arriba): con la misma
+   especificidad, si fuera anterior en el archivo el navegador aplicaría la
+   base (left/right:0) por ir después en el cascade, dejando la barra por
+   detrás de los anuncios. */
 @media (min-width: 760px) {
-  #timer-track, #input-area { left: 72px; right: 72px; }
+  #timer-track, #input-area, #day-nav { left: 72px; right: 72px; }
 }
 #input-wrap {
   flex: 1;
