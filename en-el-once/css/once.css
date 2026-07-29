@@ -1161,7 +1161,6 @@ body {
     .team-name--long  { font-size: 0.95rem; }
     .team-name--xlong { font-size: 0.75rem; }
     .score-display { font-size: 2.8rem; letter-spacing: 5px; min-width: 80px; }
-    .team-badge { display: none; }
 
     .field-container { padding: 16px 8px; min-height: 420px; }
     .formation { gap: 0; height: 380px; }
