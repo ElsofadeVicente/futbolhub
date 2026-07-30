@@ -987,53 +987,7 @@ const Restrictions = (() => {
     return candidates;
   }
 
-  /* ────────── Ronda especial: One Club Man ──────────
-     Un club + "toda su carrera en un solo club" + hasta 2 filtros extra.
-     Es incompatible con el esquema normal de 2 clubes (jugar en 2 clubes ⇒
-     tener ≥2 equipos), por eso tiene su propia rama de generación. */
-  const _ONECLUB_PROB = 0.10;
-  function _tryOneClubRound(rng, db, shuffledClubs) {
-    /* Clubes con ≥2 one-club-men en la BD (para que haya juego real) */
-    const eligible = shuffledClubs.filter(club => {
-      let cnt = 0;
-      for (const p of db) {
-        const t = p.teams || [];
-        if (t.length === 1 && normalize(t[0]) === normalize(club.tmName)) {
-          if (++cnt >= 2) return true;
-        }
-      }
-      return false;
-    });
-    if (!eligible.length) return null;
-    const club = eligible[0];   /* shuffledClubs ya viene barajado */
-    const clubR    = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-    const oneClubR = { type:'one_club', label:'One Club Man (un solo club)', imgUrl:null, icon:'🏰', family:'clubs_count' };
-
-    /* Subconjunto: one-club-men de este club concreto */
-    const pool = db.filter(p => (p.teams||[]).length === 1 && normalize(p.teams[0]) === normalize(club.tmName));
-
-    /* Filtros extra compatibles (nunca clubes/ligas/regiones/nº de clubes) */
-    const fillers = _shuffle(_buildCandidates(rng).filter(r => {
-      const fam = r.family || r.type;
-      if (fam === 'league' || fam === 'region' || fam === 'clubs_count' || r.type === 'club') return false;
-      return _matching(r, db) >= 2;
-    }), rng);
-
-    const result   = [clubR, oneClubR];
-    const usedFam  = new Set(['club','clubs_count','league','region']);
-    for (const cand of fillers) {
-      if (result.length >= 4) break;
-      const fam = cand.family || cand.type;
-      if (usedFam.has(fam)) continue;
-      /* El filtro debe dejar al menos un one-club-man del club que lo cumpla todo */
-      const nonClub = [...result.filter(r => r.type !== 'club'), cand];
-      if (pool.some(p => nonClub.every(r => validate(p, r)))) {
-        result.push(cand);
-        usedFam.add(fam);
-      }
-    }
-    return result;
-  }
+  const _ONECLUB_PROB = 0.02;   // muy poco frecuente: ~1 de cada 50 rondas
 
   /* ────────── Generar restricciones ────────── */
   function generate(seed, db) {
@@ -1041,12 +995,6 @@ const Restrictions = (() => {
 
     /* ══ PASO 1: Elegir restricciones de club ══ */
     const shuffledClubs = _shuffle(CLUBS_LIST, rng);
-
-    /* ══ Ronda especial One Club Man (probabilidad baja) ══ */
-    if (rng() < _ONECLUB_PROB) {
-      const oc = _tryOneClubRound(rng, db, shuffledClubs);
-      if (oc) return oc;
-    }
 
     /* ── B: Pre-filtrar pares de clubs por intersección mínima ── */
     const MIN_PAIR = Math.min(4, Math.max(2, Math.floor(db.length / 100)));
@@ -1063,8 +1011,26 @@ const Restrictions = (() => {
     }
     clubRestrictions.push(club1.r);
 
-    /* ── C: ~15% → sustituir club2 por una liga distinta a la del club1 ── */
-    const useLeagueAsSecond = rng() < 0.15;
+    /* ── One Club Man (~2%): sustituye el slot de "club 2" por "toda su
+       carrera en un solo club", igual que la liga lo hace con 15%. Nunca
+       cambia el total de restricciones (siguen siendo 5 siempre) — solo
+       aplica si el club1 elegido tiene ≥2 one-club-men reales en la BD. */
+    if (rng() < _ONECLUB_PROB) {
+      let ocmCount = 0;
+      for (const p of db) {
+        const t = p.teams || [];
+        if (t.length === 1 && normalize(t[0]) === normalize(club1.meta.tmName)) {
+          if (++ocmCount >= 2) break;
+        }
+      }
+      if (ocmCount >= 2) {
+        clubRestrictions.push({ type:'one_club', label:'One Club Man (un solo club)', imgUrl:null, icon:'🏰', family:'clubs_count' });
+      }
+    }
+
+    /* ── C: ~15% → sustituir club2 por una liga distinta a la del club1
+       (solo si el slot 2 no lo ocupó ya One Club Man) ── */
+    const useLeagueAsSecond = clubRestrictions.length < 2 && rng() < 0.15;
 
     if (useLeagueAsSecond) {
       const club1League = club1.meta.league;
@@ -1132,10 +1098,12 @@ const Restrictions = (() => {
       if (!familyGroups[fam]) familyGroups[fam] = [];
       familyGroups[fam].push(r);
     }
-    /* No repetir la familia del slot 2 si fue liga (C) */
+    /* No repetir la familia del slot 2 si fue liga o One Club Man */
     const usedFamilies = new Set();
     if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'league') {
       usedFamilies.add('league');
+    } else if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'one_club') {
+      usedFamilies.add('clubs_count');
     }
 
     const familyNames = _shuffle(
@@ -1221,6 +1189,10 @@ const Restrictions = (() => {
     if (rA.type === 'champions_goals_ge' && rB.type === 'champions_goals_ge' && rA.value > rB.value) return true;
     if (rA.type === 'season_goals_ge'    && rB.type === 'season_goals_ge'    && rA.value > rB.value) return true;
     if (rA.type === 'natGoals_ge'        && rB.type === 'natGoals_ge'        && rA.value > rB.value) return true;
+
+    /* One Club Man (1 solo club) es incompatible con "ha jugado en 3+ clubes" */
+    if (rA.type === 'one_club' && rB.type === 'clubs_ge') return true;
+    if (rB.type === 'one_club' && rA.type === 'clubs_ge') return true;
 
     /* Portero incompatible con trofeos de goleador */
     const SCORER_TROPHIES = new Set([
@@ -3273,12 +3245,6 @@ const App = (() => {
     const myToken = ++_animToken;
     const alive = () => _animToken === myToken && _currentScreen() === 'screen-round';
 
-    /* Rondas especiales (p.ej. One Club Man) pueden traer menos de 5
-       restricciones — sin esto, el grid de 5 columnas fijas deja un
-       hueco visual vacío. La CSS usa min(--rcount, N) por breakpoint,
-       así que esto NUNCA cambia el caso normal de 5 (ni en móvil). */
-    grid.style.setProperty('--rcount', restrictions.length);
-
     grid.innerHTML = restrictions.map(r => {
       /* Contenido visual: imagen con fallback a emoji */
       const iconHtml = r.imgUrl
@@ -4203,7 +4169,7 @@ const App = (() => {
     if (legendEl&&restrictions) {
       legendEl.innerHTML=`
         <div style="padding:0 14px 12px;">
-          <p style="font-size:.7rem;letter-spacing:2px;color:#4ade80;opacity:.7;text-transform:uppercase;margin-bottom:8px;">Las Restricciones (${restrictions.length})</p>
+          <p style="font-size:.7rem;letter-spacing:2px;color:#4ade80;opacity:.7;text-transform:uppercase;margin-bottom:8px;">Las 5 Restricciones</p>
           ${restrictions.map(r=>`
             <div style="display:flex;align-items:center;gap:8px;font-size:.8rem;color:#e8e8e8;opacity:.55;font-weight:600;margin-bottom:4px;">
               ${r.imgUrl
