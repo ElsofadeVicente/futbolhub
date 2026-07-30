@@ -391,10 +391,13 @@ a      { text-decoration: none; }
 .round-panel-title span { font-family:'DM Mono',monospace; font-size:0.62rem; letter-spacing:0.24em; color: #212121; text-transform:uppercase; }
 .round-panel-note  { font-family:'DM Mono',monospace; font-size:0.58rem; letter-spacing:0.14em; color:var(--np-ink-soft); text-transform:uppercase; }
 
-/* Restricciones */
-.restrictions-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
-@media(max-width:700px){ .restrictions-grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
-@media(max-width:420px){ .restrictions-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+/* Restricciones. --rcount lo fija JS al número real de restricciones de la
+   ronda (normalmente 5; rondas especiales como One Club Man pueden traer
+   menos) — min(--rcount, N) evita un hueco vacío sin tocar el caso normal
+   de 5 en ningún breakpoint (min(5,N) = N igual que antes). */
+.restrictions-grid { --rcount:5; display:grid; grid-template-columns:repeat(min(var(--rcount,5),5),minmax(0,1fr)); gap:10px; }
+@media(max-width:700px){ .restrictions-grid{grid-template-columns:repeat(min(var(--rcount,5),3),minmax(0,1fr));} }
+@media(max-width:420px){ .restrictions-grid{grid-template-columns:repeat(min(var(--rcount,5),2),minmax(0,1fr));} }
 
 .restriction-card {
   background:var(--np-paper2); border:1px solid var(--np-ink-soft);
@@ -621,7 +624,7 @@ body.countdown-active .input-section { display:none !important; }
   .round-panel{padding:12px;}
   .round-panel.compact{padding:8px}
   .round-panel-title{ align-items:flex-start; flex-direction:column; gap:4px; margin-bottom:10px; }
-  .restrictions-grid{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
+  .restrictions-grid{ grid-template-columns:repeat(min(var(--rcount,5),5),minmax(0,1fr)); gap:7px; }
   .restriction-card{ padding:9px 5px; gap:5px; }
   .restriction-icon{ width:36px; height:36px; font-size:1.22rem; }
   .restriction-icon-fallback{font-size:1.22rem}

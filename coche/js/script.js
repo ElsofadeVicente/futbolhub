@@ -37,7 +37,12 @@ function _acTight(s) {
    1. BASE DE DATOS
    ═══════════════════════════════════════════════════════════════ */
 let PLAYERS_DB = [];
+let GEN_POOL   = [];  // pool curado (~1500) usado SOLO por Restrictions.generate()
 let NAME_INDEX  = [];
+
+/* Pool para generar restricciones: GEN_POOL si ya cargó, si no PLAYERS_DB
+   (nunca vacío una vez cargados los datos). */
+function _genPool() { return GEN_POOL.length ? GEN_POOL : PLAYERS_DB; }
 
 /* ── Mapas globales para validación de jugadores fuera de PLAYERS_DB ── */
 let _TROPHY_MAP         = {};  // id → [trophyName, ...]
@@ -45,6 +50,7 @@ let _COACH_MAP          = {};  // id → [coachName, ...]
 let _TEAMMATE_MAP       = {};  // id → [playerName, ...]
 let _REVERSE_TEAMMATE   = {};  // normalizedName → Set<normalizedName> (relación inversa)
 let _REVERSE_TEAMMATE_IDS = {}; // normalizedName(famoso) → Set<id_string> (check por ID)
+let _PERF_MAP           = {};  // id → { lg:[cids 1a división], clg:goles Champions, bsg:mejor temporada }
 
 let _acItems         = [];
 let _acIndex         = -1;
@@ -165,7 +171,11 @@ function _buildPlayerFromChunk(id, chunk) {
     apps:        typeof chunk.apps  === 'number' ? chunk.apps  : null,
     position:    chunk.p || null,
     caps:        chunk.nt ? (parseInt(chunk.nt.c ?? 0, 10) || 0) : 0,
+    natGoals:    (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0,
     maxFee,
+    lg:          _PERF_MAP[sid]?.lg  || [],
+    clg:         _PERF_MAP[sid]?.clg || 0,
+    bsg:         _PERF_MAP[sid]?.bsg || 0,
   };
 }
 
@@ -259,6 +269,8 @@ async function _loadData() {
     _fetchCocheJsonFile('GanadoresLigayCopa.json'),
     _fetchCocheJsonFile('premios_individuales.json'),
     _fetchLeaguesFromSupabase(),
+    _fetchCocheJsonFile('perf_stats.json'),
+    _fetchCocheJsonFile('gen_pool.json'),
   ];
 
   const chunkPromises = CHUNK_NAMES.map(c => {
@@ -275,7 +287,11 @@ async function _loadData() {
     Promise.all(chunkPromises),
   ]);
 
-  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData] = metaResults;
+  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData, perfStats, genPool] = metaResults;
+
+  /* Stats precomputadas de performances (ligas 1ª div por cid, goles Champions,
+     mejor temporada) — expuestas para validar jugadores fuera de PLAYERS_DB. */
+  _PERF_MAP = perfStats && !Array.isArray(perfStats) ? perfStats : {};
 
   /* Poblar _chunkCache y fusionar todos los chunks */
   const allChunkData = {};
@@ -398,10 +414,17 @@ async function _loadData() {
 
   /* PLAYERS_DB = solo compañeros_principal, enriquecidos con companeros-data.json
      (datos completos de chunk: img, apps, goals, nt, tr, etc.).
-     Pequeño (~227 jugadores) → generate() es rápido.
+     Pequeño (~227 jugadores) → rápido de recorrer para matches directos.
+     Más tarde se enriquece con TODOS los chunks (_enrichPlayersDBFromChunks,
+     dispara justo después de esta función) para que findPlayerAsync y los
+     bots reconozcan y puedan usar cualquier futbolista real — eso NO se toca.
+     La GENERACIÓN de restricciones usa un pool aparte, GEN_POOL (ver más abajo
+     en este mismo _loadData), curado por fama para que las rondas salgan
+     variadas y generate() no tenga que recorrer los ~8000 jugadores enteros.
      findPlayerAsync usa chunks on-demand para validar respuestas del usuario. */
-  return Object.entries(companeros).map(([id, pd]) => {
+  const playersDb = Object.entries(companeros).map(([id, pd]) => {
     const chunk = allChunkData[id] || {};
+    const ps    = _PERF_MAP[id] || {};
     return {
       id,
       idNum:        parseInt(id, 10),
@@ -420,9 +443,51 @@ async function _loadData() {
       apps:         typeof chunk.apps  === 'number' ? chunk.apps  : null,
       position:     chunk.p  || null,
       caps:         chunk.nt ? (parseInt((chunk.nt.c !== undefined ? chunk.nt.c : chunk.nt) || '0', 10) || 0) : 0,
+      natGoals:     (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0,
       maxFee:       chunk.maxFee ?? _maxFee(chunk.tr ?? []),
+      lg:           ps.lg  || [],
+      clg:          ps.clg || 0,
+      bsg:          ps.bsg || 0,
     };
   });
+
+  /* GEN_POOL: pool aparte de ~1500 jugadores reconocibles (gen_pool.json,
+     precomputado por fama con admin/build_coche_perf.py), usado SOLO para
+     generar restricciones. Si gen_pool.json no cargó, cae a companeros_principal
+     (el comportamiento de antes) — nunca se queda vacío. */
+  const poolIds = (Array.isArray(genPool) && genPool.length)
+    ? genPool.map(String)
+    : Object.keys(companeros);
+  GEN_POOL = poolIds.filter(id => allChunkData[id]).map(id => {
+    const chunk = allChunkData[id];
+    const ps    = _PERF_MAP[id] || {};
+    return {
+      id,
+      idNum:        parseInt(id, 10),
+      name:         nameMap[id] || chunk.n || '?',
+      img:          chunk.img  || null,
+      aliases:      [],
+      teammates:    teammateMap[id]           || [],
+      coaches:      coachMap[id]              || [],
+      trophies:     [...new Set(trophyMap[id] || [])],
+      nationalTeam: chunk.nat                 || null,
+      teams:        chunk.teams               || [],
+      heightCm:     chunk.h  ? parseFloat(chunk.h)  : null,
+      foot:         _normFoot(chunk.f),
+      birthYear:    chunk.b  ? parseInt(chunk.b, 10) : null,
+      goals:        typeof chunk.goals === 'number' ? chunk.goals : null,
+      apps:         typeof chunk.apps  === 'number' ? chunk.apps  : null,
+      position:     chunk.p  || null,
+      caps:         chunk.nt ? (parseInt(chunk.nt.c ?? 0, 10) || 0) : 0,
+      natGoals:     (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0,
+      maxFee:       chunk.maxFee ?? _maxFee(chunk.tr ?? []),
+      lg:           ps.lg  || [],
+      clg:          ps.clg || 0,
+      bsg:          ps.bsg || 0,
+    };
+  });
+
+  return playersDb;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -447,12 +512,22 @@ const Restrictions = (() => {
     }
     return a;
   }
+  /* Memoizada: normalize() se llama con las mismas cadenas (club/liga/
+     nacionalidad/jugador) miles de veces por generate() -- con el pool de
+     generacion ampliado (~1500 jugadores) recalcular NFD+regex en cada
+     llamada era medible. Cache pura, sin efectos secundarios. */
+  const _normCache = new Map();
   function normalize(str) {
     if (!str) return '';
-    return String(str).toLowerCase()
+    const key = String(str);
+    const cached = _normCache.get(key);
+    if (cached !== undefined) return cached;
+    const out = key.toLowerCase()
       .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, ' ').trim();
+    _normCache.set(key, out);
+    return out;
   }
 
   /* ────────── LOGOS ────────── */
@@ -558,6 +633,36 @@ const Restrictions = (() => {
       'Le Havre AC','FC Metz','Paris FC',
       'Girondins de Bordeaux','AS Saint-Étienne','Montpellier HSC',
     ],
+    'Primeira Liga': [
+      'SL Benfica','FC Porto','Sporting CP','SC Braga','Vitória Guimarães SC',
+      'Rio Ave FC','GD Estoril Praia','FC Famalicão','Moreirense FC','Boavista FC',
+      'Gil Vicente FC','CS Marítimo','FC Paços de Ferreira',
+    ],
+    'Eredivisie': [
+      'Ajax Amsterdam','PSV Eindhoven','Feyenoord Rotterdam','AZ Alkmaar','FC Twente Enschede',
+      'Vitesse Arnhem','SC Heerenveen','FC Utrecht','FC Groningen','Sparta Rotterdam',
+      'Willem II Tilburg','NEC Nijmegen','Go Ahead Eagles','Heracles Almelo','PEC Zwolle',
+    ],
+    'Süper Lig': [
+      'Galatasaray','Fenerbahce','Fenerbahçe','Besiktas JK','Trabzonspor','Basaksehir FK',
+      'Bursaspor','Fatih Karagümrük','Kayserispor','Caykur Rizespor','Kasimpasa',
+      'Antalyaspor','Sivasspor','Alanyaspor','Konyaspor','Göztepe','MKE Ankaragücü',
+    ],
+  };
+
+  /* Ligas de 1ª división expuestas como restricción "ha jugado en X".
+     La pertenencia se valida por el cid de competición (performances),
+     no por el nombre del equipo → distingue 1ª de 2ª división. */
+  const LEAGUE_CIDS = {
+    'La Liga':        'ES1',
+    'Premier League': 'GB1',
+    'Serie A':        'IT1',
+    'Bundesliga':     'L1',
+    'Ligue 1':        'FR1',
+    'Eredivisie':     'NL1',
+    'Primeira Liga':  'PO1',
+    'Süper Lig':      'TR1',
+    'Brasileirão':    'BRA1',
   };
 
   /* Logo de liga (bucket league-logos) */
@@ -761,10 +866,11 @@ const Restrictions = (() => {
       });
     }
 
-    /* Ligas */
-    for (const [liga, teams] of Object.entries(LEAGUE_TEAMS)) {
+    /* Ligas (validación por cid de performances; teams = fallback sin perf) */
+    for (const [liga, cid] of Object.entries(LEAGUE_CIDS)) {
       candidates.push({
-        type:'league', value:liga, teams, label:`Ha jugado en ${liga}`,
+        type:'league', value:liga, cid, teams: LEAGUE_TEAMS[liga] || [],
+        label:`Ha jugado en ${liga}`,
         imgUrl: LEAGUE_LOGOS[liga] || null, icon:'⚽', family:'league',
       });
     }
@@ -840,6 +946,21 @@ const Restrictions = (() => {
     candidates.push({ type:'fee_gt', value:70000000, label:'Traspaso de más de 70M €',  imgUrl:null, icon:'💰', family:'fee' });
     candidates.push({ type:'fee_lt', value:70000000, label:'Traspaso de menos de 70M €',imgUrl:null, icon:'💰', family:'fee' });
 
+    /* Goles en Champions League (precomputado desde performances) */
+    candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
+    candidates.push({ type:'champions_goals_ge', value:20, label:'20+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
+    candidates.push({ type:'champions_goals_ge', value:30, label:'30+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
+
+    /* Goles en una sola temporada de liga (mejor temporada en 1ª división) */
+    candidates.push({ type:'season_goals_ge', value:10, label:'10+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
+    candidates.push({ type:'season_goals_ge', value:20, label:'20+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
+    candidates.push({ type:'season_goals_ge', value:30, label:'30+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
+
+    /* Goles con su selección absoluta */
+    candidates.push({ type:'natGoals_ge', value:20, label:'20+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
+    candidates.push({ type:'natGoals_ge', value:30, label:'30+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
+    candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
+
     /* Regiones */
     candidates.push({ type:'region', value:'sudamerica',  label:'Ha jugado en Sudamérica',     imgUrl:null, icon:'🌎', family:'region' });
     candidates.push({ type:'region', value:'usa_mexico',  label:'Ha jugado en EE.UU./México',  imgUrl:null, icon:'🌎', family:'region' });
@@ -866,12 +987,66 @@ const Restrictions = (() => {
     return candidates;
   }
 
+  /* ────────── Ronda especial: One Club Man ──────────
+     Un club + "toda su carrera en un solo club" + hasta 2 filtros extra.
+     Es incompatible con el esquema normal de 2 clubes (jugar en 2 clubes ⇒
+     tener ≥2 equipos), por eso tiene su propia rama de generación. */
+  const _ONECLUB_PROB = 0.10;
+  function _tryOneClubRound(rng, db, shuffledClubs) {
+    /* Clubes con ≥2 one-club-men en la BD (para que haya juego real) */
+    const eligible = shuffledClubs.filter(club => {
+      let cnt = 0;
+      for (const p of db) {
+        const t = p.teams || [];
+        if (t.length === 1 && normalize(t[0]) === normalize(club.tmName)) {
+          if (++cnt >= 2) return true;
+        }
+      }
+      return false;
+    });
+    if (!eligible.length) return null;
+    const club = eligible[0];   /* shuffledClubs ya viene barajado */
+    const clubR    = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+    const oneClubR = { type:'one_club', label:'One Club Man (un solo club)', imgUrl:null, icon:'🏰', family:'clubs_count' };
+
+    /* Subconjunto: one-club-men de este club concreto */
+    const pool = db.filter(p => (p.teams||[]).length === 1 && normalize(p.teams[0]) === normalize(club.tmName));
+
+    /* Filtros extra compatibles (nunca clubes/ligas/regiones/nº de clubes) */
+    const fillers = _shuffle(_buildCandidates(rng).filter(r => {
+      const fam = r.family || r.type;
+      if (fam === 'league' || fam === 'region' || fam === 'clubs_count' || r.type === 'club') return false;
+      return _matching(r, db) >= 2;
+    }), rng);
+
+    const result   = [clubR, oneClubR];
+    const usedFam  = new Set(['club','clubs_count','league','region']);
+    for (const cand of fillers) {
+      if (result.length >= 4) break;
+      const fam = cand.family || cand.type;
+      if (usedFam.has(fam)) continue;
+      /* El filtro debe dejar al menos un one-club-man del club que lo cumpla todo */
+      const nonClub = [...result.filter(r => r.type !== 'club'), cand];
+      if (pool.some(p => nonClub.every(r => validate(p, r)))) {
+        result.push(cand);
+        usedFam.add(fam);
+      }
+    }
+    return result;
+  }
+
   /* ────────── Generar restricciones ────────── */
   function generate(seed, db) {
     const rng = _mulberry32(seed);
 
     /* ══ PASO 1: Elegir restricciones de club ══ */
     const shuffledClubs = _shuffle(CLUBS_LIST, rng);
+
+    /* ══ Ronda especial One Club Man (probabilidad baja) ══ */
+    if (rng() < _ONECLUB_PROB) {
+      const oc = _tryOneClubRound(rng, db, shuffledClubs);
+      if (oc) return oc;
+    }
 
     /* ── B: Pre-filtrar pares de clubs por intersección mínima ── */
     const MIN_PAIR = Math.min(4, Math.max(2, Math.floor(db.length / 100)));
@@ -893,11 +1068,11 @@ const Restrictions = (() => {
 
     if (useLeagueAsSecond) {
       const club1League = club1.meta.league;
-      const otherLeagues = Object.entries(LEAGUE_TEAMS).filter(([lg]) => lg !== club1League);
+      const otherLeagues = Object.entries(LEAGUE_CIDS).filter(([lg]) => lg !== club1League);
       if (otherLeagues.length > 0) {
         const shuffledLeagues = _shuffle(otherLeagues, rng);
-        for (const [liga, teams] of shuffledLeagues) {
-          const lr = { type:'league', value:liga, teams, label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
+        for (const [liga, cid] of shuffledLeagues) {
+          const lr = { type:'league', value:liga, cid, teams:LEAGUE_TEAMS[liga]||[], label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
           if (db.some(p => validate(p, club1.r) && validate(p, lr))) {
             clubRestrictions.push(lr); break;
           }
@@ -1041,6 +1216,11 @@ const Restrictions = (() => {
     if (rA.type === 'caps_ge' && rA.value >= 1 && rB.type === 'caps_0') return true;
     /* caps_le(N) hace redundante a caps_le(M) si N < M (ej: ≤30 implica ≤50) */
     if (rA.type === 'caps_le' && rB.type === 'caps_le' && rA.value < rB.value) return true;
+
+    /* Umbrales "_ge" del mismo tipo: el mayor hace redundante al menor */
+    if (rA.type === 'champions_goals_ge' && rB.type === 'champions_goals_ge' && rA.value > rB.value) return true;
+    if (rA.type === 'season_goals_ge'    && rB.type === 'season_goals_ge'    && rA.value > rB.value) return true;
+    if (rA.type === 'natGoals_ge'        && rB.type === 'natGoals_ge'        && rA.value > rB.value) return true;
 
     /* Portero incompatible con trofeos de goleador */
     const SCORER_TROPHIES = new Set([
@@ -1220,8 +1400,13 @@ const Restrictions = (() => {
       case 'nationality':
         return normalize(player.nationalTeam || '') === normalize(r.value);
 
-      /* Liga */
+      /* Liga (por cid de competición: solo cuenta 1ª división real, vía performances).
+         Fallback a nombres de equipo para jugadores sin datos de performances. */
       case 'league':
+        if (r.cid) {
+          if ((player.lg || []).includes(r.cid)) return true;
+          if ((player.lg || []).length) return false; /* tiene perf y no incluye la liga */
+        }
         return (player.teams || []).some(t => (r.teams || []).some(lt => normalize(lt) === normalize(t)));
 
       /* Trofeo exacto */
@@ -1293,6 +1478,20 @@ const Restrictions = (() => {
         return (player.teams || []).length >= r.value;
       case 'clubs_le':
         return (player.teams || []).length <= r.value;
+
+      /* One Club Man: toda la carrera en un único club */
+      case 'one_club':
+        return (player.teams || []).length === 1;
+
+      /* Goles en Champions League (precomputado desde performances) */
+      case 'champions_goals_ge':
+        return (player.clg || 0) >= r.value;
+      /* Goles en una sola temporada de 1ª división (mejor temporada) */
+      case 'season_goals_ge':
+        return (player.bsg || 0) >= r.value;
+      /* Goles con su selección absoluta */
+      case 'natGoals_ge':
+        return (player.natGoals || 0) >= r.value;
 
       /* Valor traspaso */
       case 'fee_gt':
@@ -2439,7 +2638,7 @@ const App = (() => {
       await _loadGameData();
       if (stale()) { console.warn('[App] startGame abortado: sesión cambiada (post-loadData)'); restoreBtn(); return; }
       const seed         = Date.now();
-      const restrictions = await _generateAsync(seed, PLAYERS_DB);
+      const restrictions = await _generateAsync(seed, _genPool());
       if (stale()) { console.warn('[App] startGame abortado: sesión cambiada (post-generate)'); restoreBtn(); return; }
       /* Usar ajustes de _lastRoom (ya sincronizados por el listener) — sin round-trip extra */
       if (_lastRoom?.pointsToWin != null) _onlinePointsToWin = _lastRoom.pointsToWin;
@@ -2547,11 +2746,11 @@ const App = (() => {
     } else {
       /* Sin cache: generar en worker para no bloquear el hilo principal */
       const seed = Date.now() + _localRound * 7919;
-      _generateAsync(seed, PLAYERS_DB)
+      _generateAsync(seed, _genPool())
         .then(restrictions => _doAnimate(restrictions))
         .catch(() => {
           /* Último recurso: sincrónico si el worker falla */
-          _doAnimate(Restrictions.generate(seed, PLAYERS_DB));
+          _doAnimate(Restrictions.generate(seed, _genPool()));
         });
     }
   }
@@ -2563,7 +2762,7 @@ const App = (() => {
     if (!PLAYERS_DB.length) return;
     const nextRoundNum = _isLocal ? (_localRound + 1) : (_round + 1);
     const seed = Date.now() + nextRoundNum * 7919;
-    _generateAsync(seed, PLAYERS_DB)
+    _generateAsync(seed, _genPool())
       .then(restrictions => {
         _nextRestrictionsCache = restrictions;
         console.log('[App] Siguiente ronda pregenerada en worker ✓');
@@ -2614,9 +2813,16 @@ const App = (() => {
       _handleKicked('Has sido expulsado de la sala'); return;
     }
     if (room.players) {
-      _players = Object.entries(room.players).map(([id,p])=>({
-        id, name:p.name, score:p.score||0, connected:p.connected??true, isHost:p.isHost??false
-      }));
+      _players = Object.entries(room.players)
+        /* Ignorar nodos fantasma SIN nombre: se crean cuando una escritura de
+           puntuación del host (startReveal/nextRound) resucita el nodo de un
+           jugador que el onDisconnect acababa de borrar, dejando solo {score}.
+           Sin nombre saldrían con avatar "?" y, al contar como conectados,
+           bloquearían el cierre anticipado de la ronda. */
+        .filter(([,p]) => p && typeof p.name === 'string' && p.name.trim() !== '')
+        .map(([id,p])=>({
+          id, name:p.name, score:p.score||0, connected:p.connected??true, isHost:p.isHost??false
+        }));
       /* Mantener _isHost sincronizado SIEMPRE (no solo en el lobby).
          Permite el failover de host si el host original se desconecta
          a mitad de partida: el juego sigue avanzando. */
@@ -2654,6 +2860,20 @@ const App = (() => {
             if (nxt) { nxt.classList.remove('hidden'); nxt.disabled=false; }
             _preGenerateNextRestrictions();
           }
+        }
+      }
+    }
+
+    /* El host limpia nodos fantasma (sin nombre): se crean cuando una
+       escritura de puntuación (startReveal/nextRound) resucita el nodo de un
+       jugador que el onDisconnect acababa de borrar, dejando solo {score}.
+       Al no figurar ya en _players nadie los reescribe, así que borrarlos
+       aquí los elimina para siempre y no vuelven a salir con avatar "?". */
+    if (_isHost && !_isLocal && _roomCode && room.players && window._FB) {
+      for (const [pid,p] of Object.entries(room.players)) {
+        if (!p || typeof p.name !== 'string' || p.name.trim() === '') {
+          const {db,ref,remove}=window._FB;
+          remove(ref(db,`restricciones/rooms/${_roomCode}/players/${pid}`)).catch(()=>{});
         }
       }
     }
@@ -3053,6 +3273,12 @@ const App = (() => {
     const myToken = ++_animToken;
     const alive = () => _animToken === myToken && _currentScreen() === 'screen-round';
 
+    /* Rondas especiales (p.ej. One Club Man) pueden traer menos de 5
+       restricciones — sin esto, el grid de 5 columnas fijas deja un
+       hueco visual vacío. La CSS usa min(--rcount, N) por breakpoint,
+       así que esto NUNCA cambia el caso normal de 5 (ni en móvil). */
+    grid.style.setProperty('--rcount', restrictions.length);
+
     grid.innerHTML = restrictions.map(r => {
       /* Contenido visual: imagen con fallback a emoji */
       const iconHtml = r.imgUrl
@@ -3167,6 +3393,21 @@ const App = (() => {
          listener no nos llegó a entregar, aquí se pone todo al día. */
       const fresh = await Sync.getRoom(room);
       if (_sessionToken !== token || _roomCode !== room) return;
+      /* Congelación al volver de segundo plano en el LOBBY: el onDisconnect nos
+         borró de la sala mientras la app estaba en 2º plano. En vez de quedar
+         con un lobby fantasma del que ya no formamos parte (todo bloqueado),
+         nos re-añadimos al MISMO hueco con nuestro playerId de siempre — sin
+         crear un duplicado. Solo en waiting (rejoinRoom exige ese estado). */
+      if (fresh && fresh.status === 'waiting'
+          && _playerId && (!fresh.players || !fresh.players[_playerId])) {
+        try {
+          await Sync.rejoinRoom(room, _playerId, _localName || '…', _accountAvatar());
+          const again = await Sync.getRoom(room);
+          if (_sessionToken === token && _roomCode === room && again) {
+            _onRoomUpdate(again); return;
+          }
+        } catch(e) { /* sala llena o desaparecida: seguimos al flujo normal */ }
+      }
       if (fresh) _onRoomUpdate(fresh);
     } catch(e) {
       console.warn('[App] resume error:', e);
@@ -3591,7 +3832,7 @@ const App = (() => {
     _nextRestrictionsCache = null;
     const restrictionsPromise = cached
       ? Promise.resolve(cached)
-      : _generateAsync(seed, PLAYERS_DB);
+      : _generateAsync(seed, _genPool());
 
     restrictionsPromise.then(async restrictions => {
       if (!_live()) return;
@@ -3962,7 +4203,7 @@ const App = (() => {
     if (legendEl&&restrictions) {
       legendEl.innerHTML=`
         <div style="padding:0 14px 12px;">
-          <p style="font-size:.7rem;letter-spacing:2px;color:#4ade80;opacity:.7;text-transform:uppercase;margin-bottom:8px;">Las 5 Restricciones</p>
+          <p style="font-size:.7rem;letter-spacing:2px;color:#4ade80;opacity:.7;text-transform:uppercase;margin-bottom:8px;">Las Restricciones (${restrictions.length})</p>
           ${restrictions.map(r=>`
             <div style="display:flex;align-items:center;gap:8px;font-size:.8rem;color:#e8e8e8;opacity:.55;font-weight:600;margin-bottom:4px;">
               ${r.imgUrl
@@ -4281,13 +4522,31 @@ const App = (() => {
   }
 
   function _saveSession() {
-    try { sessionStorage.setItem('coche_session', JSON.stringify({code:_roomCode,playerId:_playerId,isHost:_isHost,isPublic:_isPublic})); } catch(e){}
+    const data = JSON.stringify({code:_roomCode,playerId:_playerId,isHost:_isHost,isPublic:_isPublic,ts:Date.now()});
+    try { sessionStorage.setItem('coche_session', data); } catch(e){}
+    /* Además en localStorage: al CERRAR la app (no solo recargar la pestaña)
+       sessionStorage se borra, y sin la sesión el jugador vuelve a entrar a su
+       MISMA sala pública como un segundo nodo duplicado (se veía a sí mismo
+       como host + su copia + bots). localStorage sobrevive al cierre y deja
+       que tryReconnect reutilice el hueco existente en vez de duplicarlo. */
+    try { localStorage.setItem('coche_session', data); } catch(e){}
   }
   function _loadSession() {
-    try { const s = sessionStorage.getItem('coche_session'); return s ? JSON.parse(s) : null; } catch(e){ return null; }
+    let s = null;
+    try { s = sessionStorage.getItem('coche_session'); } catch(e){}
+    if (!s) { try { s = localStorage.getItem('coche_session'); } catch(e){} }
+    if (!s) return null;
+    try {
+      const data = JSON.parse(s);
+      /* No intentar reconectar a sesiones viejas (>15 min): la sala ya no
+         existirá y tryReconnect fallaría igual, pero así se evita ruido. */
+      if (data && data.ts && (Date.now() - data.ts) > 15*60*1000) return null;
+      return data;
+    } catch(e){ return null; }
   }
   function _clearSession() {
     try { sessionStorage.removeItem('coche_session'); } catch(e){}
+    try { localStorage.removeItem('coche_session'); } catch(e){}
   }
 
   return {

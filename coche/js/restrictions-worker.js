@@ -32,12 +32,23 @@ function _shuffle(arr, rng) {
   }
   return a;
 }
+/* Memoizada: normalize() se llama con las mismas cadenas (club/liga/
+   nacionalidad/jugador) miles de veces por generate() -- con el pool de
+   generacion ampliado (~1500 jugadores) recalcular NFD+regex en cada
+   llamada era medible. Cache pura, sin efectos secundarios. DEBE seguir
+   igual que la de coche/js/script.js para que el seed sea determinista. */
+const _normCache = new Map();
 function normalize(str) {
   if (!str) return '';
-  return String(str).toLowerCase()
+  const key = String(str);
+  const cached = _normCache.get(key);
+  if (cached !== undefined) return cached;
+  const out = key.toLowerCase()
     .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ').trim();
+  _normCache.set(key, out);
+  return out;
 }
 function _logoUrl(tmName) {
   return sbStorageUrl('team-logos', tmName.replace(/ /g, '_') + '.png');
@@ -134,6 +145,34 @@ const LEAGUE_TEAMS = {
     'Angers SCO','FC Toulouse','Stade Brestois 29','AJ Auxerre','FC Lorient',
     'Le Havre AC','FC Metz','Paris FC','Girondins de Bordeaux','AS Saint-Étienne','Montpellier HSC',
   ],
+  'Primeira Liga': [
+    'SL Benfica','FC Porto','Sporting CP','SC Braga','Vitória Guimarães SC',
+    'Rio Ave FC','GD Estoril Praia','FC Famalicão','Moreirense FC','Boavista FC',
+    'Gil Vicente FC','CS Marítimo','FC Paços de Ferreira',
+  ],
+  'Eredivisie': [
+    'Ajax Amsterdam','PSV Eindhoven','Feyenoord Rotterdam','AZ Alkmaar','FC Twente Enschede',
+    'Vitesse Arnhem','SC Heerenveen','FC Utrecht','FC Groningen','Sparta Rotterdam',
+    'Willem II Tilburg','NEC Nijmegen','Go Ahead Eagles','Heracles Almelo','PEC Zwolle',
+  ],
+  'Süper Lig': [
+    'Galatasaray','Fenerbahce','Fenerbahçe','Besiktas JK','Trabzonspor','Basaksehir FK',
+    'Bursaspor','Fatih Karagümrük','Kayserispor','Caykur Rizespor','Kasimpasa',
+    'Antalyaspor','Sivasspor','Alanyaspor','Konyaspor','Göztepe','MKE Ankaragücü',
+  ],
+};
+
+/* Ligas 1ª división: display → cid de performances (distingue 1ª de 2ª) */
+const LEAGUE_CIDS = {
+  'La Liga':        'ES1',
+  'Premier League': 'GB1',
+  'Serie A':        'IT1',
+  'Bundesliga':     'L1',
+  'Ligue 1':        'FR1',
+  'Eredivisie':     'NL1',
+  'Primeira Liga':  'PO1',
+  'Süper Lig':      'TR1',
+  'Brasileirão':    'BRA1',
 };
 
 const LEAGUE_LOGOS = {
@@ -310,6 +349,10 @@ function validate(player, r) {
     case 'nationality':
       return normalize(player.nationalTeam || '') === normalize(r.value);
     case 'league':
+      if (r.cid) {
+        if ((player.lg || []).includes(r.cid)) return true;
+        if ((player.lg || []).length) return false;
+      }
       return (player.teams || []).some(t => (r.teams || []).some(lt => normalize(lt) === normalize(t)));
     case 'trophy':
       return (player.trophies || []).includes(r.value);
@@ -346,6 +389,10 @@ function validate(player, r) {
     case 'caps_0':  return (player.caps || 0) === 0;
     case 'clubs_ge': return (player.teams || []).length >= r.value;
     case 'clubs_le': return (player.teams || []).length <= r.value;
+    case 'one_club': return (player.teams || []).length === 1;
+    case 'champions_goals_ge': return (player.clg || 0) >= r.value;
+    case 'season_goals_ge':    return (player.bsg || 0) >= r.value;
+    case 'natGoals_ge':        return (player.natGoals || 0) >= r.value;
     case 'fee_gt': return (player.maxFee || 0) > r.value;
     case 'fee_lt': return (player.maxFee || 0) < r.value;
     case 'region': {
@@ -383,8 +430,8 @@ function _buildCandidates(rng, db) {
   for (const nat of _shuffle(NATIONALITIES, rng)) {
     candidates.push({ type:'nationality', value:nat.tmNat, label:nat.adj, imgUrl:nat.flagImg, icon:nat.flag, family:'nationality' });
   }
-  for (const [liga, teams] of Object.entries(LEAGUE_TEAMS)) {
-    candidates.push({ type:'league', value:liga, teams, label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' });
+  for (const [liga, cid] of Object.entries(LEAGUE_CIDS)) {
+    candidates.push({ type:'league', value:liga, cid, teams:LEAGUE_TEAMS[liga]||[], label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' });
   }
   for (const t of _shuffle(TROPHIES.individual, rng)) {
     candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_individual' });
@@ -429,6 +476,15 @@ function _buildCandidates(rng, db) {
   candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
   candidates.push({ type:'fee_gt', value:70000000, label:'Traspaso de más de 70M €',   imgUrl:null, icon:'💰', family:'fee' });
   candidates.push({ type:'fee_lt', value:70000000, label:'Traspaso de menos de 70M €', imgUrl:null, icon:'💰', family:'fee' });
+  candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
+  candidates.push({ type:'champions_goals_ge', value:20, label:'20+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
+  candidates.push({ type:'champions_goals_ge', value:30, label:'30+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
+  candidates.push({ type:'season_goals_ge', value:10, label:'10+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
+  candidates.push({ type:'season_goals_ge', value:20, label:'20+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
+  candidates.push({ type:'season_goals_ge', value:30, label:'30+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
+  candidates.push({ type:'natGoals_ge', value:20, label:'20+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
+  candidates.push({ type:'natGoals_ge', value:30, label:'30+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
+  candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
   candidates.push({ type:'region', value:'sudamerica',   label:'Ha jugado en Sudamérica',    imgUrl:null, icon:'🌎', family:'region' });
   candidates.push({ type:'region', value:'usa_mexico',   label:'Ha jugado en EE.UU./México', imgUrl:null, icon:'🌎', family:'region' });
   candidates.push({ type:'region', value:'oriente_medio',label:'Ha jugado en Oriente Medio', imgUrl:null, icon:'🌎', family:'region' });
@@ -456,6 +512,9 @@ function _isRedundant(rA, rB) {
   if (rA.type === 'caps_0' && rB.type === 'caps_ge') return true;
   if (rA.type === 'caps_ge' && rA.value >= 1 && rB.type === 'caps_0') return true;
   if (rA.type === 'caps_le' && rB.type === 'caps_le' && rA.value < rB.value) return true;
+  if (rA.type === 'champions_goals_ge' && rB.type === 'champions_goals_ge' && rA.value > rB.value) return true;
+  if (rA.type === 'season_goals_ge'    && rB.type === 'season_goals_ge'    && rA.value > rB.value) return true;
+  if (rA.type === 'natGoals_ge'        && rB.type === 'natGoals_ge'        && rA.value > rB.value) return true;
   const SCORER_TROPHIES = new Set(['Pichichi La Liga','Bota de Oro Premier League','Capocannoniere Serie A','Maximo Goleador Bundesliga','Maximo Goleador Ligue 1','Bota de Oro Mundial','Bota de Oro Europea']);
   if (rA.type === 'position_gk' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
   if (rB.type === 'position_gk' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
@@ -574,9 +633,59 @@ function _ensureSolution(restrictions, shuffledPool, db) {
   return nuclear.length >= 2 ? nuclear : result;
 }
 
+/* ── Ronda especial: One Club Man ──
+   Un club + "toda su carrera en un solo club" + hasta 2 filtros extra.
+   Incompatible con el esquema normal de 2 clubes, por eso tiene rama propia.
+   DEBE ser idéntico al de coche/js/script.js para que el seed sea determinista. */
+const _ONECLUB_PROB = 0.10;
+function _tryOneClubRound(rng, db, shuffledClubs) {
+  const eligible = shuffledClubs.filter(club => {
+    let cnt = 0;
+    for (const p of db) {
+      const t = p.teams || [];
+      if (t.length === 1 && normalize(t[0]) === normalize(club.tmName)) {
+        if (++cnt >= 2) return true;
+      }
+    }
+    return false;
+  });
+  if (!eligible.length) return null;
+  const club = eligible[0];
+  const clubR    = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
+  const oneClubR = { type:'one_club', label:'One Club Man (un solo club)', imgUrl:null, icon:'🏰', family:'clubs_count' };
+
+  const pool = db.filter(p => (p.teams||[]).length === 1 && normalize(p.teams[0]) === normalize(club.tmName));
+
+  const fillers = _shuffle(_buildCandidates(rng, db).filter(r => {
+    const fam = r.family || r.type;
+    if (fam === 'league' || fam === 'region' || fam === 'clubs_count' || r.type === 'club') return false;
+    return _matching(r, db) >= 2;
+  }), rng);
+
+  const result  = [clubR, oneClubR];
+  const usedFam = new Set(['club','clubs_count','league','region']);
+  for (const cand of fillers) {
+    if (result.length >= 4) break;
+    const fam = cand.family || cand.type;
+    if (usedFam.has(fam)) continue;
+    const nonClub = [...result.filter(r => r.type !== 'club'), cand];
+    if (pool.some(p => nonClub.every(r => validate(p, r)))) {
+      result.push(cand);
+      usedFam.add(fam);
+    }
+  }
+  return result;
+}
+
 function generate(seed, db) {
   const rng = _mulberry32(seed);
   const shuffledClubs = _shuffle(CLUBS_LIST, rng);
+
+  /* Ronda especial One Club Man (probabilidad baja) */
+  if (rng() < _ONECLUB_PROB) {
+    const oc = _tryOneClubRound(rng, db, shuffledClubs);
+    if (oc) return oc;
+  }
 
   /* ── B: Pre-filtrar pares de clubs por intersección mínima ──
      Elegir club1 y luego buscar club2 que tenga ≥ MIN_PAIR jugadores
@@ -601,11 +710,11 @@ function generate(seed, db) {
 
   if (useLeagueAsSecond) {
     const club1League = club1.meta.league;
-    const otherLeagues = Object.entries(LEAGUE_TEAMS).filter(([lg]) => lg !== club1League);
+    const otherLeagues = Object.entries(LEAGUE_CIDS).filter(([lg]) => lg !== club1League);
     if (otherLeagues.length > 0) {
       const shuffledLeagues = _shuffle(otherLeagues, rng);
-      for (const [liga, teams] of shuffledLeagues) {
-        const lr = { type:'league', value:liga, teams, label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
+      for (const [liga, cid] of shuffledLeagues) {
+        const lr = { type:'league', value:liga, cid, teams:LEAGUE_TEAMS[liga]||[], label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
         /* Comprobar que hay intersección con club1 */
         if (db.some(p => validate(p, club1.r) && validate(p, lr))) {
           clubRestrictions.push(lr);
