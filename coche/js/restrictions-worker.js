@@ -515,6 +515,8 @@ function _isRedundant(rA, rB) {
   if (rA.type === 'champions_goals_ge' && rB.type === 'champions_goals_ge' && rA.value > rB.value) return true;
   if (rA.type === 'season_goals_ge'    && rB.type === 'season_goals_ge'    && rA.value > rB.value) return true;
   if (rA.type === 'natGoals_ge'        && rB.type === 'natGoals_ge'        && rA.value > rB.value) return true;
+  if (rA.type === 'one_club' && rB.type === 'clubs_ge') return true;
+  if (rB.type === 'one_club' && rA.type === 'clubs_ge') return true;
   const SCORER_TROPHIES = new Set(['Pichichi La Liga','Bota de Oro Premier League','Capocannoniere Serie A','Maximo Goleador Bundesliga','Maximo Goleador Ligue 1','Bota de Oro Mundial','Bota de Oro Europea']);
   if (rA.type === 'position_gk' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
   if (rB.type === 'position_gk' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
@@ -633,59 +635,11 @@ function _ensureSolution(restrictions, shuffledPool, db) {
   return nuclear.length >= 2 ? nuclear : result;
 }
 
-/* ── Ronda especial: One Club Man ──
-   Un club + "toda su carrera en un solo club" + hasta 2 filtros extra.
-   Incompatible con el esquema normal de 2 clubes, por eso tiene rama propia.
-   DEBE ser idéntico al de coche/js/script.js para que el seed sea determinista. */
-const _ONECLUB_PROB = 0.10;
-function _tryOneClubRound(rng, db, shuffledClubs) {
-  const eligible = shuffledClubs.filter(club => {
-    let cnt = 0;
-    for (const p of db) {
-      const t = p.teams || [];
-      if (t.length === 1 && normalize(t[0]) === normalize(club.tmName)) {
-        if (++cnt >= 2) return true;
-      }
-    }
-    return false;
-  });
-  if (!eligible.length) return null;
-  const club = eligible[0];
-  const clubR    = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-  const oneClubR = { type:'one_club', label:'One Club Man (un solo club)', imgUrl:null, icon:'🏰', family:'clubs_count' };
-
-  const pool = db.filter(p => (p.teams||[]).length === 1 && normalize(p.teams[0]) === normalize(club.tmName));
-
-  const fillers = _shuffle(_buildCandidates(rng, db).filter(r => {
-    const fam = r.family || r.type;
-    if (fam === 'league' || fam === 'region' || fam === 'clubs_count' || r.type === 'club') return false;
-    return _matching(r, db) >= 2;
-  }), rng);
-
-  const result  = [clubR, oneClubR];
-  const usedFam = new Set(['club','clubs_count','league','region']);
-  for (const cand of fillers) {
-    if (result.length >= 4) break;
-    const fam = cand.family || cand.type;
-    if (usedFam.has(fam)) continue;
-    const nonClub = [...result.filter(r => r.type !== 'club'), cand];
-    if (pool.some(p => nonClub.every(r => validate(p, r)))) {
-      result.push(cand);
-      usedFam.add(fam);
-    }
-  }
-  return result;
-}
+const _ONECLUB_PROB = 0.02;   // muy poco frecuente: ~1 de cada 50 rondas
 
 function generate(seed, db) {
   const rng = _mulberry32(seed);
   const shuffledClubs = _shuffle(CLUBS_LIST, rng);
-
-  /* Ronda especial One Club Man (probabilidad baja) */
-  if (rng() < _ONECLUB_PROB) {
-    const oc = _tryOneClubRound(rng, db, shuffledClubs);
-    if (oc) return oc;
-  }
 
   /* ── B: Pre-filtrar pares de clubs por intersección mínima ──
      Elegir club1 y luego buscar club2 que tenga ≥ MIN_PAIR jugadores
@@ -704,9 +658,28 @@ function generate(seed, db) {
   }
   clubRestrictions.push(club1.r);
 
+  /* ── One Club Man (~2%): sustituye el slot de "club 2" por "toda su
+     carrera en un solo club", igual que la liga lo hace con 15%. Nunca
+     cambia el total de restricciones (siguen siendo 5 siempre) — solo
+     aplica si el club1 elegido tiene ≥2 one-club-men reales en la BD.
+     DEBE ser idéntico al de coche/js/script.js para que el seed sea determinista. */
+  if (rng() < _ONECLUB_PROB) {
+    let ocmCount = 0;
+    for (const p of db) {
+      const t = p.teams || [];
+      if (t.length === 1 && normalize(t[0]) === normalize(club1.meta.tmName)) {
+        if (++ocmCount >= 2) break;
+      }
+    }
+    if (ocmCount >= 2) {
+      clubRestrictions.push({ type:'one_club', label:'One Club Man (un solo club)', imgUrl:null, icon:'🏰', family:'clubs_count' });
+    }
+  }
+
   /* ── C: Con ~15% de probabilidad, sustituir el segundo club por una liga
-     (siempre de una liga DISTINTA a la del club1) ── */
-  const useLeagueAsSecond = rng() < 0.15;
+     (siempre de una liga DISTINTA a la del club1; solo si el slot 2 no lo
+     ocupó ya One Club Man) ── */
+  const useLeagueAsSecond = clubRestrictions.length < 2 && rng() < 0.15;
 
   if (useLeagueAsSecond) {
     const club1League = club1.meta.league;
@@ -776,10 +749,12 @@ function generate(seed, db) {
     if (!familyGroups[fam]) familyGroups[fam] = [];
     familyGroups[fam].push(r);
   }
-  /* No incluir la familia del slot 2 si fue liga (C) */
+  /* No incluir la familia del slot 2 si fue liga o One Club Man */
   const usedFamilies = new Set();
   if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'league') {
     usedFamilies.add('league');
+  } else if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'one_club') {
+    usedFamilies.add('clubs_count');
   }
 
   const familyNames = _shuffle(
