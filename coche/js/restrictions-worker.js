@@ -76,8 +76,8 @@ const CLUBS_LIST = [
   { tmName:'SSC Napoli',           display:'Napoli',         league:'Serie A' },
   { tmName:'SS Lazio',             display:'Lazio',          league:'Serie A' },
   { tmName:'Ajax Amsterdam',       display:'Ajax',           league:'Eredivisie' },
-  { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Argentina',  region:'sudamerica' },
-  { tmName:'CA River Plate',       display:'River Plate',    league:'Argentina',  region:'sudamerica' },
+  { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Liga Argentina' },
+  { tmName:'CA River Plate',       display:'River Plate',    league:'Liga Argentina' },
   { tmName:'SL Benfica',           display:'Benfica',        league:'Primeira Liga' },
   { tmName:'FC Porto',             display:'Porto',          league:'Primeira Liga' },
   { tmName:'Sporting CP',          display:'Sporting CP',    league:'Primeira Liga' },
@@ -103,7 +103,7 @@ const CLUBS_LIST = [
   { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
   { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
   { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
-  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão',  region:'sudamerica' },
+  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
 ].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
 
 const LEAGUE_TEAMS = {
@@ -173,6 +173,7 @@ const LEAGUE_CIDS = {
   'Primeira Liga':  'PO1',
   'Süper Lig':      'TR1',
   'Brasileirão':    'BRA1',
+  'Liga Argentina': 'AR1',
 };
 
 const LEAGUE_LOGOS = {
@@ -181,6 +182,11 @@ const LEAGUE_LOGOS = {
   'Serie A':        sbStorageUrl('league-logos', 'SerieA.png'),
   'Bundesliga':     sbStorageUrl('league-logos', 'Bundesliga.png'),
   'Ligue 1':        sbStorageUrl('league-logos', 'Ligue1.png'),
+  'Eredivisie':     sbStorageUrl('league-logos', 'Eredivisie.png'),
+  'Primeira Liga':  sbStorageUrl('league-logos', 'PrimeiraLiga.png'),
+  'Süper Lig':      sbStorageUrl('league-logos', 'SuperLig.png'),
+  'Brasileirão':    sbStorageUrl('league-logos', 'Brasileirao.png'),
+  'Liga Argentina': sbStorageUrl('league-logos', 'LigaArgentina.png'),
 };
 
 const NATIONALITIES = [
@@ -191,7 +197,21 @@ const NATIONALITIES = [
   { tmNat:'Germany',     display:'Alemania',   adj:'Alemán',     flag:'🇩🇪', flagImg:sbStorageUrl('team-flags','de.png') },
   { tmNat:'Brazil',      display:'Brasil',     adj:'Brasileño',  flag:'🇧🇷', flagImg:sbStorageUrl('team-flags','br.png') },
   { tmNat:'Netherlands', display:'Holanda',    adj:'Holandés',   flag:'🇳🇱', flagImg:sbStorageUrl('team-flags','nl.png') },
+  { tmNat:'Italy',       display:'Italia',     adj:'Italiano',   flag:'🇮🇹', flagImg:sbStorageUrl('team-flags','it.png') },
+  { tmNat:'Uruguay',     display:'Uruguay',    adj:'Uruguayo',   flag:'🇺🇾', flagImg:sbStorageUrl('team-flags','uy.png') },
+  { tmNat:'Senegal',     display:'Senegal',    adj:'Senegalés',  flag:'🇸🇳', flagImg:sbStorageUrl('team-flags','sn.png') },
+  { tmNat:'Cameroon',    display:'Camerún',    adj:'Camerunés',  flag:'🇨🇲', flagImg:sbStorageUrl('team-flags','cm.png') },
+  { tmNat:'Morocco',     display:'Marruecos',  adj:'Marroquí',   flag:'🇲🇦', flagImg:sbStorageUrl('team-flags','ma.png') },
+  { tmNat:'Japan',       display:'Japón',      adj:'Japonés',    flag:'🇯🇵', flagImg:sbStorageUrl('team-flags','jp.png') },
 ];
+
+/* Icono de silueta por continente (bucket league-logos, reutilizado) */
+const CONTINENT_LOGOS = {
+  europeo:    sbStorageUrl('league-logos', 'Europe.png'),
+  americano:  sbStorageUrl('league-logos', 'Americas.png'),
+  africano:   sbStorageUrl('league-logos', 'Africa.png'),
+  asiatico:   sbStorageUrl('league-logos', 'Asia.png'),
+};
 
 const CONTINENT_NAT = {
   europeo:   ['Spain','England','France','Germany','Netherlands','Portugal','Italy',
@@ -223,21 +243,6 @@ const CONTINENT_NAT = {
 };
 
 const REGION_PATTERNS = {
-  sudamerica:    ['boca','river','flamengo','santos','corinthians','sao paulo','gremio',
-                  'palmeiras','atletico mineiro','vasco','fluminense','cruzeiro','sport recife',
-                  'internacional','nacional','penarol','estudiantes','independiente',
-                  'racing','san lorenzo',"newell's",'rosario','tigre','colo-colo',
-                  'u de chile','universidad','alianza','universitario','barcelona guay',
-                  'liga de quito','dep quito','deportivo cali','junior','medellin'],
-  usa_mexico:    ['galaxy','red bulls','new york city','fc dallas','toronto','seattle',
-                  'portland','atlanta united','inter miami','chicago fire','columbus',
-                  'new england','real salt lake','colorado','houston',
-                  'dc united','d.c. united','los angeles fc','lafc','san jose','sporting kansas',
-                  'vancouver whitecaps','montreal','philadelphia union',
-                  'orlando city','nashville sc','minnesota united',
-                  'fc cincinnati','austin fc','charlotte fc','st. louis city',
-                  'chivas','america','cruz azul','pumas','toluca','monterrey','tigres',
-                  'leon','guadalajara','pachuca','necaxa','veracruz','atlas','santos lag'],
   oriente_medio: ['al-nassr','al-hilal','al-ittihad','al-ahli','al-qadsia',
                   'al-sadd','al-rayyan','al-duhail','al-ain','al-wahda',
                   'al-shabab','al-raed','al-taawoun','al-faisaly','al-fateh',
@@ -354,6 +359,8 @@ function validate(player, r) {
         if ((player.lg || []).length) return false;
       }
       return (player.teams || []).some(t => (r.teams || []).some(lt => normalize(lt) === normalize(t)));
+    case 'league_any':
+      return (r.value || []).some(cid => (player.lg || []).includes(cid));
     case 'trophy':
       return (player.trophies || []).includes(r.value);
     case 'trophy_any':
@@ -455,7 +462,7 @@ function _buildCandidates(rng, db) {
     candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display||p.name}`, imgUrl:(dbPlayer && dbPlayer.img) || null, icon:p.icon, family:'teammate' });
   }
   for (const [cont, label] of [['europeo','Europeo'],['americano','Continente Americano'],['africano','Africano'],['asiatico','Asiático']]) {
-    candidates.push({ type:'continent', value:cont, label, imgUrl:null, icon:'🌍', family:'continent' });
+    candidates.push({ type:'continent', value:cont, label, imgUrl:CONTINENT_LOGOS[cont], icon:'🌍', family:'continent' });
   }
   for (const [dec, label] of [['1980s','Nacido en los 80'],['1990s','Nacido en los 90'],['2000s','Nacido en los 2000']]) {
     candidates.push({ type:'birthDecade', value:dec, label, imgUrl:null, icon:'🎂', family:'birth' });
@@ -485,9 +492,8 @@ function _buildCandidates(rng, db) {
   candidates.push({ type:'natGoals_ge', value:20, label:'20+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
   candidates.push({ type:'natGoals_ge', value:30, label:'30+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
   candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
-  candidates.push({ type:'region', value:'sudamerica',   label:'Ha jugado en Sudamérica',    imgUrl:null, icon:'🌎', family:'region' });
-  candidates.push({ type:'region', value:'usa_mexico',   label:'Ha jugado en EE.UU./México', imgUrl:null, icon:'🌎', family:'region' });
   candidates.push({ type:'region', value:'oriente_medio',label:'Ha jugado en Oriente Medio', imgUrl:null, icon:'🌎', family:'region' });
+  candidates.push({ type:'league_any', value:['MLS1','MEX1'], label:'Ha jugado en MLS/Liga MX', imgUrl:sbStorageUrl('league-logos','UsaMexico.png'), icon:'⚽', family:'league_general' });
   candidates.push({ type:'trophy_any', value:['Liga España','Liga Inglaterra','Liga Italia','Liga Francia','Liga Alemania'], label:'Ganador Liga Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general' });
   candidates.push({ type:'trophy_any', value:['Copa España','Copa Inglaterra','Copa Italia','Copa Francia','Copa Alemania'], label:'Ganador Copa Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general' });
   candidates.push({ type:'trophy_any', value:['Eurocopa','Mundial','Copa America'], label:'Ganador con Selección', imgUrl:null, icon:'🌍', family:'trophy_general' });
