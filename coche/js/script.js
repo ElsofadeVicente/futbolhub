@@ -559,8 +559,8 @@ const Restrictions = (() => {
     { tmName:'SSC Napoli',           display:'Napoli',         league:'Serie A' },
     { tmName:'SS Lazio',             display:'Lazio',          league:'Serie A' },
     { tmName:'Ajax Amsterdam',       display:'Ajax',           league:'Eredivisie' },
-    { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Argentina',  region:'sudamerica' },
-    { tmName:'CA River Plate',       display:'River Plate',    league:'Argentina',  region:'sudamerica' },
+    { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Liga Argentina' },
+    { tmName:'CA River Plate',       display:'River Plate',    league:'Liga Argentina' },
     { tmName:'SL Benfica',           display:'Benfica',        league:'Primeira Liga' },
     { tmName:'FC Porto',             display:'Porto',          league:'Primeira Liga' },
     { tmName:'Sporting CP',          display:'Sporting CP',    league:'Primeira Liga' },
@@ -586,7 +586,7 @@ const Restrictions = (() => {
   { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
   { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
   { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
-  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão',  region:'sudamerica' },
+  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
   ].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
 
   /* ────────── EQUIPOS POR LIGA ────────── */
@@ -663,6 +663,7 @@ const Restrictions = (() => {
     'Primeira Liga':  'PO1',
     'Süper Lig':      'TR1',
     'Brasileirão':    'BRA1',
+    'Liga Argentina': 'AR1',
   };
 
   /* Logo de liga (bucket league-logos) */
@@ -672,6 +673,11 @@ const Restrictions = (() => {
     'Serie A':        sbStorageUrl('league-logos', 'SerieA.png'),
     'Bundesliga':     sbStorageUrl('league-logos', 'Bundesliga.png'),
     'Ligue 1':        sbStorageUrl('league-logos', 'Ligue1.png'),
+    'Eredivisie':     sbStorageUrl('league-logos', 'Eredivisie.png'),
+    'Primeira Liga':  sbStorageUrl('league-logos', 'PrimeiraLiga.png'),
+    'Süper Lig':      sbStorageUrl('league-logos', 'SuperLig.png'),
+    'Brasileirão':    sbStorageUrl('league-logos', 'Brasileirao.png'),
+    'Liga Argentina': sbStorageUrl('league-logos', 'LigaArgentina.png'),
   };
 
   /* ────────── NACIONALIDADES ────────── */
@@ -684,7 +690,21 @@ const Restrictions = (() => {
     { tmNat:'Germany',     display:'Alemania',  adj:'Alemán',    flag:'🇩🇪', flagImg:sbStorageUrl('team-flags','de.png') },
     { tmNat:'Brazil',      display:'Brasil',    adj:'Brasileño', flag:'🇧🇷', flagImg:sbStorageUrl('team-flags','br.png') },
     { tmNat:'Netherlands', display:'Holanda',   adj:'Holandés',  flag:'🇳🇱', flagImg:sbStorageUrl('team-flags','nl.png') },
+    { tmNat:'Italy',       display:'Italia',    adj:'Italiano',   flag:'🇮🇹', flagImg:sbStorageUrl('team-flags','it.png') },
+    { tmNat:'Uruguay',     display:'Uruguay',   adj:'Uruguayo',   flag:'🇺🇾', flagImg:sbStorageUrl('team-flags','uy.png') },
+    { tmNat:'Senegal',     display:'Senegal',   adj:'Senegalés',  flag:'🇸🇳', flagImg:sbStorageUrl('team-flags','sn.png') },
+    { tmNat:'Cameroon',    display:'Camerún',   adj:'Camerunés',  flag:'🇨🇲', flagImg:sbStorageUrl('team-flags','cm.png') },
+    { tmNat:'Morocco',     display:'Marruecos', adj:'Marroquí',   flag:'🇲🇦', flagImg:sbStorageUrl('team-flags','ma.png') },
+    { tmNat:'Japan',       display:'Japón',     adj:'Japonés',    flag:'🇯🇵', flagImg:sbStorageUrl('team-flags','jp.png') },
   ];
+
+  /* Icono de silueta por continente (bucket league-logos, reutilizado) */
+  const CONTINENT_LOGOS = {
+    europeo:    sbStorageUrl('league-logos', 'Europe.png'),
+    americano:  sbStorageUrl('league-logos', 'Americas.png'),
+    africano:   sbStorageUrl('league-logos', 'Africa.png'),
+    asiatico:   sbStorageUrl('league-logos', 'Asia.png'),
+  };
 
   /* ────────── CONTINENTES ────────── */
   const CONTINENT_NAT = {
@@ -718,22 +738,6 @@ const Restrictions = (() => {
 
   /* ────────── REGIONES ────────── */
   const REGION_PATTERNS = {
-    sudamerica:   ['boca','river','flamengo','santos','corinthians','sao paulo','gremio',
-                   'palmeiras','atletico mineiro','vasco','fluminense','cruzeiro','sport recife',
-                   'internacional','nacional','penarol','estudiantes','independiente',
-                   'racing','san lorenzo','newells','rosario','tigre','colo-colo',
-                   'u de chile','universidad','alianza','universitario','barcelona guay',
-                   'liga de quito','dep quito','deportivo cali','junior','medellin'],
-    usa_mexico:   ['galaxy','red bulls','new york city','fc dallas','toronto','seattle',
-                   'portland','atlanta united','inter miami','chicago fire','columbus',
-                   'new england','real salt lake','colorado','houston',
-                   'dc united','d.c. united',
-                   'los angeles fc','lafc','san jose','sporting kansas',
-                   'vancouver whitecaps','montreal','philadelphia union',
-                   'orlando city','nashville sc','minnesota united',
-                   'fc cincinnati','austin fc','charlotte fc','st. louis city',
-                   'chivas','america','cruz azul','pumas','toluca','monterrey','tigres',
-                   'leon','guadalajara','pachuca','necaxa','veracruz','atlas','santos lag'],
     oriente_medio:['al-nassr','al-hilal','al-ittihad','al-ahli','al-qadsia',
                    'al-sadd','al-rayyan','al-duhail','al-ain','al-wahda',
                    'al-shabab','al-raed','al-taawoun','al-faisaly','al-fateh',
@@ -910,7 +914,7 @@ const Restrictions = (() => {
 
     /* Continent */
     for (const [cont, label] of [['europeo','Europeo'],['americano','Continente Americano'],['africano','Africano'],['asiatico','Asiático']]) {
-      candidates.push({ type:'continent', value:cont, label, imgUrl:null, icon:'🌍', family:'continent' });
+      candidates.push({ type:'continent', value:cont, label, imgUrl:CONTINENT_LOGOS[cont], icon:'🌍', family:'continent' });
     }
 
     /* Nacido en década */
@@ -962,9 +966,13 @@ const Restrictions = (() => {
     candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
 
     /* Regiones */
-    candidates.push({ type:'region', value:'sudamerica',  label:'Ha jugado en Sudamérica',     imgUrl:null, icon:'🌎', family:'region' });
-    candidates.push({ type:'region', value:'usa_mexico',  label:'Ha jugado en EE.UU./México',  imgUrl:null, icon:'🌎', family:'region' });
     candidates.push({ type:'region', value:'oriente_medio',label:'Ha jugado en Oriente Medio', imgUrl:null, icon:'🌎', family:'region' });
+
+    /* MLS/Liga MX: como las ligas normales, validado por cid de performances (no por nombre de equipo) */
+    candidates.push({
+      type:'league_any', value:['MLS1','MEX1'],
+      label:'Ha jugado en MLS/Liga MX', imgUrl:sbStorageUrl('league-logos','UsaMexico.png'), icon:'⚽', family:'league_general',
+    });
 
     /* Ganador liga/copa doméstica (general) */
     candidates.push({
@@ -1380,6 +1388,10 @@ const Restrictions = (() => {
           if ((player.lg || []).length) return false; /* tiene perf y no incluye la liga */
         }
         return (player.teams || []).some(t => (r.teams || []).some(lt => normalize(lt) === normalize(t)));
+
+      /* Liga: cualquiera de varios cids (ej. MLS/Liga MX como una sola restricción) */
+      case 'league_any':
+        return (r.value || []).some(cid => (player.lg || []).includes(cid));
 
       /* Trofeo exacto */
       case 'trophy':
