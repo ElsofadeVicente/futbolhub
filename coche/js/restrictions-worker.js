@@ -242,17 +242,6 @@ const CONTINENT_NAT = {
                'New','New Zealand'],
 };
 
-const REGION_PATTERNS = {
-  oriente_medio: ['al-nassr','al-hilal','al-ittihad','al-ahli','al-qadsia',
-                  'al-sadd','al-rayyan','al-duhail','al-ain','al-wahda',
-                  'al-shabab','al-raed','al-taawoun','al-faisaly','al-fateh',
-                  'al-jazira','al-wasl','al-najma','al-kharaitiyat',
-                  'al-wehda','al-ettifaq','al-gharafa','al ain sc','al ain fc',
-                  'riyadh','jeddah','sharjah','dubai','abu dhabi','kuwait',
-                  'esteghlal','persepolis','tractors','sepahan',
-                  'umm salal','pakhtakor','lokomotiv tashkent'],
-};
-
 const TROPHIES = {
   individual: [
     { key:'Pichichi La Liga',          display:'Pichichi',            icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','pichichi.png') },
@@ -402,10 +391,6 @@ function validate(player, r) {
     case 'natGoals_ge':        return (player.natGoals || 0) >= r.value;
     case 'fee_gt': return (player.maxFee || 0) > r.value;
     case 'fee_lt': return (player.maxFee || 0) < r.value;
-    case 'region': {
-      const patterns = REGION_PATTERNS[r.value] || [];
-      return (player.teams || []).some(t => patterns.some(p => normalize(t).includes(p)));
-    }
     case 'team':
       return (player.teams || player.clubs || []).some(c => normalize(c) === normalize(r.value));
     case 'nationalTeam':
@@ -492,8 +477,8 @@ function _buildCandidates(rng, db) {
   candidates.push({ type:'natGoals_ge', value:20, label:'20+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
   candidates.push({ type:'natGoals_ge', value:30, label:'30+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
   candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
-  candidates.push({ type:'region', value:'oriente_medio',label:'Ha jugado en Oriente Medio', imgUrl:null, icon:'🌎', family:'region' });
   candidates.push({ type:'league_any', value:['MLS1','MEX1'], label:'Ha jugado en MLS/Liga MX', imgUrl:sbStorageUrl('league-logos','UsaMexico.png'), icon:'⚽', family:'league_general' });
+  candidates.push({ type:'league_any', value:['SA1','UAE1','QSL','IR1'], label:'Ha jugado en Oriente Medio', imgUrl:sbStorageUrl('league-logos','OrienteMedio.png'), icon:'⚽', family:'league_general' });
   candidates.push({ type:'trophy_any', value:['Liga España','Liga Inglaterra','Liga Italia','Liga Francia','Liga Alemania'], label:'Ganador Liga Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general' });
   candidates.push({ type:'trophy_any', value:['Copa España','Copa Inglaterra','Copa Italia','Copa Francia','Copa Alemania'], label:'Ganador Copa Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general' });
   candidates.push({ type:'trophy_any', value:['Eurocopa','Mundial','Copa America'], label:'Ganador con Selección', imgUrl:null, icon:'🌍', family:'trophy_general' });
@@ -505,10 +490,6 @@ function _isRedundant(rA, rB) {
   if (rA.type === 'club' && rB.type === 'league') {
     const c = CLUBS_LIST.find(c => c.tmName === rA.value);
     if (c && c.league === rB.value) return true;
-  }
-  if (rA.type === 'club' && rB.type === 'region') {
-    const c = CLUBS_LIST.find(c => c.tmName === rA.value);
-    if (c && c.region === rB.value) return true;
   }
   if (rA.type === 'trophy' && rB.type === 'trophy_any' && (rB.value||[]).includes(rA.value)) return true;
   if (rA.type === 'trophy_any' && rB.type === 'trophy' && (rA.value||[]).includes(rB.value)) return true;

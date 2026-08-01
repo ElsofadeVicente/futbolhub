@@ -736,18 +736,6 @@ const Restrictions = (() => {
                  'New','New Zealand'],
   };
 
-  /* ────────── REGIONES ────────── */
-  const REGION_PATTERNS = {
-    oriente_medio:['al-nassr','al-hilal','al-ittihad','al-ahli','al-qadsia',
-                   'al-sadd','al-rayyan','al-duhail','al-ain','al-wahda',
-                   'al-shabab','al-raed','al-taawoun','al-faisaly','al-fateh',
-                   'al-jazira','al-wasl','al-najma','al-kharaitiyat',
-                   'al-wehda','al-ettifaq','al-gharafa','al ain sc','al ain fc',
-                   'riyadh','jeddah','sharjah','dubai','abu dhabi','kuwait',
-                   'esteghlal','persepolis','tractors','sepahan',
-                   'umm salal','pakhtakor','lokomotiv tashkent'],
-  };
-
   /* ────────── TROFEOS DEFINIDOS ────────── */
   /* Estos deben coincidir EXACTAMENTE con las claves de los JSON         */
   const TROPHIES = {
@@ -965,13 +953,16 @@ const Restrictions = (() => {
     candidates.push({ type:'natGoals_ge', value:30, label:'30+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
     candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
 
-    /* Regiones */
-    candidates.push({ type:'region', value:'oriente_medio',label:'Ha jugado en Oriente Medio', imgUrl:null, icon:'🌎', family:'region' });
-
     /* MLS/Liga MX: como las ligas normales, validado por cid de performances (no por nombre de equipo) */
     candidates.push({
       type:'league_any', value:['MLS1','MEX1'],
       label:'Ha jugado en MLS/Liga MX', imgUrl:sbStorageUrl('league-logos','UsaMexico.png'), icon:'⚽', family:'league_general',
+    });
+
+    /* Oriente Medio: Arabia Saudí, EAU, Qatar e Irán, validado por cid (no por nombre de club) */
+    candidates.push({
+      type:'league_any', value:['SA1','UAE1','QSL','IR1'],
+      label:'Ha jugado en Oriente Medio', imgUrl:sbStorageUrl('league-logos','OrienteMedio.png'), icon:'⚽', family:'league_general',
     });
 
     /* Ganador liga/copa doméstica (general) */
@@ -1159,12 +1150,6 @@ const Restrictions = (() => {
     if (rA.type === 'club' && rB.type === 'league') {
       const clubObj = CLUBS_LIST.find(c => c.tmName === rA.value);
       if (clubObj && clubObj.league === rB.value) return true;
-    }
-    /* Club de una región concreta → la restricción de esa región es redundante
-       Ej: "Ha jugado en Boca Juniors" implica "Ha jugado en Sudamérica"   */
-    if (rA.type === 'club' && rB.type === 'region') {
-      const clubObj = CLUBS_LIST.find(c => c.tmName === rA.value);
-      if (clubObj && clubObj.region === rB.value) return true;
     }
     /* Trofeo específico → trophy_any que lo incluye es redundante
        Ej: "Ganador Champions" implica "Ganador título continental"        */
@@ -1482,14 +1467,6 @@ const Restrictions = (() => {
         return (player.maxFee || 0) > r.value;
       case 'fee_lt':
         return (player.maxFee || 0) < r.value;
-
-      /* Región jugada */
-      case 'region': {
-        const patterns = REGION_PATTERNS[r.value] || [];
-        return (player.teams || []).some(t =>
-          patterns.some(p => normalize(t).includes(p))
-        );
-      }
 
       /* Legacy */
       case 'team':
