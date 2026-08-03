@@ -32,6 +32,27 @@ function _shuffle(arr, rng) {
   }
   return a;
 }
+/* Orden aleatorio ponderado sin reemplazo: cada item sale antes cuanto
+   mayor sea su peso. Se usa para elegir FAMILIA de restriccion con peso
+   proporcional a su nº de candidatos, de forma que cada candidato
+   individual (esté en una familia de 2 o de 38) tenga la misma
+   probabilidad de salir en vez de que las familias pequeñas dominen. */
+function _weightedShuffle(items, weightFn, rng) {
+  const pool = items.map(it => ({ it, w: Math.max(weightFn(it), 1e-6) }));
+  const order = [];
+  while (pool.length) {
+    const total = pool.reduce((s, p) => s + p.w, 0);
+    let r = rng() * total;
+    let idx = pool.length - 1;
+    for (let i = 0; i < pool.length; i++) {
+      r -= pool[i].w;
+      if (r <= 0) { idx = i; break; }
+    }
+    order.push(pool[idx].it);
+    pool.splice(idx, 1);
+  }
+  return order;
+}
 /* Memoizada: normalize() se llama con las mismas cadenas (club/liga/
    nacionalidad/jugador) miles de veces por generate() -- con el pool de
    generacion ampliado (~1500 jugadores) recalcular NFD+regex en cada
@@ -173,7 +194,7 @@ const LEAGUE_CIDS = {
   'Primeira Liga':  'PO1',
   'Süper Lig':      'TR1',
   'Brasileirão':    'BRA1',
-  'Liga Argentina': 'AR1',
+  'Liga Argentina': 'ARG1',
 };
 
 const LEAGUE_LOGOS = {
@@ -533,6 +554,14 @@ function _isRedundant(rA, rB) {
   return false;
 }
 
+/* Evita duplicar familia (p.ej. dos restricciones de liga) al sustituir
+   una restriccion por otra del pool. excludeIdx es la posicion que se
+   va a reemplazar (no cuenta contra si misma). */
+function _familyUsed(list, candidate, excludeIdx) {
+  const fam = candidate.family || candidate.type;
+  return list.some((r, i) => i !== excludeIdx && (r.family || r.type) === fam);
+}
+
 function _removeRedundancies(restrictions, shuffledPool, db) {
   let result = [...restrictions];
   let changed = true;
@@ -576,11 +605,18 @@ function _ensureSolution(restrictions, shuffledPool, db) {
   };
   if (hasSolution(restrictions)) return restrictions;
   const result = [...restrictions];
-  const swappableIdx = result.map((_, i) => i).filter(i => result[i].type !== 'club');
+  /* Los indices 0 y 1 son el ancla club1 + (club2/liga/one-club-man)
+     decidida en generate() comprobando interseccion real de jugadores.
+     Nunca deben sustituirse aqui: cambiarlos por un candidato generico
+     de la pool convierte el rompecabezas en trivial (1 solo club real
+     + restricciones sueltas sin relacion entre si). Solo los 3 huecos
+     libres (2-4) son sustituibles para buscar solucion. */
+  const swappableIdx = result.map((_, i) => i).filter(i => i >= 2);
   for (const idx of swappableIdx) {
     const original = result[idx];
     for (const candidate of shuffledPool) {
       if (result.includes(candidate)) continue;
+      if (_familyUsed(result, candidate, idx)) continue;
       const wouldBeRedundant = result.some((r, i) => i !== idx && (_isRedundant(r, candidate) || _isRedundant(candidate, r)));
       if (wouldBeRedundant) continue;
       result[idx] = candidate;
@@ -588,20 +624,18 @@ function _ensureSolution(restrictions, shuffledPool, db) {
     }
     result[idx] = original;
   }
-  for (let idx = 0; idx < result.length; idx++) {
-    if (swappableIdx.includes(idx)) continue;
-    const original = result[idx];
-    for (const candidate of shuffledPool) {
-      if (result.includes(candidate)) continue;
-      result[idx] = candidate;
-      if (hasSolution(result)) return result;
-    }
-    result[idx] = original;
-  }
-  const clubs = result.filter(r => r.type === 'club');
+  /* Nuclear fallback: conservar SIEMPRE el ancla (indices 0-1) y
+     reconstruir desde cero los 3 huecos libres. */
+  const anchors = result.slice(0, 2);
   const nonClubPool = shuffledPool.filter(r => r.type !== 'club');
-  const nuclear = [...clubs];
+  const nuclear = [...anchors];
+  /* Sembrar con las familias del ancla (p.ej. si el slot 1 es una liga,
+     no debe poder colarse otra liga mas abajo). */
   const usedFamilies = {};
+  for (const a of anchors) {
+    const fam = a.family || a.type;
+    usedFamilies[fam] = (usedFamilies[fam] || 0) + 1;
+  }
   for (const candidate of nonClubPool) {
     if (nuclear.length >= 5) break;
     const fam = candidate.family || candidate.type;
@@ -614,6 +648,7 @@ function _ensureSolution(restrictions, shuffledPool, db) {
   for (const candidate of nonClubPool) {
     if (nuclear.length >= 5) break;
     if (nuclear.includes(candidate)) continue;
+    if (_familyUsed(nuclear, candidate, -1)) continue;
     if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
     nuclear.push(candidate);
     if (!hasSolution(nuclear)) nuclear.pop();
@@ -630,8 +665,12 @@ function generate(seed, db) {
 
   /* ── B: Pre-filtrar pares de clubs por intersección mínima ──
      Elegir club1 y luego buscar club2 que tenga ≥ MIN_PAIR jugadores
-     en común con club1 en la DB. */
-  const MIN_PAIR = Math.min(4, Math.max(2, Math.floor(db.length / 100)));
+     en común con club1 en la DB. Tope en 3 (antes 4): con 4, Athletic Bilbao
+     y Feyenoord solo tenían UN compañero de reparto posible (Barcelona y
+     Liverpool respectivamente) — el resto de la BD real no llega a esa
+     intersección. En 3 pasan a tener 2 y 7 opciones, sin perder que la
+     conexión siga siendo real. */
+  const MIN_PAIR = Math.min(3, Math.max(2, Math.floor(db.length / 100)));
   const clubRestrictions = [];
 
   /* Club 1 — el primero que tenga al menos 1 jugador */
@@ -744,7 +783,7 @@ function generate(seed, db) {
     usedFamilies.add('clubs_count');
   }
 
-  const familyNames = _shuffle(
+  const familyNames = _weightedShuffle(
     Object.keys(familyGroups).filter(f => {
       if (!usedFamilies.has(f)) {
         if (f === 'position') return rng() < 0.50; // sale ~mitad de veces
@@ -752,6 +791,7 @@ function generate(seed, db) {
       }
       return false;
     }),
+    f => familyGroups[f].length,
     rng
   );
 
@@ -775,7 +815,9 @@ function generate(seed, db) {
   let result = [...clubRestrictions, ...chosen.slice(0, 3)];
   const shuffled = _shuffle(playable, rng); /* pool para reemplazos */
   result = _removeRedundancies(result, shuffled, db);
-  if (rng() < 0.70) result = _ensureSolution(result, shuffled, db);
+  /* Al 75% (antes 70%): dejar ~1 de cada 4 rondas sin ningún jugador válido
+     es intencional — le da variedad/caos a las partidas, no es un bug. */
+  if (rng() < 0.75) result = _ensureSolution(result, shuffled, db);
   return result;
 }
 
