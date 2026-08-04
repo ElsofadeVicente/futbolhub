@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Superdraft — FutbolHUB</title>
+  <meta name="description" content="Superdraft: monta el mejor once del día. Cada ronda sale un club, liga o nacionalidad y eliges un jugador que lo cumpla para maximizar el objetivo." />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Tres en Raya) -->
+  <link rel="stylesheet" href="../coche/css/style.css?v=20260803h">
+  <link rel="stylesheet" href="css/style.css?v=20260804d">
+  <link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- Columnas de anuncios laterales (como el resto de la web) -->
+<aside class="ad-col ad-col--left" aria-hidden="true">
+  <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+</aside>
+<aside class="ad-col ad-col--right" aria-hidden="true">
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+</aside>
+
+<!-- ═══════════ PANTALLA 1: INTRO / OBJETIVO ═══════════ -->
+<div id="screen-intro" class="screen active">
+  <a href="../index.html" class="back-btn">← Volver</a>
+
+  <div class="sd-intro-wrap">
+    <div class="sd-intro-eyebrow">
+      <span class="sd-num">№ 12</span>
+      <span class="sd-sep">·</span>
+      <span class="sd-cat">Superdraft</span>
+      <span class="sd-sep">·</span>
+      <span id="sd-day-label" class="sd-day">#1</span>
+    </div>
+
+    <p class="sd-intro-kicker">EL OBJETIVO DE HOY</p>
+    <h1 id="sd-obj-title" class="sd-intro-title">EL ONCE MÁS VIEJO</h1>
+    <div id="sd-obj-formation" class="sd-intro-formation">Formación 3-4-3</div>
+    <p id="sd-obj-hint" class="sd-intro-hint"></p>
+
+    <button id="sd-start-btn" class="btn-primary">JUGAR ▶</button>
+
+    <!-- Navegación de días (archivo) -->
+    <div id="day-nav" class="sd-daynav">
+      <button id="nav-first" title="Primera edición" aria-label="Primera edición">«</button>
+      <button id="nav-prev"  title="Anterior" aria-label="Anterior">‹</button>
+      <span id="nav-label">#1</span>
+      <button id="nav-next"  title="Siguiente" aria-label="Siguiente">›</button>
+      <button id="nav-last"  title="Hoy" aria-label="Hoy">»</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PANTALLA 2: PARTIDA ═══════════ -->
+<div id="screen-game" class="screen">
+  <a href="../index.html" class="back-btn">← Hub</a>
+
+  <div class="sd-game-wrap">
+    <!-- Campo -->
+    <div id="sd-field" class="sd-field"><!-- generado por JS --></div>
+
+    <!-- Requisito de la ronda: escudo / bandera + nombre -->
+    <div class="sd-panel">
+      <div id="sd-reel" class="sd-req">
+        <div class="sd-req-frame"><img id="sd-reel-img" alt="" /></div>
+        <div id="sd-reel-label" class="sd-req-name"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PANTALLA 3: FIN ═══════════ -->
+<div id="screen-end" class="screen">
+  <div class="sd-end-wrap">
+    <div class="sd-intro-eyebrow">
+      <span class="sd-num">№ 12</span><span class="sd-sep">·</span>
+      <span class="sd-cat">Resultado</span>
+    </div>
+    <div class="sd-end-emoji">🧮</div>
+    <h2 id="sd-end-title" class="sd-end-title">EL ONCE MÁS VIEJO</h2>
+    <div id="sd-end-total" class="sd-end-total">0</div>
+    <p id="sd-end-best" class="sd-end-best"></p>
+    <div class="sd-end-actions">
+      <button id="sd-replay-btn" class="btn-primary">🔄 Reintentar</button>
+      <button id="sd-menu-btn" class="btn-secondary">Objetivo</button>
+      <a href="../index.html" class="btn-secondary">🏠 Hub</a>
+    </div>
+  </div>
+</div>
+
+<!-- Carga -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-inner">
+    <div class="loading-title">SUPERDRAFT</div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="sd-loading-text">Cargando base de datos…</div>
+  </div>
+</div>
+
+<!-- Modal: buscar jugador para la posición pulsada -->
+<div id="pick-modal" class="sd-modal hidden">
+  <div class="sd-modal-backdrop" onclick="SD.closePick()"></div>
+  <div class="sd-modal-card">
+    <button class="sd-modal-x" onclick="SD.closePick()" aria-label="Cerrar">✕</button>
+    <h3 class="sd-modal-title">Buscar jugador</h3>
+    <p class="sd-modal-sub" id="sd-modal-sub"></p>
+    <div class="sd-input-wrap">
+      <input id="player-input" class="player-input" type="text"
+             placeholder="Buscar jugador…" autocomplete="off" maxlength="60"
+             oninput="SD.onInput()" onkeydown="SD.onKey(event)" />
+      <div class="autocomplete-list hidden" id="autocomplete-list"></div>
+    </div>
+    <div class="sd-modal-actions">
+      <button class="btn-secondary" onclick="SD.closePick()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+  window.addEventListener('error', function(e){ console.error('[Global error]', e.message, e.filename, e.lineno); });
+  window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
+</script>
+
+<script src="../js/supabase-config.js"></script>
+<script src="../js/vendor/supabase-js.min.js"></script>
+<script src="../js/auth.js?v=20260722g"></script>
+<script src="../js/progress-sync.js?v=20260727a"></script>
+<script src="../js/hub-streaks.js?v=20260727a"></script>
+<script src="../js/img-heal.js?v=20260727a"></script>
+<script src="../js/profile-widget.js?v=20260727a"></script>
+<script src="../js/futbol-restrictions.js?v=20260804a"></script>
+<script>
+  // Arranca la carga de datos en cuanto FR esté disponible.
+  if (window.FR && FR.init) FR.init();
+</script>
+<script src="js/script.js?v=20260804f"></script>
+</body>
+</html>

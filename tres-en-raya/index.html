@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tres en Raya — FutbolHUB</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Blackjack) -->
+  <link rel="stylesheet" href="../coche/css/style.css?v=20260803h">
+  <link rel="stylesheet" href="css/style.css?v=20260803h">
+  <link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- Columnas de anuncios laterales (como el resto de la web) -->
+<aside class="ad-col ad-col--left" aria-hidden="true">
+  <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+</aside>
+<aside class="ad-col ad-col--right" aria-hidden="true">
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+</aside>
+
+<!-- ═══════════ PANTALLA 1: MENÚ ═══════════ -->
+<div id="screen-menu" class="screen active">
+  <a href="../index.html" class="back-btn">← Volver</a>
+
+  <div class="menu-hero">
+    <h1 class="menu-title">TRES EN RAYA</h1>
+    <p class="menu-subtitle">El tres en raya del fútbol</p>
+  </div>
+
+  <div class="menu-wrap">
+    <div class="menu-tabs">
+      <button class="menu-tab active" id="tab-local">🎮 Local</button>
+      <button class="menu-tab"        id="tab-private">🔒 Privada</button>
+      <button class="menu-tab"        id="tab-public">🌐 Pública</button>
+    </div>
+    <script>
+      (function () {
+        var tabs = ['local', 'private', 'public'];
+        tabs.forEach(function (tab) {
+          var btn = document.getElementById('tab-' + tab);
+          if (!btn) return;
+          btn.addEventListener('click', function () {
+            tabs.forEach(function (t) {
+              var b = document.getElementById('tab-' + t);
+              var p = document.getElementById('panel-' + t);
+              if (b) b.classList.remove('active');
+              if (p) p.classList.remove('active');
+            });
+            btn.classList.add('active');
+            var panel = document.getElementById('panel-' + tab);
+            if (panel) panel.classList.add('active');
+            if (window.App && typeof window.App.setTab === 'function') window.App.setTab(tab);
+          });
+        });
+      })();
+    </script>
+
+    <!-- Local -->
+    <div id="panel-local" class="menu-panel active">
+      <p class="panel-hint">Dos jugadores por turnos en la misma pantalla</p>
+      <div class="name-duo">
+        <input id="input-p1-name" class="menu-input" type="text" placeholder="Jugador 1" maxlength="16" />
+        <span class="name-vs">VS</span>
+        <input id="input-p2-name" class="menu-input" type="text" placeholder="Jugador 2" maxlength="16" />
+      </div>
+      <div class="tr-setting">
+        <span class="settings-label">Victorias para ganar</span>
+        <div class="settings-control">
+          <button class="settings-btn" onclick="App.adjustTarget('local',-1)">−</button>
+          <span class="settings-value" id="local-target-display">3</span>
+          <button class="settings-btn" onclick="App.adjustTarget('local',1)">+</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="App.startLocalGame()">JUGAR ▶</button>
+      <p class="menu-error hidden" id="error-local"></p>
+    </div>
+
+    <!-- Privada -->
+    <div id="panel-private" class="menu-panel">
+      <p class="panel-hint">Crea una sala y comparte el código con tu rival</p>
+      <input id="input-host-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" />
+      <div class="tr-setting">
+        <span class="settings-label">Victorias para ganar</span>
+        <div class="settings-control">
+          <button class="settings-btn" onclick="App.adjustTarget('host',-1)">−</button>
+          <span class="settings-value" id="host-target-display">3</span>
+          <button class="settings-btn" onclick="App.adjustTarget('host',1)">+</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="App.createRoom()">CREAR SALA ▶</button>
+      <div class="menu-divider"><span>O</span></div>
+      <div class="join-row">
+        <input id="input-join-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" />
+        <input id="input-join-code" class="menu-input menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6"
+               oninput="this.value=this.value.toUpperCase()" />
+      </div>
+      <button class="btn-secondary" onclick="App.joinRoom()">UNIRSE ▶</button>
+      <p class="menu-error hidden" id="error-private"></p>
+    </div>
+
+    <!-- Pública -->
+    <div id="panel-public" class="menu-panel">
+      <p class="panel-hint">Te emparejamos con un rival aleatorio</p>
+      <input id="input-public-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" />
+      <button class="btn-primary" id="btn-find-public" onclick="App.findPublicRoom()">BUSCAR PARTIDA ▶</button>
+      <p class="menu-error hidden" id="error-public"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PANTALLA 2: LOBBY (online) ═══════════ -->
+<div id="screen-lobby" class="screen">
+  <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
+  <div class="lobby-wrap">
+    <div class="lobby-code-card">
+      <div class="lobby-code-label">Código de sala</div>
+      <div class="lobby-code-big" id="lobby-code-display">------</div>
+      <button id="btn-copy-link" onclick="App.copyLink()">🔗 Copiar enlace de invitación</button>
+    </div>
+    <div class="lobby-section">
+      <p class="lobby-section-kicker">Jugadores (2)</p>
+      <div class="lobby-players-list" id="lobby-players"></div>
+    </div>
+    <p id="lobby-target" class="lobby-hint"></p>
+    <p id="lobby-hint" class="lobby-hint">Esperando rival…</p>
+  </div>
+</div>
+
+<!-- ═══════════ PANTALLA 3: PARTIDA ═══════════ -->
+<div id="screen-game" class="screen">
+  <div class="game-topbar">
+    <div class="scorebox" id="score-p1">
+      <span class="score-mark mark-p1">✕</span>
+      <span class="score-name" id="name-p1">P1</span>
+      <span class="score-num" id="num-p1">0</span>
+    </div>
+    <div class="turn-badge" id="turn-badge">TURNO P1</div>
+    <div class="scorebox" id="score-p2">
+      <span class="score-num" id="num-p2">0</span>
+      <span class="score-name" id="name-p2">P2</span>
+      <span class="score-mark mark-p2">◯</span>
+    </div>
+  </div>
+
+  <div class="series-info" id="series-info"></div>
+
+  <div class="game-actions">
+    <button class="mini-btn" id="btn-skip" onclick="App.skipTurn()">SALTAR TURNO</button>
+    <div class="turn-timer hidden" id="turn-timer">45</div>
+    <button class="mini-btn mini-btn--draw" id="btn-draw" onclick="App.proposeDraw()">TERMINAR EN TABLAS</button>
+  </div>
+
+  <div id="draw-offer" class="draw-offer hidden">
+    <span id="draw-offer-text">Tu rival propone terminar en tablas (0–0)</span>
+    <div class="draw-offer-btns">
+      <button class="mini-btn" onclick="App.respondDraw(true)">ACEPTAR</button>
+      <button class="mini-btn mini-btn--draw" onclick="App.respondDraw(false)">RECHAZAR</button>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board"><!-- generado por JS --></div>
+  </div>
+
+  <div class="game-hint" id="game-hint"></div>
+</div>
+
+<!-- ═══════════ PANTALLA 4: FIN ═══════════ -->
+<div id="screen-finished" class="screen">
+  <div class="finished-trophy" id="finished-emoji">🏆</div>
+  <h2 class="finished-title" id="finished-title">¡GANADOR!</h2>
+  <div class="winner-name" id="winner-name">—</div>
+  <div class="final-scores" id="final-scores"></div>
+  <div class="finished-actions">
+    <button class="btn-primary" id="btn-play-again" onclick="App.playAgain()">🔄 Revancha</button>
+    <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
+  </div>
+</div>
+
+<!-- Overlay de entrada de jugador -->
+<div id="pick-overlay" class="pick-overlay hidden">
+  <div class="pick-card">
+    <button class="pick-close" onclick="App.closePick()" aria-label="Cerrar">✕</button>
+    <div class="pick-constraints" id="pick-constraints"></div>
+    <div class="pick-input-wrap">
+      <input id="player-input" class="player-input" type="text"
+             placeholder="Escribe un futbolista…" autocomplete="off" maxlength="60" />
+      <div class="autocomplete-list hidden" id="autocomplete-list"></div>
+    </div>
+    <button class="btn-submit" id="submit-btn" onclick="App.submitAnswer()">ENVIAR ▶</button>
+  </div>
+</div>
+
+<!-- Cuenta atrás / carga -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-inner">
+    <div class="loading-title">TRES EN RAYA</div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loading-text">Cargando base de datos…</div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+  (function () {
+    var _queue = [], _real = null;
+    var methods = [
+      'setTab','startLocalGame','createRoom','joinRoom','findPublicRoom',
+      'leaveRoom','copyLink','skipTurn','proposeDraw','respondDraw','pickCell','closePick',
+      'submitAnswer','selectAutocomplete','selectAndSubmit','playAgain','showMenu','showToast'
+    ];
+    var proxy = {};
+    methods.forEach(function (m) {
+      proxy[m] = function () {
+        var args = Array.prototype.slice.call(arguments);
+        if (_real) return _real[m].apply(_real, args);
+        _queue.push([m, args]);
+      };
+    });
+    proxy._flush = function (realApp) {
+      _real = realApp; window.App = realApp;
+      _queue.forEach(function (c) { realApp[c[0]].apply(realApp, c[1]); });
+      _queue = [];
+    };
+    window.App = proxy;
+  })();
+
+  window.addEventListener('error', function(e){ console.error('[Global error]', e.message, e.filename, e.lineno); });
+  window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
+</script>
+
+<script src="../js/supabase-config.js"></script>
+<script src="../js/vendor/supabase-js.min.js"></script>
+<script src="../js/auth.js?v=20260722g"></script>
+<script src="../js/progress-sync.js?v=20260727a"></script>
+<script src="../js/hub-streaks.js?v=20260727a"></script>
+<script src="../js/img-heal.js?v=20260727a"></script>
+<script src="../js/profile-widget.js?v=20260727a"></script>
+<script src="../js/futbol-restrictions.js?v=20260803a"></script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, get, update, onValue, push,
+           serverTimestamp, remove, runTransaction, onDisconnect }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM",
+    authDomain:        "futbolhub-9d0a4.firebaseapp.com",
+    databaseURL:       "https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "futbolhub-9d0a4",
+    storageBucket:     "futbolhub-9d0a4.firebasestorage.app",
+    messagingSenderId: "179751773212",
+    appId:             "1:179751773212:web:9acfe3d5b8c344c51a2bd9"
+  };
+  let db = null;
+  try { db = getDatabase(initializeApp(FIREBASE_CONFIG)); console.log('✅ Firebase OK (Tres en Raya)'); }
+  catch(e) { console.warn('⚠️ Firebase:', e); }
+
+  window._FB = { configured: !!db, db, ref, set, get, update, onValue, push, serverTimestamp, remove, runTransaction };
+  window._FBOnDisconnect = onDisconnect;
+
+  const s = document.createElement('script');
+  s.src = 'js/script.js?v=' + Date.now();
+  s.onload = () => {
+    const realApp = window._AppReal;
+    if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }
+    window.App._flush(realApp);
+    realApp.init();
+  };
+  s.onerror = (e) => console.error('❌ script.js no se pudo cargar:', e);
+  document.body.appendChild(s);
+</script>
+</body>
+</html>

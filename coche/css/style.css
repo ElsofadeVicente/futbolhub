@@ -665,7 +665,3 @@ body.countdown-active .input-section { display:none !important; }
 @media(min-width:768px){
   .results-list{display:grid;grid-template-columns:repeat(2,1fr);align-content:start}
 }
-
-*, ::before, ::after {
-    color: #000000;
-}
