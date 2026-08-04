@@ -107,17 +107,19 @@ async function _fetchLeaguesFromSupabase() {
   }
 }
 
-/* Datos propios de Coche (compañeros_principal.json, entrenados_por.json,
-   etc.): archivos planos {clave: data} en Storage, igual que antes. */
+/* Datos de restricción (compañeros_principal.json, entrenados_por.json, etc.):
+   ahora son GENERALES (compartidos con Tres en Raya) y viven en
+   game-data/general/. Se lee de ahí con respaldo a game-data/coche/ mientras no
+   se haya subido la copia general a Supabase, para no romper nada. */
 async function _fetchCocheJsonFile(name) {
-  try {
-    const res = await fetch(sbStorageUrl('game-data', `coche/${name}`), { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (e) {
-    console.warn(`[Coche] Error cargando coche/${name}:`, e);
-    return {};
+  for (const prefix of ['general', 'coche']) {
+    try {
+      const res = await fetch(sbStorageUrl('game-data', `${prefix}/${name}`), { cache: 'no-cache' });
+      if (res.ok) return await res.json();
+    } catch (e) { /* siguiente prefijo */ }
   }
+  console.warn(`[Coche] Error cargando ${name} (general ni coche)`);
+  return {};
 }
 
 async function _getChunkData(id) {
@@ -405,6 +407,11 @@ async function _loadData() {
     }
   }
   _REVERSE_TEAMMATE_IDS = reverseIdMap;
+
+  /* Dedup: Coche delega validate()/_isRedundant() en el motor compartido FR.
+     FR.validate('teammate') necesita estos mapas inversos; se los inyectamos
+     (ya construidos) para no recargar datos. */
+  try { if (window.FR && FR.setTeammateMaps) FR.setTeammateMaps(_REVERSE_TEAMMATE, _REVERSE_TEAMMATE_IDS); } catch (e) {}
 
   /* Máxima transferencia en €  */
   function _maxFee(transfers) {
@@ -1172,83 +1179,8 @@ const Restrictions = (() => {
 
   /* ────────── Detecta si rA hace redundante/imposible a rB ────────── */
   function _isRedundant(rA, rB) {
-    /* Club de una liga concreta → la restricción de esa liga es redundante
-       Ej: "Ha jugado en Tottenham" implica "Ha jugado en Premier League"  */
-    if (rA.type === 'club' && rB.type === 'league') {
-      const clubObj = CLUBS_LIST.find(c => c.tmName === rA.value);
-      if (clubObj && clubObj.league === rB.value) return true;
-    }
-    /* Trofeo específico → trophy_any que lo incluye es redundante
-       Ej: "Ganador Champions" implica "Ganador título continental"        */
-    if (rA.type === 'trophy' && rB.type === 'trophy_any') {
-      if ((rB.value || []).includes(rA.value)) return true;
-    }
-    /* trophy_any → trofeo específico que ya está cubierto (sentido inverso) */
-    if (rA.type === 'trophy_any' && rB.type === 'trophy') {
-      if ((rA.value || []).includes(rB.value)) return true;
-    }
-    /* Nacionalidad vs continente:
-       - Si la nat NO está en el continente → imposible (incompatible)
-       - Si la nat SÍ está en el continente → el continente es redundante
-         Ej: "Alemán" implica "Europeo", por lo que "Europeo" sobra */
-    if (rA.type === 'nationality' && rB.type === 'continent') {
-      return true; /* siempre: o incompatible, o redundante — en cualquier caso rB sobra */
-    }
-    if (rA.type === 'continent' && rB.type === 'nationality') {
-      return true; /* siempre: rA (continente) queda cubierto/descartado por rB (nat) */
-    }
-    /* caps_ge(N) hace redundante a caps_ge(M) si N > M (ej: ≥50 implica ≥1) */
-    if (rA.type === 'caps_ge' && rB.type === 'caps_ge' && rA.value > rB.value) return true;
-    /* caps_0 y caps_ge(≥1) son incompatibles entre sí */
-    if (rA.type === 'caps_0' && rB.type === 'caps_ge') return true;
-    if (rA.type === 'caps_ge' && rA.value >= 1 && rB.type === 'caps_0') return true;
-    /* caps_le(N) hace redundante a caps_le(M) si N < M (ej: ≤30 implica ≤50) */
-    if (rA.type === 'caps_le' && rB.type === 'caps_le' && rA.value < rB.value) return true;
-
-    /* Umbrales "_ge" del mismo tipo: el mayor hace redundante al menor */
-    if (rA.type === 'champions_goals_ge' && rB.type === 'champions_goals_ge' && rA.value > rB.value) return true;
-    if (rA.type === 'season_goals_ge'    && rB.type === 'season_goals_ge'    && rA.value > rB.value) return true;
-    if (rA.type === 'natGoals_ge'        && rB.type === 'natGoals_ge'        && rA.value > rB.value) return true;
-
-    /* One Club Man (1 solo club) es incompatible con "ha jugado en 3+ clubes" */
-    if (rA.type === 'one_club' && rB.type === 'clubs_ge') return true;
-    if (rB.type === 'one_club' && rA.type === 'clubs_ge') return true;
-
-    /* Portero incompatible con trofeos de goleador */
-    const SCORER_TROPHIES = new Set([
-      'Pichichi La Liga','Bota de Oro Premier League','Capocannoniere Serie A',
-      'Maximo Goleador Bundesliga','Maximo Goleador Ligue 1',
-      'Bota de Oro Mundial','Bota de Oro Europea',
-    ]);
-    if (rA.type === 'position_gk' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
-    if (rB.type === 'position_gk' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
-    if (rA.type === 'position_def' && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
-    if (rB.type === 'position_def' && rA.type === 'trophy' && SCORER_TROPHIES.has(rA.value)) return true;
-
-    /* Sin internacionalidades (caps_0) es incompatible con trofeos de selección nacional */
-    const NATIONAL_TROPHIES = new Set(['Eurocopa','Mundial','Copa America']);
-    if (rA.type === 'caps_0' && rB.type === 'trophy' && NATIONAL_TROPHIES.has(rB.value)) return true;
-    if (rB.type === 'caps_0' && rA.type === 'trophy' && NATIONAL_TROPHIES.has(rA.value)) return true;
-    if (rA.type === 'caps_0' && rB.type === 'trophy_any') {
-      const vals = rB.value || [];
-      if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
-    }
-    if (rB.type === 'caps_0' && rA.type === 'trophy_any') {
-      const vals = rA.value || [];
-      if (vals.some(v => NATIONAL_TROPHIES.has(v))) return true;
-    }
-
-    /* Pie: dos restricciones de foot distintas no pueden coexistir */
-    if (rA.type === 'foot' && rB.type === 'foot') return true;
-
-    /* Altura: height_le y height_ge con mismo valor son incompatibles
-       (solo jugadores de exactamente ese valor cumplirían ambas) */
-    if (rA.type === 'height_le' && rB.type === 'height_ge') return true;
-    if (rA.type === 'height_ge' && rB.type === 'height_le') return true;
-    /* Dos height_ge: el mayor hace redundante al menor */
-    if (rA.type === 'height_ge' && rB.type === 'height_ge' && rA.value > rB.value) return true;
-
-    return false;
+    /* Dedup: lógica delegada en el motor compartido FR (idéntica, verificada). */
+    return FR.isRedundant(rA, rB);
   }
 
   /* Evita duplicar familia (p.ej. dos restricciones de liga) al sustituir
@@ -1391,139 +1323,8 @@ const Restrictions = (() => {
 
   /* ────────── Validar un jugador contra una restricción ────────── */
   function validate(player, r) {
-    if (!player || !r) return false;
-    switch (r.type) {
-      /* Clubes */
-      case 'club': {
-        const match = (player.teams || []).some(c => normalize(c) === normalize(r.value));
-        return match;
-      }
-
-      /* Nacionalidad */
-      case 'nationality':
-        return normalize(player.nationalTeam || '') === normalize(r.value);
-
-      /* Liga (por cid de competición: solo cuenta 1ª división real, vía performances).
-         Fallback a nombres de equipo para jugadores sin datos de performances. */
-      case 'league':
-        if (r.cid) {
-          if ((player.lg || []).includes(r.cid)) return true;
-          if ((player.lg || []).length) return false; /* tiene perf y no incluye la liga */
-        }
-        return (player.teams || []).some(t => (r.teams || []).some(lt => normalize(lt) === normalize(t)));
-
-      /* Liga: cualquiera de varios cids (ej. MLS/Liga MX como una sola restricción) */
-      case 'league_any':
-        return (r.value || []).some(cid => (player.lg || []).includes(cid));
-
-      /* Trofeo exacto */
-      case 'trophy':
-        return (player.trophies || []).includes(r.value);
-
-      /* Trofeo: cualquiera del array */
-      case 'trophy_any':
-        return (r.value || []).some(tv => (player.trophies || []).includes(tv));
-
-      /* Entrenador */
-      case 'coach':
-        return (player.coaches || []).some(c => normalize(c) === normalize(r.value));
-
-      /* Compañero */
-      case 'teammate': {
-        const targetNorm = normalize(r.value);
-        // Directo: el jugador tiene al famoso en su lista de compañeros
-        if ((player.teammates || []).some(t => normalize(t) === targetNorm)) return true;
-        // Inverso por ID: el famoso tiene el ID del jugador en su lista (más fiable)
-        if (_REVERSE_TEAMMATE_IDS[targetNorm]?.has(player.id)) return true;
-        // Inverso por nombre: fallback
-        const playerNorm = normalize(player.name);
-        return !!(_REVERSE_TEAMMATE[targetNorm]?.has(playerNorm));
-      }
-
-      /* Continente */
-      case 'continent': {
-        const nat = (player.nationalTeam || '').trim().replace(/[,;]+$/, '');
-        return (CONTINENT_NAT[r.value] || []).includes(nat);
-      }
-
-      /* Altura */
-      case 'height_le':
-        return typeof player.heightCm === 'number' && player.heightCm <= r.value;
-      case 'height_ge':
-        return typeof player.heightCm === 'number' && player.heightCm >= r.value;
-      case 'height_lt':
-        return typeof player.heightCm === 'number' && player.heightCm < r.value;
-      case 'height_gt':
-        return typeof player.heightCm === 'number' && player.heightCm > r.value;
-
-      /* Posición portero */
-      case 'position_gk':
-        return player.position === 'GK' || (player.position || '').toUpperCase().includes('GK');
-      case 'position_def':
-        return player.position === 'DEF' || (player.position || '').toUpperCase().includes('DEF');
-
-      /* Décadas */
-      case 'birthDecade': {
-        const y = player.birthYear;
-        if (typeof y !== 'number') return false;
-        if (r.value === '1980s') return y >= 1980 && y <= 1989;
-        if (r.value === '1990s') return y >= 1990 && y <= 1999;
-        if (r.value === '2000s') return y >= 2000 && y <= 2009;
-        return false;
-      }
-
-      /* Internacionalidades */
-      case 'caps_ge':
-        return (player.caps || 0) >= r.value;
-      case 'caps_le':
-        return (player.caps || 0) <= r.value;
-      case 'caps_0':
-        return (player.caps || 0) === 0;
-
-      /* Número de clubes */
-      case 'clubs_ge':
-        return (player.teams || []).length >= r.value;
-      case 'clubs_le':
-        return (player.teams || []).length <= r.value;
-
-      /* One Club Man: toda la carrera en un único club */
-      case 'one_club':
-        return (player.teams || []).length === 1;
-
-      /* Goles en Champions League (precomputado desde performances) */
-      case 'champions_goals_ge':
-        return (player.clg || 0) >= r.value;
-      /* Goles en una sola temporada de 1ª división (mejor temporada) */
-      case 'season_goals_ge':
-        return (player.bsg || 0) >= r.value;
-      /* Goles con su selección absoluta */
-      case 'natGoals_ge':
-        return (player.natGoals || 0) >= r.value;
-
-      /* Valor traspaso */
-      case 'fee_gt':
-        return (player.maxFee || 0) > r.value;
-      case 'fee_lt':
-        return (player.maxFee || 0) < r.value;
-
-      /* Legacy */
-      case 'team':
-        return (player.teams || player.clubs || []).some(c => normalize(c) === normalize(r.value));
-      case 'nationalTeam':
-        return normalize(player.nationalTeam || '') === normalize(r.value);
-      case 'foot':
-        return player.foot === 'both' || player.foot === r.value;
-      case 'goals_gt':
-        return typeof player.goals === 'number' && player.goals > r.value;
-      case 'goals_lt':
-        return typeof player.goals === 'number' && player.goals < r.value;
-      case 'apps_gt':
-        return typeof player.apps === 'number' && player.apps > r.value;
-      case 'apps_lt':
-        return typeof player.apps === 'number' && player.apps < r.value;
-
-      default: return false;
-    }
+    /* Dedup: lógica delegada en el motor compartido FR (idéntica, verificada). */
+    return FR.validate(player, r);
   }
 
   function findPlayer(inputName, db) {
@@ -2464,6 +2265,19 @@ const App = (() => {
      INIT
      ════════════════════════════════════════ */
   async function init() {
+    /* Blindaje: script.js delega validate()/_isRedundant() en window.FR. Si el
+       index.html servido viene cacheado sin la etiqueta de FR, lo cargamos aquí
+       para no romper ("FR is not defined"). sbStorageUrl ya está disponible. */
+    if (typeof window.FR === 'undefined') {
+      try {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = '../js/futbol-restrictions.js?v=' + Date.now();
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      } catch (e) { console.error('[Coche] No se pudo cargar futbol-restrictions.js', e); }
+    }
     _showScreen('screen-menu');
     _preloadDataInBackground();
     _setupAccountName();

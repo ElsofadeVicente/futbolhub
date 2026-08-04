@@ -71,6 +71,25 @@
       }
     },
 
+    // TRES EN RAYA — salas 2 jugadores por turnos + matchmaking público.
+    // Misma forma que Coche/Blackjack: solo se abre por código de sala (6 chars),
+    // nadie puede listar todas las salas ni leer usernames de partidas ajenas.
+    "tres-en-raya": {
+      "rooms": {
+        "$code": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "matchmaking": {
+        // Índice público de salas públicas en espera (solo {status, createdAt}).
+        ".read": true,
+        "$code": {
+          ".write": true
+        }
+      }
+    },
+
     // EL ESTADIO — puntuación diaria por usuario anónimo.
     "el-estadio": {
       "scores": {

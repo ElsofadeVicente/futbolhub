@@ -1,0 +1,347 @@
+/* =============================================================================
+   SUPERDRAFT — estilos propios
+   Base compartida: ../coche/css/style.css (tokens --np-*, ad-cols, botones,
+   toast, autocompletado, player-input, loading-overlay).
+   El campo reutiliza el look de En el Once (franjas verdes + lineas de pista).
+   ============================================================================= */
+
+/* Colores del campo (mismos que En el Once) */
+:root {
+  --sd-field-a: #2f7e34;
+  --sd-field-b: #2a7531;
+}
+
+/* ═══════════════ INTRO ═══════════════ */
+.sd-intro-wrap {
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 68px 22px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.sd-intro-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--np-ink-mid);
+  display: flex; gap: 8px; align-items: center;
+  margin-bottom: 26px;
+}
+.sd-num { color: var(--np-red); font-weight: 500; }
+.sd-sep { opacity: 0.4; }
+.sd-day { color: var(--np-ink); font-weight: 500; }
+
+.sd-intro-kicker {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 3px;
+  color: var(--np-ink-mid); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.sd-intro-title {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(2.1rem, 8vw, 3.4rem);
+  line-height: 0.98;
+  color: var(--np-ink);
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+.sd-intro-formation {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem; letter-spacing: 2px;
+  color: var(--np-red);
+  border: 2px solid var(--np-ink);
+  border-radius: 999px;
+  padding: 3px 18px;
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 20px;
+}
+.sd-intro-hint {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--np-ink-mid);
+  max-width: 420px;
+  margin: 0 0 30px;
+}
+.sd-intro-wrap .btn-primary { min-width: 200px; }
+
+/* Navegación de días */
+.sd-daynav {
+  margin-top: 34px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sd-daynav button {
+  font-family: 'DM Mono', monospace;
+  width: 34px; height: 34px;
+  border: 2px solid var(--np-ink);
+  background: var(--np-paper);
+  color: var(--np-ink);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background .15s, color .15s;
+}
+.sd-daynav button:hover:not(:disabled) { background: var(--np-ink); color: var(--np-paper); }
+.sd-daynav button:disabled { opacity: 0.3; cursor: default; }
+#nav-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem; letter-spacing: 1px;
+  min-width: 54px; text-align: center;
+  color: var(--np-ink);
+}
+
+/* ═══════════════ PARTIDA ═══════════════ */
+.sd-game-wrap {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 52px 12px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* Escritorio: dos columnas — izquierda la tragaperras/entrada, derecha el campo.
+   El DOM va [campo, panel]; row-reverse lo pinta [panel | campo]. */
+@media (min-width: 900px) {
+  .sd-game-wrap {
+    flex-direction: row-reverse;
+    align-items: flex-start;
+    max-width: 940px;
+    gap: 24px;
+    padding-top: 60px;
+  }
+  .sd-field { flex: 1 1 auto; }
+  .sd-panel {
+    flex: 0 0 320px;
+    position: sticky;
+    top: 60px;
+  }
+}
+
+/* ===== CAMPO (look de En el Once) ===== */
+.sd-field {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 520px;
+  padding: 26px 12px 30px;
+  box-shadow: var(--shadow);
+  border: 2px solid var(--np-ink);
+  background: repeating-linear-gradient(180deg,
+      var(--sd-field-a) 0, var(--sd-field-a) 52px,
+      var(--sd-field-b) 52px, var(--sd-field-b) 104px);
+}
+.sd-field::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 50% -8%, rgba(255,255,255,0.12), rgba(255,255,255,0) 52%),
+    radial-gradient(135% 100% at 50% 44%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.42) 100%);
+}
+
+/* Marcas de la pista (copiadas de once.css) */
+.pitch-lines {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  --lc: rgba(255,255,255,0.42); --lw: 2px; --ins: 12px;
+  --pbw: clamp(180px, 52vmin, 420px); --pbh: clamp(66px, 18vmin, 130px);
+  --gbw: clamp(104px, 30vmin, 220px); --gbh: clamp(28px, 8vmin, 56px);
+  --cir: clamp(80px, 24vmin, 140px);  --arc: clamp(110px, 28vmin, 210px);
+  --cr:  clamp(9px, 2.2vmin, 15px);
+}
+.pl-bounds { position: absolute; inset: var(--ins); border: var(--lw) solid var(--lc); border-radius: 3px; }
+.pl-half   { position: absolute; left: var(--ins); right: var(--ins); top: 50%; height: var(--lw); background: var(--lc); transform: translateY(-50%); }
+.pl-circle { position: absolute; top: 50%; left: 50%; width: var(--cir); height: var(--cir); border: var(--lw) solid var(--lc); border-radius: 50%; transform: translate(-50%,-50%); }
+.pl-spot { position: absolute; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: var(--lc); transform: translate(-50%,-50%); }
+.pl-spot-c { top: 50%; }
+.pl-pbox { position: absolute; left: 50%; transform: translateX(-50%); width: var(--pbw); height: var(--pbh); border: var(--lw) solid var(--lc); }
+.pl-pbox.pl-top    { top: var(--ins);    border-top: none; }
+.pl-pbox.pl-bottom { bottom: var(--ins); border-bottom: none; }
+.pl-gbox { position: absolute; left: 50%; transform: translateX(-50%); width: var(--gbw); height: var(--gbh); border: var(--lw) solid var(--lc); }
+.pl-gbox.pl-top    { top: var(--ins);    border-top: none; }
+.pl-gbox.pl-bottom { bottom: var(--ins); border-bottom: none; }
+.pl-arc { position: absolute; left: 50%; transform: translateX(-50%); width: var(--arc); height: calc(var(--arc) / 2); overflow: hidden; }
+.pl-arc::before { content: ''; position: absolute; left: 0; width: var(--arc); height: var(--arc); border-radius: 50%; border: var(--lw) solid var(--lc); box-sizing: border-box; }
+.pl-arc-top { top: calc(var(--ins) + var(--pbh)); } .pl-arc-top::before { top: calc(var(--arc) / -2); }
+.pl-arc-bottom { bottom: calc(var(--ins) + var(--pbh)); } .pl-arc-bottom::before { bottom: calc(var(--arc) / -2); }
+.pl-goal { position: absolute; left: 50%; transform: translateX(-50%); width: clamp(58px,15vmin,110px); height: 10px; border: 2px solid rgba(255,255,255,0.5); }
+.pl-goal.pl-top { top: calc(var(--ins) - 10px); border-bottom: none; }
+.pl-goal.pl-bottom { bottom: calc(var(--ins) - 10px); border-top: none; }
+.pl-corner { position: absolute; width: var(--cr); height: var(--cr); overflow: hidden; }
+.pl-corner::before { content: ''; position: absolute; width: calc(var(--cr) * 2); height: calc(var(--cr) * 2); border-radius: 50%; border: var(--lw) solid var(--lc); box-sizing: border-box; }
+.pl-tl { top: var(--ins); left: var(--ins); } .pl-tl::before { left: calc(var(--cr) * -1); top: calc(var(--cr) * -1); }
+.pl-tr { top: var(--ins); right: var(--ins); } .pl-tr::before { right: calc(var(--cr) * -1); top: calc(var(--cr) * -1); }
+.pl-bl { bottom: var(--ins); left: var(--ins); } .pl-bl::before { left: calc(var(--cr) * -1); bottom: calc(var(--cr) * -1); }
+.pl-br { bottom: var(--ins); right: var(--ins); } .pl-br::before { right: calc(var(--cr) * -1); bottom: calc(var(--cr) * -1); }
+
+/* Formación: FWD arriba → GK abajo */
+.sd-formation {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  height: 460px;
+  justify-content: space-between;
+}
+.sd-line {
+  display: flex; justify-content: center; align-items: flex-start;
+  gap: clamp(6px, 3vw, 26px); flex-wrap: nowrap;
+}
+
+/* ===== SLOT / BADGE ===== */
+.sd-slot {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: clamp(56px, 15vw, 82px);
+}
+.sd-badge {
+  position: relative;
+  width: clamp(48px, 13vw, 64px);
+  height: clamp(48px, 13vw, 64px);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  overflow: visible;
+}
+.sd-badge img {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  object-fit: contain;
+  padding: 5px;
+}
+.sd-badge--nat img { object-fit: cover; padding: 0; }
+.sd-badge--empty {
+  background: rgba(255,255,255,0.10);
+  border: 2px dashed rgba(255,255,255,0.5);
+  box-shadow: none;
+  color: rgba(255,255,255,0.72);
+  font-size: 1.7rem; font-weight: 300;
+}
+.sd-slot--active { cursor: pointer; }
+.sd-slot--active .sd-badge--empty { transition: background .15s, border-color .15s, transform .15s, color .15s; }
+.sd-slot--active:hover .sd-badge--empty { background: rgba(255,255,255,0.24); border-color: #fff; color: #fff; transform: scale(1.06); }
+.sd-val {
+  position: absolute; top: -6px; left: -8px;
+  min-width: 24px; height: 24px; padding: 0 5px;
+  border-radius: 999px;
+  background: #14181c; color: #fff;
+  font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: 0.82rem; line-height: 24px; text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.sd-name {
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700; font-size: clamp(0.6rem, 2.4vw, 0.78rem);
+  letter-spacing: 0.4px; text-transform: uppercase;
+  text-align: center; line-height: 1.05;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.sd-slot--filled { animation: sdPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes sdPop { 0%{transform:scale(0.4);opacity:0;} 60%{transform:scale(1.12);} 100%{transform:scale(1);opacity:1;} }
+
+/* Esquinas del campo (partida / objetivo+total) */
+.sd-corner {
+  position: absolute; bottom: 30px; z-index: 3;
+  font-family: 'Bebas Neue', sans-serif;
+  color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+.sd-corner--left  { left: 30px;  text-align: left; }
+.sd-corner--right { right: 16px; text-align: right; }
+.sd-corner-k { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 1.5px; opacity: 0.82; text-transform: uppercase; }
+.sd-corner-v { font-size: 1.9rem; line-height: 1; letter-spacing: 1px; }
+
+/* ===== PANEL: requisito de la ronda (escudo/bandera + nombre) ===== */
+.sd-panel {
+  background: #2b3a24;
+  border: 2px solid var(--np-ink);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 30px 20px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 240px;
+}
+.sd-req { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.sd-req-frame { width: 132px; height: 132px; display: flex; align-items: center; justify-content: center; }
+.sd-req-frame img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  filter: drop-shadow(0 5px 12px rgba(0,0,0,0.55));
+}
+.sd-req-frame.pop { animation: reelPop 120ms ease; }
+@keyframes reelPop { 0%{transform:scale(0.86);opacity:.55;} 100%{transform:scale(1);opacity:1;} }
+#sd-reel.locked .sd-req-frame { animation: reelLock 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes reelLock { 0%{transform:scale(1);} 45%{transform:scale(1.18);} 100%{transform:scale(1);} }
+.sd-req-name {
+  font-family: 'Anton', sans-serif;
+  font-size: 1.7rem; letter-spacing: 1px;
+  color: #fff; text-transform: uppercase; text-align: center;
+  min-height: 1.2em; line-height: 1.05;
+}
+
+/* ===== MODAL: buscar jugador (se abre desde la posición pulsada) ===== */
+.sd-modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.sd-modal.hidden { display: none; }
+.sd-modal-backdrop { position: absolute; inset: 0; background: rgba(15,18,14,0.5); }
+.sd-modal-card {
+  position: relative; z-index: 1;
+  width: min(420px, 94vw);
+  background: var(--np-paper);
+  border: 2px solid var(--np-ink);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 24px 22px 18px;
+  animation: sdModalIn 0.16s ease;
+}
+@keyframes sdModalIn { from{transform:scale(0.8);opacity:0;} to{transform:scale(1);opacity:1;} }
+.sd-modal-x {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  width: 46px; height: 46px; border-radius: 50%;
+  background: #9aa0a6; color: #fff; border: 3px solid var(--np-paper);
+  font-size: 1.15rem; cursor: pointer; box-shadow: var(--shadow-soft);
+}
+.sd-modal-x:hover { background: var(--np-red); }
+.sd-modal-title { font-family: 'Anton', sans-serif; font-size: 1.5rem; color: var(--np-ink); margin: 4px 0 4px; text-transform: uppercase; }
+.sd-modal-sub { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 1px; color: var(--np-ink-mid); text-transform: uppercase; margin: 0 0 16px; }
+.sd-input-wrap { position: relative; }
+.sd-input-wrap .player-input { width: 100%; }
+/* En el modal la lista va EN FLUJO (empuja el botón Cancelar hacia abajo),
+   no flotando: así nunca queda tapada. `inset:auto` limpia el top/bottom
+   heredados de la hoja base. */
+.sd-modal .autocomplete-list {
+  position: static; inset: auto;
+  margin-top: 6px;
+  max-height: 260px; overflow-y: auto;
+  border-radius: 6px;
+}
+.sd-modal-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+
+/* ═══════════════ FIN ═══════════════ */
+.sd-end-wrap {
+  max-width: 460px; margin: 0 auto; padding: 72px 22px 40px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.sd-end-emoji { font-size: 3rem; margin-bottom: 6px; }
+.sd-end-title {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(1.5rem, 6vw, 2.2rem);
+  text-transform: uppercase; color: var(--np-ink); margin: 0 0 10px;
+}
+.sd-end-total {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 14vw, 5rem);
+  line-height: 1; color: var(--np-red);
+  margin-bottom: 8px;
+}
+.sd-end-best { font-size: 0.95rem; color: var(--np-ink-mid); margin: 0 0 28px; }
+.sd-end-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+/* ═══════════════ RESPONSIVE ═══════════════ */
+@media (max-width: 520px) {
+  .sd-field { min-height: 440px; padding: 20px 6px 26px; }
+  .sd-formation { height: 380px; }
+  .sd-line { gap: 4px; }
+  .sd-corner-v { font-size: 1.5rem; }
+  .sd-corner { bottom: 22px; }
+  .sd-corner--left { left: 20px; }
+}
