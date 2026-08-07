@@ -10,6 +10,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=20260728a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
+<!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+    wait_for_update: 500
+  });
+</script>
+<!-- Google Analytics 4 (respeta el Consent Mode de arriba) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VEY3P2Q41K"></script>
+<script>
+  gtag('js', new Date());
+  gtag('config', 'G-VEY3P2Q41K');
+</script>
+<!-- Vercel Web Analytics (cookieless, no requiere consentimiento) -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 </head>
