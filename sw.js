@@ -9,7 +9,10 @@
    ============================================= */
 'use strict';
 
-const CACHE = 'futbolhub-v10';
+/* v11: imagenes del hub y logos de liga reoptimizados (pesaban hasta 20x lo
+   que debian). Como van por cache-first, sin subir la version los que ya
+   entraron seguirian viendo las viejas para siempre. */
+const CACHE = 'futbolhub-v11';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son

@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FutbolHUB — 12 juegos diarios de fútbol</title>
-<meta name="description" content="12 juegos diarios de fútbol en un solo sitio: crucigrama, alineaciones (En el Once), Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
+<title>FutbolHUB — 13 juegos diarios de fútbol</title>
+<meta name="description" content="13 juegos diarios de fútbol en un solo sitio: crucigrama, alineaciones (En el Once), Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
 <link rel="canonical" href="https://www.futbolhub.es/">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="FutbolHUB — 12 juegos diarios de fútbol">
-<meta property="og:description" content="12 juegos diarios de fútbol en un solo sitio: crucigrama, En el Once, Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
+<meta property="og:title" content="FutbolHUB — 13 juegos diarios de fútbol">
+<meta property="og:description" content="13 juegos diarios de fútbol en un solo sitio: crucigrama, En el Once, Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
 <meta property="og:url" content="https://www.futbolhub.es/">
 <meta property="og:image" content="https://www.futbolhub.es/img/iconoapp.png">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="FutbolHUB — 12 juegos diarios de fútbol">
-<meta name="twitter:description" content="12 juegos diarios de fútbol en un solo sitio. Gratis y sin instalar.">
+<meta name="twitter:title" content="FutbolHUB — 13 juegos diarios de fútbol">
+<meta name="twitter:description" content="13 juegos diarios de fútbol en un solo sitio. Gratis y sin instalar.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/iconoapp.png">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="manifest" href="./manifest.json">
@@ -24,8 +24,8 @@
 <meta name="theme-color" content="#16181d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Inter:wght@400;500;600;700&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/hub.css?v=20260729a">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/hub.css?v=20260808g">
 <link rel="stylesheet" href="./css/profile-widget.css?v=20260727a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
@@ -48,6 +48,32 @@
 <!-- Vercel Web Analytics (cookieless, no requiere consentimiento) -->
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
+<!-- Google Funding Choices — el AVISO DE COOKIES.
+     Sin esto el Consent Mode de arriba se quedaba en 'denied' para siempre
+     (nadie lo actualizaba nunca): GA4 medía en modo sin cookies y AdSense
+     servía sin señal de consentimiento, que en la UE es justo lo que la
+     política de Google no permite. Además la página de privacidad prometía
+     un banner que no existía.
+     OJO: el tag solo pinta algo si en AdSense → Privacidad y mensajes hay un
+     mensaje de RGPD PUBLICADO para el sitio. -->
+<script async src="https://fundingchoicesmessages.google.com/i/pub-1248309481500017?ers=1"></script>
+<script>
+  (function () {
+    function signalGooglefcPresent() {
+      if (!window.frames['googlefcPresent']) {
+        if (document.body) {
+          const iframe = document.createElement('iframe');
+          iframe.style = 'width:0;height:0;border:0;display:none';
+          iframe.name = 'googlefcPresent';
+          document.body.appendChild(iframe);
+        } else {
+          setTimeout(signalGooglefcPresent, 0);
+        }
+      }
+    }
+    signalGooglefcPresent();
+  })();
+</script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 </head>
@@ -63,49 +89,52 @@
       </div>
       <div class="masthead-edition">
         <strong>EDICIÓN DIGITAL</strong>
-        <div>10 JUEGOS EN PORTADA</div>
+        <div>13 JUEGOS EN PORTADA</div>
         <div>ACCESO LIBRE</div>
       </div>
     </div>
     <div class="logotype-wrap">
-      <div class="logotype">
+      <h1 class="logotype">
         <span class="logo-fut">Fútbol</span><span class="logo-hub">HUB</span>
-      </div>
+      </h1>
     </div>
   </header>
 
-  <!-- TICKER -->
+  <!-- TICKER — js/hub-ticker.js lo sustituye por titulares reales de
+       la prensa deportiva (ver api/titulares.js). Lo de aquí es solo
+       el respaldo para cuando esa llamada falla. Los tres segmentos
+       tienen que ser IDÉNTICOS: la animación desplaza un -33.33%.
+       aria-hidden porque es decoración: solo texto, sin enlaces, y un
+       lector de pantalla no puede seguir algo que se mueve en bucle. -->
   <div class="ticker" aria-hidden="true">
     <div class="ticker-strip">
-      <span class="tick-seg"><span class="tick-label">BREAKING</span><span class="tick-accent"> NUEVA EDICIÓN DEL CRUCIGRAMA </span><span class="tick-normal"> · EL ONCE #124 LISTO </span><span class="tick-normal"> · SERVIDORES ESTABLES </span><span class="tick-normal"> · HIGHER OR LOWER · TOP 5 LIGAS </span><span class="tick-normal"> · MENTIROSO · SALA NUEVA </span><span class="tick-normal"> · COCHE · 5 RESTRICCIONES </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-accent"> · LA CARRERA · NUEVO JUEGO </span></span>
-      <span class="tick-seg"><span class="tick-label">BREAKING</span><span class="tick-accent"> NUEVA EDICIÓN DEL CRUCIGRAMA </span><span class="tick-normal"> · EL ONCE #124 LISTO </span><span class="tick-normal"> · SERVIDORES ESTABLES </span><span class="tick-normal"> · HIGHER OR LOWER · TOP 5 LIGAS </span><span class="tick-normal"> · MENTIROSO · SALA NUEVA </span><span class="tick-normal"> · COCHE · 5 RESTRICCIONES </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-accent"> · LA CARRERA · NUEVO JUEGO </span></span>
-      <span class="tick-seg"><span class="tick-label">BREAKING</span><span class="tick-accent"> NUEVA EDICIÓN DEL CRUCIGRAMA </span><span class="tick-normal"> · EL ONCE #124 LISTO </span><span class="tick-normal"> · SERVIDORES ESTABLES </span><span class="tick-normal"> · HIGHER OR LOWER · TOP 5 LIGAS </span><span class="tick-normal"> · MENTIROSO · SALA NUEVA </span><span class="tick-normal"> · COCHE · 5 RESTRICCIONES </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-accent"> · LA CARRERA · NUEVO JUEGO </span></span>
+      <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 13 JUEGOS DIARIOS DE FÚTBOL </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-accent"> · BINGO </span></span>
+      <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 13 JUEGOS DIARIOS DE FÚTBOL </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-accent"> · BINGO </span></span>
+      <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 13 JUEGOS DIARIOS DE FÚTBOL </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-accent"> · BINGO </span></span>
     </div>
   </div>
 
   <!-- LAYOUT -->
   <div class="np-layout">
 
-    <!-- Ad izquierda -->
-    <aside class="ad-col ad-col--left" aria-hidden="true">
-      <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
-      <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
-      <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+    <!-- Ad izquierda (rascacielos real; js/ads.js lo quita si no hay unidad) -->
+    <aside class="ad-col ad-col--left">
+      <div class="ad-slot ad-slot--rail" data-ad="rail-left"></div>
     </aside>
 
     <!-- Contenido principal -->
     <main class="np-main">
 
       <div class="section-rule">
-        <h3>Todos los juegos</h3>
+        <h2>Todos los juegos</h2>
         <div class="rule-line"></div>
-        <div class="rule-num">10 JUEGOS</div>
+        <div class="rule-num">13 JUEGOS</div>
       </div>
 
       <div class="np-grid">
 
         <!-- EN EL ONCE -->
-        <a href="./en-el-once/" class="np-card">
+        <a href="./en-el-once/" class="np-card" style="--i:1">
           <div class="np-card-art">
             <img src="./img/hub/once.jpg" alt="En el Once">
           </div>
@@ -129,7 +158,7 @@
         </a>
 
         <!-- EN EL TOP -->
-        <a href="./en-el-top/" class="np-card">
+        <a href="./en-el-top/" class="np-card" style="--i:2">
           <div class="np-card-art">
             <img src="./img/hub/top.jpg" alt="En el Top" loading="lazy" decoding="async">
           </div>
@@ -152,7 +181,7 @@
         </a>
 
         <!-- EL CRUCIGRAMA -->
-        <a href="./crucigrama/" class="np-card">
+        <a href="./crucigrama/" class="np-card" style="--i:3">
           <div class="np-card-art">
             <img src="./img/hub/crucigrama.jpg" alt="El Crucigrama" loading="lazy" decoding="async">
           </div>
@@ -175,7 +204,7 @@
         </a>
 
         <!-- LA CARRERA -->
-        <a href="./la-carrera/" class="np-card">
+        <a href="./la-carrera/" class="np-card" style="--i:4">
           <div class="np-card-art">
             <img src="./img/hub/carrera.jpg" alt="La Carrera" loading="lazy" decoding="async">
           </div>
@@ -198,7 +227,7 @@
         </a>
 
         <!-- EN LA CADENA -->
-        <a href="./en-la-cadena/" class="np-card">
+        <a href="./en-la-cadena/" class="np-card" style="--i:5">
           <div class="np-card-art">
             <img src="./img/hub/cadena.jpg" alt="En la Cadena" loading="lazy" decoding="async">
           </div>
@@ -221,7 +250,7 @@
         </a>
 
         <!-- HIGHER OR LOWER -->
-        <a href="./higher-or-lower/" class="np-card">
+        <a href="./higher-or-lower/" class="np-card" style="--i:6">
           <div class="np-card-art">
             <img src="./img/hub/higher.jpg" alt="Higher or Lower" loading="lazy" decoding="async">
           </div>
@@ -244,7 +273,7 @@
         </a>
 
         <!-- BLACKJACK -->
-        <a href="./blackjack/" class="np-card">
+        <a href="./blackjack/" class="np-card" style="--i:7">
           <div class="np-card-art">
             <img src="./img/hub/blackjack.jpg" alt="Blackjack" loading="lazy" decoding="async">
           </div>
@@ -267,7 +296,7 @@
         </a>
 
         <!-- COCHE -->
-        <a href="./coche/" class="np-card">
+        <a href="./coche/" class="np-card" style="--i:8">
           <div class="np-card-art">
             <img src="./img/hub/coche.jpg" alt="Coche" loading="lazy" decoding="async">
           </div>
@@ -290,7 +319,7 @@
         </a>
 
         <!-- EL MENTIROSO -->
-        <a href="./mentiroso/" class="np-card">
+        <a href="./mentiroso/" class="np-card" style="--i:9">
           <div class="np-card-art">
             <img src="./img/hub/mentiroso.svg" alt="El Mentiroso" loading="lazy" decoding="async">
           </div>
@@ -313,7 +342,7 @@
         </a>
 
         <!-- EL ESTADIO -->
-        <a href="./el-estadio/" class="np-card">
+        <a href="./el-estadio/" class="np-card" style="--i:10">
           <div class="np-card-art">
             <img src="./img/hub/estadio.jpg" alt="El Estadio" loading="lazy" decoding="async">
           </div>
@@ -336,7 +365,7 @@
         </a>
 
         <!-- TRES EN RAYA -->
-        <a href="./tres-en-raya/" class="np-card">
+        <a href="./tres-en-raya/" class="np-card" style="--i:11">
           <div class="np-card-art">
             <img src="./img/hub/tres-en-raya.jpg" alt="Tres en Raya" loading="lazy" decoding="async">
           </div>
@@ -359,7 +388,7 @@
         </a>
 
         <!-- SUPERDRAFT -->
-        <a href="./superdraft/" class="np-card">
+        <a href="./superdraft/" class="np-card" style="--i:12">
           <div class="np-card-art">
             <img src="./img/hub/superdraft.jpg" alt="Superdraft" loading="lazy" decoding="async">
           </div>
@@ -381,14 +410,38 @@
           </div>
         </a>
 
+        <!-- BINGO -->
+        <a href="./bingo/" class="np-card" style="--i:13">
+          <div class="np-card-art">
+            <img src="./img/hub/bingo.jpg" alt="Bingo" loading="lazy" decoding="async">
+          </div>
+          <div class="np-card-body">
+            <div class="np-card-eyebrow">
+              <span class="np-num">№ 13</span>
+              <span class="np-cat">Online</span>
+            </div>
+            <h3 class="np-title">Bingo</h3>
+            <p class="np-desc">Un cartón de 16 categorías y un futbolista cada 10 segundos. Colócalo donde creas que encaja: los fallos no se ven hasta el final.</p>
+            <div class="np-card-footer">
+              <div class="np-tags">
+                <span class="np-tag">Online</span>
+                <span class="np-tag">Sala</span>
+                <span class="np-tag">Contrarreloj</span>
+              </div>
+              <span class="np-cta">Jugar →</span>
+            </div>
+          </div>
+        </a>
+
       </div><!-- /np-grid -->
+
+      <!-- Banner responsive bajo la rejilla -->
+      <div class="ad-slot ad-slot--inline" data-ad="inline"></div>
     </main>
 
-    <!-- Ad derecha -->
-    <aside class="ad-col ad-col--right" aria-hidden="true">
-      <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
-      <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
-      <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+    <!-- Ad derecha (rascacielos real; js/ads.js lo quita si no hay unidad) -->
+    <aside class="ad-col ad-col--right">
+      <div class="ad-slot ad-slot--rail" data-ad="rail-right"></div>
     </aside>
 
   </div><!-- /np-layout -->
@@ -396,13 +449,45 @@
   <footer class="np-footer">
     <span>FutbolHUB · 2026</span>
     <span>La Liga · Champions League · Partidos Históricos</span>
-    <span><a href="/privacidad/" class="np-footer-link">Privacidad y cookies</a></span>
+    <span>
+      <a href="/privacidad/" class="np-footer-link">Privacidad y cookies</a>
+      <!-- Reabre el aviso de Funding Choices. La política de privacidad dice
+           que se puede cambiar la decisión desde aquí, así que tiene que
+           existir de verdad. Si el CMP no ha cargado (bloqueador, fuera de
+           la UE) el botón se esconde solo — ver más abajo. -->
+      <button type="button" id="btn-gestionar-cookies" class="np-footer-link np-footer-btn" hidden>Gestionar cookies</button>
+    </span>
   </footer>
 
 </div><!-- /hub -->
 
 <script src="./js/shared.js"></script>
-<script src="./js/hub-streaks.js?v=20260727a"></script>
+<script src="./js/hub-streaks.js?v=20260808a"></script>
+<script defer src="./js/hub-ticker.js?v=20260808f"></script>
+<script defer src="./js/ads.js?v=20260808c"></script>
+<script>
+  /* "Gestionar cookies": vuelve a abrir el aviso de Funding Choices para
+     cambiar o retirar el consentimiento. Solo se enseña el botón si el CMP
+     ha cargado de verdad; si no, sería un botón que no hace nada. */
+  (function () {
+    const btn = document.getElementById('btn-gestionar-cookies');
+    if (!btn) return;
+    let intentos = 0;
+    const buscar = setInterval(function () {
+      if (window.googlefc && window.googlefc.callbackQueue) {
+        clearInterval(buscar);
+        btn.hidden = false;
+        btn.addEventListener('click', function () {
+          window.googlefc.callbackQueue.push({
+            'CONSENT_DATA_READY': () => window.googlefc.showRevocationMessage()
+          });
+        });
+      } else if (++intentos > 20) {
+        clearInterval(buscar);   // 10 s sin CMP: bloqueador o fuera de la UE
+      }
+    }, 500);
+  })();
+</script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable)
   if ('serviceWorker' in navigator) {
@@ -428,7 +513,7 @@
 <script src="./js/vendor/supabase-js.min.js"></script>
 <script src="./js/supabase-config.js"></script>
 <script src="./js/auth.js?v=20260722g"></script>
-<script src="./js/progress-sync.js?v=20260727a"></script>
+<script src="./js/progress-sync.js?v=20260808a"></script>
 <script src="./js/img-heal.js?v=20260727a"></script>
 <script src="./js/profile-widget.js?v=20260727a"></script>
 </body>

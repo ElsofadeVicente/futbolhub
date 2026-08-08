@@ -4,16 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>El Crucigrama — FutbolHUB</title>
+<link rel="canonical" href="https://www.futbolhub.es/crucigrama/">
+<meta name="description" content="Crucigrama de fútbol. Un nuevo reto cada día con partidos históricos como protagonistas.">
+<!-- Open Graph / redes sociales -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FutbolHUB">
+<meta property="og:title" content="El Crucigrama — FutbolHUB">
+<meta property="og:description" content="Crucigrama de fútbol. Un nuevo reto cada día con partidos históricos como protagonistas.">
+<meta property="og:url" content="https://www.futbolhub.es/crucigrama/">
+<meta property="og:image" content="https://www.futbolhub.es/img/og/crucigrama.jpg">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="El Crucigrama — FutbolHUB">
+<meta name="twitter:description" content="Crucigrama de fútbol. Un nuevo reto cada día con partidos históricos como protagonistas.">
+<meta name="twitter:image" content="https://www.futbolhub.es/img/og/crucigrama.jpg">
+<!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../img/iconoapp.png">
+<meta name="theme-color" content="#16181d">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<meta name="description" content="Crucigrama de fútbol diario. Resuelve pistas sobre jugadores, equipos y partidos históricos.">
-
 <!-- Fuentes -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Estilos -->
-<link rel="stylesheet" href="./css/crucigrama.css?v=20260705c">
+<link rel="stylesheet" href="./css/crucigrama.css?v=20260808d">
+  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
@@ -36,6 +53,32 @@
 <!-- Vercel Web Analytics (cookieless, no requiere consentimiento) -->
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
+<!-- Google Funding Choices — el AVISO DE COOKIES.
+     Sin esto el Consent Mode de arriba se quedaba en 'denied' para siempre
+     (nadie lo actualizaba nunca): GA4 medía en modo sin cookies y AdSense
+     servía sin señal de consentimiento, que en la UE es justo lo que la
+     política de Google no permite. Además la página de privacidad prometía
+     un banner que no existía.
+     OJO: el tag solo pinta algo si en AdSense → Privacidad y mensajes hay un
+     mensaje de RGPD PUBLICADO para el sitio. -->
+<script async src="https://fundingchoicesmessages.google.com/i/pub-1248309481500017?ers=1"></script>
+<script>
+  (function () {
+    function signalGooglefcPresent() {
+      if (!window.frames['googlefcPresent']) {
+        if (document.body) {
+          const iframe = document.createElement('iframe');
+          iframe.style = 'width:0;height:0;border:0;display:none';
+          iframe.name = 'googlefcPresent';
+          document.body.appendChild(iframe);
+        } else {
+          setTimeout(signalGooglefcPresent, 0);
+        }
+      }
+    }
+    signalGooglefcPresent();
+  })();
+</script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 </head>
@@ -52,23 +95,31 @@
 <script src="../js/supabase-config.js"></script>
 <script src="../js/vendor/supabase-js.min.js"></script>
 <script src="../js/auth.js?v=20260722g"></script>
-<script src="../js/progress-sync.js?v=20260727a"></script>
-<script src="../js/hub-streaks.js?v=20260727a"></script>
+<script src="../js/progress-sync.js?v=20260808a"></script>
+<script src="../js/hub-streaks.js?v=20260808a"></script>
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260727a"></script>
 <script src="../js/shared.js"></script>
-<script src="./js/crucigrama-game.js?v=20260706a"></script>
+<script src="./js/crucigrama-game.js?v=20260808a"></script>
 
-<!-- SIDEBARS DE ANUNCIOS — solo visibles en desktop ≥760px -->
-<aside class="ad-col ad-col--left" aria-hidden="true">
-  <div class="ad-strip"><span class="ad-strip-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
-  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
-  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
+<!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px:
+     por debajo no cabe ninguna unidad de AdSense y el juego se queda
+     con toda la pantalla. Ver css/ads.css y js/ads.js. -->
+<aside class="ad-col ad-col--left">
+  <div class="ad-slot" data-ad="rail-left"></div>
 </aside>
-<aside class="ad-col ad-col--right" aria-hidden="true">
-  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
-  <div class="ad-strip"><span class="ad-strip-label">PUBLI<br>CITARIO</span></div>
-  <div class="ad-strip ad-strip--accent"><span class="ad-strip-label">ANUNCIO</span></div>
+<aside class="ad-col ad-col--right">
+  <div class="ad-slot" data-ad="rail-right"></div>
 </aside>
+<script>
+  // PWA: registrar el service worker (cache de datos pesados + instalable).
+  // Ruta a la RAIZ para que el scope cubra el hub y todos los juegos.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+<script defer src="../js/ads.js?v=20260808c"></script>
 </body>
 </html>

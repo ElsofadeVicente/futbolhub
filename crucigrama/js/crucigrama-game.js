@@ -61,13 +61,31 @@ function crucLoad() {
 
 // ── CARGAR CRUCIGRAMA ────────────────────────
 
+/* Hoy en hora de MADRID, no en la del dispositivo.
+   Los crucigramas se generan y se nombran con el calendario español; con la
+   fecha local, quien jugara desde otro huso pedía el archivo de otro día y
+   además su racha del hub cambiaba a una hora distinta que la de La Carrera,
+   En el Top o En el Once (que sí iban por Madrid desde el principio). */
+function crucTodayMadrid() {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Madrid'
+    }).format(new Date()); // "YYYY-MM-DD"
+}
+
+/* Resta días a un "YYYY-MM-DD" con aritmética de calendario (nada de restar
+   milisegundos a un Date, que en el cambio de hora se va un día). */
+function crucShiftDays(dateStr, delta) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + delta);
+    return dt.toISOString().slice(0, 10);
+}
+
 async function loadCrucigrama(offset) {
     crucOffset  = offset;
     crucEdition = crucGetEdition(offset);
 
-    const d = new Date();
-    d.setDate(d.getDate() - offset);
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const dateStr = crucShiftDays(crucTodayMadrid(), -offset);
 
     // Show loading state
     const screen = document.getElementById('crucigrama-screen');
@@ -103,8 +121,8 @@ async function loadCrucigrama(offset) {
             // no de la fecha solicitada.
             const [ly, lm, ld] = chosenDate.split('-').map(Number);
             const latestUTC = Date.UTC(ly, lm - 1, ld);
-            const now = new Date();
-            const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+            const [ty, tm, td] = crucTodayMadrid().split('-').map(Number);
+            const todayUTC = Date.UTC(ty, tm - 1, td);
             crucOffset  = Math.max(0, Math.round((todayUTC - latestUTC) / 86400000));
             crucEdition = crucGetEdition(crucOffset);
         } catch {
@@ -153,9 +171,10 @@ async function loadCrucigrama(offset) {
 function crucGetEdition(offset) {
     // Días de calendario contados en UTC para que un cambio de horario de
     // verano/invierno entre medias no desplace el número de edición en ±1 día.
+    // El "hoy" de partida es el de Madrid, igual que el resto de diarios.
     const launchUTC = Date.UTC(2026, 2, 3); // 3 marzo 2026
-    const now = new Date();
-    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const [y, m, d] = crucTodayMadrid().split('-').map(Number);
+    const todayUTC = Date.UTC(y, m - 1, d);
     const targetUTC = todayUTC - offset * 86400000;
     return Math.max(1, Math.floor((targetUTC - launchUTC) / 86400000) + 1);
 }

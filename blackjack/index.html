@@ -4,11 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blackjack de Fútbol — FutbolHUB</title>
+<link rel="canonical" href="https://www.futbolhub.es/blackjack/">
+<meta name="description" content="Acércate al objetivo sin pasarte. Elige jugadores sin ver su valor. Hasta 6 jugadores.">
+<!-- Open Graph / redes sociales -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FutbolHUB">
+<meta property="og:title" content="Blackjack — FutbolHUB">
+<meta property="og:description" content="Acércate al objetivo sin pasarte. Elige jugadores sin ver su valor. Hasta 6 jugadores.">
+<meta property="og:url" content="https://www.futbolhub.es/blackjack/">
+<meta property="og:image" content="https://www.futbolhub.es/img/og/blackjack.jpg">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Blackjack — FutbolHUB">
+<meta name="twitter:description" content="Acércate al objetivo sin pasarte. Elige jugadores sin ver su valor. Hasta 6 jugadores.">
+<meta name="twitter:image" content="https://www.futbolhub.es/img/og/blackjack.jpg">
+<!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../img/iconoapp.png">
+<meta name="theme-color" content="#16181d">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/blackjack.css?v=20260720a" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/blackjack.css?v=20260808d" />
+  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
@@ -31,6 +50,32 @@
 <!-- Vercel Web Analytics (cookieless, no requiere consentimiento) -->
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
+<!-- Google Funding Choices — el AVISO DE COOKIES.
+     Sin esto el Consent Mode de arriba se quedaba en 'denied' para siempre
+     (nadie lo actualizaba nunca): GA4 medía en modo sin cookies y AdSense
+     servía sin señal de consentimiento, que en la UE es justo lo que la
+     política de Google no permite. Además la página de privacidad prometía
+     un banner que no existía.
+     OJO: el tag solo pinta algo si en AdSense → Privacidad y mensajes hay un
+     mensaje de RGPD PUBLICADO para el sitio. -->
+<script async src="https://fundingchoicesmessages.google.com/i/pub-1248309481500017?ers=1"></script>
+<script>
+  (function () {
+    function signalGooglefcPresent() {
+      if (!window.frames['googlefcPresent']) {
+        if (document.body) {
+          const iframe = document.createElement('iframe');
+          iframe.style = 'width:0;height:0;border:0;display:none';
+          iframe.name = 'googlefcPresent';
+          document.body.appendChild(iframe);
+        } else {
+          setTimeout(signalGooglefcPresent, 0);
+        }
+      }
+    }
+    signalGooglefcPresent();
+  })();
+</script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 </head>
@@ -321,14 +366,16 @@
   // Exponer onDisconnect para blackjack-sync.js
   window._FBOnDisconnect = onDisconnect;
 
-  // Cargar scripts del juego
-  const V = '?v=' + Date.now();
+  /* Version FIJA, no Date.now(): con el timestamp ninguno de estos scripts
+     se cacheaba nunca — se bajaban enteros en cada carga. Al tocar
+     cualquiera de ellos, sube la letra. */
+  const V = '?v=20260808a';
   const scripts = [
     '../js/supabase-config.js',
     '../js/vendor/supabase-js.min.js',
     '../js/auth.js?v=20260722g',
-    '../js/progress-sync.js?v=20260727a',
-    '../js/hub-streaks.js?v=20260727a',
+    '../js/progress-sync.js?v=20260808a',
+    '../js/hub-streaks.js?v=20260808a',
     '../js/img-heal.js?v=20260727a',
     '../js/profile-widget.js?v=20260727a',
     '../js/shared.js',
@@ -343,33 +390,48 @@
     'js/blackjack-app.js' + V,
   ];
 
-  let chain = Promise.resolve();
-  scripts.forEach(src => {
-    chain = chain.then(() => new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = res;
-      s.onerror = () => { console.warn('Script no cargado:', src); res(); };
-      document.body.appendChild(s);
-    }));
-  });
+  /* Antes esto era una cadena de promesas: cada script esperaba al onload del
+     anterior antes de PEDIR el siguiente. 17 idas y vueltas en serie, que en
+     móvil son un par de segundos de nada antes de empezar.
 
-  chain.then(() => {
+     Un <script> creado con JS es async por defecto (se ejecuta cuando llega,
+     en cualquier orden). Poniéndole async = false se bajan todos EN PARALELO
+     pero se ejecutan en el orden en que se insertan — que es justo lo que
+     hace falta, porque auth.js necesita a supabase-js, los bots necesitan a
+     blackjack-app, etc. */
+  const pendientes = scripts.map(src => new Promise(res => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = false;                       // orden de ejecución garantizado
+    s.onload = res;
+    s.onerror = () => { console.warn('Script no cargado:', src); res(); };
+    document.body.appendChild(s);
+  }));
+
+  Promise.all(pendientes).then(() => {
     if (typeof App !== 'undefined') App.init();
   });
 </script>
 
 
-<!-- SIDEBARS DE ANUNCIOS — solo visibles en desktop ≥760px -->
+<!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px:
+     por debajo no cabe ninguna unidad de AdSense y el juego se queda
+     con toda la pantalla. Ver css/ads.css y js/ads.js. -->
 <aside class="bj-ad-sidebar bj-ad-sidebar--left">
-  <div class="bj-ad-strip"><span class="bj-ad-label">ESPACIO<br>PUBLI<br>CITARIO</span></div>
-  <div class="bj-ad-strip bj-ad-strip--accent"><span class="bj-ad-label">ANUNCIO</span></div>
-  <div class="bj-ad-strip"><span class="bj-ad-label">PUBLI<br>CITARIO</span></div>
+  <div class="ad-slot" data-ad="rail-left"></div>
 </aside>
 <aside class="bj-ad-sidebar bj-ad-sidebar--right">
-  <div class="bj-ad-strip bj-ad-strip--accent"><span class="bj-ad-label">ANUNCIO</span></div>
-  <div class="bj-ad-strip"><span class="bj-ad-label">PUBLI<br>CITARIO</span></div>
-  <div class="bj-ad-strip bj-ad-strip--accent"><span class="bj-ad-label">ANUNCIO</span></div>
+  <div class="ad-slot" data-ad="rail-right"></div>
 </aside>
+<script>
+  // PWA: registrar el service worker (cache de datos pesados + instalable).
+  // Ruta a la RAIZ para que el scope cubra el hub y todos los juegos.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+<script defer src="../js/ads.js?v=20260808c"></script>
 </body>
 </html>

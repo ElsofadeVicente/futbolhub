@@ -65,7 +65,7 @@ a      { text-decoration: none; }
    ═══════════════════════════════════════════ */
 .ad-col {
   position: fixed;
-  top: 0; bottom: 0; width: 72px;
+  top: 0; bottom: 0; width: var(--ad-col-w, 72px);
   display: flex; flex-direction: column;
   z-index: 3;
   background: var(--np-paper);
@@ -95,7 +95,7 @@ a      { text-decoration: none; }
 /* Empuja contenido en desktop para no quedar bajo las columnas */
 @media (min-width: 760px) {
   .hol-mode-menu,
-  .hol-game { margin-left: 72px; margin-right: 72px; }
+  .hol-game { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
   /* .hol-back-btn--ingame es position:fixed con top/left explícitos: ignora el margin-push, hay que desplazarlo a mano */
   .hol-back-btn--ingame { left: 88px; }
 }

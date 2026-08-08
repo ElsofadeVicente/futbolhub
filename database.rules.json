@@ -90,6 +90,27 @@
       }
     },
 
+    // BINGO — salas de varios jugadores + matchmaking público.
+    // Todos los de la sala juegan el MISMO cartón (misma semilla) pero cada uno
+    // a su ritmo; solo se comparte el progreso y el resultado final. Misma
+    // forma que Coche/Blackjack/Tres en Raya: se abre por código de sala, así
+    // nadie puede listar las salas ni leer los nombres de partidas ajenas.
+    "bingo": {
+      "rooms": {
+        "$code": {
+          ".read": true,
+          ".write": true
+        }
+      },
+      "matchmaking": {
+        // Índice público de salas abiertas en espera (solo {status, createdAt}).
+        ".read": true,
+        "$code": {
+          ".write": true
+        }
+      }
+    },
+
     // EL ESTADIO — puntuación diaria por usuario anónimo.
     "el-estadio": {
       "scores": {

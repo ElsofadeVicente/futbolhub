@@ -41,7 +41,7 @@ body {
    ══════════════════════════════════════════════ */
 .bj-ad-sidebar {
   position: fixed;
-  top: 0; bottom: 0; width: 72px;
+  top: 0; bottom: 0; width: var(--ad-col-w, 72px);
   display: flex; flex-direction: column;
   z-index: 3;
   background: var(--np-paper);
@@ -70,8 +70,8 @@ body {
 
 /* Empuja contenido en desktop */
 @media (min-width: 760px) {
-  .screen { margin-left: 72px; margin-right: 72px; }
-  .reveal-footer { left: 72px !important; right: 72px !important; }
+  .screen { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
+  .reveal-footer { left: var(--ad-col-w, 72px) !important; right: var(--ad-col-w, 72px) !important; }
 }
 @media (max-width: 759px) { .bj-ad-sidebar { display: none; } }
 

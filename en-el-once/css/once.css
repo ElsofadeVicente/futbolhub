@@ -69,7 +69,7 @@ body {
    ══════════════════════════════════════════════ */
 .ad-col {
     position: fixed;
-    top: 0; bottom: 0; width: 72px;
+    top: 0; bottom: 0; width: var(--ad-col-w, 72px);
     display: flex; flex-direction: column;
     z-index: 3;
     background: var(--np-paper);
@@ -97,7 +97,7 @@ body {
 .ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
 
 @media (min-width: 760px) {
-    .once-menu-screen, #game { margin-left: 72px; margin-right: 72px; }
+    .once-menu-screen, #game { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
 }
 @media (max-width: 759px) {
     .ad-col { display: none; }

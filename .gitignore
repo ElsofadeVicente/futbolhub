@@ -48,10 +48,22 @@ el-estadio/data/estadios.json
 mentiroso/js/data.js
 coche/data/*.json
 data/general/*.json
+data/bingo/
+# Volcado de solo lectura del pool del Bingo (admin/build_bingo_pool.py --list)
+admin/bingo_pool_actual.txt
 blackjack/data/blackjack/
 
 # Config local de Claude Code (servidor de pruebas, etc.)
 .claude/
+
+# Editores internos: son herramientas de escritorio que solo funcionan con
+# editor-server.py levantado en local. Estaban en git y por tanto Vercel las
+# servía en abierto (futbolhub.es/admin/jersey-editor.html devolvía 200):
+# no filtraban credenciales, pero enseñaban el tooling a cualquiera y las
+# indexaba Google. Se quedan en disco, fuera del despliegue.
+admin/*.html
+el-estadio/data/files/estadios-editor.html
+**/buscador_escudos.html
 
 # Clave secreta y caché de admin/sync_supabase.py — NUNCA subir a git.
 admin/.supabase_secret

@@ -44,7 +44,7 @@ a      { text-decoration: none; }
    AD COLUMNS
    ══════════════════════════════════════════════ */
 .ad-col {
-  position: fixed; top: 0; bottom: 0; width: 72px;
+  position: fixed; top: 0; bottom: 0; width: var(--ad-col-w, 72px);
   display: flex; flex-direction: column; z-index: 10;
   background: var(--np-paper);
 }
@@ -80,7 +80,7 @@ a      { text-decoration: none; }
 .screen.active { display: block; }
 
 @media (min-width: 760px) {
-  .screen { left: 72px; right: 72px; }
+  .screen { left: var(--ad-col-w, 72px); right: var(--ad-col-w, 72px); }
 }
 
 /* ══════════════════════════════════════════════
@@ -222,7 +222,7 @@ a      { text-decoration: none; }
 #screen-game.active { display: block; }
 
 @media (min-width: 760px) {
-  #screen-game { left: 72px; right: 72px; }
+  #screen-game { left: var(--ad-col-w, 72px); right: var(--ad-col-w, 72px); }
 }
 
 /* HUD */

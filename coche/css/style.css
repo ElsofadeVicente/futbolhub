@@ -52,7 +52,7 @@ a      { text-decoration: none; }
    ═══════════════════════════════════════════ */
 .ad-col {
   position: fixed;
-  top: 0; bottom: 0; width: 72px;
+  top: 0; bottom: 0; width: var(--ad-col-w, 72px);
   display: flex; flex-direction: column;
   z-index: 3;
   background: var(--np-paper);
@@ -81,7 +81,7 @@ a      { text-decoration: none; }
 
 /* Empuja contenido para no quedar bajo las columnas */
 @media (min-width: 760px) {
-  .screen { margin-left: 72px; margin-right: 72px; }
+  .screen { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
 }
 @media (max-width: 759px) { .ad-col { display: none; } }
 
