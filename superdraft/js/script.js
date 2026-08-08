@@ -27,9 +27,19 @@
   /* Dia 1 = fecha de lanzamiento. */
   const EPOCH_UTC = Date.UTC(2026, 7, 4);   // 2026-08-04
 
+  /* Hoy en hora de MADRID, no en la del dispositivo: el resto de diarios
+     (La Carrera, En el Top, En el Once, El Estadio, Crucigrama) cambian de
+     día a medianoche española, y si Superdraft cambiara a otra hora la
+     racha del hub se partiría sola para quien juegue desde otro huso. */
+  function todayMadrid() {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid'
+    }).format(new Date()); // "YYYY-MM-DD"
+  }
+
   function todayNumber() {
-    const now = new Date();
-    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const [y, m, d] = todayMadrid().split('-').map(Number);
+    const todayUTC = Date.UTC(y, m - 1, d);
     return Math.max(1, Math.floor((todayUTC - EPOCH_UTC) / 86400000) + 1);
   }
 
@@ -453,6 +463,7 @@
     S.over = true;
     closePick();
     const best = saveBest(D.day, S.total, D.objective.dir);
+    saveDaily(D.day, S.total, D.objective);
     $('sd-end-title').textContent = D.objective.title;
     $('sd-end-total').textContent = fmtTotal(S.total, D.objective);
     const isBest = (D.objective.dir === 'min') ? (S.total <= best) : (S.total >= best);
@@ -470,6 +481,22 @@
     if (prev != null && !isNaN(prev)) best = (dir === 'min') ? Math.min(prev, total) : Math.max(prev, total);
     try { localStorage.setItem(bestKey(day), String(best)); } catch (e) {}
     return best;
+  }
+
+  /* Registro POR FECHA de la partida terminada.
+     bestKey() va por número de edición, que sirve para el archivo pero no
+     para la racha del hub ni para sincronizar entre dispositivos: las dos
+     cosas trabajan con claves "<juego>_day_YYYY-MM-DD" (ver
+     js/hub-streaks.js y js/progress-sync.js). Superdraft era el único
+     diario que no dejaba rastro con fecha, y por eso ni tenía 🔥 en su
+     tarjeta ni le viajaba el progreso al móvil. */
+  function saveDaily(day, total, objective) {
+    if (day !== todayNumber()) return;      // solo el día de hoy hace racha
+    try {
+      localStorage.setItem(`superdraft_day_${todayMadrid()}`, JSON.stringify({
+        day, total, objective: objective.key, unit: objective.unit,
+      }));
+    } catch (e) {}
   }
 
   /* ═══════════════════ PANTALLAS / NAV ═══════════════════ */

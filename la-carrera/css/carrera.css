@@ -44,7 +44,7 @@ body::before {
 /* ── Columnas de anuncios ────────────────────── */
 .ad-col {
   position: fixed;
-  top: 0; bottom: 0; width: 72px;
+  top: 0; bottom: 0; width: var(--ad-col-w, 72px);
   display: flex; flex-direction: column;
   z-index: 3;
   background: var(--np-paper);
@@ -68,7 +68,7 @@ body::before {
 .ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
 
 @media (min-width: 760px) {
-  #intro-screen, #game-screen, #end-screen { margin-left: 72px; margin-right: 72px; }
+  #intro-screen, #game-screen, #end-screen { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
 }
 @media (max-width: 759px) {
   .ad-col { display: none; }
@@ -162,7 +162,7 @@ body::before {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 7px 12px; height: 46px;
 }
-@media (min-width: 760px) { #day-nav { left: 72px; right: 72px; } }
+@media (min-width: 760px) { #day-nav { left: var(--ad-col-w, 72px); right: var(--ad-col-w, 72px); } }
 #day-nav button {
   background: transparent; color: var(--np-paper);
   border: 1px solid rgba(244,234,210,.3); border-radius: 0;
@@ -246,7 +246,7 @@ body::before {
   background: linear-gradient(to top, var(--np-paper) 75%, transparent);
   padding: 10px 16px 12px; display: flex; gap: 10px; align-items: flex-end; z-index: 50;
 }
-@media (min-width: 760px) { #input-area { left: 72px; right: 72px; } }
+@media (min-width: 760px) { #input-area { left: var(--ad-col-w, 72px); right: var(--ad-col-w, 72px); } }
 #input-wrap { flex: 1; position: relative; }
 #ans-input {
   width: 100%; background: var(--np-white);

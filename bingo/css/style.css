@@ -1,0 +1,303 @@
+/* =============================================================================
+   BINGO — estilos ESPECÍFICOS del juego
+   El sistema de diseño (fuentes, fondo de papel, menú, botones, lobby, inputs,
+   toast, columnas de anuncios) se hereda de ../coche/css/style.css para que sea
+   la misma web. Aquí solo: el locutor, el cartón y la pantalla de resultado.
+   ============================================================================= */
+
+:root {
+  --bg-ok:   #2f7a45;   /* casilla acertada */
+  --bg-bad:  #b5221e;   /* casilla fallada  */
+  --bg-line: #e8b93a;   /* línea de bingo   */
+}
+
+.hidden { display: none !important; }
+
+/* ═══════════ MENÚ: piezas propias ═══════════ */
+.best-box {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; background: var(--np-paper3);
+  border: 1.5px solid var(--np-ink); box-shadow: 2px 2px 0 var(--np-ink);
+}
+.best-label { font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--np-ink-mid); }
+.best-value { font-family: 'Anton', sans-serif; font-size: 1.05rem; color: var(--np-red); letter-spacing: .04em; }
+
+.join-row { display: flex; gap: 8px; }
+.join-row .menu-input:first-child { flex: 1; }
+.join-row .menu-code-input { max-width: 130px; }
+
+/* ═══════════ PARTIDA ═══════════ */
+#screen-game { justify-content: flex-start; padding: 12px 16px 26px; gap: 10px; }
+#screen-game > * { width: 100%; max-width: 460px; }
+
+/* ── El locutor: quién ha salido y cuánto queda ── */
+.caller {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--np-ink); color: var(--np-paper);
+  border: 2px solid var(--np-ink); box-shadow: var(--shadow-soft);
+  padding: 8px 10px; margin-top: 6px;
+  transition: background .3s;
+}
+.caller.urgent { background: #2a0f0e; }
+.caller.done   { opacity: .5; }
+
+.caller-ring { position: relative; width: 46px; height: 46px; flex-shrink: 0; }
+.ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: rgba(244,234,210,0.16); stroke-width: 6; }
+.ring-fill  { fill: none; stroke: var(--np-paper); stroke-width: 6; stroke-linecap: round; transition: stroke .3s; }
+.caller.urgent .ring-fill { stroke: var(--np-red); }
+.ring-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'Anton', sans-serif; font-size: 1.15rem; color: var(--np-paper);
+}
+.caller.urgent .ring-num { color: var(--np-red); animation: numPulse .5s infinite alternate; }
+@keyframes numPulse { from { transform: scale(1); } to { transform: scale(1.16); } }
+
+.caller-player { flex: 1; display: flex; align-items: center; gap: 9px; min-width: 0; }
+/* Relevo en dos tiempos: 'leaving' saca al anterior, y solo con la ficha ya
+   vacía se escribe el nuevo y entra con 'enter'. 'gone' es el corte en seco
+   de cuando la ficha ha volado a una casilla (el clon que vuela hace de ella). */
+.caller-player.enter   { animation: callerIn .34s cubic-bezier(.2,.9,.3,1.3); }
+.caller-player.leaving { animation: callerOut .19s ease-in forwards; }
+.caller-player.gone    { opacity: 0; }
+@keyframes callerIn  { from { opacity: 0; transform: translateX(26px) rotate(3deg); } to { opacity: 1; transform: none; } }
+@keyframes callerOut { to { opacity: 0; transform: translateX(-30px) rotate(-4deg); } }
+
+.caller-photo {
+  width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  border: 2px solid var(--np-paper); background: rgba(244,234,210,0.12);
+  display: flex; align-items: center; justify-content: center;
+}
+.caller-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.caller-noimg { font-size: 1.1rem; filter: grayscale(1); }
+
+.caller-names { display: flex; flex-direction: column; min-width: 0; line-height: 1; }
+.caller-first {
+  font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .16em;
+  text-transform: uppercase; color: rgba(244,234,210,0.62);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.caller-last {
+  font-family: 'Anton', sans-serif; font-size: 1.35rem; letter-spacing: .02em;
+  text-transform: uppercase; color: var(--np-paper);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.caller-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.skip-btn {
+  font-family: 'DM Mono', monospace; font-size: .56rem; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase;
+  padding: 6px 9px; border: 1.5px solid var(--np-paper); background: transparent;
+  color: var(--np-paper); transition: background .12s, color .12s;
+}
+.skip-btn:hover { background: var(--np-paper); color: var(--np-ink); }
+.caller-left { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .1em; color: rgba(244,234,210,0.45); }
+
+/* Fantasma que vuela del locutor a la casilla */
+.caller-ghost { pointer-events: none; display: flex; align-items: center; gap: 9px; }
+.caller-ghost .caller-last  { font-size: 1.1rem; }
+.caller-ghost .caller-first { color: rgba(15,18,14,0.5); }
+
+/* ── Marcador de rivales (online) ── */
+.rivals { display: flex; flex-direction: column; gap: 4px; }
+.rival { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: .58rem; }
+.rival-name { width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: .08em; color: var(--np-ink-mid); }
+.rival.me .rival-name { color: var(--np-red); font-weight: 500; }
+.rival-bar { flex: 1; height: 6px; background: var(--np-paper3); border: 1px solid var(--np-ink-soft); overflow: hidden; }
+.rival-bar i { display: block; height: 100%; background: var(--np-ink); transition: width .3s; }
+.rival.me .rival-bar i { background: var(--np-red); }
+.rival-num { width: 44px; text-align: right; letter-spacing: .04em; color: var(--np-ink); }
+
+/* ── EL CARTÓN ── */
+.board-wrap { display: flex; justify-content: center; }
+.card-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  width: 100%; max-width: min(460px, calc(100vh - 230px));
+  gap: 2px; background: var(--np-ink);
+  border: 2px solid var(--np-ink); box-shadow: var(--shadow);
+}
+
+.bcell {
+  position: relative; aspect-ratio: 1 / 1; overflow: hidden;
+  background: var(--np-paper); padding: 0; border: none;
+  opacity: 0; transform: translateY(10px) scale(.94);
+  transition: background .15s, opacity .3s ease var(--d), transform .3s ease var(--d);
+}
+.card-grid.in .bcell { opacity: 1; transform: none; }
+.bcell:hover:not(.filled) { background: var(--np-paper3); }
+.bcell:hover:not(.filled) .cat-media { transform: scale(1.09) rotate(-2deg); }
+
+.bcell-inner {
+  height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  padding: 5px 3px; text-align: center;
+}
+
+.cat-media {
+  width: clamp(26px, 8vw, 40px); height: clamp(26px, 8vw, 40px);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: transform .18s, width .25s, height .25s, opacity .25s;
+}
+.cat-media img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.cat-media--avatar { border-radius: 50%; overflow: hidden; border: 1.5px solid var(--np-ink); background: var(--np-paper3); }
+/* Los retratos tienen la cara arriba: anclar al top para no cortar cabezas. */
+.cat-media--avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.cat-media.broken img { display: none; }
+.cat-emoji { font-size: 1.25rem; line-height: 1; }
+
+.bcell-cat {
+  font-family: 'DM Mono', monospace; font-weight: 500;
+  font-size: clamp(.5rem, 2.2vw, .54rem); line-height: 1.15; letter-spacing: .02em;
+  color: var(--np-ink); word-break: break-word; hyphens: auto;
+  transition: opacity .25s, font-size .25s;
+}
+.bcell-name {
+  display: none;
+  font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: clamp(.6rem, 2.7vw, .68rem); line-height: 1.05; letter-spacing: .01em;
+  text-transform: uppercase; color: var(--np-ink);
+  padding: 0 2px; word-break: break-word;
+}
+
+/* Con futbolista dentro: el símbolo se encoge y manda el nombre */
+.bcell.filled { background: var(--np-paper2); cursor: default; }
+.bcell.filled .cat-media { width: clamp(18px, 5.2vw, 26px); height: clamp(18px, 5.2vw, 26px); opacity: .5; }
+.bcell.filled .bcell-cat  { opacity: .42; font-size: clamp(.42rem, 1.8vw, .46rem); }
+.bcell.filled .bcell-name { display: block; }
+.bcell.pop { animation: cellPop .42s cubic-bezier(.2,.9,.3,1.4); }
+@keyframes cellPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.13); box-shadow: inset 0 0 0 3px var(--np-ink); }
+  100% { transform: scale(1); }
+}
+
+/* ── Revelado ── */
+.bcell-stamp {
+  position: absolute; top: 3px; right: 5px;
+  font-family: 'Anton', sans-serif; font-size: .9rem; line-height: 1;
+  opacity: 0; transform: scale(2.2) rotate(-18deg);
+}
+.bcell.reveal { animation: cellFlip .42s cubic-bezier(.4,0,.2,1); }
+.bcell.reveal .bcell-stamp { animation: stampIn .34s .2s cubic-bezier(.2,.9,.3,1.5) forwards; }
+@keyframes cellFlip {
+  0%   { transform: perspective(420px) rotateY(0); }
+  50%  { transform: perspective(420px) rotateY(88deg); }
+  100% { transform: perspective(420px) rotateY(0); }
+}
+@keyframes stampIn { to { opacity: 1; transform: scale(1) rotate(-10deg); } }
+
+.bcell.ok  { background: var(--bg-ok);  }
+.bcell.bad { background: var(--bg-bad); }
+.bcell.ok  .bcell-name, .bcell.bad .bcell-name,
+.bcell.ok  .bcell-cat,  .bcell.bad .bcell-cat,
+.bcell.ok  .bcell-stamp,.bcell.bad .bcell-stamp { color: var(--np-paper); }
+.bcell.ok .bcell-cat, .bcell.bad .bcell-cat { opacity: .6; }
+.bcell.empty { background: var(--np-paper3); }
+.bcell.empty .bcell-stamp { color: var(--np-ink-mid); }
+
+/* BINGO: las 16 bien. No hay premio intermedio, así que se enciende el cartón
+   entero de golpe — es lo único que se gana en este juego. */
+.bcell.bingo { background: var(--bg-line); animation: bingoGlow .8s ease; }
+.bcell.bingo .bcell-name, .bcell.bingo .bcell-cat, .bcell.bingo .bcell-stamp { color: var(--np-ink); }
+@keyframes bingoGlow {
+  0%   { transform: scale(1); box-shadow: none; }
+  45%  { transform: scale(1.12); box-shadow: 0 0 0 4px var(--np-ink); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+
+.game-hint {
+  font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .1em;
+  color: var(--np-ink-mid); text-align: center; text-transform: uppercase; min-height: 14px;
+}
+
+.toast.ok { background: var(--bg-line); color: var(--np-ink); box-shadow: 3px 3px 0 var(--np-ink); font-family: 'Anton', sans-serif; letter-spacing: .1em; }
+
+/* ═══════════ RESULTADO ═══════════ */
+#screen-result { justify-content: flex-start; padding: 26px 16px 40px; }
+.result-wrap { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
+
+.result-head { text-align: center; }
+.result-title {
+  font-family: 'Anton', sans-serif; font-size: clamp(1.6rem, 7vw, 2.4rem);
+  letter-spacing: .02em; color: var(--np-ink); line-height: 1;
+  animation: titleIn .5s cubic-bezier(.2,.9,.3,1.3);
+}
+@keyframes titleIn { from { opacity: 0; transform: translateY(-14px) scale(.9); } to { opacity: 1; transform: none; } }
+.result-title.is-bingo { color: var(--np-red); }
+
+.result-score { display: flex; gap: 8px; margin-top: 14px; }
+.rs-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px; background: var(--np-paper2);
+  border: 1.5px solid var(--np-ink); box-shadow: 2px 2px 0 var(--np-ink);
+}
+.rs-item--main { background: var(--np-ink); }
+.rs-num { font-family: 'Anton', sans-serif; font-size: 1.5rem; line-height: 1; color: var(--np-ink); }
+.rs-lbl { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; color: var(--np-ink-mid); }
+.rs-item--main .rs-num { color: var(--np-paper); }
+.rs-item--main .rs-lbl { color: rgba(244,234,210,0.6); }
+.result-best { margin-top: 10px; font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--np-red); }
+
+.detail-kicker {
+  font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--np-ink-mid); margin-bottom: 7px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--np-ink-soft);
+}
+.detail-list { display: flex; flex-direction: column; }
+.detail-row {
+  display: flex; align-items: baseline; gap: 8px; padding: 6px 8px;
+  border-bottom: 1px solid var(--np-ink-soft); font-size: .8rem;
+}
+.detail-cat {
+  font-family: 'DM Mono', monospace; font-size: .54rem; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--np-ink-mid);
+  width: 40%; flex-shrink: 0; word-break: break-word;
+}
+.detail-msg { flex: 1; font-weight: 600; color: var(--np-ink); }
+.detail-msg em { display: block; font-family: 'DM Mono', monospace; font-size: .52rem; font-style: normal; font-weight: 400; letter-spacing: .04em; text-transform: uppercase; color: var(--np-ink-mid); margin-top: 2px; }
+.detail-row--ok  .detail-msg { color: var(--bg-ok); }
+.detail-row--bad .detail-msg { color: var(--np-red); text-decoration: line-through; }
+.detail-row--bad .detail-msg em { text-decoration: none; }
+.detail-row--empty .detail-msg { color: var(--np-ink-soft); font-weight: 400; font-style: italic; }
+
+/* Clasificación online */
+.ranking { display: flex; flex-direction: column; }
+.rank-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px;
+  border-bottom: 1px solid var(--np-ink-soft);
+}
+.rank-row.me { background: var(--np-paper3); }
+.rank-pos { font-family: 'Anton', sans-serif; font-size: 1.05rem; width: 20px; color: var(--np-red); }
+.rank-name { flex: 1; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-detail { font-family: 'DM Mono', monospace; font-size: .54rem; letter-spacing: .06em; color: var(--np-ink-mid); text-transform: uppercase; }
+.rank-points { font-family: 'Anton', sans-serif; font-size: 1.15rem; color: var(--np-ink); min-width: 38px; text-align: right; }
+
+/* ═══════════ REGLAS ═══════════ */
+.rules-card { max-width: 420px; }
+.rules-title { font-family: 'Anton', sans-serif; font-size: 1.3rem; letter-spacing: .02em; margin-bottom: 12px; color: var(--np-ink); }
+.rules-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 9px; }
+.rules-list li { font-size: .84rem; line-height: 1.35; color: var(--np-ink); }
+.rules-list b { font-weight: 700; color: var(--np-red); }
+
+/* ═══════════ CARGA ═══════════ */
+.loading-overlay { position: fixed; inset: 0; z-index: 500; background: var(--np-paper); display: flex; align-items: center; justify-content: center; }
+.loading-overlay.hidden { display: none; }
+.loading-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.loading-title { font-family: 'Anton', sans-serif; font-size: 2.6rem; letter-spacing: .08em; color: var(--np-ink); }
+.loading-spinner { width: 40px; height: 40px; border: 4px solid var(--np-ink-soft); border-top-color: var(--np-red); border-radius: 50%; animation: bg-spin .8s linear infinite; }
+@keyframes bg-spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .14em; color: var(--np-ink-mid); text-transform: uppercase; }
+
+/* ═══════════ MÓVIL ═══════════ */
+@media (max-width: 480px) {
+  .caller-last { font-size: 1.15rem; }
+  .caller-ring { width: 40px; height: 40px; }
+  .detail-cat { width: 46%; }
+}
+
+/* Menos movimiento si el sistema lo pide */
+@media (prefers-reduced-motion: reduce) {
+  .bcell, .bcell.reveal, .bcell.pop, .bcell.bingo,
+  .caller-player.enter, .caller-player.leaving, .result-title { animation: none !important; transition: none !important; }
+  .card-grid .bcell { opacity: 1; transform: none; }
+}

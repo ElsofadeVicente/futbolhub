@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bingo — FutbolHUB</title>
+<link rel="canonical" href="https://www.futbolhub.es/bingo/">
+<meta name="description" content="Un cartón de 16 categorías y un futbolista cada 10 segundos. Colócalo donde creas que encaja: los fallos no se ven hasta el final.">
+<!-- Open Graph / redes sociales -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FutbolHUB">
+<meta property="og:title" content="Bingo — FutbolHUB">
+<meta property="og:description" content="Un cartón de 16 categorías y un futbolista cada 10 segundos. Colócalo donde creas que encaja: los fallos no se ven hasta el final.">
+<meta property="og:url" content="https://www.futbolhub.es/bingo/">
+<meta property="og:image" content="https://www.futbolhub.es/img/og/bingo.jpg">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bingo — FutbolHUB">
+<meta name="twitter:description" content="Un cartón de 16 categorías y un futbolista cada 10 segundos. Colócalo donde creas que encaja: los fallos no se ven hasta el final.">
+<meta name="twitter:image" content="https://www.futbolhub.es/img/og/bingo.jpg">
+<!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../img/iconoapp.png">
+<meta name="theme-color" content="#16181d">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Tres en Raya) -->
+  <link rel="stylesheet" href="../coche/css/style.css?v=20260808d">
+  <link rel="stylesheet" href="css/style.css?v=20260808d">
+  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
+  <link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
+  <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500
+    });
+  </script>
+  <!-- Google Analytics 4 (respeta el Consent Mode de arriba) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VEY3P2Q41K"></script>
+  <script>
+    gtag('js', new Date());
+    gtag('config', 'G-VEY3P2Q41K');
+  </script>
+  <!-- Vercel Web Analytics (cookieless, no requiere consentimiento) -->
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Google Funding Choices — el AVISO DE COOKIES.
+       Sin esto el Consent Mode de arriba se quedaba en 'denied' para siempre
+       (nadie lo actualizaba nunca): GA4 medía en modo sin cookies y AdSense
+       servía sin señal de consentimiento, que en la UE es justo lo que la
+       política de Google no permite. Además la página de privacidad prometía
+       un banner que no existía.
+       OJO: el tag solo pinta algo si en AdSense → Privacidad y mensajes hay un
+       mensaje de RGPD PUBLICADO para el sitio. -->
+  <script async src="https://fundingchoicesmessages.google.com/i/pub-1248309481500017?ers=1"></script>
+  <script>
+    (function () {
+      function signalGooglefcPresent() {
+        if (!window.frames['googlefcPresent']) {
+          if (document.body) {
+            const iframe = document.createElement('iframe');
+            iframe.style = 'width:0;height:0;border:0;display:none';
+            iframe.name = 'googlefcPresent';
+            document.body.appendChild(iframe);
+          } else {
+            setTimeout(signalGooglefcPresent, 0);
+          }
+        }
+      }
+      signalGooglefcPresent();
+    })();
+  </script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px:
+     por debajo no cabe ninguna unidad de AdSense y el juego se queda
+     con toda la pantalla. Ver css/ads.css y js/ads.js. -->
+<aside class="ad-col ad-col--left">
+  <div class="ad-slot" data-ad="rail-left"></div>
+</aside>
+<aside class="ad-col ad-col--right">
+  <div class="ad-slot" data-ad="rail-right"></div>
+</aside>
+
+<!-- ═══════════ PANTALLA 1: MENÚ ═══════════ -->
+<div id="screen-menu" class="screen active">
+  <a href="../index.html" class="back-btn">← Volver</a>
+
+  <div class="menu-hero">
+    <h1 class="menu-title">BINGO</h1>
+    <p class="menu-subtitle">16 categorías, un futbolista cada 10 segundos</p>
+  </div>
+
+  <div class="menu-wrap">
+    <div class="menu-tabs">
+      <button class="menu-tab active" id="tab-solo">🎯 Solo</button>
+      <button class="menu-tab"        id="tab-private">🔒 Privada</button>
+      <button class="menu-tab"        id="tab-public">🌐 Pública</button>
+    </div>
+    <script>
+      (function () {
+        var tabs = ['solo', 'private', 'public'];
+        tabs.forEach(function (tab) {
+          var btn = document.getElementById('tab-' + tab);
+          if (!btn) return;
+          btn.addEventListener('click', function () {
+            tabs.forEach(function (t) {
+              var b = document.getElementById('tab-' + t);
+              var p = document.getElementById('panel-' + t);
+              if (b) b.classList.remove('active');
+              if (p) p.classList.remove('active');
+            });
+            btn.classList.add('active');
+            var panel = document.getElementById('panel-' + tab);
+            if (panel) panel.classList.add('active');
+            if (window.App && typeof window.App.setTab === 'function') window.App.setTab(tab);
+          });
+        });
+      })();
+    </script>
+
+    <!-- Solo -->
+    <div id="panel-solo" class="menu-panel active">
+      <p class="panel-hint">Llena el cartón tú solo y bate tu récord</p>
+      <div id="best-box" class="best-box hidden">
+        <span class="best-label">Tu récord</span>
+        <span class="best-value" id="best-value">—</span>
+      </div>
+      <button class="btn-primary" onclick="App.startSolo()">JUGAR ▶</button>
+      <button class="btn-secondary" onclick="App.showRules()">CÓMO SE JUEGA</button>
+      <p class="menu-error hidden" id="error-solo"></p>
+    </div>
+
+    <!-- Privada -->
+    <div id="panel-private" class="menu-panel">
+      <p class="panel-hint">Crea una sala y comparte el código: todos juegan el mismo cartón</p>
+      <input id="input-host-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" />
+      <button class="btn-primary" onclick="App.createRoom()">CREAR SALA ▶</button>
+      <div class="menu-divider"><span>O</span></div>
+      <div class="join-row">
+        <input id="input-join-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" />
+        <input id="input-join-code" class="menu-input menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6"
+               oninput="this.value=this.value.toUpperCase()" />
+      </div>
+      <button class="btn-secondary" onclick="App.joinRoom()">UNIRSE ▶</button>
+      <p class="menu-error hidden" id="error-private"></p>
+    </div>
+
+    <!-- Pública -->
+    <div id="panel-public" class="menu-panel">
+      <p class="panel-hint">Te metemos en una sala abierta con más gente</p>
+      <input id="input-public-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" />
+      <button class="btn-primary" id="btn-find-public" onclick="App.findPublicRoom()">BUSCAR SALA ▶</button>
+      <p class="menu-error hidden" id="error-public"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PANTALLA 2: LOBBY (online) ═══════════ -->
+<div id="screen-lobby" class="screen">
+  <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
+  <div class="lobby-wrap">
+    <div class="lobby-code-card">
+      <div class="lobby-code-label">Código de sala</div>
+      <div class="lobby-code-big" id="lobby-code-display">------</div>
+      <button id="btn-copy-link" onclick="App.copyLink()">🔗 Copiar enlace de invitación</button>
+    </div>
+    <div class="lobby-section">
+      <p class="lobby-section-kicker" id="lobby-count-kicker">Jugadores (0)</p>
+      <div class="lobby-players-list" id="lobby-players"></div>
+    </div>
+    <button class="btn-primary hidden" id="btn-start-room" onclick="App.startRoom()">EMPEZAR ▶</button>
+    <p id="lobby-hint" class="lobby-hint">Esperando al anfitrión…</p>
+  </div>
+</div>
+
+<!-- ═══════════ PANTALLA 3: PARTIDA ═══════════ -->
+<div id="screen-game" class="screen">
+
+  <!-- Locutor: futbolista en juego + cuenta atrás -->
+  <div class="caller" id="caller">
+    <div class="caller-ring">
+      <svg viewBox="0 0 64 64" class="ring-svg" aria-hidden="true">
+        <circle class="ring-track" cx="32" cy="32" r="28"></circle>
+        <circle class="ring-fill"  cx="32" cy="32" r="28" id="ring-fill"></circle>
+      </svg>
+      <span class="ring-num" id="ring-num">10</span>
+    </div>
+
+    <div class="caller-player" id="caller-player">
+      <div class="caller-photo" id="caller-photo"></div>
+      <div class="caller-names">
+        <span class="caller-first" id="caller-first">—</span>
+        <span class="caller-last"  id="caller-last"></span>
+      </div>
+    </div>
+
+    <div class="caller-side">
+      <button class="skip-btn" id="btn-skip" onclick="App.skip()">SALTAR ⏭</button>
+      <span class="caller-left" id="caller-left">—</span>
+    </div>
+  </div>
+
+  <!-- Marcador de rivales (solo online) -->
+  <div class="rivals hidden" id="rivals"></div>
+
+  <div class="board-wrap">
+    <div class="card-grid" id="board"><!-- generado por JS --></div>
+  </div>
+
+  <div class="game-hint" id="game-hint">Coloca al futbolista en la casilla que creas que cumple</div>
+</div>
+
+<!-- ═══════════ PANTALLA 4: RESULTADO ═══════════ -->
+<div id="screen-result" class="screen">
+  <div class="result-wrap">
+    <div class="result-head">
+      <h2 class="result-title" id="result-title">CARTÓN CERRADO</h2>
+      <div class="result-score">
+        <div class="rs-item rs-item--main"><span class="rs-num" id="rs-hits">0</span><span class="rs-lbl">aciertos</span></div>
+        <div class="rs-item"><span class="rs-num" id="rs-fails">0</span><span class="rs-lbl">falladas</span></div>
+        <div class="rs-item"><span class="rs-num" id="rs-empty">0</span><span class="rs-lbl">sin rellenar</span></div>
+      </div>
+      <p class="result-best" id="result-best"></p>
+    </div>
+
+    <div class="ranking hidden" id="ranking"></div>
+
+    <div class="result-detail" id="result-detail"></div>
+
+    <div class="finished-actions">
+      <button class="btn-primary"   id="btn-again" onclick="App.playAgain()">🔄 Otra partida</button>
+      <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ REGLAS ═══════════ -->
+<div id="rules-overlay" class="pick-overlay hidden">
+  <div class="pick-card rules-card">
+    <button class="pick-close" onclick="App.closeRules()" aria-label="Cerrar">✕</button>
+    <h3 class="rules-title">CÓMO SE JUEGA</h3>
+    <ol class="rules-list">
+      <li>El cartón tiene <b>16 categorías</b>: clubes, países, ligas, títulos, entrenadores, compañeros…</li>
+      <li>Cada <b>10 segundos</b> cae un futbolista. Colócalo en la casilla que creas que cumple, o pulsa <b>SALTAR</b>.</li>
+      <li>Nadie te dice si aciertas: <b>los fallos se revelan al final</b>, cuando se cierra el cartón.</li>
+      <li>O están las <b>16 bien y cantas bingo</b>, o no hay bingo. Aquí no hay medias tintas.</li>
+      <li>Siempre hay una forma de cerrarlo entero, pero de cada casilla caen <b>solo dos nombres válidos</b> en toda la partida: si gastas uno donde no debes, esa casilla se muere.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Carga -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-inner">
+    <div class="loading-title">BINGO</div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loading-text">Cargando base de datos…</div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+  (function () {
+    var _queue = [], _real = null;
+    var methods = [
+      'setTab','startSolo','showRules','closeRules','createRoom','joinRoom','findPublicRoom',
+      'leaveRoom','startRoom','copyLink','skip','place','playAgain','showMenu','showToast'
+    ];
+    var proxy = {};
+    methods.forEach(function (m) {
+      proxy[m] = function () {
+        var args = Array.prototype.slice.call(arguments);
+        if (_real) return _real[m].apply(_real, args);
+        _queue.push([m, args]);
+      };
+    });
+    proxy._flush = function (realApp) {
+      _real = realApp; window.App = realApp;
+      _queue.forEach(function (c) { realApp[c[0]].apply(realApp, c[1]); });
+      _queue = [];
+    };
+    window.App = proxy;
+  })();
+
+  window.addEventListener('error', function(e){ console.error('[Global error]', e.message, e.filename, e.lineno); });
+  window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
+</script>
+
+<script src="../js/supabase-config.js"></script>
+<script src="../js/vendor/supabase-js.min.js"></script>
+<script src="../js/auth.js?v=20260722g"></script>
+<script src="../js/progress-sync.js?v=20260808a"></script>
+<script src="../js/hub-streaks.js?v=20260808a"></script>
+<script src="../js/img-heal.js?v=20260727a"></script>
+<script src="../js/profile-widget.js?v=20260727a"></script>
+<script src="../js/futbol-restrictions.js?v=20260803a"></script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, get, update, onValue, push,
+           serverTimestamp, remove, runTransaction, onDisconnect }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM",
+    authDomain:        "futbolhub-9d0a4.firebaseapp.com",
+    databaseURL:       "https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "futbolhub-9d0a4",
+    storageBucket:     "futbolhub-9d0a4.firebasestorage.app",
+    messagingSenderId: "179751773212",
+    appId:             "1:179751773212:web:9acfe3d5b8c344c51a2bd9"
+  };
+  let db = null;
+  try { db = getDatabase(initializeApp(FIREBASE_CONFIG)); console.log('✅ Firebase OK (Bingo)'); }
+  catch(e) { console.warn('⚠️ Firebase:', e); }
+
+  window._FB = { configured: !!db, db, ref, set, get, update, onValue, push, serverTimestamp, remove, runTransaction };
+  window._FBOnDisconnect = onDisconnect;
+
+  const s = document.createElement('script');
+  // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
+  s.src = 'js/script.js?v=20260808a';
+  s.onload = () => {
+    const realApp = window._AppReal;
+    if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }
+    window.App._flush(realApp);
+    realApp.init();
+  };
+  s.onerror = (e) => console.error('❌ script.js no se pudo cargar:', e);
+  document.body.appendChild(s);
+</script>
+<script>
+  // PWA: registrar el service worker (cache de datos pesados + instalable).
+  // Ruta a la RAIZ para que el scope cubra el hub y todos los juegos.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+<script defer src="../js/ads.js?v=20260808c"></script>
+</body>
+</html>

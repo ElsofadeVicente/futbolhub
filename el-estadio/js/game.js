@@ -56,9 +56,15 @@ function shuffleSeeded(arr, seed) {
   return a;
 }
 
+/* Hoy en hora de MADRID, no en la del dispositivo.
+   Antes esto usaba la fecha local: para quien juega desde México o desde
+   Japón el día "cambiaba" a una hora distinta que en La Carrera, En el Top
+   o En el Once (que sí van por Madrid), así que el estadio del día no
+   coincidía con el resto de diarios y la racha del hub se partía sola. */
 function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid'
+  }).format(new Date()); // "YYYY-MM-DD"
 }
 
 /* Distancia Haversine en km */

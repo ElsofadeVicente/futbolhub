@@ -33,11 +33,10 @@
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
   }
 
-  /* Hoy en hora local (crucigrama y el estadio guardan con fecha local) */
-  function localToday() {
-    const d = new Date();
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
+  /* Antes había un localToday() aparte porque el Crucigrama y El Estadio
+     guardaban con la fecha del dispositivo. Ya no: los seis diarios usan
+     hora de Madrid, así que el día cambia a la vez en todos y la racha no
+     se rompe por jugar desde otro huso. */
 
   /* Resta días a un "YYYY-MM-DD" (aritmética de calendario, sin husos) */
   function shiftDays(dateStr, delta) {
@@ -74,7 +73,7 @@
     {
       href: 'crucigrama',
       label: 'Crucigrama',
-      today: localToday,
+      today: madridToday,
       stateFor(day) {
         const s = readJSON(`cruc_${day.replace(/-/g, '')}`);
         if (!s || !s.completed) return null;
@@ -119,7 +118,7 @@
     {
       href: 'el-estadio',
       label: 'El Estadio',
-      today: localToday,
+      today: madridToday,
       stateFor(day) {
         const s = readJSON(`estadio_daily_${day}`);
         return s ? 'win' : null;   // racha de días jugados
@@ -128,6 +127,23 @@
         const s = readJSON(`estadio_daily_${day}`);
         if (!s) return null;
         return typeof s.total === 'number' ? `${s.total.toLocaleString('es-ES')} puntos` : 'Jugado';
+      },
+    },
+    {
+      /* Superdraft no se gana ni se pierde: se saca una puntuación contra un
+         objetivo del día. Como El Estadio, la racha es de días jugados. */
+      href: 'superdraft',
+      label: 'Superdraft',
+      today: madridToday,
+      stateFor(day) {
+        const s = readJSON(`superdraft_day_${day}`);
+        return s ? 'win' : null;
+      },
+      detailFor(day) {
+        const s = readJSON(`superdraft_day_${day}`);
+        if (!s) return null;
+        if (typeof s.total !== 'number') return 'Jugado';
+        return `${s.total.toLocaleString('es-ES')} ${s.unit || ''}`.trim();
       },
     },
   ];

@@ -51,6 +51,7 @@
         { prefix: 'enteltop_day_', merge: 'newest', daily: true },
         { prefix: 'oncediario_',   merge: 'newest', daily: true },
         { prefix: 'estadio_daily_',merge: 'newest', daily: true },
+        { prefix: 'superdraft_day_', merge: 'newest', daily: true },
         /* Partida de hoy a medias (para seguirla en otro dispositivo) */
         { exact: 'carrera_today',  merge: 'newest' },
         { exact: 'enteltop_today', merge: 'newest' },
@@ -61,6 +62,11 @@
         { exact: 'footballStats',  merge: 'stats' },
         /* Récords de Higher or Lower (un número por modo) */
         { prefix: 'hol_record_',   merge: 'max' },
+        /* Mejor marca de cada edición de Superdraft (superdraft-best-<nº>).
+           'newest' y no 'max': según el objetivo del día se gana subiendo
+           (el once más caro) o bajando (el más joven), así que quedarse con
+           el número mayor sería mentir la mitad de los días. */
+        { prefix: 'superdraft-best-', merge: 'newest' },
     ];
 
     const META_KEY    = 'fh_progress_meta';   // clave → cuándo cambió aquí

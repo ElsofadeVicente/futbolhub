@@ -1,0 +1,58 @@
+/* =============================================
+   ADS.CSS — Huecos de anuncio de los juegos
+   QUIÉN COÑO FALTA
+
+   Esto NO es una hoja de estilos común de la web: cada juego mantiene su
+   paleta, su tipografía y su :root. Aquí SOLO vive el hueco publicitario,
+   que antes estaba copiado en 10 CSS distintos con los 72px a pelo.
+
+   EL PROBLEMA QUE RESUELVE
+   Las columnas laterales medían 72px y llevaban recuadros de mentira que
+   ponían "ESPACIO PUBLICITARIO". 72px no da para ninguna unidad real de
+   AdSense (la más estrecha es 120px), así que ese hueco no podía llenarse
+   nunca: solo restaba ancho al juego.
+
+   AHORA
+     · < 1240px → no hay columnas. El juego ocupa toda la pantalla, que en
+       un portátil se agradece más que dos franjas decorativas.
+     · ≥ 1240px → columnas de 172px con un rascacielos de verdad dentro
+       (js/ads.js mete el <ins>; si no hay unidad configurada, lo quita).
+
+   El ancho vive en --ad-col-w y cada CSS de juego lo lee con
+   var(--ad-col-w, 72px), así que el fallback deja el comportamiento viejo
+   si esta hoja no llegara a cargar.
+   ============================================= */
+
+:root { --ad-col-w: 0px; }
+
+@media (min-width: 1240px) {
+  :root { --ad-col-w: 172px; }
+}
+
+/* Por debajo del umbral no hay columna que valga: fuera, y que el
+   contenido recupere el ancho (--ad-col-w vale 0). */
+@media (max-width: 1239px) {
+  .ad-col,
+  .bj-ad-sidebar { display: none !important; }
+}
+
+/* ── El hueco de la unidad ──
+   Reserva altura para que el anuncio, al entrar, no empuje nada (CLS). */
+.ad-col .ad-slot,
+.bj-ad-sidebar .ad-slot {
+  display: block;
+  width: 160px;
+  min-height: 600px;
+  margin: 16px auto 0;
+  /* Acompaña al scroll: una sola impresión bien vista rinde mucho más que
+     un anuncio que desaparece en cuanto bajas dos pantallas. */
+  position: sticky;
+  top: 16px;
+}
+
+.ad-col .ad-slot ins.adsbygoogle,
+.bj-ad-sidebar .ad-slot ins.adsbygoogle { display: block; }
+
+/* Sin unidad configurada, con bloqueador, o sin consentimiento: AdSense
+   deja el <ins> vacío. Que no quede un boquete de 600px. */
+.ad-slot:not([data-ad-filled]) { min-height: 0; }

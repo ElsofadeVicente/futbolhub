@@ -58,7 +58,7 @@ body::before {
    ══════════════════════════════════════════════ */
 .ad-col {
   position: fixed;
-  top: 0; bottom: 0; width: 72px;
+  top: 0; bottom: 0; width: var(--ad-col-w, 72px);
   display: flex; flex-direction: column;
   z-index: 3;
   background: var(--np-paper);
@@ -86,7 +86,7 @@ body::before {
 .ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
 
 @media (min-width: 760px) {
-  #mode-screen, #game-screen, #end-screen { margin-left: 72px; margin-right: 72px; }
+  #mode-screen, #game-screen, #end-screen { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
 }
 @media (max-width: 759px) {
   .ad-col { display: none; }
@@ -639,7 +639,7 @@ body::before {
    base (left/right:0) por ir después en el cascade, dejando la barra por
    detrás de los anuncios. */
 @media (min-width: 760px) {
-  #timer-track, #input-area, #day-nav { left: 72px; right: 72px; }
+  #timer-track, #input-area, #day-nav { left: var(--ad-col-w, 72px); right: var(--ad-col-w, 72px); }
 }
 #input-wrap {
   flex: 1;

@@ -12,6 +12,19 @@
   --np-ink-mid:  rgba(15,18,14,0.68);
   --np-ink-soft: rgba(15,18,14,0.18);
   --np-white:    #ffffff;
+
+  /* Texto secundario sobre BLANCO (tarjetas). El 0.55 de antes daba 4.17:1
+     y no llegaba al 4.5:1 que pide WCAG AA para texto normal. */
+  --np-ink-dim:  rgba(15,18,14,0.62);
+
+  /* ── Escala tipográfica ──
+     Antes estaba todo en px fijos y diminuto (7-10px), que en un móvil no
+     hay quien lo lea y no crecía nunca. Ahora cada tamaño tiene un mínimo
+     legible y sube con el ancho de pantalla. */
+  --fs-micro: clamp(10px, 1.6vw, 11px);   /* nº de edición, categorías, tags */
+  --fs-meta:  clamp(11px, 1.8vw, 12px);   /* masthead, footer, regla de sección */
+  --fs-body:  clamp(13px, 2.2vw, 14px);   /* descripciones de tarjeta */
+  --fs-cta:   clamp(14px, 2.4vw, 15px);   /* "Jugar →" */
 }
 
 /* ── BODY OVERRIDE para el hub ── */
@@ -43,18 +56,18 @@ body.np-body::before {
   padding-bottom: 8px;
 }
 .masthead-meta {
-  font-family: 'DM Mono', monospace; font-size: 8px;
-  letter-spacing: 0.22em; color: var(--np-ink-mid);
-  line-height: 1.9; text-transform: uppercase;
+  font-family: 'DM Mono', monospace; font-size: var(--fs-meta);
+  letter-spacing: 0.18em; color: var(--np-ink-mid);
+  line-height: 1.7; text-transform: uppercase;
 }
 .masthead-edition {
-  font-family: 'DM Mono', monospace; font-size: 8px;
-  letter-spacing: 0.18em; color: var(--np-ink-mid);
-  text-align: right; line-height: 1.9;
+  font-family: 'DM Mono', monospace; font-size: var(--fs-meta);
+  letter-spacing: 0.14em; color: var(--np-ink-mid);
+  text-align: right; line-height: 1.7;
 }
 .masthead-edition strong {
   display: block; color: var(--np-red);
-  font-size: 8px; letter-spacing: 0.22em;
+  font-size: var(--fs-meta); letter-spacing: 0.18em;
 }
 .logotype-wrap {
   padding: 8px 0 10px; text-align: center;
@@ -62,7 +75,9 @@ body.np-body::before {
   border-bottom: 1px solid var(--np-ink-soft);
   margin-bottom: 10px;
 }
-.logotype { display: inline-flex; align-items: baseline; }
+/* Es el <h1> de la portada (antes era un <div> y la página no tenía ningún
+   h1: mal para SEO y para lectores de pantalla). */
+.logotype { display: inline-flex; align-items: baseline; margin: 0; font-weight: 400; }
 .logo-fut {
   font-family: 'Playfair Display', serif;
   font-style: italic; font-weight: 900;
@@ -84,31 +99,42 @@ body.np-body::before {
   overflow: hidden; white-space: nowrap;
   background: var(--np-red);
   font-family: 'DM Mono', monospace;
-  font-size: 9.5px; letter-spacing: 0.18em;
-  padding: 5px 0;
+  font-size: var(--fs-micro); letter-spacing: 0.14em;
+  padding: 6px 0;
   border-bottom: 1px solid rgba(0,0,0,0.18);
 }
+/* La duración de aquí es solo un valor de arranque razonable para el texto
+   de reserva del HTML: js/hub-ticker.js la recalcula a partir del ancho real
+   del contenido para que la VELOCIDAD sea siempre la misma (~50 px/s), venga
+   el texto corto de los juegos o 18 titulares de prensa. */
 .ticker-strip {
   display: inline-block;
-  animation: tickerScroll 38s linear infinite;
+  animation: tickerScroll 240s linear infinite;
 }
+
 @keyframes tickerScroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-33.33%); }
 }
 .tick-label {
   background: rgba(0,0,0,0.2); padding: 0 7px; margin-right: 5px;
-  color: var(--np-paper); font-weight: 500; letter-spacing: 0.26em;
+  color: var(--np-paper); font-weight: 500; letter-spacing: 0.22em;
 }
 .tick-accent { color: var(--np-paper); font-weight: 500; }
-.tick-normal { color: rgba(244,234,210,0.8); }
+.tick-normal { color: rgba(244,234,210,0.86); }
+/* Nombre del medio detrás de cada titular (js/hub-ticker.js). */
+.tick-src { color: rgba(244,234,210,0.6); }
 
 /* ══════════════════════════════════════════════
    LAYOUT: anuncios | contenido | anuncios
    ══════════════════════════════════════════════ */
+/* Una sola columna por defecto. Los rascacielos laterales solo aparecen
+   cuando de verdad caben (>=1240px): un hueco de 72px no admite ninguna
+   unidad real de AdSense, así que antes solo servía para pintar
+   "ESPACIO PUBLICITARIO" y comerse 144px de ancho. */
 .np-layout {
   display: grid;
-  grid-template-columns: 72px 1fr 72px;
+  grid-template-columns: 1fr;
   align-items: start;
   padding: 18px 0 0;
 }
@@ -123,41 +149,37 @@ body.np-body .np-layout .ad-col {
   background: transparent;
   z-index: auto;
 }
-.ad-col {
-  display: flex; flex-direction: column;
-  gap: 8px; padding: 0 5px;
-  align-self: stretch;
-}
-.ad-col--left {
-  border-right: 1px solid var(--np-ink-soft);
-  padding-right: 6px;
-}
-.ad-col--right {
-  border-left: 1px solid var(--np-ink-soft);
-  padding-left: 6px;
+.ad-col { display: none; }
+
+@media (min-width: 1240px) {
+  /* auto y no 172px fijos: si js/ads.js quita las columnas (sin unidad
+     configurada, o con bloqueador de anuncios) el contenido se queda con
+     todo el ancho en vez de dejar dos huecos vacíos. */
+  .np-layout { grid-template-columns: auto 1fr auto; }
+  .ad-col { width: 172px; }
+  body.np-body .np-layout .ad-col {
+    display: block;
+    padding: 0 6px;
+    align-self: stretch;
+  }
+  .ad-col--left  { border-right: 1px solid var(--np-ink-soft); }
+  .ad-col--right { border-left:  1px solid var(--np-ink-soft); }
+  /* El anuncio acompaña al scroll: una sola impresión rinde mucho más. */
+  .ad-slot--rail { position: sticky; top: 16px; }
 }
 
-/* Cada strip es una tira fina vertical */
-.ad-strip {
-  flex: 1;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(15,18,14,0.025);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
+/* Contenedor de cada unidad de AdSense. Reserva altura para que el anuncio
+   al cargar no empuje el contenido (CLS). */
+.ad-slot { display: block; overflow: hidden; }
+.ad-slot ins.adsbygoogle { display: block; }
+.ad-slot--rail   { min-height: 600px; width: 160px; }
+.ad-slot--inline {
+  min-height: 100px; margin: 20px auto 0; max-width: 970px;
+  border-top: 1px solid var(--np-ink-soft); padding-top: 14px;
 }
-.ad-strip--accent {
-  border-color: rgba(181,34,30,0.22);
-  background: rgba(181,34,30,0.03);
-}
-.ad-strip-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 6px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(15,18,14,0.25); line-height: 1.6;
-}
-.ad-strip--accent .ad-strip-label {
-  color: rgba(181,34,30,0.3);
-}
+/* Sin consentimiento / sin unidad configurada AdSense deja el <ins> vacío:
+   que no quede un boquete con borde. */
+.ad-slot:not([data-ad-filled]) { border: 0; min-height: 0; }
 
 /* ══════════════════════════════════════════════
    CONTENIDO PRINCIPAL
@@ -170,15 +192,15 @@ body.np-body .np-layout .ad-col {
   border-top: 2px solid var(--np-ink); padding-top: 6px;
   margin: 0 0 14px;
 }
-.section-rule h3 {
-  font-family: 'DM Mono', monospace; font-size: 9px;
-  letter-spacing: 0.34em; text-transform: uppercase;
-  white-space: nowrap; margin: 0;
+.section-rule h2 {
+  font-family: 'DM Mono', monospace; font-size: var(--fs-meta);
+  letter-spacing: 0.28em; text-transform: uppercase;
+  white-space: nowrap; margin: 0; font-weight: 500;
 }
 .rule-line { flex: 1; height: 1px; background: var(--np-ink-soft); }
 .rule-num {
-  font-family: 'DM Mono', monospace; font-size: 8px;
-  letter-spacing: 0.22em; color: var(--np-ink-mid); white-space: nowrap;
+  font-family: 'DM Mono', monospace; font-size: var(--fs-meta);
+  letter-spacing: 0.18em; color: var(--np-ink-mid); white-space: nowrap;
 }
 
 /* ══════════════════════════════════════════════
@@ -186,8 +208,12 @@ body.np-body .np-layout .ad-col {
    ══════════════════════════════════════════════ */
 
 /* ── Partes comunes ── */
+/* FLEX, no block: si no, el `flex:1` de .np-card-body es inerte, el cuerpo
+   no se estira hasta el fondo de la tarjeta y el "Jugar →" queda a distinta
+   altura en cada tarjeta de la misma fila. */
 .np-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   background: var(--np-white);
   border: 1px solid var(--np-ink-soft);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -195,6 +221,12 @@ body.np-body .np-layout .ad-col {
 .np-card:hover {
   transform: translateY(-2px);
   box-shadow: 3px 3px 0 var(--np-ink), 0 10px 28px rgba(15,18,14,0.14);
+}
+/* Sobre el fondo papel el outline por defecto casi no se ve: al navegar con
+   teclado hay que saber en todo momento dónde estás. */
+.np-card:focus-visible {
+  outline: 3px solid var(--np-red);
+  outline-offset: 2px;
 }
 
 .np-card-art {
@@ -214,36 +246,28 @@ body.np-body .np-layout .ad-col {
   display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;
 }
 .np-num {
-  font-family: 'DM Mono', monospace; font-size: 8px;
-  letter-spacing: 0.28em; color: var(--np-ink-mid);
+  font-family: 'DM Mono', monospace; font-size: var(--fs-micro);
+  letter-spacing: 0.22em; color: var(--np-ink-mid);
 }
 .np-cat {
-  font-family: 'DM Mono', monospace; font-size: 8px;
-  letter-spacing: 0.2em; color: var(--np-red); text-transform: uppercase;
+  font-family: 'DM Mono', monospace; font-size: var(--fs-micro);
+  letter-spacing: 0.16em; color: var(--np-red); text-transform: uppercase;
 }
 .np-cat::before { content: "· "; }
 
 .np-title {
   font-family: 'Playfair Display', serif;
   font-style: italic; font-weight: 900;
-  font-size: clamp(15px, 2.4vw, 19px);
-  line-height: 1.05; letter-spacing: -0.01em;
-  margin: 0 0 5px; color: var(--np-ink);
-}
-.np-title--featured {
-  font-size: clamp(22px, 4vw, 32px);
-  line-height: 1.0; margin: 0 0 7px;
+  font-size: clamp(19px, 3vw, 23px);
+  line-height: 1.1; letter-spacing: -0.01em;
+  margin: 0 0 6px; color: var(--np-ink);
 }
 
 .np-desc {
-  font-size: 10.5px; line-height: 1.4;
-  color: rgba(15,18,14,0.68); margin: 0 0 8px; flex: 1;
+  font-size: var(--fs-body); line-height: 1.45;
+  color: var(--np-ink-mid); margin: 0 0 10px; flex: 1;
   display: -webkit-box; -webkit-line-clamp: 3;
   -webkit-box-orient: vertical; overflow: hidden;
-}
-.np-desc--featured {
-  font-size: 12.5px; line-height: 1.5; -webkit-line-clamp: 4;
-  margin: 0 0 10px;
 }
 
 .np-card-footer {
@@ -252,46 +276,31 @@ body.np-body .np-layout .ad-col {
 }
 .np-tags { display: flex; gap: 4px; flex-wrap: wrap; }
 .np-tag {
-  font-family: 'DM Mono', monospace; font-size: 7px;
-  letter-spacing: 0.14em; text-transform: uppercase;
+  font-family: 'DM Mono', monospace; font-size: var(--fs-micro);
+  letter-spacing: 0.1em; text-transform: uppercase;
   border: 1px solid var(--np-ink-soft);
-  padding: 2px 5px; color: rgba(15,18,14,0.55);
+  padding: 3px 6px; color: var(--np-ink-dim);
 }
 .np-cta {
   font-family: 'Playfair Display', serif; font-style: italic;
-  font-size: 13px; color: var(--np-red); white-space: nowrap;
+  font-size: var(--fs-cta); color: var(--np-red); white-space: nowrap;
   flex-shrink: 0; transition: letter-spacing 0.25s;
 }
 .np-card:hover .np-cta { letter-spacing: 0.07em; }
-
-/* ── Featured card ── */
-.np-card--featured {
-  margin-bottom: 16px;
-  animation: slideUp 0.4s ease both;
-}
-.np-card-art--hero {
-  width: 100%; aspect-ratio: 16/5;
-  border-bottom: 1px solid var(--np-ink-soft);
-}
 
 /* ── Grid 2 columnas ── */
 .np-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
 }
-.np-card--reg {
-  display: flex; flex-direction: column;
-}
 
-/* Stagger de entrada */
-.np-card--featured               { animation: slideUp 0.4s ease both 0.0s; }
-.np-grid .np-card:nth-child(1)   { animation: slideUp 0.4s ease both 0.06s; }
-.np-grid .np-card:nth-child(2)   { animation: slideUp 0.4s ease both 0.12s; }
-.np-grid .np-card:nth-child(3)   { animation: slideUp 0.4s ease both 0.18s; }
-.np-grid .np-card:nth-child(4)   { animation: slideUp 0.4s ease both 0.24s; }
-.np-grid .np-card:nth-child(5)   { animation: slideUp 0.4s ease both 0.30s; }
-.np-grid .np-card:nth-child(6)   { animation: slideUp 0.4s ease both 0.36s; }
-.np-grid .np-card:nth-child(7)   { animation: slideUp 0.4s ease both 0.42s; }
-.np-grid .np-card:nth-child(8)   { animation: slideUp 0.4s ease both 0.48s; }
+/* Stagger de entrada.
+   Antes estaba escrito a mano de nth-child(1) a (8) y las tarjetas 9-13 se
+   quedaban sin animación: entraban de golpe mientras las demás subían. Con
+   --i (que pone el HTML en cada tarjeta) da igual cuántas haya. */
+.np-grid .np-card {
+  animation: slideUp 0.4s ease both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
 
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(18px); }
@@ -306,31 +315,51 @@ body.np-body .np-layout .ad-col {
   border-top: 2px solid var(--np-ink);
   display: flex; justify-content: space-between; align-items: center;
   flex-wrap: wrap; gap: 6px;
-  font-family: 'DM Mono', monospace; font-size: 7.5px;
-  letter-spacing: 0.22em; color: var(--np-ink-mid);
+  font-family: 'DM Mono', monospace; font-size: var(--fs-meta);
+  letter-spacing: 0.16em; color: var(--np-ink-mid);
   text-transform: uppercase;
 }
+/* inline-flex + min-height: el enlace medía 9px de alto y era imposible de
+   acertar con el dedo (WCAG 2.5.8 pide 24x24 como mínimo). */
 .np-footer-link {
+  display: inline-flex; align-items: center; min-height: 24px;
   color: var(--np-ink-mid); text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 .np-footer-link:hover { color: var(--np-red); }
+/* "Gestionar cookies" es un <button> pero debe verse igual que el enlace. */
+.np-footer-btn {
+  background: none; border: 0; padding: 0 0 0 14px; cursor: pointer;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+}
+.np-footer-link:focus-visible {
+  outline: 2px solid var(--np-red); outline-offset: 3px;
+}
 
 /* ══════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════ */
-@media (max-width: 760px) {
-  .np-layout {
-    grid-template-columns: 52px 1fr 52px;
-  }
-  /* El global oculta .ad-col a 759px; el hub las mantiene hasta 540px */
-  body.np-body .np-layout .ad-col { display: flex; }
-}
 @media (max-width: 540px) {
-  .np-layout {
-    grid-template-columns: 1fr;
-  }
-  body.np-body .np-layout .ad-col { display: none; }
   .np-grid { grid-template-columns: 1fr; }
   .logo-fut, .logo-hub { font-size: 38px; }
+  .np-main { padding: 0 12px; }
+}
+
+/* ══════════════════════════════════════════════
+   MOVIMIENTO REDUCIDO
+   Quien lo pide en su sistema (mareos, migrañas, sensibilidad vestibular)
+   no puede con el ticker girando en bucle ni con las tarjetas subiendo.
+   Se anula todo aquí en vez de tocar animación por animación.
+   ══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* El ticker se queda quieto y se puede leer/desplazar a mano. */
+  .ticker { overflow-x: auto; }
+  .ticker-strip { animation: none !important; }
+  .np-card:hover { transform: none; }
 }
