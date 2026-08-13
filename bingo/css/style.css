@@ -17,7 +17,7 @@
 .best-box {
   display: flex; align-items: center; justify-content: space-between;
   padding: 9px 12px; background: var(--np-paper3);
-  border: 1.5px solid var(--np-ink); box-shadow: 2px 2px 0 var(--np-ink);
+  border: 1.5px solid var(--bd-c, var(--np-ink)); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
 }
 .best-label { font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--np-ink-mid); }
 .best-value { font-family: 'Anton', sans-serif; font-size: 1.05rem; color: var(--np-red); letter-spacing: .04em; }
@@ -34,7 +34,7 @@
 .caller {
   display: flex; align-items: center; gap: 10px;
   background: var(--np-ink); color: var(--np-paper);
-  border: 2px solid var(--np-ink); box-shadow: var(--shadow-soft);
+  border: 2px solid var(--bd-c, var(--np-ink)); box-shadow: var(--shadow-soft);
   padding: 8px 10px; margin-top: 6px;
   transition: background .3s;
 }
@@ -43,7 +43,7 @@
 
 .caller-ring { position: relative; width: 46px; height: 46px; flex-shrink: 0; }
 .ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring-track { fill: none; stroke: rgba(244,234,210,0.16); stroke-width: 6; }
+.ring-track { fill: none; stroke: rgba(var(--np-paper-rgb, 244,234,210), 0.16); stroke-width: 6; }
 .ring-fill  { fill: none; stroke: var(--np-paper); stroke-width: 6; stroke-linecap: round; transition: stroke .3s; }
 .caller.urgent .ring-fill { stroke: var(--np-red); }
 .ring-num {
@@ -65,7 +65,7 @@
 
 .caller-photo {
   width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
-  border: 2px solid var(--np-paper); background: rgba(244,234,210,0.12);
+  border: 2px solid var(--np-paper); background: rgba(var(--np-paper-rgb, 244,234,210), 0.12);
   display: flex; align-items: center; justify-content: center;
 }
 .caller-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
@@ -74,7 +74,7 @@
 .caller-names { display: flex; flex-direction: column; min-width: 0; line-height: 1; }
 .caller-first {
   font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .16em;
-  text-transform: uppercase; color: rgba(244,234,210,0.62);
+  text-transform: uppercase; color: rgba(var(--np-paper-rgb, 244,234,210), 0.62);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .caller-last {
@@ -91,12 +91,12 @@
   color: var(--np-paper); transition: background .12s, color .12s;
 }
 .skip-btn:hover { background: var(--np-paper); color: var(--np-ink); }
-.caller-left { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .1em; color: rgba(244,234,210,0.45); }
+.caller-left { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .1em; color: rgba(var(--np-paper-rgb, 244,234,210), 0.45); }
 
 /* Fantasma que vuela del locutor a la casilla */
 .caller-ghost { pointer-events: none; display: flex; align-items: center; gap: 9px; }
 .caller-ghost .caller-last  { font-size: 1.1rem; }
-.caller-ghost .caller-first { color: rgba(15,18,14,0.5); }
+.caller-ghost .caller-first { color: rgba(var(--np-ink-rgb, 15,18,14), 0.5); }
 
 /* ── Marcador de rivales (online) ── */
 .rivals { display: flex; flex-direction: column; gap: 4px; }
@@ -114,7 +114,7 @@
   display: grid; grid-template-columns: repeat(4, 1fr);
   width: 100%; max-width: min(460px, calc(100vh - 230px));
   gap: 2px; background: var(--np-ink);
-  border: 2px solid var(--np-ink); box-shadow: var(--shadow);
+  border: 2px solid var(--bd-c, var(--np-ink)); box-shadow: var(--shadow);
 }
 
 .bcell {
@@ -139,7 +139,7 @@
   transition: transform .18s, width .25s, height .25s, opacity .25s;
 }
 .cat-media img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.cat-media--avatar { border-radius: 50%; overflow: hidden; border: 1.5px solid var(--np-ink); background: var(--np-paper3); }
+.cat-media--avatar { border-radius: 50%; overflow: hidden; border: 1.5px solid var(--bd-c, var(--np-ink)); background: var(--np-paper3); }
 /* Los retratos tienen la cara arriba: anclar al top para no cortar cabezas. */
 .cat-media--avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .cat-media.broken img { display: none; }
@@ -210,7 +210,7 @@
   color: var(--np-ink-mid); text-align: center; text-transform: uppercase; min-height: 14px;
 }
 
-.toast.ok { background: var(--bg-line); color: var(--np-ink); box-shadow: 3px 3px 0 var(--np-ink); font-family: 'Anton', sans-serif; letter-spacing: .1em; }
+.toast.ok { background: var(--bg-line); color: var(--np-ink); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); font-family: 'Anton', sans-serif; letter-spacing: .1em; }
 
 /* ═══════════ RESULTADO ═══════════ */
 #screen-result { justify-content: flex-start; padding: 26px 16px 40px; }
@@ -229,13 +229,13 @@
 .rs-item {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 10px 6px; background: var(--np-paper2);
-  border: 1.5px solid var(--np-ink); box-shadow: 2px 2px 0 var(--np-ink);
+  border: 1.5px solid var(--bd-c, var(--np-ink)); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
 }
 .rs-item--main { background: var(--np-ink); }
 .rs-num { font-family: 'Anton', sans-serif; font-size: 1.5rem; line-height: 1; color: var(--np-ink); }
 .rs-lbl { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; color: var(--np-ink-mid); }
 .rs-item--main .rs-num { color: var(--np-paper); }
-.rs-item--main .rs-lbl { color: rgba(244,234,210,0.6); }
+.rs-item--main .rs-lbl { color: rgba(var(--np-paper-rgb, 244,234,210), 0.6); }
 .result-best { margin-top: 10px; font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--np-red); }
 
 .detail-kicker {

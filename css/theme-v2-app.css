@@ -1,0 +1,682 @@
+/* =============================================
+   THEME-V2-APP.CSS — Diseño "Estadio" DENTRO de los juegos
+   FutbolHUB
+
+   Hermana de css/hub-v2.css (que viste la portada). Se carga en las 13
+   páginas de juego y todo cuelga de :root[data-theme="v2"]: mientras el
+   usuario no elija el diseño nuevo en Ajustes, esta hoja no pinta nada y el
+   aspecto "periódico" de siempre queda intacto.
+
+   NO ES UN RECOLOREADO. El tema clásico es papel: tipografía de periódico,
+   marcos de tinta de 2px, sombras duras desplazadas y esquinas en ángulo
+   recto. Aquí se rehacen los componentes: píldoras, superficies de cristal
+   con desenfoque, filetes de un pelo, elevación suave y un control
+   segmentado en vez de las pestañas subrayadas.
+
+   CÓMO LLEGA A 13 JUEGOS SIN DUPLICAR NADA
+   · Los 13 CSS comparten los tokens --np-* de la migración a "periódico":
+     cambiarles el valor retiñe todos los juegos a la vez.
+   · Sus valores cuadrados se hicieron variables CON RESPALDO
+     (border-radius: var(--r-md, 0), var(--bd-c, var(--np-ink))…): en el
+     tema clásico esas variables no existen, se usa el respaldo y el render
+     es idéntico al de siempre.
+   · Y el vocabulario de componentes se repite entre juegos (.btn-primary en
+     6, .back-btn en 9, .toast en 7, .menu-input en 5…), así que rehacer
+     esas piezas aquí cambia la cara de todos.
+
+   EL ACENTO ES TURQUESA, NO ROJO. El rojo del tema clásico era el acento y
+   a la vez el color de "error"; al cambiar de acento hay que devolver el
+   rojo SOLO donde significa algo (ver bloque "ROJO DONDE SIGNIFICA ERROR").
+   Verde sigue siendo acierto y dorado sigue siendo "está pero no ahí".
+   Para cambiar la identidad entera basta tocar --ac / --ac-2.
+   ============================================= */
+
+:root[data-theme="v2"] {
+  /* ── Identidad ── */
+  --ac:        #2ee6c6;   /* turquesa: acción, foco, lo activo */
+  --ac-2:      #7f8bff;   /* violeta: solo para degradados y brillos */
+  --on-ac:     #04231f;   /* texto sobre el acento */
+  --ac-glow:   rgba(46, 230, 198, 0.30);
+  --np-error:  #ff5f56;   /* error / cuenta atrás urgente */
+
+  /* ── Paleta base ── */
+  --np-paper:    #080b0d;                      /* fondo de página      */
+  --np-paper2:   #121a1e;                      /* superficie           */
+  --np-paper3:   #1a242a;                      /* superficie elevada   */
+  --np-white:    #141d21;                      /* lo que era "tarjeta blanca" */
+  --np-ink:      #e9f1ef;                      /* texto (y fondo de lo invertido) */
+  --np-ink-mid:  rgba(233, 241, 239, 0.74);
+  --np-ink-soft: rgba(255, 255, 255, 0.13);
+  --np-red:      var(--ac);                    /* el token "acento" de los juegos */
+  --np-red-soft: rgba(46, 230, 198, 0.16);
+  --np-green:    #35d67f;                      /* acierto */
+  --np-green-bg: rgba(53, 214, 127, 0.16);
+  /* Tres en Raya: el azul del jugador 2 estaba pensado sobre papel; sobre
+     fondo oscuro su "◯" se quedaba en 2:1. */
+  --np-blue:     #6fbcff;
+
+  /* Canales sueltos para los colores del sistema escritos como rgba() a
+     pelo: los CSS de juego llevan `rgba(var(--np-ink-rgb, 15,18,14), .68)`,
+     así que cambiando el canal aquí se invierten de golpe los 158 textos,
+     filetes y velos translúcidos que no pasaban por un token.
+     (Las sombras quedaron fuera: una sombra debe seguir siendo oscura). */
+  --np-ink-rgb:   233, 241, 239;
+  --np-paper-rgb: 8, 11, 13;
+
+  /* Textos que estaban clavados en negro sobre superficie clara. */
+  --np-ink-flip: var(--np-ink);
+
+  /* ── Cristal ── */
+  --glass:     rgba(255, 255, 255, 0.05);
+  --glass-2:   rgba(255, 255, 255, 0.085);
+  --hairline:  rgba(255, 255, 255, 0.10);
+
+  /* ── Esquinas ── */
+  --r-sm:   8px;
+  --r-md:   14px;
+  --r-lg:   24px;
+  --r-pill: 999px;
+
+  /* ── Sombras: de desplazamiento duro a elevación ── */
+  --sh-x: 0;
+  --sh-y: 10px;
+  --sh-b: 26px;
+  --sh-c:      rgba(0, 0, 0, 0.48);
+  --sh-c-soft: rgba(0, 0, 0, 0.38);
+  --sh-c-red:  var(--ac-glow);
+  --shadow:      0 14px 34px rgba(0, 0, 0, 0.48);
+  --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.38);
+
+  /* Los juegos enmarcan con 2-3px de tinta; con la tinta ya casi blanca
+     ese borde sería un latigazo alrededor de cada caja. */
+  --bd-c: var(--hairline);
+
+  /* Alias semánticos de dos juegos que apuntaban al acento rojo. */
+  --error:  var(--np-error);   /* En la Cadena */
+  --red-ko: var(--np-error);   /* El Mentiroso */
+
+  /* En el Top y La Carrera eligen tipografía por token y además apuntan sus
+     títulos por ID (#mode-title, #end-title…), que le gana a cualquier
+     selector de clase nuestro. Remapear el token los cubre todos de una. */
+  --font-serif:   'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  /* --font-mono se queda como está: sirve para cifras de marcador. */
+
+  color-scheme: dark;
+}
+
+/* ══════════════════════════════════════════════
+   FONDO
+   Los 13 juegos comparten la misma textura de papel (rejilla de columnas +
+   grano) dibujada con tintas oscuras, invisible sobre fondo oscuro. Se
+   cambia por luz de estadio: dos focos difuminados y una malla muy tenue.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] body,
+:root[data-theme="v2"] html {
+  background-color: var(--np-paper);
+  background-image:
+    radial-gradient(1000px 620px at 8% -12%, rgba(46, 230, 198, 0.13), transparent 60%),
+    radial-gradient(900px 560px at 94% -6%, rgba(127, 139, 255, 0.11), transparent 58%),
+    linear-gradient(transparent 95%, rgba(255, 255, 255, 0.022) 95%),
+    linear-gradient(90deg, transparent 95%, rgba(255, 255, 255, 0.022) 95%);
+  background-size: auto, auto, 46px 46px, 46px 46px;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+  background-attachment: fixed;
+}
+
+/* ══════════════════════════════════════════════
+   TIPOGRAFÍA
+   Es lo que más delata al tema: mientras los títulos siguieran en Playfair
+   Display (serif con cursiva) y los rótulos en Anton condensada con 3px de
+   espaciado, por mucho que cambiara el color seguía siendo el periódico.
+
+   Nuevo sistema:
+     · Space Grotesk 700 para todo lo que sea título, con interletrado
+       NEGATIVO (el clásico lo abre; abrirlo es lo que suena a cabecera).
+     · Inter para texto e interfaz.
+     · DM Mono se queda solo en marcadores y cuentas atrás, donde el ancho
+       fijo de las cifras sirve para algo.
+
+   Space Grotesk se pidió a Google Fonts en las 14 páginas junto a las que
+   ya había: si el usuario está en clásico el navegador no descarga sus
+   ficheros (solo baja las familias que se usan de verdad), así que el tema
+   de siempre no paga nada por esto.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+:root[data-theme="v2"] h1,
+:root[data-theme="v2"] h2,
+:root[data-theme="v2"] h3,
+:root[data-theme="v2"] h4,
+:root[data-theme="v2"] [class*="title"],
+:root[data-theme="v2"] .menu-title,
+:root[data-theme="v2"] .cruc-title,
+:root[data-theme="v2"] .mode-name,
+:root[data-theme="v2"] .mode-btn-title,
+:root[data-theme="v2"] .seat-name,
+:root[data-theme="v2"] .lobby-code-big,
+:root[data-theme="v2"] .room-code-display,
+:root[data-theme="v2"] .winner-name,
+:root[data-theme="v2"] .revealed-name,
+:root[data-theme="v2"] .completion-stat-value,
+:root[data-theme="v2"] .hol-player-name,
+:root[data-theme="v2"] .np-title {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.02em;
+}
+
+/* El título de portada de cada juego venía en serif a 99px y con el ancho
+   justo (en Blackjack ya se salía de su caja en el tema clásico). Con la
+   familia nueva se le baja un punto la escala para que quepa de sobra. */
+:root[data-theme="v2"] .menu-title {
+  font-size: clamp(2.4rem, 8vw, 4.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+}
+
+/* Botones propios de un solo juego que no comparten clase con nadie y se
+   quedaban en Anton/DM Mono/Rajdhani, cantando al lado de los demás. */
+:root[data-theme="v2"] .hol-choice-btn,
+:root[data-theme="v2"] .btn-liga {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+:root[data-theme="v2"] .cruc-back-btn,
+:root[data-theme="v2"] .back-to-hub-btn,
+:root[data-theme="v2"] .cruc-nav-btn,
+:root[data-theme="v2"] .hol-back-btn,
+:root[data-theme="v2"] .liga-tab,
+:root[data-theme="v2"] .remove-player-btn,
+:root[data-theme="v2"] .lobby-copy-btn,
+:root[data-theme="v2"] .cruc-reveal-option {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+/* Y los que además eran cajas cuadradas con filete de tinta, a píldora de
+   cristal como el resto de secundarios. */
+:root[data-theme="v2"] .cruc-back-btn,
+:root[data-theme="v2"] .back-to-hub-btn,
+:root[data-theme="v2"] .cruc-nav-btn,
+:root[data-theme="v2"] .hol-back-btn {
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  color: var(--np-ink);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+}
+:root[data-theme="v2"] .cruc-back-btn:hover,
+:root[data-theme="v2"] .back-to-hub-btn:hover,
+:root[data-theme="v2"] .cruc-nav-btn:hover:not(:disabled),
+:root[data-theme="v2"] .hol-back-btn:hover {
+  background: var(--glass-2);
+  border-color: rgba(46, 230, 198, 0.45);
+  color: var(--np-ink);
+}
+
+/* Rótulos y etiquetas: el clásico los pone en mono a 0.2em, que es el tic
+   de periódico. Aquí van en Inter con un espaciado discreto. */
+:root[data-theme="v2"] [class*="label"],
+:root[data-theme="v2"] [class*="-meta"],
+:root[data-theme="v2"] .menu-subtitle,
+:root[data-theme="v2"] .mode-desc,
+:root[data-theme="v2"] .type-note,
+:root[data-theme="v2"] .menu-tab,
+:root[data-theme="v2"] .mode-btn,
+:root[data-theme="v2"] .mode-opt,
+:root[data-theme="v2"] .type-btn,
+:root[data-theme="v2"] .lives-opt,
+:root[data-theme="v2"] .np-cat {
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════════════
+   BOTONES
+   Clásico: bloque de tinta, DM Mono con 0.2em de espaciado y sombra dura
+   desplazada. Nuevo: píldora con degradado, Inter compacta y elevación que
+   responde al ratón.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] .btn-primary,
+:root[data-theme="v2"] .submit-btn,
+:root[data-theme="v2"] .btn-submit,
+:root[data-theme="v2"] .next-btn,
+:root[data-theme="v2"] .reveal-btn,
+:root[data-theme="v2"] .reveal-btn-modal,
+:root[data-theme="v2"] .cruc-btn-reveal,
+:root[data-theme="v2"] .hol-play-again-btn,
+:root[data-theme="v2"] .btn-confirmar,
+:root[data-theme="v2"] .btn-add-player,
+:root[data-theme="v2"] .copy-btn,
+:root[data-theme="v2"] .btn-ink,
+:root[data-theme="v2"] #btn-copy-link {
+  background: linear-gradient(135deg, var(--ac) 0%, #21c9b4 55%, var(--ac-2) 190%);
+  color: var(--on-ac);
+  border: 0;
+  border-radius: var(--r-pill);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow: 0 10px 26px -6px var(--ac-glow);
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.3, 1),
+              box-shadow 0.18s ease, filter 0.18s ease;
+}
+:root[data-theme="v2"] .btn-primary:hover:not(:disabled),
+:root[data-theme="v2"] .submit-btn:hover:not(:disabled),
+:root[data-theme="v2"] .btn-submit:hover:not(:disabled),
+:root[data-theme="v2"] .next-btn:hover:not(:disabled),
+:root[data-theme="v2"] .reveal-btn:hover:not(:disabled),
+:root[data-theme="v2"] .cruc-btn-reveal:hover:not(:disabled),
+:root[data-theme="v2"] .hol-play-again-btn:hover:not(:disabled),
+:root[data-theme="v2"] .btn-confirmar:hover:not(:disabled),
+:root[data-theme="v2"] #btn-copy-link:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px -8px var(--ac-glow);
+  filter: brightness(1.06);
+  opacity: 1;
+}
+:root[data-theme="v2"] .btn-primary:active:not(:disabled),
+:root[data-theme="v2"] .submit-btn:active:not(:disabled),
+:root[data-theme="v2"] .btn-confirmar:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+:root[data-theme="v2"] .btn-primary:disabled,
+:root[data-theme="v2"] .btn-confirmar:disabled { box-shadow: none; filter: grayscale(0.5); }
+
+/* Secundarios y "volver": cristal con filete de un pelo. */
+:root[data-theme="v2"] .btn-secondary,
+:root[data-theme="v2"] .back-btn,
+:root[data-theme="v2"] .hub-back-link,
+:root[data-theme="v2"] .home-btn,
+:root[data-theme="v2"] .menu-back-btn,
+:root[data-theme="v2"] .menu-stats-btn,
+:root[data-theme="v2"] .give-up-btn,
+:root[data-theme="v2"] .hol-change-mode-btn,
+:root[data-theme="v2"] .leave-game-btn,
+:root[data-theme="v2"] .settings-btn,
+:root[data-theme="v2"] .step-btn,
+:root[data-theme="v2"] .btn-tiny {
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  color: var(--np-ink);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+:root[data-theme="v2"] .btn-secondary:hover:not(:disabled),
+:root[data-theme="v2"] .back-btn:hover,
+:root[data-theme="v2"] .hub-back-link:hover,
+:root[data-theme="v2"] .home-btn:hover,
+:root[data-theme="v2"] .menu-back-btn:hover,
+:root[data-theme="v2"] .menu-stats-btn:hover,
+:root[data-theme="v2"] .give-up-btn:hover,
+:root[data-theme="v2"] .hol-change-mode-btn:hover,
+:root[data-theme="v2"] .settings-btn:hover,
+:root[data-theme="v2"] .step-btn:hover {
+  background: var(--glass-2);
+  border-color: rgba(46, 230, 198, 0.45);
+  color: var(--np-ink);
+  transform: translateY(-1px);
+}
+/* Los "−/+" de ajustes y los pasos de apuesta son cuadrados: redondos. */
+:root[data-theme="v2"] .settings-btn,
+:root[data-theme="v2"] .step-btn { border-radius: 50%; }
+
+/* Botonera de acción de Blackjack (pedir / plantarse / descartar): eran
+   bloques Anton con sombra dura. Tipografía y forma nuevas; el color de
+   cada variante sigue saliendo de los tokens. */
+:root[data-theme="v2"] .btn-action {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border-radius: var(--r-md);
+}
+:root[data-theme="v2"] .btn-action .btn-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.10em;
+}
+:root[data-theme="v2"] .btn-action:active:not(:disabled) { transform: scale(0.98); }
+
+/* ── Cuando el juego se blinda con !important ──
+   Blackjack lleva !important en CADA declaración de sus botones (guerra de
+   especificidad de otra época). Para poder vestirlos hay que igualar el
+   arma. Los valores son los mismos que en las reglas de arriba, así que en
+   el resto de juegos no cambia nada. */
+:root[data-theme="v2"] .btn-primary {
+  background: linear-gradient(135deg, var(--ac) 0%, #21c9b4 55%, var(--ac-2) 190%) !important;
+  color: var(--on-ac) !important;
+  border: 0 !important;
+  border-radius: var(--r-pill) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  box-shadow: 0 10px 26px -6px var(--ac-glow) !important;
+}
+:root[data-theme="v2"] .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--ac) 0%, #21c9b4 55%, var(--ac-2) 190%) !important;
+  box-shadow: 0 16px 34px -8px var(--ac-glow) !important;
+  transform: translateY(-2px) !important;
+  filter: brightness(1.06);
+}
+:root[data-theme="v2"] .btn-secondary,
+:root[data-theme="v2"] .back-btn {
+  background: var(--glass) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--r-pill) !important;
+  color: var(--np-ink) !important;
+  box-shadow: none !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+}
+:root[data-theme="v2"] .btn-secondary:hover:not(:disabled),
+:root[data-theme="v2"] .back-btn:hover {
+  background: var(--glass-2) !important;
+  border-color: rgba(46, 230, 198, 0.45) !important;
+  color: var(--np-ink) !important;
+}
+
+/* ══════════════════════════════════════════════
+   CAMPOS DE TEXTO
+   Clásico: caja con marco de tinta y sombrita dura al enfocar.
+   Nuevo: superficie hundida sin marco y anillo de foco del acento.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] .menu-input,
+:root[data-theme="v2"] .player-name-input,
+:root[data-theme="v2"] .menu-name-input,
+:root[data-theme="v2"] .menu-code-input,
+:root[data-theme="v2"] .code-input,
+:root[data-theme="v2"] .answer-input,
+:root[data-theme="v2"] .player-input,
+:root[data-theme="v2"] #ans-input {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  color: var(--np-ink);
+  box-shadow: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+:root[data-theme="v2"] .menu-input:focus,
+:root[data-theme="v2"] .player-name-input:focus,
+:root[data-theme="v2"] .menu-name-input:focus,
+:root[data-theme="v2"] .menu-code-input:focus,
+:root[data-theme="v2"] .code-input:focus,
+:root[data-theme="v2"] .answer-input:focus,
+:root[data-theme="v2"] .player-input:focus,
+:root[data-theme="v2"] #ans-input:focus {
+  border-color: var(--ac);
+  background: rgba(0, 0, 0, 0.42);
+  box-shadow: 0 0 0 4px rgba(46, 230, 198, 0.16);
+}
+
+/* ══════════════════════════════════════════════
+   PESTAÑAS → CONTROL SEGMENTADO
+   Clásico: fila de pestañas con subrayado grueso. Nuevo: cápsula de cristal
+   con la opción activa en pastilla, como en las apps de hoy.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] .menu-tabs {
+  border-bottom: 0;
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  padding: 4px;
+  gap: 4px;
+}
+:root[data-theme="v2"] .menu-tab {
+  border-bottom: 0;
+  margin-bottom: 0;
+  border-radius: var(--r-pill);
+  opacity: 1;
+  color: var(--np-ink-mid);
+  transition: background 0.16s ease, color 0.16s ease;
+}
+:root[data-theme="v2"] .menu-tab:hover { background: var(--glass); color: var(--np-ink); }
+:root[data-theme="v2"] .menu-tab.active {
+  background: var(--ac);
+  color: var(--on-ac);
+  opacity: 1;
+  border-bottom-color: transparent;
+  box-shadow: 0 6px 18px -6px var(--ac-glow);
+}
+
+/* ══════════════════════════════════════════════
+   SUPERFICIES: paneles, tarjetas y modales
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] .menu-section,
+:root[data-theme="v2"] .mode-card,
+:root[data-theme="v2"] .mode-btn,
+:root[data-theme="v2"] .mode-opt,
+:root[data-theme="v2"] .round-panel,
+:root[data-theme="v2"] .lobby-share-card,
+:root[data-theme="v2"] .lobby-code-card,
+:root[data-theme="v2"] .hol-mode-card,
+:root[data-theme="v2"] .cruc-clues-section,
+:root[data-theme="v2"] .cruc-clue-bar,
+:root[data-theme="v2"] .completion-stat,
+:root[data-theme="v2"] .lobby-player-item,
+:root[data-theme="v2"] .lobby-player-row,
+:root[data-theme="v2"] .player-life-card,
+:root[data-theme="v2"] .chain-entry,
+:root[data-theme="v2"] .seat {
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+}
+:root[data-theme="v2"] .mode-card:hover,
+:root[data-theme="v2"] .mode-btn:hover,
+:root[data-theme="v2"] .hol-mode-card:hover {
+  background: var(--glass-2);
+  border-color: rgba(46, 230, 198, 0.40);
+  box-shadow: 0 14px 32px -14px var(--ac-glow);
+}
+
+/* Elegido. En clásico había dos formas de marcarlo: invertir la tarjeta
+   (fondo tinta) o teñirla de rojo al 6%. Las dos se unifican en el mismo
+   gesto: tinte del acento, filete del acento y un aro fino. */
+:root[data-theme="v2"] .mode-btn.selected,
+:root[data-theme="v2"] .mode-opt.selected,
+:root[data-theme="v2"] .mode-opt.active,
+:root[data-theme="v2"] .mode-card.selected,
+:root[data-theme="v2"] .type-btn.active,
+:root[data-theme="v2"] .lives-opt.selected,
+:root[data-theme="v2"] .seat.active {
+  background: rgba(46, 230, 198, 0.15);
+  border-color: var(--ac);
+  color: var(--np-ink);
+  box-shadow: 0 0 0 1px rgba(46, 230, 198, 0.35),
+              0 12px 28px -16px var(--ac-glow);
+}
+/* Las tarjetas grandes responden al dedo aunque ya no tengan sombra dura. */
+:root[data-theme="v2"] .mode-card:active,
+:root[data-theme="v2"] .mode-btn:active,
+:root[data-theme="v2"] .hol-mode-card:active { transform: scale(0.99); }
+
+:root[data-theme="v2"] .modal-content,
+:root[data-theme="v2"] .completion-content,
+:root[data-theme="v2"] .cruc-completion-content,
+:root[data-theme="v2"] .hol-gameover-content,
+:root[data-theme="v2"] .overlay-inner,
+:root[data-theme="v2"] .menu-wrap,
+:root[data-theme="v2"] .lobby-wrap,
+:root[data-theme="v2"] .felt-felt,
+:root[data-theme="v2"] .cruc-reveal-menu,
+:root[data-theme="v2"] .suggestions {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--hairline);
+  background: rgba(18, 26, 30, 0.86);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.85);
+}
+/* El autocompletado es una lista pegada al campo: esquinas menores. */
+:root[data-theme="v2"] .suggestions { border-radius: var(--r-md); }
+:root[data-theme="v2"] .sug-item.active,
+:root[data-theme="v2"] .sug-item:hover { background: rgba(46, 230, 198, 0.14); color: var(--np-ink); }
+:root[data-theme="v2"] .sug-item.active .sug-name { color: var(--np-ink); }
+:root[data-theme="v2"] .sug-highlight,
+:root[data-theme="v2"] .sug-item.active .sug-highlight { color: var(--ac); }
+
+/* Avisos flotantes: píldora de cristal, no rectángulo con sombra dura. */
+:root[data-theme="v2"] .toast {
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.9);
+}
+
+/* Barras de tiempo y progreso: píldora con degradado. */
+:root[data-theme="v2"] .loading-bar-track,
+:root[data-theme="v2"] .timer-bar-wrap,
+:root[data-theme="v2"] .timer-track,
+:root[data-theme="v2"] .round-timer-bar-wrap,
+:root[data-theme="v2"] .lobby-autotimer-track,
+:root[data-theme="v2"] .countdown-progress-wrap {
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+}
+:root[data-theme="v2"] .loading-bar-fill,
+:root[data-theme="v2"] .timer-bar,
+:root[data-theme="v2"] .round-timer-bar,
+:root[data-theme="v2"] .lobby-autotimer-bar,
+:root[data-theme="v2"] .countdown-progress-bar {
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--ac), var(--ac-2));
+}
+
+/* Casillas pegadas unas a otras (rejilla del crucigrama, celdas y teclas
+   tipo wordle): con 14px parecerían pastillas sueltas. */
+:root[data-theme="v2"] .cruc-cell,
+:root[data-theme="v2"] .letter-cell,
+:root[data-theme="v2"] .key,
+:root[data-theme="v2"] .cruc-key { border-radius: var(--r-sm); }
+
+/* Avatares: redondos, como en el resto de la web. */
+:root[data-theme="v2"] .lobby-player-avatar,
+:root[data-theme="v2"] .submission-avatar,
+:root[data-theme="v2"] .seat-av { border-radius: 50%; }
+
+/* ══════════════════════════════════════════════
+   ROJO DONDE SIGNIFICA ERROR
+   El acento ya no es rojo, así que hay que devolverlo a mano en los sitios
+   donde el color ERA el mensaje: un "código incorrecto" en turquesa o una
+   cuenta atrás que no se pone roja al acabarse engañan al jugador.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] .menu-error,
+:root[data-theme="v2"] .error-msg,
+:root[data-theme="v2"] .round-timer.urgent { color: var(--np-error); }
+:root[data-theme="v2"] .toast.error { background: var(--np-error); color: #2a0704; }
+:root[data-theme="v2"] .round-timer-bar.urgent { background: var(--np-error); }
+
+/* ══════════════════════════════════════════════
+   LO QUE VA ENCIMA DE UNA IMAGEN
+   Aquí la inversión tinta↔papel no vale. Una foto de futbolista, un Street
+   View o un escudo no cambian de color con el tema: encima de ellos el velo
+   sigue siendo OSCURO y el texto CLARO.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] #game-hud {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75) 0%, transparent 100%);
+}
+:root[data-theme="v2"] .hud-back,
+:root[data-theme="v2"] .hud-ronda { color: rgba(255, 255, 255, 0.92); }
+:root[data-theme="v2"] .hud-label { color: rgba(255, 255, 255, 0.70); }
+:root[data-theme="v2"] .hud-back {
+  background: rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+:root[data-theme="v2"] .hud-back:hover { background: rgba(0, 0, 0, 0.78); }
+
+/* En el Top y La Carrera — rótulo sobre la ilustración del modo */
+:root[data-theme="v2"] #mode-art-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.68) 0%, transparent 100%);
+}
+:root[data-theme="v2"] #mode-art-overlay .eyebrow-num,
+:root[data-theme="v2"] #mode-art-overlay .eyebrow-sep { color: rgba(255, 255, 255, 0.85); }
+
+/* Higher or Lower — nombre y club van sobre el retrato */
+:root[data-theme="v2"] .hol-player-club { color: rgba(255, 255, 255, 0.78); }
+:root[data-theme="v2"] .hol-player-name { color: rgba(255, 255, 255, 0.68); }
+/* Velo de pulsación: sobre un panel ya oscuro tiene que aclarar. */
+:root[data-theme="v2"] .hol-choice-btn::after { background: rgba(255, 255, 255, 0.14); }
+
+/* Chips que existen para que el escudo se vea con sus colores: si se
+   oscurecen, los escudos de trazo oscuro desaparecen. */
+:root[data-theme="v2"] .hol-league-logo,
+:root[data-theme="v2"] .card-badge-wrap,
+:root[data-theme="v2"] .reveal-card-badge { background: rgba(255, 255, 255, 0.92); }
+/* Sin logo, ese chip enseña un emoji de reserva: sobre blanco, tinta oscura. */
+:root[data-theme="v2"] .hol-league-logo { color: #0a0d0f; }
+
+/* ══════════════════════════════════════════════
+   SUPERFICIES INVERTIDAS
+   En clásico, fondo de tinta + texto de papel = franja negra destacada. Al
+   invertir la pareja salen claras sobre fondo oscuro: en un botón queda
+   bien, pero una barra fija de lado a lado en blanco deslumbra.
+   ══════════════════════════════════════════════ */
+:root[data-theme="v2"] #day-nav {
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--bd-c);
+  backdrop-filter: blur(10px);
+  color: var(--np-ink);
+}
+/* Todo lo de dentro hereda texto claro: sus rótulos estaban pensados en
+   color papel y se quedarían negros sobre negro. */
+:root[data-theme="v2"] #day-nav * { color: var(--np-ink); }
+:root[data-theme="v2"] #day-nav .daily-label { color: var(--np-ink-mid); }
+:root[data-theme="v2"] #day-nav button { border-color: var(--bd-c); }
+:root[data-theme="v2"] #day-nav button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+
+/* El Estadio: el crédito del mapa lo pinta Leaflet con su gris #333 fijo
+   sobre un recuadro que el juego tiñe con --np-paper (ahora oscuro). */
+:root[data-theme="v2"] .leaflet-control-attribution,
+:root[data-theme="v2"] .leaflet-control-attribution a { color: var(--np-ink-mid); }
+
+/* ══════════════════════════════════════════════
+   COLORES DE ESTADO QUE SOLO SALEN JUGANDO
+   (no los ve ninguna auditoría del estado inicial: esas clases las pone el
+   JS en partida, hay que forzarlas a mano para medirlas)
+   ══════════════════════════════════════════════ */
+
+/* Crucigrama: la casilla acertada era verde CLARO con letra oscura; con la
+   letra ya clara hay que invertir el relleno, no solo el texto. */
+:root[data-theme="v2"] .cruc-cell--correct { background: rgba(53, 214, 127, 0.20) !important; }
+:root[data-theme="v2"] .cruc-cell--correct.cruc-cell--word-active { background: rgba(53, 214, 127, 0.32) !important; }
+/* La correcta Y seleccionada lleva la letra oscura (regla del juego):
+   necesita relleno sólido y claro, un velo verde la dejaba en 2,9:1. */
+:root[data-theme="v2"] .cruc-cell--correct.cruc-cell--selected { background: var(--np-green) !important; }
+/* Las separaciones de la rejilla son el fondo del contenedor asomando por
+   un gap de 2px: con la tinta clara quedaba una jaula blanca. */
+:root[data-theme="v2"] .cruc-grid { background: rgba(255, 255, 255, 0.14); }
+:root[data-theme="v2"] .cruc-cell--black { background: rgba(255, 255, 255, 0.07); }
+
+/* Tres en Raya: la casilla ganadora era dorado claro y encima van las
+   fichas, que sobre ese dorado se perdían. */
+:root[data-theme="v2"] .cell.win { background: rgba(246, 217, 122, 0.22); }
+
+/* En el Once: --correct es un verde bosque pensado como FONDO de casilla
+   (con letra blanca encima). Usado como color de TEXTO sobre el panel de
+   fin de partida se quedaba en 2,5:1; ahí va el verde claro. */
+:root[data-theme="v2"] .completion-stat:nth-child(1) .completion-stat-value { color: var(--np-green); }
+
+/* Bingo: el dorado de "línea/bingo" es un color con significado y se queda,
+   pero encima ya no puede ir texto claro. */
+:root[data-theme="v2"] .bcell.bingo,
+:root[data-theme="v2"] .bcell.bingo *,
+:root[data-theme="v2"] .toast.ok { color: #1c1400; }
+
+/* El Estadio: el cartel de ascenso invierte a fondo claro, así que su cifra
+   (verde/rojo claritos) tiene que oscurecerse para verse. */
+:root[data-theme="v2"] .liga-climb-banner .lcb-delta { color: #0b6b3a; }
+:root[data-theme="v2"] .liga-climb-banner.lcb-down .lcb-delta { color: #a3231a; }

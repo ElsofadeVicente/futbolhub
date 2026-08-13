@@ -25,11 +25,18 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/style.css?v=20260808d">
+  <link rel="stylesheet" href="css/style.css?v=20260809a">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
-<link rel="stylesheet" href="../css/profile-widget.css?v=20260727a">
+<link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
+<!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
+     Sin defer y en el <head> para que no se vea un fogonazo. -->
+<script src="../js/theme.js?v=20260809a"></script>
+<!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
+     :root[data-theme="v2"]: sin ese atributo no pinta nada.
+     Va la ultima para poder ganar a igual especificidad. -->
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260809a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -249,7 +256,7 @@
   <script src="../js/progress-sync.js?v=20260808a"></script>
   <script src="../js/hub-streaks.js?v=20260808a"></script>
   <script src="../js/img-heal.js?v=20260727a"></script>
-  <script src="../js/profile-widget.js?v=20260727a"></script>
+  <script src="../js/profile-widget.js?v=20260809a"></script>
   <script src="js/game.js?v=20260808a"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).

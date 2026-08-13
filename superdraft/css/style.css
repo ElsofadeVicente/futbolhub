@@ -53,7 +53,7 @@
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem; letter-spacing: 2px;
   color: var(--np-red);
-  border: 2px solid var(--np-ink);
+  border: 2px solid var(--bd-c, var(--np-ink));
   border-radius: 999px;
   padding: 3px 18px;
   box-shadow: var(--shadow-soft);
@@ -76,7 +76,7 @@
 .sd-daynav button {
   font-family: 'DM Mono', monospace;
   width: 34px; height: 34px;
-  border: 2px solid var(--np-ink);
+  border: 2px solid var(--bd-c, var(--np-ink));
   background: var(--np-paper);
   color: var(--np-ink);
   border-radius: 6px;
@@ -129,7 +129,7 @@
   min-height: 520px;
   padding: 26px 12px 30px;
   box-shadow: var(--shadow);
-  border: 2px solid var(--np-ink);
+  border: 2px solid var(--bd-c, var(--np-ink));
   background: repeating-linear-gradient(180deg,
       var(--sd-field-a) 0, var(--sd-field-a) 52px,
       var(--sd-field-b) 52px, var(--sd-field-b) 104px);
@@ -255,7 +255,7 @@
 /* ===== PANEL: requisito de la ronda (escudo/bandera + nombre) ===== */
 .sd-panel {
   background: #2b3a24;
-  border: 2px solid var(--np-ink);
+  border: 2px solid var(--bd-c, var(--np-ink));
   border-radius: 10px;
   box-shadow: var(--shadow);
   padding: 30px 20px;
@@ -282,12 +282,12 @@
 /* ===== MODAL: buscar jugador (se abre desde la posición pulsada) ===== */
 .sd-modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .sd-modal.hidden { display: none; }
-.sd-modal-backdrop { position: absolute; inset: 0; background: rgba(15,18,14,0.5); }
+.sd-modal-backdrop { position: absolute; inset: 0; background: rgba(var(--np-ink-rgb, 15,18,14), 0.5); }
 .sd-modal-card {
   position: relative; z-index: 1;
   width: min(420px, 94vw);
   background: var(--np-paper);
-  border: 2px solid var(--np-ink);
+  border: 2px solid var(--bd-c, var(--np-ink));
   border-radius: 14px;
   box-shadow: var(--shadow);
   padding: 24px 22px 18px;

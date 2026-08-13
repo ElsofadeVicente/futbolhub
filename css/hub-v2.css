@@ -1,0 +1,417 @@
+/* =============================================
+   HUB-V2.CSS — Diseño "Estadio" (alternativo)
+   FutbolHUB
+
+   Segundo diseño de la portada. NO sustituye a hub.css: se carga siempre
+   pero TODO cuelga de [data-theme="v2"], así que mientras el <html> no
+   lleve ese atributo (js/theme.js) esta hoja no pinta absolutamente nada.
+   El diseño clásico queda intacto, sin un solo `!important` cruzado.
+
+   Se carga DESPUÉS de hub.css y de profile-widget.css a propósito: con la
+   misma especificidad gana la última, y así puede recolocar cosas que
+   aquellas dan por hechas (el hueco del avatar en el masthead, p. ej.).
+
+   IDEA: el HTML es el mismo. Ni una clase nueva, ni un div de más. Por eso
+   siguen funcionando sin tocar nada js/hub-streaks.js (círculo de racha),
+   js/ads.js (columnas de AdSense) y js/hub-ticker.js (titulares).
+
+   PALETA: noche de partido. Fondo casi negro con dos focos difuminados,
+   superficies de cristal y turquesa eléctrico como acento — el mismo que
+   usa css/theme-v2-app.css dentro de los juegos, para que portada y juego
+   se vean del mismo sitio. Turquesa y no rojo ni verde: en los juegos el
+   rojo significa error y el verde acierto, así que el color de interfaz
+   tiene que ser uno que no diga nada por su cuenta.
+   Cambiar la identidad entera = tocar --v2-accent / --v2-accent-2.
+   ============================================= */
+
+[data-theme="v2"] {
+  --v2-bg:        #0a0d0f;
+  --v2-surface:   rgba(255, 255, 255, 0.045);
+  --v2-surface-2: rgba(255, 255, 255, 0.075);
+  --v2-line:      rgba(255, 255, 255, 0.10);
+  --v2-line-soft: rgba(255, 255, 255, 0.055);
+  --v2-text:      #eaf1ee;
+  --v2-mid:       rgba(234, 241, 238, 0.78);
+  --v2-dim:       rgba(234, 241, 238, 0.62);
+  /* El texto pequeño (nº de edición, "№ 01") no puede bajar de aquí: con
+     0.42, que es lo que pedía el ojo, se quedaba en 3.7:1 sobre el fondo y
+     WCAG AA pide 4.5:1. Medido: 5.3:1. */
+  --v2-faint:     rgba(234, 241, 238, 0.56);
+  --v2-accent:    #2ee6c6;
+  --v2-accent-2:  #7f8bff;
+  --v2-on-accent: #04231f;
+  --v2-glow:      rgba(46, 230, 198, 0.30);
+
+  /* Radios: lo contrario de la portada cuadrada de periódico. */
+  --v2-r-lg:   26px;
+  --v2-r-md:   18px;
+  --v2-r-sm:   12px;
+  --v2-r-pill: 999px;
+
+  /* Los tokens del tema clásico se re-mapean en vez de perseguir una por
+     una las reglas que los usan. Así el borde de las columnas de anuncios,
+     el outline de foco o cualquier regla futura que lea --np-* siguen
+     siendo coherentes en oscuro sin duplicar código. */
+  --np-paper:    var(--v2-bg);
+  --np-paper2:   #141a1e;
+  --np-ink:      var(--v2-text);
+  --np-ink-mid:  var(--v2-mid);
+  --np-ink-soft: var(--v2-line);
+  --np-ink-dim:  var(--v2-dim);
+  --np-red:      var(--v2-accent);
+  --np-white:    var(--v2-surface);
+}
+
+/* ══════════════════════════════════════════════
+   FONDO
+   ══════════════════════════════════════════════ */
+[data-theme="v2"] body.np-body {
+  background: var(--v2-bg);
+  color: var(--v2-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* El mismo pseudo-elemento que en clásico llevaba la textura de papel aquí
+   hace de iluminación: dos focos de estadio muy difuminados. Fijo y sin
+   eventos, así que no interfiere con nada. */
+[data-theme="v2"] body.np-body::before {
+  background-image:
+    radial-gradient(900px 540px at 8% -10%, rgba(46, 230, 198, 0.15), transparent 60%),
+    radial-gradient(820px 520px at 96% -4%, rgba(127, 139, 255, 0.12), transparent 58%);
+  background-repeat: no-repeat;
+  opacity: 1;
+}
+
+[data-theme="v2"] .hub {
+  max-width: 1460px;
+  margin: 0 auto;
+  padding-bottom: 56px;
+}
+
+/* ══════════════════════════════════════════════
+   CABECERA
+   ══════════════════════════════════════════════ */
+[data-theme="v2"] .masthead {
+  border-bottom: 0;
+  padding: 20px 20px 0;
+}
+[data-theme="v2"] .masthead-top {
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 20px;
+}
+[data-theme="v2"] .masthead-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
+  color: var(--v2-dim);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-md);
+  padding: 9px 15px;
+}
+/* El círculo del perfil flota en la esquina superior derecha (lo coloca
+   css/profile-widget.css). Se le sigue reservando su hueco: sin ese
+   padding-right el bloque de la edición le quedaría debajo. */
+[data-theme="v2"] body.np-body .masthead-edition {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 0 60px 0 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+  color: var(--v2-faint);
+}
+[data-theme="v2"] .masthead-edition strong {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--v2-accent);
+  background: rgba(46, 230, 198, 0.12);
+  border: 1px solid rgba(46, 230, 198, 0.22);
+  border-radius: var(--v2-r-pill);
+  padding: 4px 11px;
+}
+
+[data-theme="v2"] .logotype-wrap {
+  border: 0;
+  text-align: left;
+  padding: 4px 0 6px;
+  margin-bottom: 0;
+}
+[data-theme="v2"] .logotype { align-items: center; }
+[data-theme="v2"] .logo-fut {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 800;
+  font-size: clamp(34px, 6vw, 52px);
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--v2-text);
+}
+[data-theme="v2"] .logo-hub {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(34px, 6vw, 52px);
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin-left: 9px;
+  padding: 4px 16px 7px;
+  border-radius: var(--v2-r-pill);
+  background: linear-gradient(135deg, var(--v2-accent), var(--v2-accent-2));
+  color: var(--v2-on-accent);
+  box-shadow: 0 10px 30px var(--v2-glow);
+}
+
+/* ══════════════════════════════════════════════
+   TICKER
+   ══════════════════════════════════════════════ */
+[data-theme="v2"] .ticker {
+  margin: 12px 20px 0;
+  padding: 10px 0;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-bottom: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-pill);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  /* Los titulares se desvanecen en los extremos en vez de cortarse a
+     cuchillo contra el borde redondeado. */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+[data-theme="v2"] .tick-label {
+  background: var(--v2-accent);
+  color: var(--v2-on-accent);
+  border-radius: var(--v2-r-pill);
+  padding: 3px 11px;
+  margin: 0 8px 0 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+[data-theme="v2"] .tick-accent { color: var(--v2-text); font-weight: 500; }
+[data-theme="v2"] .tick-normal { color: rgba(234, 241, 238, 0.55); }
+[data-theme="v2"] .tick-src    { color: rgba(46, 230, 198, 0.72); }
+
+/* ══════════════════════════════════════════════
+   CONTENIDO
+   ══════════════════════════════════════════════ */
+[data-theme="v2"] .np-layout { padding-top: 8px; }
+[data-theme="v2"] .np-main { padding: 0 20px; }
+
+[data-theme="v2"] .section-rule {
+  border-top: 0;
+  align-items: center;
+  gap: 16px;
+  padding-top: 30px;
+  margin-bottom: 20px;
+}
+[data-theme="v2"] .section-rule h2 {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(20px, 3vw, 27px);
+  letter-spacing: -0.025em;
+  text-transform: none;
+  color: var(--v2-text);
+}
+[data-theme="v2"] .rule-line { background: var(--v2-line-soft); }
+[data-theme="v2"] .rule-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--v2-accent);
+  background: rgba(46, 230, 198, 0.10);
+  border: 1px solid rgba(46, 230, 198, 0.24);
+  border-radius: var(--v2-r-pill);
+  padding: 6px 13px;
+}
+
+/* ══════════════════════════════════════════════
+   TARJETAS
+   ══════════════════════════════════════════════ */
+/* auto-fill en vez de las 2 columnas fijas del clásico: en un monitor ancho
+   caben 3 o 4 y las tarjetas no se estiran hasta parecer pancartas.
+   El min() evita que en un móvil estrecho la columna desborde. */
+[data-theme="v2"] .np-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 18px;
+}
+
+[data-theme="v2"] .np-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-lg);
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+              box-shadow 0.35s ease, border-color 0.35s ease;
+}
+[data-theme="v2"] .np-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(46, 230, 198, 0.42);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55),
+              0 12px 40px -14px var(--v2-glow);
+}
+[data-theme="v2"] .np-card:focus-visible {
+  outline: 3px solid var(--v2-accent);
+  outline-offset: 3px;
+}
+
+/* La ilustración conserva su proporción 8/3 (los banners son 2048×768):
+   recortarla a 16/9 partiría por la mitad a los jugadores del centro. */
+[data-theme="v2"] .np-card-art {
+  position: relative;
+  border-bottom: 0;
+  background: #12181c;
+}
+/* Degradado al pie de la imagen para que el título no arranque sobre un
+   corte seco de foto. */
+[data-theme="v2"] .np-card-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, rgba(10, 13, 15, 0.55));
+}
+
+[data-theme="v2"] .np-card-body { padding: 14px 16px 16px; }
+
+[data-theme="v2"] .np-card-eyebrow { gap: 8px; margin-bottom: 9px; }
+[data-theme="v2"] .np-num {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--v2-faint);
+}
+[data-theme="v2"] .np-cat {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--v2-accent);
+  background: rgba(46, 230, 198, 0.12);
+  border-radius: var(--v2-r-pill);
+  padding: 4px 10px;
+}
+[data-theme="v2"] .np-cat::before { content: none; }
+
+[data-theme="v2"] .np-title {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 800;
+  font-size: clamp(19px, 2.4vw, 22px);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  color: var(--v2-text);
+}
+[data-theme="v2"] .np-desc {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(234, 241, 238, 0.62);
+  margin-bottom: 14px;
+}
+
+[data-theme="v2"] .np-card-footer {
+  padding-top: 13px;
+  border-top: 1px solid var(--v2-line-soft);
+  gap: 10px;
+}
+[data-theme="v2"] .np-tags { gap: 5px; }
+[data-theme="v2"] .np-tag {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-pill);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px 9px;
+  color: rgba(234, 241, 238, 0.55);
+}
+[data-theme="v2"] .np-cta {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--v2-on-accent);
+  background: var(--v2-accent);
+  border-radius: var(--v2-r-pill);
+  padding: 9px 15px;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+/* En clásico el hover abría el interletrado; aquí el botón se ilumina. */
+[data-theme="v2"] .np-card:hover .np-cta {
+  letter-spacing: normal;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px var(--v2-glow);
+}
+
+/* Círculo de racha: lo inyecta js/hub-streaks.js con un <style> que entra
+   en el <head> DESPUÉS de esta hoja, así que hace falta más especificidad
+   (el atributo + la clase) para ganarle. */
+[data-theme="v2"] .np-card .hub-streak-badge {
+  background: rgba(10, 13, 15, 0.82);
+  border-color: rgba(255, 206, 84, 0.75);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* ══════════════════════════════════════════════
+   ANUNCIOS
+   Las columnas siguen donde estaban (js/ads.js no se entera de nada);
+   solo se cambia el filete que las separa por uno suave.
+   ══════════════════════════════════════════════ */
+[data-theme="v2"] .ad-slot--inline {
+  border-top: 1px solid var(--v2-line-soft);
+  padding-top: 18px;
+  margin-top: 26px;
+}
+@media (min-width: 1240px) {
+  [data-theme="v2"] .ad-col--left  { border-right: 1px solid var(--v2-line-soft); }
+  [data-theme="v2"] .ad-col--right { border-left:  1px solid var(--v2-line-soft); }
+}
+
+/* ══════════════════════════════════════════════
+   PIE
+   ══════════════════════════════════════════════ */
+[data-theme="v2"] .np-footer {
+  margin: 34px 20px 0;
+  padding: 18px 22px;
+  border-top: 0;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-lg);
+  background: var(--v2-surface);
+  /* Inter y no Space Grotesk: la display se reserva para títulos, el texto
+     corrido se lee mejor en la de interfaz. */
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: rgba(234, 241, 238, 0.55);
+}
+[data-theme="v2"] .np-footer-link {
+  color: rgba(234, 241, 238, 0.72);
+  text-decoration: none;
+  border-bottom: 1px solid var(--v2-line);
+}
+[data-theme="v2"] .np-footer-link:hover {
+  color: var(--v2-accent);
+  border-bottom-color: var(--v2-accent);
+}
+[data-theme="v2"] .np-footer-link:focus-visible {
+  outline: 2px solid var(--v2-accent);
+  outline-offset: 3px;
+}
+
+/* ══════════════════════════════════════════════
+   MÓVIL
+   ══════════════════════════════════════════════ */
+@media (max-width: 540px) {
+  [data-theme="v2"] .masthead { padding: 16px 14px 0; }
+  [data-theme="v2"] .masthead-top { align-items: flex-start; }
+  [data-theme="v2"] .masthead-meta { font-size: 9.5px; padding: 7px 11px; }
+  [data-theme="v2"] body.np-body .masthead-edition { padding-right: 52px; }
+  [data-theme="v2"] .ticker { margin: 10px 14px 0; }
+  [data-theme="v2"] .np-main { padding: 0 14px; }
+  [data-theme="v2"] .np-footer { margin: 26px 14px 0; padding: 16px; }
+}

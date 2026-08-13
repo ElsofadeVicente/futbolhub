@@ -87,9 +87,13 @@
 
     function renderDropdown() {
         if (!session) {
+            /* Sin sesión no hay "Ajustes" donde meter el diseño, y elegirlo no
+               necesita cuenta (se guarda en el navegador): va suelto aquí. */
             dropdown.innerHTML = `
               <button class="pw-login-cta" type="button" data-action="open-login">Iniciar sesión</button>
-              <div class="pw-drop-note">Guarda tus estadísticas en todos los juegos</div>`;
+              <div class="pw-drop-note">Guarda tus estadísticas en todos los juegos</div>
+              ${window.FHTheme ? `<div class="pw-drop-line"></div>
+              <button class="pw-item" type="button" data-action="diseno">Diseño de la web</button>` : ''}`;
         } else {
             dropdown.innerHTML = `
               <div class="pw-drop-head">
@@ -283,6 +287,50 @@
         `);
     }
 
+    /* ── Selector de diseño ──
+       Dos diseños conviven: el clásico (portada tipo periódico) y el nuevo
+       "Estadio". Lo único que hace elegir uno es escribir data-theme en el
+       <html> (js/theme.js); el cambio se ve al momento, detrás del modal.
+       Se guarda en el navegador, no en la cuenta: es una preferencia de
+       cómo quieres ver la web en ESTA pantalla. */
+    const THEME_INFO = {
+        classic: { name: 'Clásico', tag: 'Papel de periódico' },
+        v2:      { name: 'Moderno', tag: 'Noche de estadio' },
+    };
+
+    function themePickerHTML() {
+        if (!window.FHTheme) return '';
+        const actual = FHTheme.get();
+        return `<div class="pw-themes">` + FHTheme.THEMES.map(t => {
+            const info = THEME_INFO[t.id] || { name: t.name, tag: t.tag };
+            const on = t.id === actual;
+            return `
+              <button class="pw-theme${on ? ' pw-theme--on' : ''}" type="button"
+                      data-action="set-theme" data-theme-id="${esc(t.id)}"
+                      aria-pressed="${on}">
+                <span class="pw-theme-prev pw-theme-prev--${esc(t.id)}">
+                  <i></i><i></i><i></i>
+                </span>
+                <span class="pw-theme-name">${esc(info.name)}</span>
+                <span class="pw-theme-tag">${esc(info.tag)}</span>
+              </button>`;
+        }).join('') + `</div>`;
+    }
+
+    function themeNoteHTML() {
+        return `<p class="pw-hint">Cambia toda la web: la portada y los 13 juegos. Se guarda en este navegador y puedes volver al clásico cuando quieras.</p>`;
+    }
+
+    function disenoView() {
+        openModal(`
+          <div class="pw-brand">Fútbol<span>HUB</span></div>
+          <h3 class="pw-title">Diseño de la web</h3>
+          <p class="pw-text">Elige cómo quieres ver FutbolHUB. Puedes cambiarlo las veces que quieras.</p>
+          ${themePickerHTML()}
+          ${themeNoteHTML()}
+        `);
+    }
+
     function ajustesView() {
         const changed = !!(profile && profile.username_changed);
         openModal(`
@@ -305,6 +353,11 @@
             ? `<p class="pw-hint">Ya has usado tu único cambio de nombre, así que no se puede volver a cambiar.</p>`
             : `<button class="pw-secondary" type="button" data-action="change-username">Cambiar nombre de usuario</button>
                <p class="pw-hint">Solo se puede cambiar <strong>una vez</strong>. Elige bien.</p>`}
+
+          ${window.FHTheme ? `
+            <div class="pw-field-label">Diseño de la web</div>
+            ${themePickerHTML()}
+            ${themeNoteHTML()}` : ''}
 
           <div class="pw-msg"></div>
           <button class="pw-danger" type="button" data-action="logout">Cerrar sesión</button>
@@ -422,6 +475,21 @@
             case 'perfil':       toggleDropdown(false); placeholderView('Perfil'); break;
             case 'estadisticas': toggleDropdown(false); estadisticasView(); break;
             case 'ajustes':      toggleDropdown(false); ajustesView(); break;
+            case 'diseno':       toggleDropdown(false); disenoView(); break;
+            case 'set-theme': {
+                if (!window.FHTheme) break;
+                const id = btn.dataset.themeId;
+                FHTheme.set(id);
+                /* Se marca el elegido a mano en vez de repintar la vista: si
+                   se repintara, el modal saltaría al principio y en Ajustes
+                   perderías de vista dónde estabas. */
+                modal.querySelectorAll('.pw-theme').forEach(b => {
+                    const on = b.dataset.themeId === id;
+                    b.classList.toggle('pw-theme--on', on);
+                    b.setAttribute('aria-pressed', String(on));
+                });
+                break;
+            }
             case 'change-username': changeUsernameView(); break;
             case 'change-photo': {
                 const input = modal.querySelector('.pw-file');

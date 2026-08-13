@@ -24,9 +24,18 @@
 <meta name="theme-color" content="#16181d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./css/hub.css?v=20260808g">
-<link rel="stylesheet" href="./css/profile-widget.css?v=20260727a">
+<link rel="stylesheet" href="./css/profile-widget.css?v=20260809a">
+<!-- Diseño alternativo "Estadio". Se carga siempre, pero TODO cuelga de
+     [data-theme="v2"]: sin ese atributo en el <html> no pinta nada y la
+     portada clásica queda exactamente igual que antes. Va la última para
+     poder recolocar lo que dan por hecho las dos hojas de arriba. -->
+<link rel="stylesheet" href="./css/hub-v2.css?v=20260809a">
+<!-- Pone data-theme en el <html> con el diseño elegido. Sin defer y aquí
+     arriba: si corriera al final del body se vería un fogonazo del otro
+     diseño antes de cambiar. -->
+<script src="./js/theme.js?v=20260809a"></script>
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -515,6 +524,6 @@
 <script src="./js/auth.js?v=20260722g"></script>
 <script src="./js/progress-sync.js?v=20260808a"></script>
 <script src="./js/img-heal.js?v=20260727a"></script>
-<script src="./js/profile-widget.js?v=20260727a"></script>
+<script src="./js/profile-widget.js?v=20260809a"></script>
 </body>
 </html>

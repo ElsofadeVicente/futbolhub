@@ -370,6 +370,76 @@ body.np-body .pw-root { position: absolute; }
   line-height: 1.45;
 }
 
+/* ── Selector de diseño (Ajustes → Diseño de la web) ──
+   Dos tarjetas con una miniatura dibujada en CSS: no hay capturas que
+   mantener y pesan cero. El elegido se marca con borde y check. */
+.pw-drop-line {
+  height: 1px;
+  background: rgba(255, 255, 255, .1);
+  margin: 8px 4px;
+}
+
+.pw-themes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.pw-theme {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  color: #e8e6e1;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color .15s ease, background .15s ease;
+}
+.pw-theme:hover { border-color: rgba(255, 255, 255, .32); background: rgba(255, 255, 255, .06); }
+.pw-theme--on { border-color: #7ddc9a; background: rgba(125, 220, 154, .1); }
+/* Check del elegido */
+.pw-theme--on::after {
+  content: "✓";
+  position: absolute;
+  top: 6px; right: 8px;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #7ddc9a;
+}
+.pw-theme-name { font-size: .86rem; font-weight: 700; }
+.pw-theme-tag  { font-size: .68rem; color: rgba(232, 230, 225, .5); }
+
+/* Miniatura: barra de cabecera + dos tarjetas */
+.pw-theme-prev {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 6px 1fr;
+  gap: 4px;
+  height: 48px;
+  padding: 5px;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+.pw-theme-prev i:first-child { grid-column: 1 / -1; }
+
+/* Clásico: papel, tinta y esquinas rectas */
+.pw-theme-prev--classic { background: #f4ead2; border-radius: 3px; }
+.pw-theme-prev--classic i:first-child { background: #0f120e; }
+.pw-theme-prev--classic i + i { background: #fff; border: 1px solid rgba(15, 18, 14, .35); }
+
+/* Moderno: noche de estadio, verde y todo redondeado */
+.pw-theme-prev--v2 { background: #0a0d0f; border-radius: 10px; }
+.pw-theme-prev--v2 i:first-child { background: #2fe07d; border-radius: 999px; }
+.pw-theme-prev--v2 i + i {
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 7px;
+}
+
 /* En el hub, el bloque "EDICIÓN DIGITAL" del masthead queda justo bajo
    el círculo: le damos aire por la derecha solo ahí. */
 .np-body .masthead-edition { padding-right: 58px; }

@@ -132,7 +132,7 @@
       case 'league':      return String(r.value).toUpperCase();
       case 'league_any':  return r.label.replace(/^Ha jugado en /, '').toUpperCase();
       case 'coach':       return 'DT ' + String(r.value).split(' ').slice(-1)[0].toUpperCase();
-      case 'teammate':    return 'CON ' + String(r.label).replace(/^Compañero de /, '').toUpperCase();
+      case 'teammate':    return 'COMPAÑERO DE ' + String(r.label).replace(/^Compañero de /, '').toUpperCase();
       case 'trophy':      return String(r.label).replace(/^Ganador /, '').toUpperCase();
       case 'trophy_any':  return String(r.label).replace(/^Ganador /, '').toUpperCase();
       case 'continent':   return String(r.label).toUpperCase();

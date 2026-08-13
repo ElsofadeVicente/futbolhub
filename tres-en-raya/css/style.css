@@ -11,7 +11,7 @@
 /* ── Menú: piezas propias ── */
 .tr-setting {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 12px; background: var(--np-paper); border: 1.5px solid var(--np-ink);
+  padding: 8px 12px; background: var(--np-paper); border: 1.5px solid var(--bd-c, var(--np-ink));
 }
 .tr-setting .settings-label { font-family: 'DM Mono', monospace; font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--np-ink-mid); }
 .series-info { font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--np-ink-mid); text-align: center; }
@@ -29,8 +29,8 @@
 .game-topbar { display: flex; align-items: stretch; justify-content: space-between; gap: 6px; margin-top: 4px; }
 .scorebox {
   flex: 1; display: flex; align-items: center; gap: 7px; justify-content: center;
-  background: var(--np-paper2); border: 1.5px solid var(--np-ink); padding: 6px 8px;
-  box-shadow: 2px 2px 0 var(--np-ink);
+  background: var(--np-paper2); border: 1.5px solid var(--bd-c, var(--np-ink)); padding: 6px 8px;
+  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
 }
 .scorebox.active { background: var(--np-ink); color: var(--np-paper); }
 .score-name, .score-num { color: var(--np-ink); }
@@ -44,23 +44,23 @@
 .turn-badge {
   align-self: center; font-family: 'DM Mono', monospace; font-size: .56rem; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase; background: var(--np-red);
-  color: var(--np-paper); padding: 7px 9px; border: 1.5px solid var(--np-ink);
-  box-shadow: 2px 2px 0 var(--np-ink); text-align: center; white-space: nowrap;
+  color: var(--np-paper); padding: 7px 9px; border: 1.5px solid var(--bd-c, var(--np-ink));
+  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink)); text-align: center; white-space: nowrap;
 }
 
 .game-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .mini-btn {
   font-family: 'DM Mono', monospace; font-weight: 500; font-size: .56rem;
   text-transform: uppercase; letter-spacing: .12em; padding: 7px 10px;
-  border: 1.5px solid var(--np-ink); background: var(--np-paper2); color: var(--np-ink);
-  box-shadow: 2px 2px 0 var(--np-ink); transition: background .12s, color .12s;
+  border: 1.5px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2); color: var(--np-ink);
+  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink)); transition: background .12s, color .12s;
 }
 .mini-btn:hover { background: var(--np-ink); color: var(--np-paper); }
 .turn-timer { font-family: 'Anton', sans-serif; font-size: 1.2rem; color: var(--np-red); min-width: 30px; text-align: center; }
 
 .draw-offer {
   display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-  background: var(--np-paper3); border: 1.5px solid var(--np-ink); box-shadow: 2px 2px 0 var(--np-ink);
+  background: var(--np-paper3); border: 1.5px solid var(--bd-c, var(--np-ink)); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
   padding: 9px 11px; font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .06em; text-transform: uppercase;
 }
 .draw-offer-btns { display: flex; gap: 8px; }
@@ -72,7 +72,7 @@
   width: 100%;
   max-width: min(440px, calc((100vh - 200px)));
   gap: 2px; background: var(--np-ink);
-  border: 2px solid var(--np-ink); box-shadow: var(--shadow);
+  border: 2px solid var(--bd-c, var(--np-ink)); box-shadow: var(--shadow);
 }
 .cell-corner { background: var(--np-ink); display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; }
 .corner-ball { font-size: clamp(.9rem, 3.5vw, 1.4rem); opacity: .65; filter: grayscale(1); }
@@ -84,7 +84,7 @@
 }
 .hdr-media { width: clamp(26px, 8.5vw, 42px); height: clamp(26px, 8.5vw, 42px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .hdr-media img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.hdr-media--avatar { border-radius: 50%; overflow: hidden; border: 1.5px solid var(--np-ink); background: var(--np-paper3); }
+.hdr-media--avatar { border-radius: 50%; overflow: hidden; border: 1.5px solid var(--bd-c, var(--np-ink)); background: var(--np-paper3); }
 /* Retratos (entrenador/compañero): la cara está arriba → anclar al top para
    no cortar la cabeza al recortar en círculo. */
 .hdr-media--avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
@@ -101,7 +101,7 @@
 .cell.playable:hover { background: var(--np-paper3); }
 .cell.playable::after { content: '+'; font-family: 'DM Mono', monospace; font-weight: 500; font-size: 1.5rem; color: var(--np-ink-soft); }
 .cell.filled::after { content: none; }
-.cell-photo { width: clamp(34px, 11vw, 50px); height: clamp(34px, 11vw, 50px); border-radius: 50%; overflow: hidden; border: 2px solid var(--np-ink); background: var(--np-paper3); flex-shrink: 0; }
+.cell-photo { width: clamp(34px, 11vw, 50px); height: clamp(34px, 11vw, 50px); border-radius: 50%; overflow: hidden; border: 2px solid var(--bd-c, var(--np-ink)); background: var(--np-paper3); flex-shrink: 0; }
 .cell-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .cell-pname { font-family: 'DM Mono', monospace; font-weight: 500; font-size: .48rem; line-height: 1.05; text-align: center; padding: 0 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cell-mark { position: absolute; top: 2px; right: 4px; font-family: 'Anton', sans-serif; font-size: .95rem; line-height: 1; }
@@ -114,11 +114,11 @@
 .game-hint { font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .06em; color: var(--np-ink-mid); text-align: center; min-height: 14px; text-transform: uppercase; }
 
 /* ═══════════ OVERLAY DE SELECCIÓN ═══════════ */
-.pick-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(15,18,14,0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
-.pick-card { position: relative; width: 100%; max-width: 400px; background: var(--np-paper); border: 2px solid var(--np-ink); box-shadow: var(--shadow); padding: 22px 18px 18px; }
+.pick-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(var(--np-ink-rgb, 15,18,14), 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.pick-card { position: relative; width: 100%; max-width: 400px; background: var(--np-paper); border: 2px solid var(--bd-c, var(--np-ink)); box-shadow: var(--shadow); padding: 22px 18px 18px; }
 .pick-close { position: absolute; top: 8px; right: 10px; font-size: 1.1rem; color: var(--np-ink); background: none; border: none; cursor: pointer; }
 .pick-constraints { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-.pick-chip { display: flex; align-items: center; gap: 7px; background: var(--np-paper2); border: 1.5px solid var(--np-ink); padding: 6px 10px; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .03em; text-transform: uppercase; }
+.pick-chip { display: flex; align-items: center; gap: 7px; background: var(--np-paper2); border: 1.5px solid var(--bd-c, var(--np-ink)); padding: 6px 10px; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .03em; text-transform: uppercase; }
 .pick-chip img { width: 24px; height: 24px; object-fit: contain; }
 .pick-chip .pick-emoji { font-size: 1.05rem; }
 .pick-x { font-family: 'Anton', sans-serif; color: var(--np-red); font-size: 1.05rem; }
