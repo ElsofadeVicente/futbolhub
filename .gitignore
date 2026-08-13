@@ -73,3 +73,7 @@ admin/.comp_names_cache.json
 
 # Logs de tandas de admin/update_chunks.py
 admin/logs/
+
+# Notas operativas del proyecto para Claude Code (contexto interno de trabajo,
+# no es código ni algo que deba servir Vercel ni ver nadie fuera del equipo).
+CLAUDE.md
