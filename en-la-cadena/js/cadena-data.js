@@ -299,11 +299,13 @@ const CadenaData = (() => {
     const box = document.getElementById('suggestions');
     if (!items.length) { closeSuggestions(); return; }
     suggestionItems = items;
-    suggestionIndex = -1;
+    /* La primera viene marcada: Enter ya enviaba esa (submitAnswer cae a la
+       primera si no hay ninguna elegida), pero no se veía cuál era. */
+    suggestionIndex = 0;
     box.innerHTML = items.map((item, i) => {
       const icon = item.type === 'player' ? '⚽' : '🏟️';
       const meta = item.type === 'player' ? (item.disambig || '') : '';
-      return `<div class="suggestion-item" data-index="${i}"
+      return `<div class="suggestion-item${i === 0 ? ' selected' : ''}" data-index="${i}"
                 onclick="CadenaData.selectSuggestion(${i})">
         <span class="sug-icon">${icon}</span>
         <span class="sug-name">${highlightMatch(item.name, query)}</span>
@@ -340,7 +342,9 @@ const CadenaData = (() => {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (!isOpen) return;
-      suggestionIndex = Math.max(suggestionIndex - 1, -1);
+      /* Tope en 0: con la lista abierta siempre hay una marcada, para que no
+         se quede sin saber qué manda Enter. */
+      suggestionIndex = Math.max(suggestionIndex - 1, 0);
       updateSuggestionHighlight();
     } else if (e.key === 'Enter') {
       e.preventDefault();

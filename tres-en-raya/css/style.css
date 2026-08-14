@@ -22,6 +22,11 @@
 .join-row .menu-input:first-child { flex: 1; }
 .join-row .menu-code-input { max-width: 130px; }
 
+/* ── Buscando rival (público): sin lobby, 1vs1 arranca solo ── */
+.searching-wrap { max-width: 380px; padding: 30px 20px; text-align: center; }
+.searching-title { font-family: 'Anton', sans-serif; font-size: 1.5rem; letter-spacing: .02em; color: var(--np-ink); }
+.searching-wrap .btn-secondary { margin-top: 6px; }
+
 /* ═══════════ PARTIDA ═══════════ */
 #screen-game { justify-content: flex-start; padding: 14px 16px 28px; gap: 10px; }
 #screen-game > * { width: 100%; max-width: 440px; }
@@ -56,7 +61,18 @@
   box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink)); transition: background .12s, color .12s;
 }
 .mini-btn:hover { background: var(--np-ink); color: var(--np-paper); }
-.turn-timer { font-family: 'Anton', sans-serif; font-size: 1.2rem; color: var(--np-red); min-width: 30px; text-align: center; }
+/* Cuenta atrás del turno: recuadro propio en el extremo izquierdo de la barra
+   superior, con el mismo aspecto que los marcadores. */
+.turn-timer {
+  font-family: 'Anton', sans-serif; font-size: 1.35rem; line-height: 1;
+  color: var(--np-ink); min-width: 42px; display: flex; align-items: center; justify-content: center;
+  background: var(--np-paper2); border: 1.5px solid var(--bd-c, var(--np-ink)); padding: 6px 6px;
+  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+}
+/* Últimos segundos del turno: rojo de aviso (en el tema oscuro, --np-red es
+   el turquesa de acento, así que ahí se usa el rojo de error). */
+.turn-timer.urgent { color: var(--np-red); animation: tk-timer-pulse .6s ease-in-out infinite; }
+@keyframes tk-timer-pulse { 50% { opacity: .35; } }
 
 .draw-offer {
   display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
@@ -91,6 +107,13 @@
 .hdr-media--broken { display: none; }
 .hdr-emoji { font-size: 1.3rem; line-height: 1; }
 .hdr-label { font-family: 'DM Mono', monospace; font-weight: 500; font-size: .48rem; line-height: 1.15; letter-spacing: .01em; text-transform: uppercase; color: var(--np-ink); }
+/* "CAMPEÓN" / "JUGÓ EN": sin esto no se distingue haber ganado un torneo de
+   haber jugado en él. */
+.hdr-kicker {
+  font-family: 'DM Mono', monospace; font-size: .38rem; line-height: 1;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--np-red);
+  margin-bottom: -2px;
+}
 
 .cell {
   position: relative; background: var(--np-paper); aspect-ratio: 1 / 1;

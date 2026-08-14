@@ -597,7 +597,10 @@ function buildPlayerSug(query) {
     else if (n.startsWith(q))         starts.push([id, name]);
     else if (wordBoundaryMatch(n, q)) wordBound.push([id, name]);
     else if (n.includes(q))           contains.push([id, name]);
-    if (exact.length + starts.length + wordBound.length >= 10 && contains.length >= 4) break;
+    /* Nada de cortar antes de encontrar la coincidencia exacta: escribiendo
+       "Diego" se llenaba el cupo con los "Diego ..." que salen antes en el
+       índice y el propio Diego, que está más abajo, no aparecía nunca. */
+    if (exact.length && starts.length + wordBound.length >= 10 && contains.length >= 4) break;
   }
   const combined = [
     ...exact.map(([id, name]) => ({ id, name })),
@@ -617,7 +620,10 @@ function buildTeamSug(query) {
     else if (n.startsWith(q))         starts.push(team);
     else if (wordBoundaryMatch(n, q)) wordBound.push(team);
     else if (n.includes(q))           contains.push(team);
-    if (exact.length + starts.length + wordBound.length >= 10 && contains.length >= 4) break;
+    /* Nada de cortar antes de encontrar la coincidencia exacta: escribiendo
+       "Diego" se llenaba el cupo con los "Diego ..." que salen antes en el
+       índice y el propio Diego, que está más abajo, no aparecía nunca. */
+    if (exact.length && starts.length + wordBound.length >= 10 && contains.length >= 4) break;
   }
   const combined = [...exact, ...starts, ...wordBound, ...contains].slice(0, 8);
   renderSug(combined.map(t => ({ id: null, name: t.name })), query);

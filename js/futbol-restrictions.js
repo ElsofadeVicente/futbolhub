@@ -545,19 +545,62 @@ window.FR = (function () {
     return out;
   }
 
-  /* Autocompletado: PLAYERS_DB + name-index. */
+  /* Calidad de la coincidencia (0 = mejor). Sin esto el orden lo decidía el
+     orden de los datos: escribiendo "Diego" salían antes todos los "Diego
+     ..." de la base curada y el propio Diego no aparecía nunca, porque los
+     de la base se metían primero y llenaban el hueco. */
+  function _matchScore(n, norm) {                           // n ya viene normalizado
+    if (n === norm) return 0;                               // el nombre exacto
+    if (n.startsWith(norm + ' ')) return 1;                 // primera palabra completa
+    const words = n.split(' ');
+    if (words.some(w => w === norm)) return 2;              // una palabra exacta
+    if (n.startsWith(norm)) return 3;                       // empieza igual
+    if (words.some(w => w.startsWith(norm))) return 4;      // alguna palabra empieza igual
+    return 5;                                               // aparece por dentro
+  }
+
+  /* Autocompletado: PLAYERS_DB + name-index, ordenado por calidad de
+     coincidencia y, a igualdad, dando preferencia a los jugadores de la base
+     curada (los reconocibles) y al nombre más corto. */
   function suggest(input, limit = 8) {
     const norm = normalize(input);
     if (!norm || norm.length < 2) return [];
-    const fromDB = PLAYERS_DB.filter(p =>
-      normalize(p.name).includes(norm) || (p.aliases||[]).some(a => normalize(a).includes(norm))
-    ).map(p => ({ id:p.id, name:p.name, inDB:true }));
-    const dbIds = new Set(fromDB.map(p => String(p.id)));
-    const fromIdx = NAME_INDEX
-      .filter(([id, name]) => !dbIds.has(String(id)) && normalize(name).includes(norm))
-      .slice(0, Math.max(0, limit - fromDB.length))
-      .map(([id, name]) => ({ id:String(id), name, inDB:false }));
-    return [...fromDB, ...fromIdx].slice(0, limit);
+    const PER_BUCKET = 40;
+    const buckets = [[], [], [], [], [], []];
+    const seen = new Set();
+
+    const add = (id, name, inDB, score) => {
+      const key = String(id);
+      if (seen.has(key)) return;
+      seen.add(key);
+      const b = buckets[score];
+      if (b.length < PER_BUCKET) b.push({ id: key, name, inDB });
+    };
+
+    for (const p of PLAYERS_DB) {
+      const n = normalize(p.name);
+      let s = n.includes(norm) ? _matchScore(n, norm) : 99;
+      /* Los alias ("Kun Agüero") también puntúan, pero se muestra el nombre. */
+      for (const a of (p.aliases || [])) {
+        const na = normalize(a);
+        if (na.includes(norm)) s = Math.min(s, _matchScore(na, norm));
+      }
+      if (s <= 5) add(p.id, p.name, true, s);
+    }
+    for (const [id, name] of NAME_INDEX) {
+      if (seen.has(String(id))) continue;
+      const n = normalize(name);
+      if (!n.includes(norm)) continue;
+      add(id, name, false, _matchScore(n, norm));
+    }
+
+    const out = [];
+    for (const b of buckets) {
+      b.sort((a, c) => (a.inDB === c.inDB ? a.name.length - c.name.length : (a.inDB ? -1 : 1)));
+      for (const it of b) { if (out.length < limit) out.push(it); }
+      if (out.length >= limit) break;
+    }
+    return out;
   }
 
   /* ═══════════════════ CARGA ═══════════════════ */

@@ -38,6 +38,13 @@ window._AppReal = (function () {
   const TARGET_MIN = 1, TARGET_MAX = 9;
   const PUBLIC_TARGET = 3;   /* en partidas públicas el objetivo es fijo (rival aleatorio) */
 
+  /* ── Online: tiempos y tolerancias ── */
+  const TURN_MS       = 30000;              /* tiempo por turno */
+  const TURN_GRACE_MS = 5000;               /* margen antes de que el rival fuerce el corte */
+  const AFK_STRIKES   = 3;                  /* turnos agotados seguidos = abandono */
+  const GONE_GRACE_MS = 25000;              /* margen tras caerse el rival */
+  const MM_TTL_MS     = 60 * 60 * 1000;     /* sala pública sin emparejar = basura */
+
   function adjustTarget(which, delta) {
     if (which === 'local') {
       localTarget = Math.max(TARGET_MIN, Math.min(TARGET_MAX, localTarget + delta));
@@ -88,6 +95,23 @@ window._AppReal = (function () {
           .replace(' o menos internacionalidades', '– internac.');
     }
   }
+  /* Prefijo que separa "haber jugado ahí" de "haberlo ganado". Sin él, la
+     cabecera del trofeo de la Libertadores y la de una liga se leían igual
+     ("Copa Libertadores" / "La Liga") y no había forma de saber si pedían
+     jugar o ganar. */
+  function qualifier(r) {
+    if (r.type === 'trophy' || r.type === 'trophy_any') {
+      return r.family === 'trophy_individual' ? 'Ganador' : 'Campeón';
+    }
+    if (r.type === 'league' || r.type === 'league_any' || r.type === 'club') return 'Jugó en';
+    return null;
+  }
+  function hdrTextHtml(r) {
+    const q = qualifier(r);
+    return (q ? `<span class="hdr-kicker">${esc(q)}</span>` : '') +
+           `<span class="hdr-label">${esc(shortLabel(r))}</span>`;
+  }
+
   /* Los entrenadores y compañeros son FOTOS (avatar circular); logos, banderas
      y trofeos van contenidos sin recortar. */
   function hdrMediaHtml(r) {
@@ -166,16 +190,17 @@ window._AppReal = (function () {
   /* ═══════════════ RENDER DEL TABLERO ═══════════════ */
   function renderBoard() {
     const board = $('board');
+    if (!board || !G || !G.grid) return;
     let html = `<div class="cell-corner"><span class="corner-ball">⚽</span></div>`;
     /* cabeceras de columna */
     for (let c = 0; c < 3; c++) {
       const r = G.grid.cols[c];
-      html += `<div class="hdr hdr-col">${hdrMediaHtml(r)}<span class="hdr-label">${esc(shortLabel(r))}</span></div>`;
+      html += `<div class="hdr hdr-col">${hdrMediaHtml(r)}${hdrTextHtml(r)}</div>`;
     }
     /* filas */
     for (let row = 0; row < 3; row++) {
       const rr = G.grid.rows[row];
-      html += `<div class="hdr hdr-row">${hdrMediaHtml(rr)}<span class="hdr-label">${esc(shortLabel(rr))}</span></div>`;
+      html += `<div class="hdr hdr-row">${hdrMediaHtml(rr)}${hdrTextHtml(rr)}</div>`;
       for (let col = 0; col < 3; col++) {
         const i = row * 3 + col;
         const cell = G.board[i];
@@ -239,7 +264,7 @@ window._AppReal = (function () {
     G = {
       grid: res.grid, seed: res.seed, min: res.min,
       board: new Array(9).fill(null),
-      turn: 0,
+      turn: 0, startedBy: 0,
       players: [{ name: p1 || 'Jugador 1' }, { name: p2 || 'Jugador 2' }],
       usedIds: new Set(),
       over: false, matchOver: false, winner: null, roundWinner: null, winLine: null, passes: 0,
@@ -249,16 +274,26 @@ window._AppReal = (function () {
     try { window._ttt = G; } catch (e) {}   /* depuración */
     return true;
   }
+  /* Quién sale en la ronda siguiente: nunca el que acaba de ganarla (empezar
+     es ventaja); si la ronda quedó en tablas, se alterna respecto a quien
+     salió en ella. */
+  function nextStarter(prevStarter, roundWinner) {
+    if (roundWinner === 0 || roundWinner === 1) return 1 - roundWinner;
+    return 1 - (prevStarter || 0);
+  }
+
   /* Siguiente ronda de la serie: nuevo tablero, se conserva el marcador. */
   function nextRound() {
     const res = generateGrid();
     if (!res) { showToast('No se pudo generar el tablero', 'err'); return; }
+    const starter = nextStarter(G.startedBy, G.roundWinner);
     G.grid = res.grid; G.seed = res.seed; G.min = res.min;
-    G.board = new Array(9).fill(null); G.turn = 0; G.usedIds = new Set();
+    G.board = new Array(9).fill(null); G.usedIds = new Set();
+    G.turn = starter; G.startedBy = starter;
     G.over = false; G.winner = null; G.roundWinner = null; G.winLine = null; G.passes = 0;
     G.gameNum = (G.gameNum || 1) + 1;
     renderScore(); renderBoard();
-    showToast('Ronda ' + G.gameNum);
+    showToast(`Ronda ${G.gameNum} · empieza ${G.players[starter].name}`);
   }
 
   function startLocalGame() {
@@ -267,7 +302,7 @@ window._AppReal = (function () {
     const p2 = ($('input-p2-name').value || '').trim() || 'Jugador 2';
     if (!newGame(p1, p2, localTarget)) return;
     showScreen('screen-game');
-    $('turn-timer').classList.add('hidden');
+    stopTurnTimer();
     $('game-hint').textContent = 'Pulsa una casilla y nombra un futbolista que cumpla ambas condiciones.';
     renderScore(); renderBoard();
   }
@@ -291,7 +326,8 @@ window._AppReal = (function () {
     const media = r.imgUrl
       ? `<img src="${esc(r.imgUrl)}" alt="" onerror="this.style.display='none'">`
       : `<span class="pick-emoji">${r.icon || '⚽'}</span>`;
-    return `<span class="pick-chip">${media}<span>${esc(shortLabel(r))}</span></span>`;
+    const q = qualifier(r);
+    return `<span class="pick-chip">${media}<span>${q ? esc(q) + ' ' : ''}${esc(shortLabel(r))}</span></span>`;
   }
   function closePick() {
     $('pick-overlay').classList.add('hidden');
@@ -300,6 +336,7 @@ window._AppReal = (function () {
 
   async function submitAnswer() {
     if (pickIdx < 0 || !G || G.over) return;
+    if (G.mode === 'online' && G.turn !== G.myIdx) { closePick(); showToast('Ya no es tu turno', 'err'); return; }
     const input = $('player-input');
     const name = (input.value || '').trim();
     if (!name) return;
@@ -307,7 +344,17 @@ window._AppReal = (function () {
     btn.disabled = true;
     try {
       const player = await FR.resolvePlayer(name);
-      if (!player) { showToast('No encuentro ese futbolista', 'err'); return; }
+      /* Nombre que no existe = fallo, y el fallo cuesta el turno. Lo único que
+         NO penaliza es repetir un futbolista ya usado (eso es un despiste,
+         no un intento). */
+      if (!player) {
+        closePick();
+        showToast('No encuentro ese futbolista — pierdes el turno', 'err');
+        if (G.mode === 'online') { await Sync.wrongAnswer(); return; }
+        G.passes = 0; G.turn = 1 - G.turn;
+        renderScore(); renderBoard();
+        return;
+      }
       if (G.usedIds.has(String(player.id))) { showToast(`${player.name} ya se ha usado`, 'err'); return; }
 
       const i = pickIdx;
@@ -360,8 +407,11 @@ window._AppReal = (function () {
   function proposeDraw() {
     if (!G || G.over) return;
     if (G.mode === 'online') { Sync.offerDraw(); return; }
-    /* Local: acuerdo inmediato → termina la serie en tablas. */
-    endRound(null, true);
+    /* Local: acuerdo inmediato. Las tablas cierran la RONDA (sin punto para
+       nadie) y se pasa a la siguiente, no terminan la partida. */
+    closePick();
+    showToast('Ronda en tablas');
+    endRound(null);
   }
   function respondDraw(accept) {
     if (G && G.mode === 'online') Sync.respondDraw(accept);
@@ -391,16 +441,9 @@ window._AppReal = (function () {
 
   /* Fin de RONDA (un tres en raya). Suma a la serie y, si se llega al objetivo,
      termina la partida; si no, encadena la siguiente ronda. */
-  function endRound(winnerOwner, forcedDraw) {
+  function endRound(winnerOwner) {
     G.over = true;
     G.roundWinner = (winnerOwner === 0 || winnerOwner === 1) ? winnerOwner : null;
-    if (forcedDraw) {                 /* tablas acordadas → fin de partida */
-      G.matchOver = true; G.forcedDraw = true;
-      renderScore(); renderBoard();
-      clearTimeout(_roundTimer);
-      _roundTimer = setTimeout(() => { if (G) showMatchOver(); }, 650);
-      return;
-    }
     if (G.roundWinner !== null) G.series[G.roundWinner]++;
     renderScore(); renderBoard();
     const matchWon = G.roundWinner !== null && G.series[G.roundWinner] >= G.targetWins;
@@ -420,9 +463,20 @@ window._AppReal = (function () {
     const isDraw = mw === null;
     $('finished-emoji').textContent = isDraw ? '🤝' : '🏆';
     $('finished-title').textContent = isDraw ? '¡EMPATE!' : '¡GANADOR!';
-    $('winner-name').textContent = isDraw
-      ? (G.forcedDraw ? 'Tablas acordadas' : 'Empate')
-      : G.players[mw].name;
+    $('winner-name').textContent = isDraw ? 'Empate' : G.players[mw].name;
+
+    /* Abandono: el marcador puede ir 0-0, así que el cartel lo explica. */
+    if (G.mode === 'online' && G.abandoned) {
+      const rival = G.abandoned === 'rival';
+      $('finished-emoji').textContent = rival ? '🏆' : '🚪';
+      $('finished-title').textContent = rival ? '¡VICTORIA!' : 'PARTIDA TERMINADA';
+      $('winner-name').textContent = rival
+        ? 'El rival abandonó la partida'
+        : 'Te quedaste sin tiempo demasiadas veces';
+    }
+    /* Sin rival al otro lado no hay revancha posible. */
+    const again = $('btn-play-again');
+    if (again) again.classList.toggle('hidden', G.mode === 'online' && (G.abandoned || G.oppGone));
     $('final-scores').innerHTML = G.players.map((p, idx) => {
       const isWinner = !isDraw && mw === idx;
       return `<div class="final-score-item${isWinner ? ' winner-item' : ''}"><span class="final-score-name">${esc(p.name)}</span><span class="final-score-pts">${s[idx]}</span></div>`;
@@ -443,8 +497,16 @@ window._AppReal = (function () {
   }
 
   function showMenu() {
+    /* Volver al menú desde una partida online es SALIR de la sala. Sin esto,
+       el botón "🏠 Menú" del final dejaba tu jugador dentro para siempre: la
+       sala no se borraba nunca y seguías escuchándola de fondo. leave() borra
+       el código y vuelve a llamar aquí, así que no hay recursión. */
+    if (Sync.getCode()) { Sync.leave(); return; }
     G = null; pickIdx = -1;
     clearTimeout(_finishTimer); clearTimeout(_roundTimer);
+    stopTurnTimer();
+    closePick();
+    const again = $('btn-play-again'); if (again) again.classList.remove('hidden');
     showScreen('screen-menu');
   }
 
@@ -456,11 +518,14 @@ window._AppReal = (function () {
     if (q.length < 2) { list.classList.add('hidden'); acItems = []; return; }
     acItems = FR.suggest(q, 8);
     if (!acItems.length) { list.classList.add('hidden'); return; }
-    acIndex = -1;
+    /* El primero viene marcado, como en Coche: escribes y con Enter directo
+       envías la sugerencia de arriba sin tener que bajar con la flecha. */
+    acIndex = 0;
     list.innerHTML = acItems.map((it, idx) =>
       `<div class="autocomplete-item" data-idx="${idx}" onmousedown="event.preventDefault();App.selectAndSubmit(${idx})">${esc(it.name)}</div>`
     ).join('');
     list.classList.remove('hidden');
+    paintAc();
   }
   function selectAndSubmit(idx) {
     const it = acItems[idx]; if (!it) return;
@@ -480,8 +545,11 @@ window._AppReal = (function () {
     } else if (e.key === 'Escape') { closePick(); }
   }
   function paintAc() {
+    /* La clase es 'selected', que es la que estiliza el diseño compartido
+       (igual que Coche y Superdraft). Con 'active' la marca era invisible: ni
+       la preselección ni el movimiento con las flechas se veían. */
     document.querySelectorAll('.autocomplete-item').forEach((el, idx) =>
-      el.classList.toggle('active', idx === acIndex));
+      el.classList.toggle('selected', idx === acIndex));
   }
 
   /* ═══════════════ ONLINE — Firebase Realtime DB ═══════════════ */
@@ -510,12 +578,48 @@ window._AppReal = (function () {
     return n;
   }
 
+  /* ── Cronómetro de turno (solo online) ──
+     El reloj NO se calcula con la marca de tiempo que va en la sala: los
+     relojes de dos dispositivos pueden ir minutos desfasados. Cada cliente
+     cuenta desde que VE cambiar el turno, y el corte se aplica con una
+     transacción atada al token del turno, así que da igual quién lo dispare:
+     solo se aplica la primera vez. */
+  let _turnKey = '', _turnSeenAt = 0, _turnInt = null;
+  function stopTurnTimer() {
+    clearInterval(_turnInt); _turnInt = null;
+    const el = $('turn-timer');
+    if (el) { el.classList.add('hidden'); el.classList.remove('urgent'); }
+  }
+  function startTurnTimer() {
+    const el = $('turn-timer'); if (!el) return;
+    clearInterval(_turnInt);
+    el.classList.remove('hidden');
+    const tick = () => {
+      if (!G || G.mode !== 'online' || G.over) { stopTurnTimer(); return; }
+      const gone = Date.now() - _turnSeenAt;
+      const left = Math.ceil((TURN_MS - gone) / 1000);
+      el.textContent = Math.max(0, left);
+      el.classList.toggle('urgent', left <= 10);
+      /* Al que le toca corta su propio turno; el rival espera un margen, así
+         las dos transacciones no se pisan (aunque sería inofensivo). */
+      const limit = TURN_MS + (G.turn === G.myIdx ? 0 : TURN_GRACE_MS);
+      if (gone >= limit) { clearInterval(_turnInt); _turnInt = null; Sync.timeout(); }
+    };
+    tick();
+    _turnInt = setInterval(tick, 250);
+  }
+
   const Sync = (() => {
     const FB = () => window._FB;
     const ROOMS = 'tres-en-raya/rooms';
     const MM    = 'tres-en-raya/matchmaking';
     let code = null, myPid = null, myIdx = 0, unsub = null, room = null;
-    let _nextRoundScheduled = false;   /* debounce del arranque de ronda (host) */
+    let isPublicRoom = false;
+    let _nextRoundScheduled = false;   /* debounce del arranque de ronda */
+    let _startBusy   = false;          /* debounce del arranque de partida */
+    let _armedFor    = null;           /* estado para el que está armado onDisconnect */
+    let _goneTimer   = null;           /* margen antes de dar la partida por abandono */
+    let _abandonBusy = false;
 
     function _ref(path) { const { db, ref } = FB(); return ref(db, path); }
     function _genCode() {
@@ -523,15 +627,48 @@ window._AppReal = (function () {
       return Array.from({ length: 6 }, () => ch[Math.floor(Math.random() * ch.length)]).join('');
     }
     function _genId() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+    function _stamp() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
     function available() { return !!(FB() && FB().configured); }
 
-    function _armDisconnect() {
+    /* Jugadores realmente presentes, ordenados por idx. */
+    function _liveEntries(r) {
+      const ps = ((r || room) || {}).players || {};
+      return Object.entries(ps)
+        .filter(([, p]) => p && p.connected !== false)
+        .sort((a, b) => (a[1].idx || 0) - (b[1].idx || 0));
+    }
+    /* Quién manda (arrancar partida, encadenar ronda, revancha): el jugador
+       conectado con el idx más bajo. Antes era siempre "el idx 0"; si ese se
+       caía, nadie arrancaba nada y la sala se quedaba colgada en
+       "Empezando…" para siempre. */
+    function _amDirector() {
+      const live = _liveEntries();
+      return !!live.length && live[0][0] === myPid;
+    }
+
+    /* onDisconnect es un hook de SERVIDOR: se registra una vez y lo ejecuta
+       Firebase cuando el socket se cae. En el lobby hay que BORRAR el jugador
+       (si no, quien cierra la pestaña deja un fantasma que ocupa sitio y, si
+       era el anfitrión, nadie vuelve a arrancar la partida). En partida solo
+       se marca connected:false, para poder volver tras un corte. */
+    async function _armDisconnect(status) {
+      if (!window._FBOnDisconnect || !code || !myPid) return;
+      const key = (status === 'waiting') ? 'waiting' : 'playing';
+      if (_armedFor === key) return;
+      _armedFor = key;
       try {
-        if (!window._FBOnDisconnect) return;
         const { db, ref } = FB();
-        const path = `${ROOMS}/${code}/players/${myPid}`;
-        window._FBOnDisconnect(ref(db, path)).update({ connected: false }).catch(() => {});
-      } catch (e) {}
+        const pRef  = ref(db, `${ROOMS}/${code}/players/${myPid}`);
+        const mmRef = ref(db, `${MM}/${code}`);
+        await window._FBOnDisconnect(pRef).cancel().catch(() => {});
+        if (key === 'waiting') {
+          window._FBOnDisconnect(pRef).remove().catch(() => {});
+          /* Si se cae el anfitrión, la sala deja de anunciarse. */
+          if (myIdx === 0) window._FBOnDisconnect(mmRef).remove().catch(() => {});
+        } else {
+          window._FBOnDisconnect(pRef).update({ connected: false }).catch(() => {});
+        }
+      } catch (e) { _armedFor = null; }
     }
 
     function _connErr(e) {
@@ -539,11 +676,17 @@ window._AppReal = (function () {
       showToast('No se pudo conectar al servidor', 'err');
       code = null; myPid = null;
     }
+    function _resetSession() {
+      isPublicRoom = false; _armedFor = null; _startBusy = false;
+      _nextRoundScheduled = false; _abandonBusy = false;
+      _turnKey = ''; clearTimeout(_goneTimer);
+    }
 
     async function create(name, isPublic, targetWins) {
       if (!available()) { showToast('Sin conexión al servidor', 'err'); return; }
       const { set } = FB();
       code = _genCode(); myPid = _genId(); myIdx = 0;
+      _resetSession(); isPublicRoom = !!isPublic;
       try {
         await set(_ref(`${ROOMS}/${code}`), {
           status: 'waiting', isPublic: !!isPublic, createdAt: Date.now(),
@@ -551,33 +694,92 @@ window._AppReal = (function () {
           seed: 0, min: 0, turn: 0, board: {}, usedIds: {}, passes: 0,
           series: {}, roundOver: null, gameNum: 1,
           winnerIdx: null, winLine: null, drawOffer: null, rematch: {},
+          abandonedBy: null, afk: null,
           players: { [myPid]: { name: name || 'Jugador 1', idx: 0, connected: true, isHost: true } },
         });
         if (isPublic) await set(_ref(`${MM}/${code}`), { status: 'waiting', createdAt: Date.now() });
       } catch (e) { _connErr(e); return; }
-      _armDisconnect();
+      _armDisconnect('waiting');
       _listen();
-      enterLobby();
+      enterWait();
     }
 
-    async function join(joinCode, name) {
-      if (!available()) { showToast('Sin conexión al servidor', 'err'); return; }
-      const { get, update } = FB();
-      let snap;
-      try { snap = await get(_ref(`${ROOMS}/${joinCode}`)); } catch (e) { _connErr(e); return; }
-      if (!snap.exists()) { showToast('Sala no encontrada', 'err'); return; }
-      const r = snap.val();
-      if (r.status !== 'waiting') { showToast('La partida ya ha empezado', 'err'); return; }
-      const count = Object.keys(r.players || {}).length;
-      if (count >= 2) { showToast('La sala está llena', 'err'); return; }
-      code = joinCode; myPid = _genId(); myIdx = 1;
-      try {
-        await update(_ref(`${ROOMS}/${code}/players/${myPid}`), { name: name || 'Jugador 2', idx: 1, connected: true, isHost: false });
-        await FB().remove(_ref(`${MM}/${code}`)).catch(() => {});
-      } catch (e) { _connErr(e); return; }
-      _armDisconnect();
+    /* Reserva sitio con una transacción. Sin esto, dos personas entrando a la
+       vez en la misma sala se quedaban las dos con idx 1 (el lector de la
+       comprobación "¿está llena?" y el escritor eran pasos separados), y una
+       sala podía acabar con tres dentro. De paso barre a los desconectados
+       que quedaron ocupando hueco. */
+    /* Firebase llama al callback de una transacción con null cuando no hay una
+       escucha VIVA en ese nodo (un get() previo no calienta esa caché), y al
+       abortar no lo reintenta. Sin esto, entrar en una sala fallaba siempre.
+       Durante la partida no se nota porque _listen() ya mantiene la escucha. */
+    async function _withRoomListener(path, fn) {
+      const { onValue } = FB();
+      let off = null, settled = false;
+      await new Promise((resolve) => {
+        const done = () => { if (!settled) { settled = true; resolve(); } };
+        off = onValue(_ref(path), done, done);
+      });
+      try { return await fn(); }
+      finally { try { if (off) off(); } catch (e) {} }
+    }
+
+    async function _claimSeat(joinCode, name) {
+      const { runTransaction } = FB();
+      const pid = _genId();
+      const path = `${ROOMS}/${joinCode}`;
+      return _withRoomListener(path, async () => {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          let reason = null, res = null;
+          try {
+            res = await runTransaction(_ref(path), (r) => {
+              if (!r) { reason = 'cold'; return; }
+              if (r.status !== 'waiting') { reason = 'started'; return; }
+              const ps = r.players || {};
+              for (const id in ps) { if (!ps[id] || ps[id].connected === false) delete ps[id]; }
+              const live = Object.values(ps);
+              if (live.length >= 2) { reason = 'full'; return; }
+              const idx = live.some(p => p.idx === 0) ? 1 : 0;
+              ps[pid] = {
+                name: name || (idx === 0 ? 'Jugador 1' : 'Jugador 2'),
+                idx, connected: true, isHost: idx === 0,
+              };
+              r.players = ps;
+              return r;
+            });
+          } catch (e) { return { error: 'conn' }; }
+          const val = res && res.snapshot && res.snapshot.val();
+          const me  = val && val.players && val.players[pid];
+          if (me) return { pid, idx: me.idx, room: val };
+          if (reason === 'cold' && attempt < 2) { await new Promise(r => setTimeout(r, 120)); continue; }
+          return { error: reason === 'cold' ? 'missing' : (reason || (val ? 'full' : 'missing')) };
+        }
+        return { error: 'missing' };
+      });
+    }
+
+    async function join(joinCode, name, opts) {
+      if (!available()) { showToast('Sin conexión al servidor', 'err'); return false; }
+      const seat = await _claimSeat(joinCode, name);
+      if (seat.error) {
+        if (!(opts && opts.quiet)) {
+          showToast({
+            started: 'La partida ya ha empezado',
+            full:    'La sala está llena',
+            missing: 'Sala no encontrada',
+            conn:    'No se pudo conectar al servidor',
+          }[seat.error] || 'No se pudo entrar en la sala', 'err');
+        }
+        return false;
+      }
+      code = joinCode; myPid = seat.pid; myIdx = seat.idx;
+      _resetSession();
+      isPublicRoom = !!(seat.room && seat.room.isPublic);
+      await FB().remove(_ref(`${MM}/${code}`)).catch(() => {});
+      _armDisconnect('waiting');
       _listen();
-      enterLobby();
+      enterWait();
+      return true;
     }
 
     async function findPublic(name) {
@@ -585,18 +787,36 @@ window._AppReal = (function () {
       const { get } = FB();
       let snap;
       try { snap = await get(_ref(MM)); } catch (e) { _connErr(e); return; }
-      if (snap.exists()) {
-        const codes = Object.keys(snap.val());
-        for (const c of codes) {
-          const rs = await get(_ref(`${ROOMS}/${c}`));
-          if (rs.exists() && rs.val().status === 'waiting' && Object.keys(rs.val().players || {}).length === 1) {
-            await join(c, name); return;
-          }
-          await FB().remove(_ref(`${MM}/${c}`)).catch(() => {});
+      const index = (snap && snap.exists()) ? (snap.val() || {}) : {};
+      const now = Date.now();
+      const entries = Object.entries(index).filter(([, v]) => v && v.status === 'waiting');
+
+      /* Barrido oportunista: el que pasa por aquí limpia lo que encuentra. Sin
+         esto el índice solo crece y cada jugador nuevo prueba una a una todas
+         las salas muertas antes de emparejar. */
+      entries.filter(([, v]) => now - (v.createdAt || 0) > MM_TTL_MS).forEach(([c]) => {
+        FB().remove(_ref(`${MM}/${c}`)).catch(() => {});
+        FB().remove(_ref(`${ROOMS}/${c}`)).catch(() => {});
+      });
+
+      const fresh = entries
+        .filter(([, v]) => now - (v.createdAt || 0) <= MM_TTL_MS)
+        .sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0));   /* la que lleva más esperando, primero */
+
+      for (const [c] of fresh) {
+        let rs = null;
+        try { rs = await get(_ref(`${ROOMS}/${c}`)); } catch (e) { continue; }
+        const r = rs && rs.exists() ? rs.val() : null;
+        const live = r ? Object.values(r.players || {}).filter(p => p && p.connected !== false) : [];
+        /* Sala fantasma: sigue anunciada pero dentro no queda nadie vivo. */
+        if (!r || r.status !== 'waiting' || live.length !== 1) {
+          FB().remove(_ref(`${MM}/${c}`)).catch(() => {});
+          if (r && !live.length) FB().remove(_ref(`${ROOMS}/${c}`)).catch(() => {});
+          continue;
         }
+        if (await join(c, name, { quiet: true })) return;
       }
       await create(name, true, PUBLIC_TARGET);
-      showToast('Esperando a un rival…');
     }
 
     function _listen() {
@@ -609,20 +829,30 @@ window._AppReal = (function () {
       });
     }
 
-    /* Host arranca la partida cuando entran los 2 jugadores */
+    /* Arranca la partida cuando hay 2 jugadores presentes. */
     async function _maybeStart() {
-      if (myIdx !== 0) return;                 /* solo el host */
-      if (room.status !== 'waiting') return;
-      if (Object.keys(room.players || {}).length < 2) return;
+      if (_startBusy || !room || room.status !== 'waiting') return;
+      if (_liveEntries().length < 2 || !_amDirector()) return;
+      _startBusy = true;
       const res = generateGrid();
-      if (!res) return;
-      await FB().update(_ref(`${ROOMS}/${code}`), {
-        status: 'playing', seed: res.seed, min: res.min, turn: 0,
-        board: {}, usedIds: {}, passes: 0, series: {}, roundOver: null, gameNum: 1,
-        winnerIdx: null, matchWinnerIdx: null, winLine: null,
-        drawOffer: null, drawAgreed: null, rematch: {}, turnStartAt: Date.now(),
-      });
-      await FB().remove(_ref(`${MM}/${code}`)).catch(() => {});
+      /* Antes, si el generador fallaba se hacía "return" a secas: la sala se
+         quedaba en "Empezando…" para siempre, sin aviso ni reintento. */
+      if (!res) {
+        showToast('Generando tablero…');
+        setTimeout(() => { _startBusy = false; _maybeStart(); }, 900);
+        return;
+      }
+      try {
+        await FB().update(_ref(`${ROOMS}/${code}`), {
+          status: 'playing', seed: res.seed, min: res.min, turn: 0, startedBy: 0,
+          board: {}, usedIds: {}, passes: 0, series: {}, roundOver: null, gameNum: 1,
+          winnerIdx: null, matchWinnerIdx: null, winLine: null,
+          abandonedBy: null, afk: null,
+          drawOffer: null, rematch: {}, turnStartAt: _stamp(),
+        });
+        await FB().remove(_ref(`${MM}/${code}`)).catch(() => {});
+      } catch (e) { console.error('[Sync] start', e); }
+      _startBusy = false;
     }
 
     /* Aplica el fin de una RONDA dentro de la transacción: suma a la serie y
@@ -640,28 +870,77 @@ window._AppReal = (function () {
       }
     }
 
-    /* El host arranca la siguiente ronda tras una pausa (deja ver la línea). */
+    /* El director arranca la siguiente ronda tras una pausa (deja ver la línea). */
     function _maybeNextRound() {
-      if (myIdx !== 0 || _nextRoundScheduled) return;
+      if (_nextRoundScheduled || !_amDirector()) return;
       if (!room || room.status !== 'playing' || !room.roundOver) return;
       _nextRoundScheduled = true;
       const res = generateGrid();
       const delay = room.roundOver.line ? 1600 : 1000;
       setTimeout(async () => {
         _nextRoundScheduled = false;
-        if (!room || room.status !== 'playing' || !room.roundOver || !res) return;
+        if (!room || room.status !== 'playing' || !room.roundOver) return;
+        if (!res) { _maybeNextRound(); return; }   /* reintenta con otra semilla */
+        const w = room.roundOver.w;
+        const starter = nextStarter(room.startedBy, (w === 0 || w === 1) ? w : null);
         try {
           await FB().update(_ref(`${ROOMS}/${code}`), {
-            seed: res.seed, min: res.min, turn: 0, board: {}, usedIds: {},
+            seed: res.seed, min: res.min, turn: starter, startedBy: starter,
+            board: {}, usedIds: {}, afk: null,
             passes: 0, roundOver: null, winLine: null,
-            gameNum: (room.gameNum || 1) + 1, turnStartAt: Date.now(),
+            gameNum: (room.gameNum || 1) + 1, turnStartAt: _stamp(),
           });
         } catch (e) {}
       }, delay);
     }
 
+    /* El rival se fue: si borró su nodo (salió por el botón) se resuelve ya;
+       si solo perdió la conexión se le da un margen por si vuelve. Sin esto,
+       quien cerraba la pestaña dejaba al otro esperando un turno eterno. */
+    function _watchOpponent() {
+      clearTimeout(_goneTimer);
+      if (!room || room.status !== 'playing') return;
+      const others = Object.entries(room.players || {}).filter(([pid]) => pid !== myPid);
+      if (others.some(([, p]) => p && p.connected !== false)) return;
+      if (!others.length) { _declareAbandon(); return; }
+      _goneTimer = setTimeout(_declareAbandon, GONE_GRACE_MS);
+    }
+    async function _declareAbandon() {
+      if (_abandonBusy) return;
+      _abandonBusy = true;
+      try {
+        await _tx((r) => {
+          const others = Object.entries(r.players || {})
+            .filter(([pid, p]) => pid !== myPid && p && p.connected !== false);
+          if (others.length) return r;                  /* volvió justo a tiempo */
+          r.status = 'finished'; r.matchWinnerIdx = myIdx; r.abandonedBy = 1 - myIdx;
+          r.roundOver = null; r.winLine = null; r.drawOffer = null;
+          return r;
+        });
+      } catch (e) {}
+      _abandonBusy = false;
+    }
+
     function onRoom() {
-      if (room.status === 'waiting') { _maybeStart(); renderLobby(); return; }
+      const mine = (room.players || {})[myPid];
+      if (!mine && room.status === 'waiting') {
+        /* Nos barrieron de la sala (fantasma limpiado, sala reiniciada…). */
+        showToast('Te has salido de la sala'); leave(); return;
+      }
+      if (mine) {
+        /* Volver de segundo plano (móvil): Firebase reconecta solo, pero el
+           onDisconnect ya saltó y nadie vuelve a poner connected:true — el
+           rival te daría por ido y perderías la partida sentado delante. */
+        if (mine.connected === false) {
+          _armedFor = null;
+          FB().update(_ref(`${ROOMS}/${code}/players/${myPid}`), { connected: true }).catch(() => {});
+        }
+        if (mine.idx !== myIdx) myIdx = mine.idx;
+        _armDisconnect(room.status);
+      }
+      _watchOpponent();
+
+      if (room.status === 'waiting') { stopTurnTimer(); _maybeStart(); renderWait(); return; }
       /* Proyectar sala → estado local G */
       const players = room.players || {};
       const nameByIdx = ['Jugador 1', 'Jugador 2'];
@@ -670,6 +949,14 @@ window._AppReal = (function () {
       const bo = room.board || {};
       for (const k in bo) boardArr[+k] = bo[k];
       const grid = rebuildGrid(room.seed, room.min);
+      if (!grid) {
+        /* Los dos clientes reconstruyen la rejilla desde la semilla; si uno
+           tiene datos distintos (caché vieja) saldría null y el render
+           reventaba dejando la pantalla en blanco. */
+        stopTurnTimer();
+        showToast('No se pudo cargar el tablero. Recarga la página.', 'err');
+        return;
+      }
       const series = [ (room.series && room.series[0]) || 0, (room.series && room.series[1]) || 0 ];
       const finished = room.status === 'finished';
       const roundOver = room.roundOver || null;
@@ -688,11 +975,14 @@ window._AppReal = (function () {
         winLine: (finished ? room.winLine : (roundOver && roundOver.line)) || null,
         passes: room.passes || 0,
         series, targetWins: room.targetWins || 3, gameNum: room.gameNum || 1,
-        forcedDraw: !!room.drawAgreed,
+        abandoned: room.abandonedBy === (1 - myIdx) ? 'rival'
+                 : room.abandonedBy === myIdx       ? 'yo' : null,
+        oppGone: _liveEntries().length < 2,
       };
       try { window._ttt = G; } catch (e) {}
 
       if (finished) {
+        stopTurnTimer();
         if (!$('screen-finished').classList.contains('active')) { showScreen('screen-game'); renderScore(); renderBoard(); }
         _handleRematch();
         /* Retardo cancelable: deja ver la línea ganadora antes del cartel de fin. */
@@ -703,21 +993,39 @@ window._AppReal = (function () {
       /* status playing (ronda en curso o ronda recién terminada) */
       clearTimeout(_finishTimer);
       if (!$('screen-game').classList.contains('active')) showScreen('screen-game');
-      $('turn-timer').classList.add('hidden');
       renderScore(); renderBoard();
       _renderDrawOffer();
 
       if (roundOver) {
-        /* Fin de ronda: se muestra la línea y quién ganó; el host encadena. */
+        /* Fin de ronda: se muestra la línea y quién ganó; el director encadena. */
+        stopTurnTimer();
         $('game-hint').textContent = (roundWinner === 0 || roundWinner === 1)
           ? `${G.players[roundWinner].name} gana la ronda`
           : 'Ronda en tablas';
         _maybeNextRound();
         return;
       }
-      $('game-hint').textContent = (G.turn === myIdx)
-        ? 'Tu turno: pulsa una casilla y nombra un futbolista.'
-        : `Turno de ${G.players[G.turn].name}…`;
+      /* Reloj del turno: se reinicia solo cuando cambia de verdad (misma ronda,
+         mismo turno y mismo token = la misma cuenta atrás sigue corriendo, no
+         se reinicia porque llegue otra actualización de la sala). */
+      const key = `${room.gameNum || 1}|${room.turn}|${room.turnStartAt || ''}`;
+      if (key !== _turnKey) { _turnKey = key; _turnSeenAt = Date.now(); }
+      startTurnTimer();
+
+      /* Si el turno ha pasado al rival con la ventana de respuesta abierta
+         (se agotó el tiempo mientras escribías), hay que cerrarla: si no, al
+         enviar la jugada la transacción la descarta en silencio y el juego te
+         dice "✓ correcto" sin haber puesto nada en el tablero. */
+      if (pickIdx >= 0 && (G.turn !== myIdx || G.board[pickIdx])) {
+        closePick();
+        showToast('Ya no es tu turno', 'err');
+      }
+
+      $('game-hint').textContent = G.oppGone
+        ? 'El rival ha perdido la conexión…'
+        : (G.turn === myIdx)
+          ? 'Tu turno: pulsa una casilla y nombra un futbolista.'
+          : `Turno de ${G.players[G.turn].name}…`;
     }
 
     function _renderDrawOffer() {
@@ -730,17 +1038,21 @@ window._AppReal = (function () {
 
     async function _handleRematch() {
       const rm = room.rematch || {};
-      const both = Object.keys(room.players || {}).every(pid => rm[pid]);
-      if (both && myIdx === 0) {
-        const res = generateGrid();
-        if (!res) return;
-        await FB().update(_ref(`${ROOMS}/${code}`), {
-          status: 'playing', seed: res.seed, min: res.min, turn: 0,
-          board: {}, usedIds: {}, passes: 0, series: {}, roundOver: null, gameNum: 1,
-          winnerIdx: null, matchWinnerIdx: null, winLine: null,
-          drawOffer: null, drawAgreed: null, rematch: {}, turnStartAt: Date.now(),
-        });
-      }
+      const live = _liveEntries();
+      /* Antes bastaba con que "todos" hubieran pedido revancha; si el rival ya
+         se había ido, "todos" era una sola persona y la partida se reiniciaba
+         sola contra nadie. */
+      if (live.length < 2 || !_amDirector()) return;
+      if (!live.every(([pid]) => rm[pid])) return;
+      const res = generateGrid();
+      if (!res) return;
+      await FB().update(_ref(`${ROOMS}/${code}`), {
+        status: 'playing', seed: res.seed, min: res.min, turn: 0, startedBy: 0,
+        board: {}, usedIds: {}, passes: 0, series: {}, roundOver: null, gameNum: 1,
+        winnerIdx: null, matchWinnerIdx: null, winLine: null,
+        abandonedBy: null, afk: null,
+        drawOffer: null, rematch: {}, turnStartAt: _stamp(),
+      });
     }
 
     function _tx(fn) {
@@ -760,39 +1072,75 @@ window._AppReal = (function () {
         if (r.usedIds[cellData.id]) return r;
         r.board[i] = cellData;
         r.usedIds[cellData.id] = true;
-        r.passes = 0; r.drawOffer = null;
+        r.passes = 0; r.drawOffer = null; r.afk = null;
         const line = winningLineObj(r.board);
         if (line) _endRoundTx(r, myIdx, line);
         else if (countFilledObj(r.board) >= 9) _endRoundTx(r, decideByCellsObj(r.board), null);
         else r.turn = 1 - myIdx;
-        r.turnStartAt = Date.now();
+        r.turnStartAt = _stamp();
         return r;
       });
     }
     async function wrongAnswer() {
       await _tx((r) => {
         if (r.turn !== myIdx) return r;
-        r.passes = 0; r.drawOffer = null; r.turn = 1 - myIdx; r.turnStartAt = Date.now();
+        r.passes = 0; r.drawOffer = null; r.afk = null;
+        r.turn = 1 - myIdx; r.turnStartAt = _stamp();
         return r;
       });
     }
     async function skip() {
       await _tx((r) => {
         if (r.turn !== myIdx) return r;
-        r.passes = (r.passes || 0) + 1;
+        r.passes = (r.passes || 0) + 1; r.afk = null;
         if (r.passes >= 2) _endRoundTx(r, decideByCellsObj(r.board || {}), null);
-        else { r.turn = 1 - myIdx; r.turnStartAt = Date.now(); }
+        else r.turn = 1 - myIdx;
+        r.turnStartAt = _stamp();
         return r;
       });
+    }
+
+    /* Se agotó el turno. Lo dispara cualquiera de los dos (el rival con un
+       margen), pero va atada al token del turno: solo se aplica una vez.
+       Tres turnos agotados seguidos por la misma persona = abandono, y así el
+       que sigue delante no se queda enganchado a un AFK ronda tras ronda. */
+    async function timeout() {
+      if (!room || room.status !== 'playing' || room.roundOver) return;
+      const token = room.turnStartAt;
+      await _tx((r) => {
+        if (r.turnStartAt !== token || r.roundOver) return r;
+        const slow = r.turn;
+        const n = (r.afk && r.afk.i === slow) ? (r.afk.n || 0) + 1 : 1;
+        r.afk = { i: slow, n };
+        r.drawOffer = null;
+        if (n >= AFK_STRIKES) {
+          r.status = 'finished'; r.matchWinnerIdx = 1 - slow; r.abandonedBy = slow;
+          r.roundOver = null; r.winLine = null;
+          return r;
+        }
+        r.passes = (r.passes || 0) + 1;
+        if (r.passes >= 2) _endRoundTx(r, decideByCellsObj(r.board || {}), null);
+        else r.turn = 1 - slow;
+        r.turnStartAt = _stamp();
+        return r;
+      });
+      if (G && G.turn === myIdx) showToast('Se te acabó el tiempo', 'err');
     }
     async function offerDraw() {
       if (!room || room.status !== 'playing') return;
       await FB().update(_ref(`${ROOMS}/${code}`), { drawOffer: myPid });
       showToast('Propuesta de tablas enviada');
     }
+    /* Aceptar tablas cierra la RONDA sin punto para nadie y encadena la
+       siguiente; no termina la partida. */
     async function respondDraw(accept) {
       if (accept) {
-        await _tx((r) => { r.status = 'finished'; r.matchWinnerIdx = null; r.winLine = null; r.roundOver = null; r.drawAgreed = true; r.drawOffer = null; return r; });
+        await _tx((r) => {
+          r.drawOffer = null; r.afk = null;
+          _endRoundTx(r, null, null);
+          return r;
+        });
+        showToast('Ronda en tablas');
       } else {
         await FB().update(_ref(`${ROOMS}/${code}`), { drawOffer: null });
       }
@@ -804,41 +1152,75 @@ window._AppReal = (function () {
     }
 
     async function leave() {
+      const c = code, pid = myPid;
+      stopTurnTimer();
+      try { if (unsub) unsub(); } catch (e) {}
+      unsub = null; code = null; myPid = null; room = null;
+      _resetSession();
+      showMenu();
+      if (!c || !pid) return;
       try {
-        if (unsub) unsub();
-        if (code && myPid) {
-          await FB().remove(_ref(`${ROOMS}/${code}/players/${myPid}`)).catch(() => {});
-          await FB().remove(_ref(`${MM}/${code}`)).catch(() => {});
+        const { get, remove, set } = FB();
+        await remove(_ref(`${ROOMS}/${c}/players/${pid}`)).catch(() => {});
+        const snap = await get(_ref(`${ROOMS}/${c}`));
+        const r = snap && snap.exists() ? snap.val() : null;
+        const rest = r ? Object.values(r.players || {}).filter(p => p && p.connected !== false) : [];
+        if (!r || !rest.length) {
+          /* Último en salir: apaga la luz. Antes las salas vacías se quedaban
+             en la base de datos para siempre. */
+          await remove(_ref(`${ROOMS}/${c}`)).catch(() => {});
+          await remove(_ref(`${MM}/${c}`)).catch(() => {});
+        } else if (r.isPublic && r.status === 'waiting') {
+          /* Queda alguien esperando: que se le pueda seguir encontrando. */
+          await set(_ref(`${MM}/${c}`), { status: 'waiting', createdAt: Date.now() }).catch(() => {});
+        } else {
+          await remove(_ref(`${MM}/${c}`)).catch(() => {});
         }
       } catch (e) {}
-      code = null; myPid = null; room = null; unsub = null;
-      showMenu();
     }
 
-    function enterLobby() {
+    /* Las partidas públicas son 1vs1 y no hay nada que configurar: no pasan por
+       el lobby, solo una pantalla de espera; en cuanto entra el segundo, la
+       partida arranca sola. */
+    function enterWait() {
+      if (isPublicRoom) { showScreen('screen-searching'); renderWait(); return; }
       showScreen('screen-lobby');
       $('lobby-code-display').textContent = code;
-      renderLobby();
+      renderWait();
     }
-    function renderLobby() {
+    function renderWait() {
       if (!room) return;
-      const ps = Object.values(room.players || {}).sort((a, b) => a.idx - b.idx);
+      const ps = _liveEntries().map(([, p]) => p);
+      if (isPublicRoom) {
+        const t = $('searching-title'), h = $('searching-hint');
+        if (t) t.textContent = ps.length < 2 ? 'Buscando rival…' : '¡Rival encontrado!';
+        if (h) h.textContent = ps.length < 2
+          ? 'Te emparejamos con la primera persona que entre.'
+          : 'Empezando la partida…';
+        return;
+      }
       $('lobby-players').innerHTML = ps.map(p => {
         const initial = ((p.name || '?').trim().charAt(0) || '?').toUpperCase();
         return `<div class="lobby-player-row">
           <div class="lobby-player-avatar">${esc(initial)}</div>
           <span class="lobby-player-name">${esc(p.name)}</span>
-          ${p.isHost ? '<span class="lobby-player-host">Host</span>' : ''}
+          ${p.idx === 0 ? '<span class="lobby-player-host">Host</span>' : ''}
         </div>`;
       }).join('');
+      const kicker = $('lobby-count');
+      if (kicker) kicker.textContent = `Jugadores (${ps.length}/2)`;
       const t = room.targetWins || 3;
       const lt = $('lobby-target');
       if (lt) lt.textContent = `A ${t} victoria${t > 1 ? 's' : ''} para ganar`;
       $('lobby-hint').textContent = ps.length < 2 ? 'Esperando rival…' : 'Empezando…';
     }
     function getCode() { return code; }
+    function opponentGone() { return _liveEntries().length < 2; }
 
-    return { available, create, join, findPublic, move, wrongAnswer, skip, offerDraw, respondDraw, rematch, leave, getCode };
+    return {
+      available, create, join, findPublic, move, wrongAnswer, skip, timeout,
+      offerDraw, respondDraw, rematch, leave, getCode, opponentGone,
+    };
   })();
 
   function createRoom() {

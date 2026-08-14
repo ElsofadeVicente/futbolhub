@@ -576,7 +576,8 @@
    ══════════════════════════════════════════════ */
 :root[data-theme="v2"] .menu-error,
 :root[data-theme="v2"] .error-msg,
-:root[data-theme="v2"] .round-timer.urgent { color: var(--np-error); }
+:root[data-theme="v2"] .round-timer.urgent,
+:root[data-theme="v2"] .turn-timer.urgent { color: var(--np-error); }
 :root[data-theme="v2"] .toast.error { background: var(--np-error); color: #2a0704; }
 :root[data-theme="v2"] .round-timer-bar.urgent { background: var(--np-error); }
 

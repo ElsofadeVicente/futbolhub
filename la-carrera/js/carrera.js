@@ -744,7 +744,10 @@ async function buildSug(query) {
     else if (n.startsWith(q)) starts.push([sid, name]);
     else if (wordBoundaryMatch(n, q)) word.push([sid, name]);
     else if (n.includes(q)) contains.push([sid, name]);
-    if (exact.length + starts.length + word.length >= 12 && contains.length >= 6) break;
+    /* Nada de cortar antes de encontrar la coincidencia exacta: escribiendo
+       "Diego" se llenaba el cupo con los "Diego ..." que salen antes en el
+       índice y el propio Diego, que está más abajo, no aparecía nunca. */
+    if (exact.length && starts.length + word.length >= 12 && contains.length >= 6) break;
   }
   const tagged = [
     ...exact.map(([id, name])    => ({ id, name, cat: 0 })),

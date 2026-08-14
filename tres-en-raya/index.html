@@ -27,8 +27,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Blackjack) -->
-  <link rel="stylesheet" href="../coche/css/style.css?v=20260809a">
-  <link rel="stylesheet" href="css/style.css?v=20260809a">
+  <link rel="stylesheet" href="../coche/css/style.css?v=20260814a">
+  <link rel="stylesheet" href="css/style.css?v=20260814a">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
   <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
@@ -37,7 +37,7 @@
   <!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
        :root[data-theme="v2"]: sin ese atributo no pinta nada.
        Va la ultima para poder ganar a igual especificidad. -->
-  <link rel="stylesheet" href="../css/theme-v2-app.css?v=20260809a">
+  <link rel="stylesheet" href="../css/theme-v2-app.css?v=20260814a">
   <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -199,7 +199,7 @@
       <button id="btn-copy-link" onclick="App.copyLink()">🔗 Copiar enlace de invitación</button>
     </div>
     <div class="lobby-section">
-      <p class="lobby-section-kicker">Jugadores (2)</p>
+      <p class="lobby-section-kicker" id="lobby-count">Jugadores (1/2)</p>
       <div class="lobby-players-list" id="lobby-players"></div>
     </div>
     <p id="lobby-target" class="lobby-hint"></p>
@@ -207,9 +207,23 @@
   </div>
 </div>
 
+<!-- ═══════════ PANTALLA 2b: BUSCANDO RIVAL (público) ═══════════
+     Las partidas públicas son 1vs1 y no tienen nada que configurar, así que
+     no pasan por el lobby: en cuanto hay dos, empieza. -->
+<div id="screen-searching" class="screen">
+  <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
+  <div class="lobby-wrap searching-wrap">
+    <div class="loading-spinner"></div>
+    <p class="searching-title" id="searching-title">Buscando rival…</p>
+    <p class="lobby-hint" id="searching-hint">Te emparejamos con la primera persona que entre.</p>
+    <button class="btn-secondary" onclick="App.leaveRoom()">CANCELAR</button>
+  </div>
+</div>
+
 <!-- ═══════════ PANTALLA 3: PARTIDA ═══════════ -->
 <div id="screen-game" class="screen">
   <div class="game-topbar">
+    <div class="turn-timer hidden" id="turn-timer">30</div>
     <div class="scorebox" id="score-p1">
       <span class="score-mark mark-p1">✕</span>
       <span class="score-name" id="name-p1">P1</span>
@@ -227,12 +241,11 @@
 
   <div class="game-actions">
     <button class="mini-btn" id="btn-skip" onclick="App.skipTurn()">SALTAR TURNO</button>
-    <div class="turn-timer hidden" id="turn-timer">45</div>
-    <button class="mini-btn mini-btn--draw" id="btn-draw" onclick="App.proposeDraw()">TERMINAR EN TABLAS</button>
+    <button class="mini-btn mini-btn--draw" id="btn-draw" onclick="App.proposeDraw()">RONDA EN TABLAS</button>
   </div>
 
   <div id="draw-offer" class="draw-offer hidden">
-    <span id="draw-offer-text">Tu rival propone terminar en tablas (0–0)</span>
+    <span id="draw-offer-text">Tu rival propone dejar la ronda en tablas</span>
     <div class="draw-offer-btns">
       <button class="mini-btn" onclick="App.respondDraw(true)">ACEPTAR</button>
       <button class="mini-btn mini-btn--draw" onclick="App.respondDraw(false)">RECHAZAR</button>
@@ -319,7 +332,7 @@
 <script src="../js/hub-streaks.js?v=20260808a"></script>
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260809a"></script>
-<script src="../js/futbol-restrictions.js?v=20260803a"></script>
+<script src="../js/futbol-restrictions.js?v=20260814a"></script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getDatabase, ref, set, get, update, onValue, push,
@@ -344,7 +357,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260808a';
+  s.src = 'js/script.js?v=20260814a';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }
