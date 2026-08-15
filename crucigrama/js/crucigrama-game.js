@@ -194,7 +194,10 @@ function buildCrucigramaScreen() {
             <div class="cruc-nav-row">
                 <button class="cruc-back-btn" onclick="goToHub()">← VOLVER</button>
                 <div class="cruc-title-block">
-                    <div class="cruc-title">EN EL CRUCIGRAMA</div>
+                    <!-- h1: este render sustituye el innerHTML del contenedor y se
+                         llevaba por delante el único encabezado de la página, así
+                         que la versión renderizada se quedaba sin H1. -->
+                    <h1 class="cruc-title">EN EL CRUCIGRAMA</h1>
                     <div class="cruc-edition">Crucigrama diario de fútbol</div>
                 </div>
             </div>
@@ -208,6 +211,9 @@ function buildCrucigramaScreen() {
                 <button class="cruc-nav-btn" id="cruc-next-btn" ${canForward ? '' : 'disabled'}
                         onclick="loadCrucigrama(0)">Hoy →</button>
             </div>
+            <!-- Enlace a la guía del juego. Va aquí y no solo en el HTML porque
+                 este render sustituye el innerHTML del contenedor entero. -->
+            <p class="guia-link"><a href="/como-jugar/crucigrama/">Cómo se juega &rarr;</a></p>
         </div>
 
         <!-- BODY -->

@@ -363,3 +363,43 @@ body.np-body .np-layout .ad-col {
   .ticker-strip { animation: none !important; }
   .np-card:hover { transform: none; }
 }
+
+/* ══════════════════════════════════════════════
+   TEXTO DE PORTADA ("Qué es FutbolHUB")
+   Bloque de prosa bajo la rejilla. Usa el patrón de variables con respaldo
+   (var(--r-md, 0), var(--bd-c, …)) para que el diseño "Estadio" lo herede
+   sin tocar hub-v2.css.
+   ══════════════════════════════════════════════ */
+.np-about {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  background: var(--np-paper2);
+  border: 2px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0);
+  box-shadow: var(--sh-x, 3px) var(--sh-y, 3px) var(--sh-b, 0) var(--sh-c, var(--np-ink));
+}
+.np-about p {
+  margin: 0 0 12px;
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  color: var(--np-ink);
+}
+.np-about p:last-child { margin-bottom: 0; }
+.np-about strong { font-weight: 700; }
+.np-about-links {
+  font-family: 'DM Mono', monospace;
+  font-size: var(--fs-meta);
+  letter-spacing: 0.1em;
+  color: var(--np-ink-mid);
+}
+.np-about-links a {
+  color: var(--np-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  display: inline-flex; align-items: center; min-height: 24px;
+}
+.np-about-links a:hover { color: var(--np-red); }
+
+@media (max-width: 520px) {
+  .np-about { padding: 14px 14px; }
+}

@@ -853,3 +853,59 @@ a      { text-decoration: none; }
 }
 
 .hidden { display: none !important; }
+
+/* ── Estado inicial del contenedor (antes de que arranque el JS) ───────────
+   Es lo único que hay en el HTML servido de esta página, así que además de
+   tapar el hueco mientras carga es el H1 y el texto propio del crucigrama.
+   Sigue el patrón de variables con respaldo: sin --r-md/--bd-c (tema
+   clásico) renderiza cuadrado y con filete de tinta, como el resto. */
+.cruc-intro {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+}
+.cruc-intro-kicker {
+  margin: 0;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: .72rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--np-ink-mid);
+}
+.cruc-intro-title {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -.01em;
+  color: var(--np-ink);
+}
+.cruc-intro-sub {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--np-ink-mid);
+}
+.cruc-intro-load {
+  margin: 6px 0 0;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: .8rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--np-red);
+}
+.cruc-intro-links {
+  margin: 4px 0 0;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: .78rem;
+  letter-spacing: .1em;
+  color: var(--np-ink-mid);
+}
+.cruc-intro-links a { color: var(--np-ink); }

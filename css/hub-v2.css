@@ -415,3 +415,24 @@
   [data-theme="v2"] .np-main { padding: 0 14px; }
   [data-theme="v2"] .np-footer { margin: 26px 14px 0; padding: 16px; }
 }
+
+/* ══════════════════════════════════════════════
+   TEXTO DE PORTADA ("Qué es FutbolHUB")
+   El bloque usa el patrón de variables con respaldo, pero --r-md / --sh-* /
+   --bd-c solo existen en theme-v2-app.css (los juegos), no aquí: en la
+   portada caía al respaldo clásico y salía cuadrado y con sombra dura
+   blanca sobre fondo oscuro. Se le da el lenguaje de tarjeta de cristal.
+   ══════════════════════════════════════════════ */
+[data-theme="v2"] .np-about {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-lg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  padding: 20px 22px;
+}
+[data-theme="v2"] .np-about p { color: var(--v2-mid); }
+[data-theme="v2"] .np-about strong { color: var(--v2-text); }
+[data-theme="v2"] .np-about-links { color: var(--v2-dim); }
+[data-theme="v2"] .np-about-links a { color: var(--v2-accent); }
+[data-theme="v2"] .np-about-links a:hover { color: var(--v2-text); }

@@ -29,8 +29,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 
 <!-- Estilos -->
-<link rel="stylesheet" href="./css/crucigrama.css?v=20260809a">
+<link rel="stylesheet" href="./css/crucigrama.css?v=20260815a">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
+  <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -95,7 +96,23 @@
 <!-- PANTALLA: CRUCIGRAMA                       -->
 <!-- ========================================== -->
 <div id="crucigrama-screen">
-  <!-- El contenido se genera dinámicamente por crucigrama-game.js -->
+  <!-- Estado inicial. crucigrama-game.js reemplaza el innerHTML de este
+       contenedor en cuanto arranca (primero por "CARGANDO...", luego por la
+       rejilla), así que esto es lo que se ve mientras tanto — y lo único que
+       hay en el HTML servido. Antes estaba vacío: la página no tenía ni un
+       H1 ni una línea de texto propio. -->
+  <section class="cruc-intro">
+    <p class="cruc-intro-kicker">FutbolHUB · Nº 03 · Diario</p>
+    <h1 class="cruc-intro-title">El Crucigrama de fútbol</h1>
+    <p class="cruc-intro-sub">Un crucigrama nuevo cada día en el que todas las
+    definiciones son de fútbol: estadios, apodos, Balones de Oro y partidos que
+    todos hemos visto.</p>
+    <p class="cruc-intro-load">Cargando la edición de hoy…</p>
+    <p class="cruc-intro-links">
+      <a href="/como-jugar/crucigrama/">Cómo se juega</a> ·
+      <a href="/">Volver al hub</a>
+    </p>
+  </section>
 </div>
 
 <!-- Scripts -->
@@ -107,7 +124,7 @@
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260809a"></script>
 <script src="../js/shared.js"></script>
-<script src="./js/crucigrama-game.js?v=20260808a"></script>
+<script src="./js/crucigrama-game.js?v=20260815a"></script>
 
 <!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px:
      por debajo no cabe ninguna unidad de AdSense y el juego se queda

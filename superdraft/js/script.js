@@ -8,10 +8,16 @@
    una linea con hueco libre; su valor de la metrica se suma al marcador.
 
    Reglas de badge (semantica):
-     nacionalidad -> historico (nationalTeam); retirados incluidos
-     club         -> SIEMPRE club actual (chunk.club); retirados no valen
-     liga         -> liga del club actual; retirados no valen
-   Objetivo valor de mercado -> solo jugadores activos (mv > 0).
+     nacionalidad -> historico (nationalTeam)
+     club         -> SIEMPRE club actual (chunk.club)
+     liga         -> liga del club actual
+
+   QUIEN VALE: por defecto SOLO jugadores en activo (club actual + valor de
+   mercado). Las unicas excepciones son los objetivos de seleccion
+   (internacionalidades y goles con la seleccion), donde los nombres que
+   importan son casi todos retirados: esos llevan retiredOk:true. El mismo
+   criterio filtra el autocompletado, para no ofrecer a nadie que luego se
+   vaya a rechazar.
    ============================================================================= */
 'use strict';
 
@@ -44,19 +50,28 @@
   }
 
   /* ─────────── Objetivos (metrica del dia, todo SUMA) ─────────── */
-  /* families: badges que pueden salir. activeOnly: solo jugadores con mv. */
+  /* families: badges que pueden salir.
+     retiredOk: unica excepcion a "solo jugadores en activo" (ver cabecera). */
   const OBJECTIVES = [
     { key:'age_old',    metric:'age',    dir:'max', title:'EL ONCE MÁS VIEJO',           short:'MÁS VIEJO',   unit:'años',    families:['nat','club','league'] },
     { key:'age_young',  metric:'age',    dir:'min', title:'EL ONCE MÁS JOVEN',           short:'MÁS JOVEN',   unit:'años',    families:['nat','club','league'] },
     { key:'height_tall',metric:'height', dir:'max', title:'EL ONCE MÁS ALTO',            short:'MÁS ALTO',    unit:'cm',      families:['nat','club','league'] },
     { key:'height_low', metric:'height', dir:'min', title:'EL ONCE MÁS BAJO',            short:'MÁS BAJO',    unit:'cm',      families:['nat','club','league'] },
-    { key:'mv_high',    metric:'mv',     dir:'max', title:'EL ONCE MÁS CARO',            short:'MÁS CARO',    unit:'€',       families:['nat','club','league'], activeOnly:true },
-    { key:'caps',       metric:'caps',   dir:'max', title:'MÁS INTERNACIONALIDADES',     short:'INTERNAC.',   unit:'caps',    families:['nat'] },
-    { key:'natgoals',   metric:'natGoals',dir:'max',title:'MÁS GOLES CON LA SELECCIÓN',  short:'GOLES SEL.',  unit:'goles',   families:['nat'] },
+    { key:'mv_high',    metric:'mv',     dir:'max', title:'EL ONCE MÁS CARO',            short:'MÁS CARO',    unit:'€',       families:['nat','club','league'] },
+    { key:'caps',       metric:'caps',   dir:'max', title:'MÁS INTERNACIONALIDADES',     short:'INTERNAC.',   unit:'caps',    families:['nat'], retiredOk:true },
+    { key:'natgoals',   metric:'natGoals',dir:'max',title:'MÁS GOLES CON LA SELECCIÓN',  short:'GOLES SEL.',  unit:'goles',   families:['nat'], retiredOk:true },
     { key:'goals',      metric:'goals',  dir:'max', title:'MÁS GOLES EN SU CARRERA',     short:'GOLES',       unit:'goles',   families:['nat','club','league'] },
     { key:'apps',       metric:'apps',   dir:'max', title:'MÁS PARTIDOS EN SU CARRERA',  short:'PARTIDOS',    unit:'part.',   families:['nat','club','league'] },
     { key:'clg',        metric:'clg',    dir:'max', title:'MÁS GOLES EN CHAMPIONS',      short:'GOLES UCL',   unit:'goles',   families:['club','league'] },
   ];
+
+  /* En activo = tiene club actual Y valor de mercado. Solo con el club se
+     colarian los ex-profesionales que acaban en equipos de barrio (el scraper
+     les guarda ese club), y solo con el mv se colarian los que estan sin
+     equipo. Vale tanto para un jugador completo como para la ficha ligera del
+     autocompletado, porque los dos campos se llaman igual. */
+  function isActive(p) { return !!(p && p.club && p.mv > 0); }
+  function activeRequired(obj) { return !(obj && obj.retiredOk); }
 
   /* ─────────── Formaciones (rotan cada dia). GK siempre 1. ─────────── */
   const FORMATIONS = [
@@ -160,7 +175,7 @@
 
   /* ¿El jugador cumple el badge? (semantica descrita arriba). */
   function matchesBadge(p, badge, obj) {
-    if (obj && obj.activeOnly && !(p.mv > 0)) return false;
+    if (activeRequired(obj) && !isActive(p)) return false;
     if (badge.kind === 'nat')    return norm(p.nationalTeam) === norm(badge.value);
     if (badge.kind === 'club')   return !!p.club && norm(p.club) === norm(badge.value);
     if (badge.kind === 'league') return !!p.club && (badge.teams || []).some(t => norm(t) === norm(p.club));
@@ -197,26 +212,36 @@
 
     const badges = [];
     const used   = new Set();
+    /* Cuantas veces ha salido ya ESE badge para ESA posicion. Un jugador solo
+       se puede usar una vez en la partida, asi que repetir "portero del
+       Atlético" cuando solo hay un portero en activo deja la ronda sin
+       solucion: se exige un candidato mas por cada repeticion. */
+    const usedPos = new Map();
+    const need = (b, pos) => (usedPos.get(b.kind + ':' + b.value + '|' + pos) || 0) + 1;
     for (const pos of order) {
       let best = null, bestScore = -1;
       for (let t = 0; t < 60; t++) {
         const b = pools[Math.floor(rng() * pools.length)];
         const key = b.kind + ':' + b.value;
-        const allC = countFor(b, objective, pos, all, 3);
-        if (allC < 1) continue;                    // sin solucion posible -> descartar
+        const min = need(b, pos);
+        const allC = countFor(b, objective, pos, all, min + 2);
+        if (allC < min) continue;                  // sin solucion posible -> descartar
         const genC = countFor(b, objective, pos, gen, 1);   // ¿reconocible?
         let score = allC + (genC > 0 ? 1000 : 0) + (used.has(key) ? -500 : 0);
         if (score > bestScore) { bestScore = score; best = b; }
         if (genC > 0 && !used.has(key)) break;     // suficientemente bueno
       }
       if (!best) {
-        // Fallback: cualquiera con al menos 1 jugador de esa posicion.
+        // Fallback: cualquiera que aun tenga jugadores libres para esa posicion.
         for (const b of FR.rng.shuffle(pools, rng)) {
-          if (countFor(b, objective, pos, all, 1) >= 1) { best = b; break; }
+          const min = need(b, pos);
+          if (countFor(b, objective, pos, all, min) >= min) { best = b; break; }
         }
         best = best || pools[0];
       }
       used.add(best.kind + ':' + best.value);
+      const pk = best.kind + ':' + best.value + '|' + pos;
+      usedPos.set(pk, (usedPos.get(pk) || 0) + 1);
       badges.push({ ...best, pos });
     }
     return { day, objective, formation, badges, order };
@@ -361,15 +386,35 @@
   /* ═══════════════════ AUTOCOMPLETADO + ENVIO ═══════════════════ */
   let acItems = [], acIndex = -1;
 
+  /* Nombres repetidos (dos "Koke", dos "Rodri"...): sin nada mas escrito son
+     dos filas identicas y elegir bien es imposible. Se añade el club actual
+     (o la nacion y el año si esta retirado) solo cuando hace falta. */
+  const POS_ES = { GK:'POR', DEF:'DEF', MID:'MED', FWD:'DEL' };
+  function acHint(it, ambiguous) {
+    const bits = [];
+    const pos = POS_ES[posBucket(it) || ''] || null;
+    if (pos) bits.push(pos);
+    if (it.club) bits.push(it.club);
+    else if (ambiguous) bits.push([it.nationalTeam, it.birthYear].filter(Boolean).join(' ') || 'retirado');
+    else if (it.hasData) bits.push('retirado');
+    return bits.join(' · ');
+  }
+
   function onInput() {
     const q = ($('player-input').value || '').trim();
     const list = $('autocomplete-list');
     if (q.length < 2) { list.classList.add('hidden'); acItems = []; return; }
-    acItems = FR.suggest(q, 8); acIndex = 0;   // primera preseleccionada -> Enter la elige
+    const soloActivos = activeRequired(D && D.objective);
+    acItems = FR.suggest(q, 8, { filter: (m) => !soloActivos || isActive(m) });
+    acIndex = 0;                               // primera preseleccionada -> Enter la elige
     if (!acItems.length) { list.classList.add('hidden'); return; }
-    list.innerHTML = acItems.map((it, idx) =>
-      `<div class="autocomplete-item${idx === 0 ? ' selected' : ''}" data-idx="${idx}" onmousedown="event.preventDefault();SD.pick(${idx})">${esc(it.name)}</div>`
-    ).join('');
+    const veces = {};
+    for (const it of acItems) veces[norm(it.name)] = (veces[norm(it.name)] || 0) + 1;
+    list.innerHTML = acItems.map((it, idx) => {
+      const hint = acHint(it, veces[norm(it.name)] > 1);
+      return `<div class="autocomplete-item${idx === 0 ? ' selected' : ''}" data-idx="${idx}" onmousedown="event.preventDefault();SD.pick(${idx})">${esc(it.name)}${
+        hint ? `<span class="ac-hint">${esc(hint)}</span>` : ''}</div>`;
+    }).join('');
     list.classList.remove('hidden');
   }
   function paintAc() {
@@ -391,7 +436,7 @@
     const it = acItems[idx]; if (!it) return;
     $('player-input').value = it.name;
     $('autocomplete-list').classList.add('hidden');
-    submit();
+    submit(it.id);                    // por ID: el nombre solo no distingue homonimos
   }
 
   /* Abre el modal de busqueda para un slot concreto (posicion elegida). */
@@ -399,7 +444,8 @@
     if (!S || S.spinning || S.over) return;
     if (S.lines[bucket][idx]) return;   // ya ocupado
     S.pickSlot = { bucket, idx };
-    $('sd-modal-sub').textContent = `${LINE_LABEL[bucket]} · ${S.curBadge ? S.curBadge.label : ''}`;
+    $('sd-modal-sub').textContent = `${LINE_LABEL[bucket]} · ${S.curBadge ? S.curBadge.label : ''}`
+      + (activeRequired(D.objective) ? ' · SOLO EN ACTIVO' : '');
     const input = $('player-input');
     input.value = ''; input.disabled = false;
     acItems = []; acIndex = -1;
@@ -412,21 +458,36 @@
     if (S) S.pickSlot = null;
   }
 
-  async function submit() {
+  /* Nombre escrito a mano (Enter sin elegir de la lista). Entre los homonimos
+     se queda con el que tenga sentido para la ronda: primero el que cumple el
+     badge, luego cualquiera que este en activo. Si no hay ninguno, se deja el
+     de siempre para que el mensaje de error sea el correcto. */
+  async function resolveTyped(name) {
+    const n = norm(name);
+    const cands = FR.suggest(name, 12).filter(it => norm(it.name) === n);
+    if (cands.length > 1) {
+      const ok = cands.find(it => matchesBadge(it, S.curBadge, D.objective))
+              || cands.find(it => isActive(it));
+      if (ok) return FR.resolvePlayerById(ok.id);
+    }
+    return FR.resolvePlayer(name);
+  }
+
+  async function submit(pickedId) {
     if (!S || S.over || S.spinning || !S.pickSlot) return;
     const input = $('player-input');
     const name = (input.value || '').trim();
     if (!name) return;
     input.disabled = true;
     try {
-      const player = await FR.resolvePlayer(name);
+      const player = pickedId ? await FR.resolvePlayerById(pickedId) : await resolveTyped(name);
       if (!player) { toast('No encuentro ese futbolista', 'err'); return; }
       if (S.usedIds.has(String(player.id))) { toast(`${player.name} ya lo has usado`, 'err'); return; }
 
       const badge = S.curBadge;
       if (!matchesBadge(player, badge, D.objective)) {
-        if (D.objective.activeOnly && !(player.mv > 0))
-          toast(`${player.name} está retirado (objetivo solo para jugadores en activo)`, 'err');
+        if (activeRequired(D.objective) && !isActive(player))
+          toast(`${player.name} no está en activo (este objetivo es solo de jugadores en activo)`, 'err');
         else if (badge.kind === 'club' || badge.kind === 'league')
           toast(`${player.name} no juega actualmente en ${badge.label}`, 'err');
         else
@@ -530,7 +591,7 @@
             : fam.includes('league') ? 'ligas y nacionalidades'
             : 'nacionalidades';
     const dir = obj.dir === 'min' ? 'La suma más BAJA gana.' : 'La suma más ALTA gana.';
-    const act = obj.activeOnly ? ' Solo jugadores en activo.' : '';
+    const act = activeRequired(obj) ? ' Solo jugadores en activo.' : ' Valen también los retirados.';
     return `Rellena los 11 puestos. Cada ronda saldrá un badge (${src}); elige un jugador que lo cumpla y colócalo en su posición. ${dir}${act}`;
   }
 

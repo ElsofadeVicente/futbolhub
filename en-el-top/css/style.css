@@ -475,6 +475,8 @@ body::before {
   font-size: clamp(0.95rem, 2.4vw, 1.3rem);
   text-align: center;
   color: var(--np-ink);
+  /* Pasó de <h1> a <h2>. No hace falta tocar el margen superior: el reset de
+     la línea 6 (`*{margin:0}`) ya lo dejaba a cero con el h1. */
   margin-bottom: 12px;
   line-height: 1.2;
   border-top: 2px solid var(--bd-c, var(--np-ink));

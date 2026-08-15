@@ -25,13 +25,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/hub.css?v=20260808g">
+<link rel="stylesheet" href="./css/hub.css?v=20260815a">
 <link rel="stylesheet" href="./css/profile-widget.css?v=20260809a">
 <!-- Diseño alternativo "Estadio". Se carga siempre, pero TODO cuelga de
      [data-theme="v2"]: sin ese atributo en el <html> no pinta nada y la
      portada clásica queda exactamente igual que antes. Va la última para
      poder recolocar lo que dan por hecho las dos hojas de arriba. -->
-<link rel="stylesheet" href="./css/hub-v2.css?v=20260809a">
+<link rel="stylesheet" href="./css/hub-v2.css?v=20260815a">
 <!-- Pone data-theme en el <html> con el diseño elegido. Sin defer y aquí
      arriba: si corriera al final del body se vería un fogonazo del otro
      diseño antes de cambiar. -->
@@ -111,14 +111,15 @@
 
   <!-- TICKER — js/hub-ticker.js lo sustituye por titulares reales de
        la prensa deportiva (ver api/titulares.js). Lo de aquí es solo
-       el respaldo para cuando esa llamada falla. Los tres segmentos
-       tienen que ser IDÉNTICOS: la animación desplaza un -33.33%.
+       el respaldo para cuando esa llamada falla.
+       La animación necesita el segmento REPETIDO 3 VECES (desplaza un
+       -33.33%), pero aquí va UNO SOLO y hub-ticker.js lo clona al arrancar:
+       si no, el mismo párrafo aparece tres veces en el HTML servido y son
+       ~180 palabras de texto duplicado dentro de la propia portada.
        aria-hidden porque es decoración: solo texto, sin enlaces, y un
        lector de pantalla no puede seguir algo que se mueve en bucle. -->
   <div class="ticker" aria-hidden="true">
     <div class="ticker-strip">
-      <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 13 JUEGOS DIARIOS DE FÚTBOL </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-accent"> · BINGO </span></span>
-      <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 13 JUEGOS DIARIOS DE FÚTBOL </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-accent"> · BINGO </span></span>
       <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 13 JUEGOS DIARIOS DE FÚTBOL </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-accent"> · BINGO </span></span>
     </div>
   </div>
@@ -446,6 +447,49 @@
 
       <!-- Banner responsive bajo la rejilla -->
       <div class="ad-slot ad-slot--inline" data-ad="inline"></div>
+
+      <!-- ══ TEXTO DE PORTADA ══
+           La portada era una rejilla de 13 tarjetas y poco más: en el HTML
+           servido apenas había texto propio. Esto explica qué es el sitio y
+           enlaza las guías, que es por donde se entra al contenido largo. -->
+      <div class="section-rule">
+        <h2>Qué es FutbolHUB</h2>
+        <div class="rule-line"></div>
+        <div class="rule-num">EDICIÓN DIARIA</div>
+      </div>
+
+      <section class="np-about">
+        <p><strong>FutbolHUB reúne trece juegos diarios de fútbol</strong> que se
+        juegan directamente en el navegador, gratis, sin instalar nada y sin
+        registrarse. Cada uno ataca la cultura futbolística por un lado distinto:
+        unos van de memoria pura, como reconstruir la alineación de un partido real
+        o completar un top diez contra el reloj; otros van de deducción, como leer
+        la trayectoria de un futbolista club a club hasta saber de quién se trata, o
+        mirar la grada de un estadio y averiguar en qué ciudad del mundo estás.</p>
+
+        <p><strong>Los juegos diarios publican un reto nuevo cada día a
+        medianoche</strong>, hora española, y ese reto es idéntico para todos los
+        jugadores. Por eso tiene sentido comparar resultados con un amigo y por eso
+        la racha se cuida: solo la partida del día en curso cuenta para tus
+        estadísticas. Las ediciones anteriores no se pierden, quedan en el archivo
+        de cada juego para jugarlas cuando quieras.</p>
+
+        <p><strong>Los juegos con gente</strong> —En la Cadena, Coche, Blackjack, El
+        Mentiroso, Tres en Raya y Bingo— se juegan en salas online con un código que
+        compartes, o buscando partida abierta. Varios tienen además modo local para
+        pasarse un mismo móvil por turnos y modo en solitario para practicar sin
+        prisa.</p>
+
+        <p>Puedes jugar a todo sin cuenta. Si te creas una, gratuita, tu progreso y
+        tus rachas te siguen a cualquier dispositivo y entras en las clasificaciones,
+        como la liga semanal por divisiones de El Estadio.</p>
+
+        <p class="np-about-links">
+          <a href="/como-jugar/">Guías de los 13 juegos</a> ·
+          <a href="/sobre-futbolhub/">Sobre FutbolHUB</a> ·
+          <a href="/contacto/">Contacto</a>
+        </p>
+      </section>
     </main>
 
     <!-- Ad derecha (rascacielos real; js/ads.js lo quita si no hay unidad) -->
@@ -459,6 +503,9 @@
     <span>FutbolHUB · 2026</span>
     <span>La Liga · Champions League · Partidos Históricos</span>
     <span>
+      <a href="/como-jugar/" class="np-footer-link">Cómo se juega</a>
+      <a href="/sobre-futbolhub/" class="np-footer-link">Sobre FutbolHUB</a>
+      <a href="/contacto/" class="np-footer-link">Contacto</a>
       <a href="/privacidad/" class="np-footer-link">Privacidad y cookies</a>
       <a href="/aviso-legal/" class="np-footer-link">Aviso legal</a>
       <!-- Reabre el aviso de Funding Choices. La política de privacidad dice

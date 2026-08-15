@@ -1,0 +1,37 @@
+/* ==========================================================================
+   guia-link.css — el enlace "Cómo se juega" del menú de cada juego.
+
+   Hoja diminuta y compartida por los 13 juegos para no repetir la misma regla
+   en 13 hojas distintas. Lleva a /como-jugar/<juego>/ (ver CLAUDE.md, sección
+   "Páginas de contenido").
+
+   Los colores salen de tokens CON RESPALDO, y el último respaldo es
+   currentColor: así hereda el color del texto de alrededor y es legible en
+   cualquiera de los dos diseños aunque el juego no defina esos tokens.
+   ========================================================================== */
+
+.guia-link {
+  margin: 12px 0 0;
+  text-align: center;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* inline-flex + min-height 24px: objetivo táctil mínimo (WCAG 2.5.8), el
+   mismo criterio que ya se aplicó a los enlaces del pie del hub. */
+.guia-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--np-ink-mid, currentColor);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.guia-link a:hover,
+.guia-link a:focus-visible {
+  color: var(--ac, var(--np-red, currentColor));
+}

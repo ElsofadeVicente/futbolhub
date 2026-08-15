@@ -13,7 +13,9 @@
      FR.countMatching(r, pool, min) -> nº de jugadores que cumplen r (early-exit)
      FR.countMatchingPair(a,b,pool,min) -> nº que cumplen a Y b
      FR.resolvePlayer(name)         -> Promise<player|null> (por name-index)
-     FR.suggest(input, limit)       -> [{id,name,inDB}] autocompletado
+     FR.resolvePlayerById(id)       -> Promise<player|null> (por id; homonimos)
+     FR.suggest(input, limit, opts) -> [meta] autocompletado (opts.filter(meta))
+     FR.playerMeta(id, name)        -> {id,name,club,position,nationalTeam,...}
      FR.normalize(s), FR.acNorm(s), FR.acTight(s)
      FR.rng.mulberry32/shuffle/weightedShuffle
      FR.genPool / FR.playersDb / FR.nameIndex   (getters)
@@ -390,6 +392,11 @@ window.FR = (function () {
   let _chunkCache      = {};
   let _playerDataCache = {};
   let _readyPromise = null;
+  /* Todos los chunks ya cargados, indexados por id (id -> chunk crudo). Lo
+     rellena _loadData y permite mirar club/posicion/mv de cualquier jugador
+     SIN volver a pedir nada, que es lo que necesitan el autocompletado
+     filtrado y resolveById. */
+  let ALL_CHUNKS = {};
 
   const _CHUNK_RANGES = [
     [0,99999],[100000,199999],[200000,299999],[300000,399999],[400000,499999],
@@ -525,6 +532,54 @@ window.FR = (function () {
     return _buildPlayerFromChunk(chunkId, chunk);
   }
 
+  /* Resuelve por ID, no por nombre. Es lo que debe usar un juego cuando el
+     jugador viene ELEGIDO de la lista del autocompletado: hay homonimos
+     (dos "Koke", dos "Rodri"...) y resolver por texto siempre devuelve al
+     mismo, asi que el jugador que el usuario habia pinchado no llegaba nunca.
+     Mismo criterio que guess() en La Carrera. */
+  async function resolvePlayerById(id) {
+    const sid = String(id || '').trim();
+    if (!sid) return null;
+    const inDB = PLAYERS_DB.find(p => String(p.id) === sid);
+    const chunk = ALL_CHUNKS[sid] || await _getChunkData(sid);
+    if (!inDB) return _buildPlayerFromChunk(sid, chunk);
+    if (chunk) {
+      inDB.img = inDB.img || chunk.img || null;
+      inDB.teams = chunk.teams || [];
+      inDB.heightCm = chunk.h ? parseFloat(chunk.h) : null;
+      inDB.foot = _normFoot(chunk.f);
+      inDB.birthYear = chunk.b ? parseInt(chunk.b, 10) : null;
+      inDB.goals = typeof chunk.goals === 'number' ? chunk.goals : null;
+      inDB.apps  = typeof chunk.apps  === 'number' ? chunk.apps  : null;
+      inDB.position = chunk.p || null;
+      inDB.nationalTeam = chunk.nat || null;
+      inDB.caps = chunk.nt ? (parseInt(chunk.nt.c ?? 0, 10) || 0) : 0;
+      inDB.natGoals = (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0;
+      inDB.maxFee = _maxFee(chunk.tr || []);
+      inDB.mv   = typeof chunk.mv === 'number' ? chunk.mv : (parseInt(chunk.mv, 10) || 0);
+      inDB.club = chunk.club || null;
+    }
+    return inDB;
+  }
+
+  /* Ficha ligera de un id para el autocompletado: lo justo para filtrar
+     (¿esta en activo?) y para desambiguar homonimos en la lista. */
+  function playerMeta(id, name, inDB) {
+    const sid = String(id);
+    const c = ALL_CHUNKS[sid] || null;
+    return {
+      id: sid,
+      name: name || (c && c.n) || '?',
+      inDB: !!inDB,
+      hasData: !!c,
+      club: (c && c.club) || null,
+      position: (c && c.p) || null,
+      nationalTeam: (c && c.nat) || null,
+      birthYear: (c && c.b) ? parseInt(c.b, 10) : null,
+      mv: c ? (typeof c.mv === 'number' ? c.mv : (parseInt(c.mv, 10) || 0)) : 0,
+    };
+  }
+
   /* Todos los jugadores del chunk como objetos completos (mv, club, posicion,
      stats…). Se construye una sola vez y se cachea. Lo usa Superdraft para
      validar en generacion que cada dia tiene solucion (semantica club actual). */
@@ -562,19 +617,25 @@ window.FR = (function () {
   /* Autocompletado: PLAYERS_DB + name-index, ordenado por calidad de
      coincidencia y, a igualdad, dando preferencia a los jugadores de la base
      curada (los reconocibles) y al nombre más corto. */
-  function suggest(input, limit = 8) {
+  /* opts.filter(meta) -> bool: deja pasar solo los jugadores que quiera el
+     juego (Superdraft lo usa para no sugerir retirados). Cada resultado lleva
+     ya club/posicion/nacion/año, que sirven para desambiguar homonimos. */
+  function suggest(input, limit = 8, opts = {}) {
     const norm = normalize(input);
     if (!norm || norm.length < 2) return [];
     const PER_BUCKET = 40;
     const buckets = [[], [], [], [], [], []];
     const seen = new Set();
+    const filter = typeof opts.filter === 'function' ? opts.filter : null;
 
     const add = (id, name, inDB, score) => {
       const key = String(id);
       if (seen.has(key)) return;
       seen.add(key);
+      const meta = playerMeta(key, name, inDB);
+      if (filter && !filter(meta)) return;
       const b = buckets[score];
-      if (b.length < PER_BUCKET) b.push({ id: key, name, inDB });
+      if (b.length < PER_BUCKET) b.push(meta);
     };
 
     for (const p of PLAYERS_DB) {
@@ -636,6 +697,7 @@ window.FR = (function () {
         allChunkData[id] = pdata;
       }
     }
+    ALL_CHUNKS = allChunkData;
     console.log(`✅ [FR] Chunks cargados: ${Object.keys(allChunkData).length} jugadores`);
 
     NAME_INDEX = Object.entries(allChunkData).map(([id, p]) => [parseInt(id, 10), p.n]);
@@ -958,7 +1020,8 @@ window.FR = (function () {
     init,
     get ready() { return _readyPromise || init(); },
     validate, isRedundant, familyUsed, buildCandidates, countMatching, countMatchingPair,
-    resolvePlayer, suggest, getAllPlayers, normalize, acNorm, acTight,
+    resolvePlayer, resolvePlayerById, playerMeta, suggest, getAllPlayers,
+    normalize, acNorm, acTight,
     /* Permite a otro juego (p.ej. Coche) inyectar sus mapas inversos de compañeros
        ya construidos, para que FR.validate('teammate') funcione sin FR.init()
        (sin recargar datos). */

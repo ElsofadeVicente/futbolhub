@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.futbolhub.es/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+
+  <!-- Juegos -->
   <url><loc>https://www.futbolhub.es/en-el-once/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.futbolhub.es/en-el-top/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.futbolhub.es/la-carrera/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
@@ -14,6 +16,26 @@
   <url><loc>https://www.futbolhub.es/superdraft/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.futbolhub.es/blackjack/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.futbolhub.es/bingo/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+
+  <!-- Guías: cómo se juega a cada juego -->
+  <url><loc>https://www.futbolhub.es/como-jugar/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/en-el-once/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/en-el-top/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/crucigrama/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/la-carrera/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/en-la-cadena/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/higher-or-lower/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/blackjack/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/coche/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/mentiroso/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/el-estadio/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/tres-en-raya/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/superdraft/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/bingo/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Institucionales y legales -->
+  <url><loc>https://www.futbolhub.es/sobre-futbolhub/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.futbolhub.es/contacto/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.futbolhub.es/privacidad/</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://www.futbolhub.es/aviso-legal/</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>

@@ -314,6 +314,14 @@
   max-height: 260px; overflow-y: auto;
   border-radius: 6px;
 }
+/* Pista de desambiguación (posición · club) a la derecha de cada sugerencia:
+   con dos "Koke" en la lista, el nombre solo no dice cuál es cuál. */
+.sd-modal .autocomplete-item .ac-hint {
+  font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--np-ink-mid); opacity: .75;
+  margin-left: 12px; flex-shrink: 0; text-align: right;
+  max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .sd-modal-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 
 /* ═══════════════ FIN ═══════════════ */

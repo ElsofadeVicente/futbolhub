@@ -723,6 +723,9 @@ a      { text-decoration: none; }
   letter-spacing: -0.01em;
   color: var(--np-ink);
   line-height: 0.95;
+  /* Es un <h1> (antes un div): sin esto el margen por defecto del navegador
+     descoloca el header, que reparte el espacio con gap. */
+  margin: 0;
 }
 
 .hol-mode-header-sub {

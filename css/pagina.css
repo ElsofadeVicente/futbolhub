@@ -1,0 +1,251 @@
+/* ==========================================================================
+   pagina.css — hoja compartida de las páginas de CONTENIDO
+   (guías «Cómo se juega», Sobre FutbolHUB, Contacto).
+
+   No es el design system de los juegos ni de la portada: estas páginas son
+   documentos de texto, no aplicaciones. Van sin JS a propósito, igual que
+   /privacidad/ y /aviso-legal/, para que su contenido esté siempre en el HTML
+   servido y no dependa de nada.
+
+   El tema claro/oscuro se resuelve con prefers-color-scheme y NO con
+   data-theme: estas páginas no cargan js/theme.js.
+   ========================================================================== */
+
+:root {
+  --ink: #16181d;
+  --ink-soft: #5b5f66;
+  --paper: #f4efe3;
+  --paper-2: #ece5d6;
+  --accent: #b5221e;
+  --line: rgba(22, 24, 29, .15);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f4efe3;
+    --ink-soft: #a7abb2;
+    --paper: #16181d;
+    --paper-2: #1e2128;
+    --accent: #e2564f;
+    --line: rgba(244, 239, 227, .15);
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+html, body { margin: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.65;
+}
+
+/* ── Cabecera ────────────────────────────────────────────────────────────── */
+.pg-top {
+  border-bottom: 2px solid var(--ink);
+  padding: 14px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.pg-brand {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.pg-brand span { color: var(--accent); }
+.pg-nav {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.pg-nav a { color: var(--ink-soft); text-decoration: none; }
+.pg-nav a:hover { color: var(--accent); text-decoration: underline; }
+
+/* ── Cuerpo ──────────────────────────────────────────────────────────────── */
+.wrap { max-width: 720px; margin: 0 auto; padding: 28px 24px 8px; }
+
+.crumbs {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: var(--ink-soft);
+  margin-bottom: 22px;
+}
+.crumbs a { color: var(--ink-soft); }
+
+.kicker {
+  font-family: 'Courier New', monospace;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--ink-soft);
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  padding: 8px 0;
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+h1 {
+  font-size: clamp(28px, 7vw, 42px);
+  line-height: 1.12;
+  margin: 0 0 14px;
+  letter-spacing: -.015em;
+}
+h2 {
+  font-size: 21px;
+  margin: 38px 0 10px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+h3 { font-size: 17px; margin: 24px 0 6px; }
+
+p, li { font-size: 17px; }
+.lead { font-size: 19px; color: var(--ink); }
+ul, ol { padding-left: 22px; }
+li { margin-bottom: 8px; }
+a { color: var(--accent); }
+.muted { color: var(--ink-soft); }
+strong { font-weight: 700; }
+
+/* Ficha de datos rápidos del juego */
+.ficha {
+  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  padding: 16px 18px;
+  margin: 26px 0;
+}
+.ficha dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 18px;
+}
+.ficha dt {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  align-self: baseline;
+}
+.ficha dd { margin: 0; font-size: 16px; }
+
+/* Pasos numerados */
+ol.pasos { counter-reset: paso; list-style: none; padding-left: 0; }
+ol.pasos > li {
+  counter-increment: paso;
+  position: relative;
+  padding-left: 46px;
+  margin-bottom: 16px;
+}
+ol.pasos > li::before {
+  content: counter(paso);
+  position: absolute;
+  left: 0; top: 2px;
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Preguntas frecuentes */
+.faq { margin-top: 8px; }
+.faq h3 { margin: 22px 0 4px; }
+.faq p { margin-top: 0; }
+
+/* Aviso / nota destacada */
+.nota {
+  border-left: 4px solid var(--accent);
+  padding: 4px 0 4px 16px;
+  margin: 22px 0;
+  color: var(--ink-soft);
+}
+
+/* Botón principal */
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  margin-top: 34px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  font-size: 14px;
+  padding: 14px 28px;
+  border-radius: 2px;
+}
+.btn:hover { background: var(--accent); }
+
+/* Rejilla de tarjetas (índice de guías) */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 24px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.cards li { margin: 0; }
+.cards a {
+  display: block;
+  height: 100%;
+  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.cards a:hover { background: var(--ink); color: var(--paper); }
+.cards a:hover .c-num, .cards a:hover .c-desc { color: inherit; }
+.c-num {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 4px;
+}
+.c-name { font-size: 19px; font-weight: 700; display: block; line-height: 1.2; }
+.c-desc { font-size: 14px; color: var(--ink-soft); display: block; margin-top: 6px; line-height: 1.45; }
+
+/* ── Pie ─────────────────────────────────────────────────────────────────── */
+.pg-foot {
+  max-width: 720px;
+  margin: 48px auto 0;
+  padding: 16px 24px 40px;
+  border-top: 1px solid var(--line);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: .06em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+.pg-foot a { color: var(--ink-soft); }
+.pg-foot a:hover { color: var(--accent); }
+
+@media (max-width: 520px) {
+  .wrap { padding: 22px 18px 8px; }
+  .pg-top { padding: 12px 18px; }
+  .ficha dl { grid-template-columns: 1fr; gap: 2px; }
+  .ficha dt { margin-top: 8px; }
+}

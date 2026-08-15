@@ -17,6 +17,16 @@
   const strip = document.querySelector('.ticker-strip');
   if (!strip) return;
 
+  /* El HTML trae UN solo segmento de reserva (repetirlo tres veces allí eran
+     ~180 palabras duplicadas dentro de la portada). Aquí se clona hasta los
+     tres que necesita el bucle de la animación. */
+  (function clonarSegmentos() {
+    const segs = strip.querySelectorAll('.tick-seg');
+    if (segs.length !== 1) return;               // ya vienen los tres: nada que hacer
+    strip.appendChild(segs[0].cloneNode(true));
+    strip.appendChild(segs[0].cloneNode(true));
+  })();
+
   /* Velocidad de desplazamiento, en píxeles por segundo.
      Este es el número que hay que tocar si el ticker va rápido o lento;
      NO la duración del @keyframes. */
