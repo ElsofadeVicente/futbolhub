@@ -77,3 +77,8 @@ admin/logs/
 # Notas operativas del proyecto para Claude Code (contexto interno de trabajo,
 # no es código ni algo que deba servir Vercel ni ver nadie fuera del equipo).
 CLAUDE.md
+
+# El banco del crucigrama: datos de admin, se regenera y se respalda solo
+admin/crucigrama_banco.json
+admin/_backup_banco/
+admin/.crucigrama_meta.json
