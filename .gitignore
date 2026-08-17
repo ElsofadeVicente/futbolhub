@@ -45,6 +45,9 @@ la-torre/data/
 en-el-once/data/
 en-el-top/data/enteltop.json
 el-estadio/data/estadios.json
+# Las copias que deja generar_estadios.py al guardar: son respaldos de un
+# archivo que ya esta ignorado y que viaja a Supabase con sync.bat estadio.
+el-estadio/data/_backup/
 mentiroso/js/data.js
 coche/data/*.json
 data/general/*.json
