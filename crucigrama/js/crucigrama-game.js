@@ -17,6 +17,7 @@ let crucSegundos    = 0;      // tiempo jugado en este puzzle
 let crucRelojTimer  = null;
 let crucUsedCheck   = false;  // se pulsó "Comprobar" en este puzzle
 let crucMalas       = new Set(); // "r,c" marcadas como error por Comprobar
+let crucAtrasado    = false;  // hoy no tiene edición y se sirve la anterior
 let crucUserGrid    = {};     // (r,c) -> letra introducida por el usuario
 let crucSolvedWords = new Set();  // ids de palabras resueltas
 let crucSelectedWord = null;  // { word, direction }
@@ -103,7 +104,11 @@ function crucRelojPara() {
    ahora invalidaría rachas que la gente ya tiene. */
 function crucComprobar() {
     if (!crucData) return;
-    crucUsedCheck = true;
+    // Con el crucigrama ya resuelto no hay nada que comprobar, y marcarlo como
+    // "con ayudas" a toro pasado ROMPE la racha del hub de forma retroactiva:
+    // lo resolviste limpio, pulsaste el botón por curiosidad y ese día dejaba
+    // de contar. Lo mismo vale para los tres Revelar.
+    if (crucIsComplete()) return;
     crucMalas = new Set();
     // Se cuentan CASILLAS, no pasadas: las de cruce pertenecen a dos palabras
     // y sumando por palabra el mensaje decía "5 letras mal" con 4 en rojo.
@@ -116,6 +121,10 @@ function crucComprobar() {
             if (escrita !== crucNormalize(w.answer[i])) crucMalas.add(`${row},${col}`);
         });
     }
+    // Solo cuenta como ayuda si de verdad había algo que comprobar: pulsarlo
+    // con la rejilla vacía no te dice nada, y te costaba el "sin ayudas".
+    if (puestas.size) crucUsedCheck = true;
+
     refreshAllCells();
     crucSave();
 
@@ -157,16 +166,23 @@ function crucStatsApuntar() {
     s.jugados    = (s.jugados || 0) + 1;
     s.completados = (s.completados || 0) + 1;
     if (!crucUsedReveal && !crucUsedCheck) s.limpios = (s.limpios || 0) + 1;
-    if (!crucUsedReveal && (!s.mejorTiempo || crucSegundos < s.mejorTiempo)) {
-        s.mejorTiempo = crucSegundos;
+    // Un 0 no es un tiempo: las partidas guardadas antes de que existiera el
+    // cronómetro se restauran sin 'segundos', y al abrirlas hundían el tiempo
+    // medio y podían colarse como récord.
+    if (crucSegundos > 0) {
+        if (!crucUsedReveal && (!s.mejorTiempo || crucSegundos < s.mejorTiempo)) {
+            s.mejorTiempo = crucSegundos;
+        }
+        s.tiempoTotal = (s.tiempoTotal || 0) + crucSegundos;
+        s.cronometrados = (s.cronometrados || 0) + 1;
     }
-    s.tiempoTotal = (s.tiempoTotal || 0) + crucSegundos;
     crucStatsGuardar(s);
 }
 
 function crucStatsHTML() {
     const s = crucStatsLeer();
-    const media = s.completados ? Math.round((s.tiempoTotal || 0) / s.completados) : 0;
+    const conTiempo = s.cronometrados || 0;
+    const media = conTiempo ? Math.round((s.tiempoTotal || 0) / conTiempo) : 0;
     const filas = [
         ['Resueltos', s.completados || 0],
         ['Sin ayudas', s.limpios || 0],
@@ -283,6 +299,10 @@ async function crucStart() {
 
     // Se abre por el de hoy; si hoy no tiene, por el último publicado.
     const i = crucEditions.indexOf(hoy);
+    // Y si hoy no tiene, se DICE. Antes se caía al último disponible en
+    // silencio: el juego estuvo 102 días sirviendo el crucigrama del 7 de mayo
+    // y en pantalla no se notaba nada raro.
+    crucAtrasado = i < 0;
     await crucGoEdition(i >= 0 ? i : crucEditions.length - 1);
 }
 
@@ -446,6 +466,8 @@ function buildCrucigramaScreen() {
                 <button class="cruc-nav-btn cruc-nav-btn--edge" ${alFinal ? 'disabled' : ''}
                         title="Última edición" onclick="crucGoEdition(${crucEditions.length - 1})">»</button>
             </div>
+            ${crucAtrasado ? `<p class="cruc-atrasado">El crucigrama de hoy todavía no
+               está listo. Mientras tanto, aquí tienes el del ${crucFechaLarga(crucData.date)}.</p>` : ''}
             <!-- Enlace a la guía del juego. Va aquí y no solo en el HTML porque
                  este render sustituye el innerHTML del contenedor entero. -->
             <p class="guia-link"><a href="/como-jugar/crucigrama/">Cómo se juega &rarr;</a></p>
@@ -1017,7 +1039,7 @@ function crucCloseRevealMenu() {
 
 function crucRevealLetter() {
     crucCloseRevealMenu();
-    if (!crucSelectedCell || !crucData) return;
+    if (!crucSelectedCell || !crucData || crucIsComplete()) return;
     crucUsedReveal = true;
     const { row, col } = crucSelectedCell;
 
@@ -1042,7 +1064,7 @@ function crucRevealLetter() {
 
 function crucRevealWord() {
     crucCloseRevealMenu();
-    if (!crucSelectedWord || !crucData) return;
+    if (!crucSelectedWord || !crucData || crucIsComplete()) return;
     crucUsedReveal = true;
     const w = crucSelectedWord;
     const cells = crucGetWordCells(w);
@@ -1072,8 +1094,8 @@ function crucRevealWord() {
 
 function crucRevealAll() {
     crucCloseRevealMenu();
+    if (!crucData || crucIsComplete()) return;
     if (!confirm('¿Seguro que quieres revelar toda la cuadrícula?')) return;
-    if (!crucData) return;
     crucUsedReveal = true;
     crucData.words.forEach(w => {
         crucGetWordCells(w).forEach(({ row, col }, i) => {
