@@ -387,16 +387,23 @@
   let acItems = [], acIndex = -1;
 
   /* Nombres repetidos (dos "Koke", dos "Rodri"...): sin nada mas escrito son
-     dos filas identicas y elegir bien es imposible. Se añade el club actual
-     (o la nacion y el año si esta retirado) solo cuando hace falta. */
-  const POS_ES = { GK:'POR', DEF:'DEF', MID:'MED', FWD:'DEL' };
-  function acHint(it, ambiguous) {
+     dos filas identicas y elegir bien es imposible. Desambiguacion EN CASCADA,
+     igual que Coche y En la Cadena: la posicion siempre, y solo si sigue
+     habiendo empate se añade la nacion y despues el año de nacimiento. El club
+     NO se enseña: es dato de juego (los badges van de clubes), no una pista. */
+  const POS_ES = { GK:'Portero', DEF:'Defensa', MID:'Centrocampista', FWD:'Delantero' };
+  function acHint(it, sameName) {
     const bits = [];
-    const pos = POS_ES[posBucket(it) || ''] || null;
-    if (pos) bits.push(pos);
-    if (it.club) bits.push(it.club);
-    else if (ambiguous) bits.push([it.nationalTeam, it.birthYear].filter(Boolean).join(' ') || 'retirado');
-    else if (it.hasData) bits.push('retirado');
+    const bucket = posBucket(it);
+    if (bucket) bits.push(POS_ES[bucket] || bucket);
+    if (sameName.length > 1) {
+      const samePos = sameName.filter(o => posBucket(o) === bucket);
+      if (samePos.length > 1 && it.nationalTeam) {
+        bits.push(it.nationalTeam);
+        const sameNat = samePos.filter(o => o.nationalTeam === it.nationalTeam);
+        if (sameNat.length > 1 && it.birthYear) bits.push('n. ' + it.birthYear);
+      }
+    }
     return bits.join(' · ');
   }
 
@@ -408,10 +415,10 @@
     acItems = FR.suggest(q, 8, { filter: (m) => !soloActivos || isActive(m) });
     acIndex = 0;                               // primera preseleccionada -> Enter la elige
     if (!acItems.length) { list.classList.add('hidden'); return; }
-    const veces = {};
-    for (const it of acItems) veces[norm(it.name)] = (veces[norm(it.name)] || 0) + 1;
+    const porNombre = {};
+    for (const it of acItems) (porNombre[norm(it.name)] = porNombre[norm(it.name)] || []).push(it);
     list.innerHTML = acItems.map((it, idx) => {
-      const hint = acHint(it, veces[norm(it.name)] > 1);
+      const hint = acHint(it, porNombre[norm(it.name)]);
       return `<div class="autocomplete-item${idx === 0 ? ' selected' : ''}" data-idx="${idx}" onmousedown="event.preventDefault();SD.pick(${idx})">${esc(it.name)}${
         hint ? `<span class="ac-hint">${esc(hint)}</span>` : ''}</div>`;
     }).join('');
