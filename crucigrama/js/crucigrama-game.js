@@ -531,6 +531,9 @@ function buildCrucigramaScreen() {
                 <span class="cruc-reloj" id="cruc-reloj">${crucFormatoTiempo(crucSegundos)}</span>
             </div>
             <div class="cruc-actions">
+                <!-- Solo se ve en movil: en escritorio las pistas ya estan en las
+                     dos columnas laterales, asi que el boton sobra. -->
+                <button class="cruc-btn-reveal cruc-btn-clues" onclick="crucToggleCluesSheet()">Pistas</button>
                 <button class="cruc-btn-reveal" onclick="crucComprobar()">Comprobar</button>
                 <div class="cruc-reveal-wrapper" id="cruc-reveal-wrapper">
                     <button class="cruc-btn-reveal" onclick="crucToggleRevealMenu(event)">Revelar ▾</button>
@@ -540,6 +543,17 @@ function buildCrucigramaScreen() {
                         <button class="cruc-reveal-option cruc-reveal-option--danger" onclick="crucRevealAll()">🔲 Cuadrícula</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- PANEL DE PISTAS (movil) -->
+        <div class="cruc-clues-sheet" id="cruc-clues-sheet" onclick="crucCluesSheetBackdrop(event)">
+            <div class="cruc-clues-sheet-inner">
+                <div class="cruc-clues-sheet-head">
+                    <span>Todas las pistas</span>
+                    <button class="cruc-clues-sheet-close" onclick="crucCloseCluesSheet()">&#10005;</button>
+                </div>
+                <div class="cruc-clues-sheet-body" id="cruc-clues-mobile"></div>
             </div>
         </div>
 
@@ -714,31 +728,67 @@ function renderCluesList() {
     const across = crucData.words.filter(w => w.direction === 'across').sort((a,b) => a.number - b.number);
     const down   = crucData.words.filter(w => w.direction === 'down').sort((a,b) => a.number - b.number);
 
-    const buildList = (words) => words.map(w => {
+    // El panel de movil llama a otra funcion para cerrarse solo al elegir; en
+    // las columnas de escritorio no hay nada que cerrar.
+    const buildList = (words, alElegir) => words.map(w => {
         const isActive  = crucSelectedWord && crucSelectedWord.id === w.id;
         const isSolved  = crucSolvedWords.has(w.id);
         return `<div class="cruc-clue-item ${isActive ? 'active' : ''} ${isSolved ? 'solved' : ''}"
-                     onclick="crucSelectWordById(${w.id})" data-clue-id="${w.id}">
+                     onclick="${alElegir}(${w.id})" data-clue-id="${w.id}">
                     <div class="cruc-clue-num">${w.number}</div>
                     <div class="cruc-clue-desc">${crucEsc(w.clue)}</div>
                 </div>`;
     }).join('');
 
-    const acrossHTML = `
+    const seccion = (titulo, words, alElegir) => `
         <div class="cruc-clues-section">
-            <div class="cruc-clues-heading">HORIZONTALES</div>
-            ${buildList(across)}
-        </div>`;
-    const downHTML = `
-        <div class="cruc-clues-section">
-            <div class="cruc-clues-heading">VERTICALES</div>
-            ${buildList(down)}
+            <div class="cruc-clues-heading">${titulo}</div>
+            ${buildList(words, alElegir)}
         </div>`;
 
     const colDown   = document.getElementById('cruc-clues-down');
     const colAcross = document.getElementById('cruc-clues-across');
-    if (colDown)   colDown.innerHTML   = downHTML;
-    if (colAcross) colAcross.innerHTML = acrossHTML;
+    if (colDown)   colDown.innerHTML   = seccion('VERTICALES',   down,   'crucSelectWordById');
+    if (colAcross) colAcross.innerHTML = seccion('HORIZONTALES', across, 'crucSelectWordById');
+
+    // Movil: las dos listas juntas dentro del panel desplegable.
+    const movil = document.getElementById('cruc-clues-mobile');
+    if (movil) movil.innerHTML = seccion('HORIZONTALES', across, 'crucSelectFromSheet')
+                               + seccion('VERTICALES',   down,   'crucSelectFromSheet');
+}
+
+// ── PANEL DE PISTAS (MOVIL) ──────────────────
+/* En escritorio las pistas viven en las dos columnas laterales. En movil no
+   caben, y hasta ahora solo se veia la pista de la palabra en la que estabas:
+   este panel ensena las dos listas completas, horizontales y verticales. */
+
+function crucToggleCluesSheet() {
+    const sheet = document.getElementById('cruc-clues-sheet');
+    if (!sheet) return;
+    if (sheet.classList.contains('open')) return crucCloseCluesSheet();
+    renderCluesList();                       // por si cambio algo desde la ultima vez
+    sheet.classList.add('open');
+    document.body.classList.add('cruc-sheet-abierto');
+    // Deja a la vista la pista en la que estas, que puede estar muy abajo.
+    const activa = sheet.querySelector('.cruc-clue-item.active');
+    if (activa) activa.scrollIntoView({ block: 'center' });
+}
+
+function crucCloseCluesSheet() {
+    const sheet = document.getElementById('cruc-clues-sheet');
+    if (!sheet) return;
+    sheet.classList.remove('open');
+    document.body.classList.remove('cruc-sheet-abierto');
+}
+
+/* Solo cierra si el toque cae en el velo, no dentro de la lista. */
+function crucCluesSheetBackdrop(e) {
+    if (e.target.id === 'cruc-clues-sheet') crucCloseCluesSheet();
+}
+
+function crucSelectFromSheet(id) {
+    crucCloseCluesSheet();
+    crucSelectWordById(id);
 }
 
 function updateCluesPanel() {
