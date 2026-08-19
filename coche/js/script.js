@@ -981,22 +981,23 @@ const Restrictions = (() => {
 
     /* Internacionalidades */
     candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
-    candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades', imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_0',              label:'Sin internacionalidades',        imgUrl:null, icon:'🌍', family:'caps' });
-    /* Fuera "Internacional (≥1 partido)": lo cumplia el 98,7% del pool y aun
-       asi era la 3ª restriccion mas frecuente del juego. En su sitio, un
-       umbral que si parte la baraja (p75 del pool = 87 internacionalidades). */
+    /* Los umbrales se miden contra la BASE ENTERA (8.245), que es contra lo que
+       valida el juego cuando escribes un nombre, no contra el pool de generacion.
+       Ahi cualquier "menos de X" es un regalo: "50 o menos internacionalidades"
+       lo cumplia el 83% y "Internacional (>=1 partido)" el 99%. Fuera los dos;
+       quedan solo los cortes por arriba, que si dicen algo (>=50 el 17% de la
+       base, >=75 el 8%, >=100 el 4%). */
     candidates.push({ type:'caps_ge', value:75,  label:'75 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
 
     /* Clubes — la mediana del pool son 6, asi que "3 o mas" pasaba el 92%. */
-    candidates.push({ type:'clubs_ge', value:7, label:'Ha jugado en 7 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
-    candidates.push({ type:'clubs_le', value:4, label:'Ha jugado en 4 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
+    candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
 
     /* Valor de traspaso — mediana 10,5M y p90 42M. Con el corte en 70M,
        "menos de 70M" lo cumplia el 96% y "mas de 70M" solo el 3%. */
     candidates.push({ type:'fee_gt', value:40000000, label:'Traspaso de más de 40M €',  imgUrl:null, icon:'💰', family:'fee' });
-    candidates.push({ type:'fee_lt', value:10000000, label:'Traspaso de menos de 10M €',imgUrl:null, icon:'💰', family:'fee' });
+    candidates.push({ type:'fee_gt', value:20000000, label:'Traspaso de más de 20M €',  imgUrl:null, icon:'💰', family:'fee' });
 
     /* Goles en Champions League (precomputado desde performances) */
     candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
@@ -1207,10 +1208,13 @@ const Restrictions = (() => {
     const shuffled = _shuffle(playable, rng);
     result = _removeRedundancies(result, shuffled, db);
 
-    /* ══ PASO 6: Garantizar que ≥1 jugador cumple las 5 restricciones a la vez ══
-       Al 75% (antes 70%): dejar ~1 de cada 4 rondas sin ningún jugador válido
-       es intencional — le da variedad/caos a las partidas, no es un bug. */
-    if (rng() < 0.75) result = _ensureSolution(result, shuffled, db);
+    /* ══ PASO 6: Garantizar que ≥2 jugadores cumplen las 5 a la vez ══
+       Se busca solucion SIEMPRE. El 75% de antes dejaba 1 de cada 4 rondas sin
+       ningun jugador valido a proposito, por darle caos; con las restricciones
+       mas finas de ahora eso se juntaba con lo dificil que ya era acertar y
+       salian 20% de rondas donde el techo era 3. El caos que queda es de sobra:
+       aun pidiendo dos soluciones, el 2% de las rondas no llega a 5. */
+    result = _ensureSolution(result, shuffled, db);
 
     return result;
   }
@@ -1287,10 +1291,23 @@ const Restrictions = (() => {
       ? db.filter(p => clubRestrictions.every(cr => validate(p, cr)))
       : db;
 
+    /* No basta con que EXISTA una solucion: hay que poder encontrarla. Pidiendo
+       una sola, la ronda se resolvia con el unico futbolista de 8.245 que
+       encajaba, o sea que hacer 5/5 era loteria. Pidiendo DOS, los que cumplen
+       las cinco pasan de 0,8 a 2,3 por ronda y los que cumplen cuatro de 7,0 a
+       14,4. Medido: con 3 EMPEORA (77% de rondas con un 5/5 posible frente al
+       98% de 2), porque al generador le cuesta tanto dar con la combinacion que
+       se rinde y deja algo peor; con 5 se hunde al 23%. Dos es el punto dulce.
+       DEBE ser identico al de coche/js/restrictions-worker.js. */
+    const MIN_SOLUCIONES = 2;
     const hasSolution = (rs) => {
       /* Solo comprobar las restricciones no-club contra la DB pre-filtrada */
       const nonClub = rs.filter(r => r.type !== 'club');
-      return filteredDB.some(p => nonClub.every(r => validate(p, r)));
+      let n = 0;
+      for (const p of filteredDB) {
+        if (nonClub.every(r => validate(p, r))) { if (++n >= MIN_SOLUCIONES) return true; }
+      }
+      return false;
     };
     if (hasSolution(restrictions)) return restrictions;
 
@@ -1355,8 +1372,19 @@ const Restrictions = (() => {
     }
     if (hasSolution(nuclear) && nuclear.length === 5) return nuclear;
 
-    /* Si absolutamente todo falla (no debería), devolver con clubs al menos correctos */
-    return nuclear.length >= 2 ? nuclear : result;
+    /* Si la reconstruccion no llega a 5 CON solucion, se completa hasta 5 sin
+       exigirla. Antes se devolvia la lista corta tal cual y salian rondas de 4
+       restricciones — o de 2 — en el 4,5% de los casos. Una ronda sin solucion
+       garantizada es aceptable; una que no tiene 5 restricciones no lo es,
+       porque el juego entero se lee sobre esas cinco. */
+    for (const candidate of nonClubPool) {
+      if (nuclear.length >= 5) break;
+      if (nuclear.includes(candidate)) continue;
+      if (_familyUsed(nuclear, candidate, -1)) continue;
+      if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
+      nuclear.push(candidate);
+    }
+    return nuclear.length === 5 ? nuclear : result;
   }
 
   /* ────────── Validar un jugador contra una restricción ────────── */
@@ -1922,7 +1950,7 @@ const App = (() => {
            sala generan rejillas distintas con la misma semilla. Sin ?v= el
            navegador se quedaba con el worker viejo indefinidamente mientras
            script.js si se actualizaba: justo la divergencia que hay que evitar. */
-        worker = new Worker('js/restrictions-worker.js?v=20260820a');
+        worker = new Worker('js/restrictions-worker.js?v=20260820b');
       } catch(e) {
         finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(err); } });
         return;
@@ -3738,8 +3766,10 @@ const App = (() => {
     if (!cdEl) {
       cdEl = document.createElement('div');
       cdEl.id = '_finished-cd';
+      /* Por token: el dorado a fuego con opacity .8 daba 2,2:1 sobre el papel
+         crema del diseño Clásico, del mismo estilo que la leyenda de abajo. */
       cdEl.style.cssText = "text-align:center;font-family:'Bebas Neue',sans-serif;" +
-        "font-size:1rem;letter-spacing:3px;color:#c8a84b;padding:8px 0;opacity:.8;";
+        "font-size:1rem;letter-spacing:3px;color:var(--np-red);padding:8px 0;";
       const footer = (nxt && nxt.parentNode) || document.querySelector('.results-actions');
       if (footer) footer.insertBefore(cdEl, footer.firstChild);
     }
@@ -4055,15 +4085,20 @@ const App = (() => {
     /* Leyenda de restricciones */
     const legendEl=document.getElementById('results-restrictions-legend');
     if (legendEl&&restrictions) {
+      /* Los colores van por token, NO a fuego. Esto llevaba desde el diseño
+         oscuro de antes un `color:#e8e8e8; opacity:.55` sobre un panel que hoy
+         es papel crema (--np-paper): 1,05:1 de contraste, o sea invisible en el
+         diseño Clásico. El `opacity` es lo que remataba la faena, así que
+         tampoco vuelve: si hace falta texto tenue, se usa --np-ink-mid. */
       legendEl.innerHTML=`
         <div style="padding:0 14px 12px;">
-          <p style="font-size:.7rem;letter-spacing:2px;color:#4ade80;opacity:.7;text-transform:uppercase;margin-bottom:8px;">Las 5 Restricciones</p>
+          <p style="font-size:.7rem;letter-spacing:2px;color:var(--np-red);text-transform:uppercase;margin-bottom:8px;font-weight:700;">Las 5 restricciones</p>
           ${restrictions.map(r=>`
-            <div style="display:flex;align-items:center;gap:8px;font-size:.8rem;color:#e8e8e8;opacity:.55;font-weight:600;margin-bottom:4px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--np-ink);font-weight:600;margin-bottom:5px;">
               ${r.imgUrl
-                ? `<img src="${r.imgUrl}" style="width:18px;height:18px;object-fit:contain;"
+                ? `<img src="${r.imgUrl}" style="width:18px;height:18px;object-fit:contain;flex:0 0 auto;"
                       onerror="this.outerHTML='<span>${r.icon||'❓'}</span>'" alt="">`
-                : `<span>${r.icon||'❓'}</span>`}
+                : `<span style="flex:0 0 auto;">${r.icon||'❓'}</span>`}
               <span>${r.label}</span>
             </div>`).join('')}
         </div>`;

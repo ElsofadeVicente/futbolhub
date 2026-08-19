@@ -519,20 +519,23 @@ function _buildCandidates(rng, db) {
   candidates.push({ type:'position_gk',  label:'Portero',   imgUrl:null, icon:'🧤', family:'position' });
   candidates.push({ type:'position_def', label:'Defensa',   imgUrl:null, icon:'🛡️', family:'position' });
   candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
-  candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades',imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_0',              label:'Sin internacionalidades',        imgUrl:null, icon:'🌍', family:'caps' });
-  /* Fuera "Internacional (≥1 partido)": lo cumplia el 98,7% del pool y aun asi
-     era la 3ª restriccion mas frecuente del juego. En su sitio, un umbral que
-     si parte la baraja (p75 = 87 internacionalidades). */
+  /* Los umbrales se miden contra la BASE ENTERA (8.245), que es contra lo que
+     valida el juego cuando escribes un nombre, no contra el pool de generacion.
+     Ahi cualquier "menos de X" es un regalo: "50 o menos internacionalidades"
+     lo cumplia el 83% y "Internacional (>=1 partido)" el 99%. Fuera los dos;
+     quedan solo los cortes por arriba, que si dicen algo (>=50 el 17% de la
+     base, >=75 el 8%, >=100 el 4%). */
   candidates.push({ type:'caps_ge', value:75,  label:'75 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
-  /* La mediana del pool son 6 clubes: con "3 o mas" pasaba el 92%. */
-  candidates.push({ type:'clubs_ge', value:7, label:'Ha jugado en 7 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
-  candidates.push({ type:'clubs_le', value:4, label:'Ha jugado en 4 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
-  /* Traspaso maximo: mediana 10,5M y p90 42M. Con el corte en 70M, "menos de
-     70M" lo cumplia el 96% y "mas de 70M" solo el 3%. */
+  /* Solo el corte por abajo. "7 o mas clubes" se quito por peticion del
+     usuario: como criterio no dice nada de nadie. "3 o menos" es el 26% de
+     la base y si retrata a un futbolista de pocas casas. */
+  candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
+  /* Igual que arriba: "menos de 10M" lo cumplia el 77% de la base, que es
+     casi cualquiera. Solo por arriba: >20M el 11% y >40M el 3%. */
   candidates.push({ type:'fee_gt', value:40000000, label:'Traspaso de más de 40M €',   imgUrl:null, icon:'💰', family:'fee' });
-  candidates.push({ type:'fee_lt', value:10000000, label:'Traspaso de menos de 10M €', imgUrl:null, icon:'💰', family:'fee' });
+  candidates.push({ type:'fee_gt', value:20000000, label:'Traspaso de más de 20M €',   imgUrl:null, icon:'💰', family:'fee' });
   candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
   candidates.push({ type:'champions_goals_ge', value:20, label:'20+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
   candidates.push({ type:'champions_goals_ge', value:30, label:'30+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
@@ -643,9 +646,22 @@ function _ensureSolution(restrictions, shuffledPool, db) {
   const filteredDB = clubRestrictions.length > 0
     ? db.filter(p => clubRestrictions.every(cr => validate(p, cr)))
     : db;
+  /* No basta con que EXISTA una solucion: hay que poder encontrarla.
+     Pidiendo una sola, la ronda se resolvia con el unico futbolista de 8.245
+     que encajaba, o sea que hacer 5/5 era loteria. Pidiendo DOS, los que
+     cumplen las cinco pasan de 0,8 a 2,3 por ronda y los que cumplen cuatro de
+     7,0 a 14,4 — el doble de nombres a los que agarrarse.
+     Medido: con 3 EMPEORA (77% de rondas con un 5/5 posible, frente al 98% de
+     2), porque al generador le cuesta tanto encontrar la combinacion que se
+     rinde y deja algo peor. Con 5 se hunde al 23%. Dos es el punto dulce. */
+  const MIN_SOLUCIONES = 2;
   const hasSolution = (rs) => {
     const nonClub = rs.filter(r => r.type !== 'club');
-    return filteredDB.some(p => nonClub.every(r => validate(p, r)));
+    let n = 0;
+    for (const p of filteredDB) {
+      if (nonClub.every(r => validate(p, r))) { if (++n >= MIN_SOLUCIONES) return true; }
+    }
+    return false;
   };
   if (hasSolution(restrictions)) return restrictions;
   const result = [...restrictions];
@@ -698,7 +714,19 @@ function _ensureSolution(restrictions, shuffledPool, db) {
     if (!hasSolution(nuclear)) nuclear.pop();
   }
   if (hasSolution(nuclear) && nuclear.length === 5) return nuclear;
-  return nuclear.length >= 2 ? nuclear : result;
+  /* Si la reconstruccion no llega a 5 CON solucion, se completa hasta 5 sin
+     exigirla. Antes se devolvia la lista corta tal cual y salian rondas de 4
+     restricciones — o de 2 — en el 4,5% de los casos. Una ronda sin solucion
+     garantizada es aceptable; una ronda que no tiene 5 restricciones no lo es,
+     porque el juego entero se lee sobre esas cinco. */
+  for (const candidate of nonClubPool) {
+    if (nuclear.length >= 5) break;
+    if (nuclear.includes(candidate)) continue;
+    if (_familyUsed(nuclear, candidate, -1)) continue;
+    if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
+    nuclear.push(candidate);
+  }
+  return nuclear.length === 5 ? nuclear : result;
 }
 
 const _ONECLUB_PROB = 0.02;   // muy poco frecuente: ~1 de cada 50 rondas
@@ -871,9 +899,12 @@ function generate(seed, db) {
   let result = [...clubRestrictions, ...chosen.slice(0, 3)];
   const shuffled = _shuffle(playable, rng); /* pool para reemplazos */
   result = _removeRedundancies(result, shuffled, db);
-  /* Al 75% (antes 70%): dejar ~1 de cada 4 rondas sin ningún jugador válido
-     es intencional — le da variedad/caos a las partidas, no es un bug. */
-  if (rng() < 0.75) result = _ensureSolution(result, shuffled, db);
+  /* Se busca solucion SIEMPRE. El 75% de antes dejaba 1 de cada 4 rondas sin
+     ningun jugador valido a proposito, por darle caos; con las restricciones
+     mas finas de ahora eso se juntaba con lo dificil que ya era acertar y
+     salian 20% de rondas donde el techo era 3. El caos que queda es de sobra:
+     aun pidiendo dos soluciones, el 2% de las rondas no llega a 5. */
+  result = _ensureSolution(result, shuffled, db);
   return result;
 }
 

@@ -1008,16 +1008,20 @@ window.FR = (function () {
     candidates.push({ type:'position_def', label:'Defensa', imgUrl:null, icon:'🛡️', family:'position' });
 
     candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',   imgUrl:null, icon:'🌍', family:'caps' });
-    candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_0',             label:'Sin internacionalidades',         imgUrl:null, icon:'🌍', family:'caps' });
-    /* Fuera "Internacional (≥1 partido)": lo cumplia el 98,7% del pool. En su
-       sitio, un umbral que si parte la baraja (p75 del pool = 87 caps). */
+    /* Los umbrales se miden contra la BASE ENTERA (8.245), que es contra lo que
+       valida el juego cuando escribes un nombre, no contra el pool de generacion.
+       Ahi cualquier "menos de X" es un regalo: "50 o menos internacionalidades"
+       lo cumplia el 83% y "Internacional (>=1 partido)" el 99%. Fuera los dos;
+       quedan solo los cortes por arriba, que si dicen algo (>=50 el 17% de la
+       base, >=75 el 8%, >=100 el 4%). */
     candidates.push({ type:'caps_ge', value:75,  label:'75 o más internacionalidades',    imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',   imgUrl:null, icon:'🌍', family:'caps' });
 
-    /* La mediana del pool son 6 clubes, asi que "3 o mas" pasaba el 92%. */
-    candidates.push({ type:'clubs_ge', value:7, label:'Ha jugado en 7 o más clubes',  imgUrl:null, icon:'🏟️', family:'clubs_count' });
-    candidates.push({ type:'clubs_le', value:4, label:'Ha jugado en 4 o menos clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
+    /* Solo el corte por abajo. "7 o mas clubes" se quito por peticion del
+       usuario: como criterio no dice nada de nadie. "3 o menos" es el 26% de
+       la base y si retrata a un futbolista de pocas casas. */
+    candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
     /* one_club estaba implementado y validado desde siempre, pero no se
        generaba nunca: la categoria existia y no salia jamas. 313 jugadores la
        cumplen, mas que varias nacionalidades. */
@@ -1034,10 +1038,10 @@ window.FR = (function () {
     candidates.push({ type:'career_apps_ge', value:500, label:'500+ partidos oficiales', imgUrl:null, icon:'📋', family:'career_apps' });
     candidates.push({ type:'career_apps_ge', value:700, label:'700+ partidos oficiales', imgUrl:null, icon:'📋', family:'career_apps' });
 
-    /* Mediana 10,5M y p90 42M: con el corte en 70M, "menos de 70M" lo cumplia
-       el 96% del pool y "mas de 70M" solo el 3%. */
+    /* Solo por arriba: "menos de 70M" lo cumplia el 96% del pool y "menos de
+       10M" el 77% de la base entera. >20M es el 11% y >40M el 3%. */
     candidates.push({ type:'fee_gt', value:40000000, label:'Traspaso de más de 40M €',  imgUrl:null, icon:'💰', family:'fee' });
-    candidates.push({ type:'fee_lt', value:10000000, label:'Traspaso de menos de 10M €', imgUrl:null, icon:'💰', family:'fee' });
+    candidates.push({ type:'fee_gt', value:20000000, label:'Traspaso de más de 20M €',  imgUrl:null, icon:'💰', family:'fee' });
 
     candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
     candidates.push({ type:'champions_goals_ge', value:20, label:'20+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
