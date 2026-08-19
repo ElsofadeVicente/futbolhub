@@ -70,6 +70,21 @@ blackjack/data/blackjack/
 # no filtraban credenciales, pero enseñaban el tooling a cualquiera y las
 # indexaba Google. Se quedan en disco, fuera del despliegue.
 admin/*.html
+
+# ── admin/ ENTERO fuera de git ──────────────────────────────────────────────
+# Las herramientas internas se guardan en local, no en el repo (que ademas es
+# publico y es lo que despliega Vercel).
+#
+# Hasta ahora esto se hacia con reglas sueltas: *.py cubria los scripts, y cada
+# JSON de admin fue necesitando SU propia linea segun aparecia
+# (crucigrama_banco.json, bingo_pool_actual.txt, las caches...). A
+# ganadores_config.json no le habia tocado el turno, asi que un "git add -A" se
+# lo llevo al commit 2f6ee29 del 2026-08-04 (el de Superdraft) y acabo publicado
+# con sus 307 URLs de scraping. Con la carpeta entera ignorada no puede repetirse.
+#
+# OJO: esto lo evita de aqui en adelante. Lo que ya esta en commits antiguos
+# sigue ahi salvo que se reescriba el historial.
+admin/
 el-estadio/data/files/estadios-editor.html
 **/buscador_escudos.html
 
