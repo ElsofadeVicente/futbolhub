@@ -388,10 +388,13 @@
         var args = Array.prototype.slice.call(arguments);
         if (_real) { _real[m].apply(_real, args); }
         else {
+          /* Solo encolar. NO poner aquí un temporizador de error: en móvil
+             script.js (213 KB) no se pide hasta que han bajado los dos
+             módulos de Firebase desde gstatic, así que tocar una pestaña
+             antes de que llegue disparaba el cartel rojo sin que hubiera
+             ningún fallo. Si script.js no carga de verdad, ya avisan
+             s.onerror y la comprobación de _AppReal de más abajo. */
           _queue.push([m, args]);
-          setTimeout(function() {
-            if (!_real) _showInitError('El script del juego no se inicializó. Posible error de JavaScript.');
-          }, 2000);
         }
       };
     });
@@ -422,17 +425,20 @@
     document.body.appendChild(el);
   }
 
+  /* Quedan en consola, pero NO pintan el cartel rojo. Casi todo lo que llega
+     aquí es de terceros (el CMP de Google, GA4, AdSense), que se cargan sin
+     crossorigin: el navegador los entrega como "Script error." sin archivo ni
+     línea, así que ni se pueden diagnosticar ni se pueden arreglar desde aquí.
+     Medido en producción el 2026-08-19: el cartel salía en 5 de 5 cargas por
+     culpa del CMP, con el juego funcionando perfectamente.
+     El cartel se reserva para los dos fallos REALES de carga de script.js
+     (s.onerror y _AppReal ausente), que sí son accionables. Mismo criterio
+     que Bingo, Superdraft y Tres en Raya, que solo registran en consola. */
   window.addEventListener('error', function(e) {
     console.error('[Global error]', e.message, e.filename, e.lineno);
-    _showInitError(
-      (e.message || 'Error desconocido') +
-      (e.filename ? ' — ' + e.filename.split('/').pop() + ':' + e.lineno : '')
-    );
   });
   window.addEventListener('unhandledrejection', function(e) {
     console.error('[Unhandled Promise]', e.reason);
-    var msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason);
-    _showInitError('Promise rechazada: ' + msg);
   });
 </script>
 
