@@ -121,7 +121,6 @@ const CLUBS_LIST = [
   { tmName:'Galatasaray',          display:'Galatasaray',    league:'Süper Lig' },
   { tmName:'Besiktas JK',          display:'Beşiktaş',       league:'Süper Lig' },
   { tmName:'Fenerbahçe',           display:'Fenerbahçe',     league:'Süper Lig' },
-  { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
   { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
   { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
   { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
@@ -329,9 +328,22 @@ const COACHES_LIST = [
   { name:'Pep Guardiola',   id:'5672',  icon:'🎽' },
   { name:'Luis Enrique',    id:'6499',  icon:'🎽' },
   { name:'Zinédine Zidane', id:'21284', icon:'🎽' },
+  /* Entrenador nuevo: hay que dejar su foto en coche/data/coaches/<id>.png y
+     subirla con admin/upload_images_to_storage.py coach-photos. Si por lo que
+     sea todavia no la tiene, marcalo `photo:false` y saldra con imgUrl null:
+     aqui se pinta el emoji y Tres en Raya y Bingo, que filtran por imgUrl, no
+     lo ofrecen — mejor eso que una imagen rota en una casilla de 70px. */
+  { name:'Thomas Tuchel',      id:'7471', icon:'🎽' },
+  { name:'Mauricio Pochettino', id:'9044', icon:'🎽' },
 ];
 
-const TEAMMATES_LIST = [
+/* La lista de compañeros YA NO se escribe a mano: el hilo principal la
+   construye desde compañeros_principal.json (227 jugadores curados, todos con
+   45+ compañeros en el pool) y la manda en el postMessage. Asi no puede
+   divergir de la de script.js, que es justo el fallo contra el que avisa el
+   comentario del `new Worker(...?v=)` de script.js.
+   Lo de aqui abajo es SOLO el respaldo por si llegara un mensaje sin lista. */
+let TEAMMATES_LIST = [
   { name:'Lionel Messi',       display:'Messi',            id:'28003',  icon:'⚽' },
   { name:'Cristiano Ronaldo',  display:'Cristiano Ronaldo',id:'8198',   icon:'⚽' },
   { name:'Harry Kane',         display:'Kane',             id:'132098', icon:'⚽' },
@@ -413,6 +425,7 @@ function validate(player, r) {
     case 'birthDecade': {
       const y = player.birthYear;
       if (typeof y !== 'number') return false;
+      if (r.value === '1970s') return y >= 1970 && y <= 1979;
       if (r.value === '1980s') return y >= 1980 && y <= 1989;
       if (r.value === '1990s') return y >= 1990 && y <= 1999;
       if (r.value === '2000s') return y >= 2000 && y <= 2009;
@@ -476,36 +489,50 @@ function _buildCandidates(rng, db) {
     candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_national' });
   }
   for (const c of _shuffle(COACHES_LIST, rng)) {
-    candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:sbStorageUrl('coach-photos', `${c.id}.png`), icon:c.icon, family:'coach' });
+    candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:c.photo === false ? null : sbStorageUrl('coach-photos', `${c.id}.png`), icon:c.icon, family:'coach' });
   }
+  /* Indice id→jugador: con 227 compañeros, un db.find() por cabeza son 227 x
+     1516 comparaciones en cada generate(). */
+  const byId = new Map();
+  for (const x of db) byId.set(x.id, x);
   for (const p of _shuffle(TEAMMATES_LIST, rng)) {
     /* La foto viene de la BD de jugadores (Supabase), no de un archivo local:
        nunca hubo fotos propias en coche/data/players/photos. */
-    const dbPlayer = db.find(x => x.id === p.id);
+    const dbPlayer = byId.get(p.id);
     candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display||p.name}`, imgUrl:(dbPlayer && dbPlayer.img) || null, icon:p.icon, family:'teammate' });
   }
   for (const [cont, label] of [['europeo','Europeo'],['americano','Continente Americano'],['africano','Africano'],['asiatico','Asiático']]) {
     candidates.push({ type:'continent', value:cont, label, imgUrl:CONTINENT_LOGOS[cont], icon:'🌍', family:'continent' });
   }
-  for (const [dec, label] of [['1980s','Nacido en los 80'],['1990s','Nacido en los 90'],['2000s','Nacido en los 2000']]) {
+  for (const [dec, label] of [['1970s','Nacido en los 70'],['1980s','Nacido en los 80'],['1990s','Nacido en los 90'],['2000s','Nacido en los 2000']]) {
     candidates.push({ type:'birthDecade', value:dec, label, imgUrl:null, icon:'🎂', family:'birth' });
   }
-  candidates.push({ type:'height_le', value:180, label:'Mide 180 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
-  candidates.push({ type:'height_ge', value:180, label:'Mide 180 cm o más',    imgUrl:null, icon:'📏', family:'height' });
+  /* Umbrales sacados de los percentiles reales del pool (p25 177, p50 182,
+     p75 186), no a ojo: "180 cm o más" lo cumplia el 59% y no decia nada. */
+  candidates.push({ type:'height_le', value:176, label:'Mide 176 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
+  candidates.push({ type:'height_ge', value:185, label:'Mide 185 cm o más',    imgUrl:null, icon:'📏', family:'height' });
   candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
+  /* Solo Zurdo. "Diestro" lo cumplia el 71% del pool (los ambidiestros valen
+     para las dos), asi que era un hueco regalado y ademas salia mucho porque
+     _ensureSolution premia lo que nunca bloquea. */
   candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
-  candidates.push({ type:'foot', value:'right', label:'Diestro',     imgUrl:null, icon:'🦶', family:'foot' });
   candidates.push({ type:'position_gk',  label:'Portero',   imgUrl:null, icon:'🧤', family:'position' });
   candidates.push({ type:'position_def', label:'Defensa',   imgUrl:null, icon:'🛡️', family:'position' });
   candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades',imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_0',              label:'Sin internacionalidades',        imgUrl:null, icon:'🌍', family:'caps' });
-  candidates.push({ type:'caps_ge', value:1,   label:'Internacional (≥1 partido)',     imgUrl:null, icon:'🌍', family:'caps' });
+  /* Fuera "Internacional (≥1 partido)": lo cumplia el 98,7% del pool y aun asi
+     era la 3ª restriccion mas frecuente del juego. En su sitio, un umbral que
+     si parte la baraja (p75 = 87 internacionalidades). */
+  candidates.push({ type:'caps_ge', value:75,  label:'75 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
   candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
-  candidates.push({ type:'clubs_ge', value:3, label:'Ha jugado en 3 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
-  candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
-  candidates.push({ type:'fee_gt', value:70000000, label:'Traspaso de más de 70M €',   imgUrl:null, icon:'💰', family:'fee' });
-  candidates.push({ type:'fee_lt', value:70000000, label:'Traspaso de menos de 70M €', imgUrl:null, icon:'💰', family:'fee' });
+  /* La mediana del pool son 6 clubes: con "3 o mas" pasaba el 92%. */
+  candidates.push({ type:'clubs_ge', value:7, label:'Ha jugado en 7 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
+  candidates.push({ type:'clubs_le', value:4, label:'Ha jugado en 4 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
+  /* Traspaso maximo: mediana 10,5M y p90 42M. Con el corte en 70M, "menos de
+     70M" lo cumplia el 96% y "mas de 70M" solo el 3%. */
+  candidates.push({ type:'fee_gt', value:40000000, label:'Traspaso de más de 40M €',   imgUrl:null, icon:'💰', family:'fee' });
+  candidates.push({ type:'fee_lt', value:10000000, label:'Traspaso de menos de 10M €', imgUrl:null, icon:'💰', family:'fee' });
   candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
   candidates.push({ type:'champions_goals_ge', value:20, label:'20+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
   candidates.push({ type:'champions_goals_ge', value:30, label:'30+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
@@ -783,7 +810,19 @@ function generate(seed, db) {
      elegir primero una FAMILIA al azar (todas con igual probabilidad)
      y luego un candidato random de esa familia. */
   const candidates = _buildCandidates(rng, db);
-  const playable = candidates.filter(r => _matching(r, db) >= (r.type === 'teammate' ? 1 : 2));
+  /* Los compañeros se comprueban con el mapa inverso (O(1) por id) en vez de
+     recorrer los 1516 del pool por cada uno: con 227 en la lista, ese filtro
+     era el 80% del coste de generate() (357 ms; asi baja a ~75, por debajo de
+     los 91 que costaba con los 38 de antes). */
+  const dbIds = new Set(db.map(p => p.id));
+  const playable = candidates.filter(r => {
+    if (r.type === 'teammate') {
+      const s = _REVERSE_TEAMMATE_IDS[normalize(r.value)];
+      if (s) { for (const id of s) if (dbIds.has(id)) return true; }
+      return _matching(r, db, 1) >= 1;
+    }
+    return _matching(r, db) >= 2;
+  });
 
   /* Agrupar por familia */
   const familyGroups = {};
@@ -848,6 +887,12 @@ self.onmessage = function({ data }) {
   _REVERSE_TEAMMATE_IDS = {};
   for (const [k, v] of Object.entries(data.reverseTeammateIds || {})) {
     _REVERSE_TEAMMATE_IDS[k] = new Set(v);
+  }
+  /* Lista de compañeros construida por el hilo principal desde
+     compañeros_principal.json. Si no llega (mensaje de una version vieja),
+     se queda la de respaldo de arriba. */
+  if (Array.isArray(data.teammates) && data.teammates.length) {
+    TEAMMATES_LIST = data.teammates;
   }
   try {
     const restrictions = generate(data.seed, data.db);

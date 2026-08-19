@@ -40,6 +40,36 @@ let PLAYERS_DB = [];
 let GEN_POOL   = [];  // pool curado (~1500) usado SOLO por Restrictions.generate()
 let NAME_INDEX  = [];
 
+/* ── Compañeros para las restricciones "Compañero de X" ──
+   Se construye en _loadData desde compañeros_principal.json (227 jugadores
+   curados) en vez de estar escrita a mano. Antes eran 38 nombres fijos, asi
+   que Jesé, Lamela, Areola o Lingard no podian salir NUNCA por mucho que
+   estuvieran en la base con 500 compañeros cada uno. Comprobados los 227: el
+   peor tiene 45 compañeros dentro del pool de generacion, de sobra para
+   montar una ronda.
+   La MISMA lista viaja al worker por postMessage: asi no hay dos copias que
+   puedan divergir, que es contra lo que avisa el comentario del `new Worker`. */
+let TEAMMATES_LIST = [];
+
+/* Nombre corto para la etiqueta, solo de los que ya lo tenian curado. El resto
+   sale con su nombre completo ("Compañero de Erik Lamela"), que se lee igual
+   de bien y evita inventar abreviaturas ambiguas (hay dos Thiago, tres Danilo). */
+const TEAMMATE_DISPLAY = {
+  '28003':'Messi',   '132098':'Kane',      '3979':'Casillas',  '342229':'Mbappé',
+  '45320':'Di María','48280':'Cavani',     '7825':'Reina',     '17259':'Neuer',
+  '58358':'Müller',  '35207':'Reus',       '5817':'Pirlo',     '406625':'Lautaro',
+  '4673':'Sneijder', '288230':'Dembélé',   '27992':'Modric',   '26399':'Agüero',
+  '88755':'De Bruyne','3455':'Ibrahimovic','5023':'Buffon',    '3111':'Zidane',
+  '164770':'Varane', '148455':'Salah',     '225083':'Kanté',   '4360':'Robben',
+  '7767':'Torres',   '5958':'Totti',
+};
+
+function _buildTeammatesList(companeros) {
+  return Object.entries(companeros).map(([id, pd]) => ({
+    name: pd.name, display: TEAMMATE_DISPLAY[id] || pd.name, id, icon: '⚽',
+  }));
+}
+
 /* Pool para generar restricciones: GEN_POOL si ya cargó, si no PLAYERS_DB
    (nunca vacío una vez cargados los datos). */
 function _genPool() { return GEN_POOL.length ? GEN_POOL : PLAYERS_DB; }
@@ -408,6 +438,10 @@ async function _loadData() {
   }
   _REVERSE_TEAMMATE_IDS = reverseIdMap;
 
+  /* Los 227 curados pasan a ser candidatos de "Compañero de X" (antes 38
+     escritos a mano). Ver TEAMMATES_LIST arriba. */
+  TEAMMATES_LIST = _buildTeammatesList(companeros);
+
   /* Dedup: Coche delega validate()/_isRedundant() en el motor compartido FR.
      FR.validate('teammate') necesita estos mapas inversos; se los inyectamos
      (ya construidos) para no recargar datos. */
@@ -613,7 +647,6 @@ const Restrictions = (() => {
   { tmName:'Galatasaray',          display:'Galatasaray',    league:'Süper Lig' },
   { tmName:'Besiktas JK',          display:'Beşiktaş',       league:'Süper Lig' },
   { tmName:'Fenerbahçe',           display:'Fenerbahçe',     league:'Süper Lig' },
-  { tmName:'Celtic FC',            display:'Celtic',         league:'Scottish Premiership' },
   { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
   { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
   { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
@@ -835,50 +868,20 @@ const Restrictions = (() => {
     { name:'Pep Guardiola',     id:'5672', icon:'🎽' },
     { name:'Luis Enrique',      id:'6499', icon:'🎽' },
     { name:'Zinédine Zidane',   id:'21284',icon:'🎽' },
+    /* Entrenador nuevo: hay que dejar su foto en coche/data/coaches/<id>.png y
+       subirla con admin/upload_images_to_storage.py coach-photos. Si por lo que
+       sea todavia no la tiene, marcalo `photo:false` y saldra con imgUrl null:
+       aqui se pinta el emoji y Tres en Raya y Bingo, que filtran por imgUrl, no
+       lo ofrecen — mejor eso que una imagen rota en una casilla de 70px. */
+    { name:'Thomas Tuchel',       id:'7471', icon:'🎽' },
+    { name:'Mauricio Pochettino', id:'9044', icon:'🎽' },
   ];
 
   /* ────────── COMPAÑEROS ────────── */
   /* IDs de jugadores "famosos" para generar restricción compañero-de     */
-  const TEAMMATES_LIST = [
-    { name:'Lionel Messi',       display:'Messi',            id:'28003',  icon:'⚽' },
-    { name:'Cristiano Ronaldo',  display:'Cristiano Ronaldo',id:'8198',   icon:'⚽' },
-    { name:'Harry Kane',         display:'Kane',             id:'132098', icon:'⚽' },
-    { name:'Iker Casillas',      display:'Casillas',         id:'3979',   icon:'⚽' },
-    { name:'Kylian Mbappé',      display:'Mbappé',           id:'342229', icon:'⚽' },
-    { name:'Pepe',               display:'Pepe',             id:'14132',  icon:'⚽' },
-    { name:'Neymar',             display:'Neymar',           id:'68290',  icon:'⚽' },
-    { name:'Ronaldinho',         display:'Ronaldinho',       id:'3373',   icon:'⚽' },
-    { name:'Ángel Di María',     display:'Di María',         id:'45320',  icon:'⚽' },
-    { name:'Edinson Cavani',     display:'Cavani',           id:'48280',  icon:'⚽' },
-    { name:'Xavi',               display:'Xavi',             id:'7607',   icon:'⚽' },
-    { name:'Fernando Llorente',  display:'Fernando Llorente',         id:'35564',  icon:'⚽' },
-    { name:'Pepe Reina',         display:'Reina',            id:'7825',   icon:'⚽' },
-    { name:'Manuel Neuer',       display:'Neuer',            id:'17259',  icon:'⚽' },
-    { name:'Thomas Müller',      display:'Müller',           id:'58358',  icon:'⚽' },
-    { name:'Marco Reus',         display:'Reus',             id:'35207',  icon:'⚽' },
-    { name:'Andrea Pirlo',       display:'Pirlo',            id:'5817',   icon:'⚽' },
-    { name:'Lautaro Martínez',   display:'Lautaro',          id:'406625', icon:'⚽' },
-    { name:'Wesley Sneijder',    display:'Sneijder',         id:'4673',   icon:'⚽' },
-    { name:'Ousmane Dembélé',    display:'Dembélé',          id:'288230', icon:'⚽' },
-    { name:'Kaká',               display:'Kaká',             id:'3366',   icon:'⚽' },
-    { name:'Luka Modrić',        display:'Modric',           id:'27992',  icon:'⚽' },
-    { name:'Sergio Agüero',      display:'Agüero',           id:'26399',  icon:'⚽' },
-    { name:'David Villa',        display:'David Villa',      id:'7980',   icon:'⚽' },
-    { name:'Kevin De Bruyne',    display:'De Bruyne',        id:'88755',  icon:'⚽' },
-    { name:'Zlatan Ibrahimović', display:'Ibrahimovic',      id:'3455',   icon:'⚽' },
-    { name:'Gianluigi Buffon',   display:'Buffon',           id:'5023',   icon:'⚽' },
-    { name:'Sergio Ramos',       display:'Sergio Ramos',     id:'25557',  icon:'⚽' },
-    { name:'Zinédine Zidane',    display:'Zidane',           id:'3111',   icon:'⚽' },
-    { name:'Xabi Alonso',        display:'Xabi Alonso',      id:'7476',   icon:'⚽' },
-    { name:'Raphaël Varane',     display:'Varane',           id:'164770', icon:'⚽' },
-    { name:'Mohamed Salah',      display:'Salah',            id:'148455', icon:'⚽' },
-    { name:"N'Golo Kanté",      display:'Kanté',            id:'225083', icon:'⚽' },
-    { name:'Alexis Sánchez',     display:'Alexis Sánchez',   id:'40433',  icon:'⚽' },
-    { name:'Arjen Robben',       display:'Robben',           id:'4360',   icon:'⚽' },
-    { name:'Fernando Torres',    display:'Torres',           id:'7767',   icon:'⚽' },
-    { name:'Joaquín',            display:'Joaquín',          id:'7663',   icon:'⚽' },
-    { name:'Francesco Totti',    display:'Totti',            id:'5958',   icon:'⚽' },
-  ];
+  /* TEAMMATES_LIST vive ahora en el ambito del modulo (arriba del todo) y
+     la construye _loadData desde companeros_principal.json. Estaba aqui
+     escrita a mano con 38 nombres fijos. */
 
   /* ────────── Contar jugadores válidos (con early-exit) ────────── */
   function _matching(restriction, db, minNeeded) {
@@ -936,14 +939,18 @@ const Restrictions = (() => {
 
     /* Entrenadores */
     for (const c of _shuffle(COACHES_LIST, rng)) {
-      candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:sbStorageUrl('coach-photos', `${c.id}.png`), icon:c.icon, family:'coach' });
+      candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:c.photo === false ? null : sbStorageUrl('coach-photos', `${c.id}.png`), icon:c.icon, family:'coach' });
     }
 
     /* Compañeros de */
+    /* Indice id→jugador: con 227 compañeros, un PLAYERS_DB.find() por cabeza
+       es un recorrido completo por cada uno. */
+    const _playersById = new Map();
+    for (const x of PLAYERS_DB) _playersById.set(x.id, x);
     for (const p of _shuffle(TEAMMATES_LIST, rng)) {
       /* La foto viene de la BD de jugadores (Supabase), no de un archivo local:
          nunca hubo fotos propias en coche/data/players/photos. */
-      const dbPlayer = PLAYERS_DB.find(x => x.id === p.id);
+      const dbPlayer = _playersById.get(p.id);
       candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display || p.name}`, imgUrl:(dbPlayer && dbPlayer.img) || null, icon:p.icon, family:'teammate' });
     }
 
@@ -953,18 +960,20 @@ const Restrictions = (() => {
     }
 
     /* Nacido en década */
-    for (const [dec, label] of [['1980s','Nacido en los 80'],['1990s','Nacido en los 90'],['2000s','Nacido en los 2000']]) {
+    for (const [dec, label] of [['1970s','Nacido en los 70'],['1980s','Nacido en los 80'],['1990s','Nacido en los 90'],['2000s','Nacido en los 2000']]) {
       candidates.push({ type:'birthDecade', value:dec, label, imgUrl:null, icon:'🎂', family:'birth' });
     }
 
-    /* Altura */
-    candidates.push({ type:'height_le', value:180, label:'Mide 180 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
-    candidates.push({ type:'height_ge', value:180, label:'Mide 180 cm o más',    imgUrl:null, icon:'📏', family:'height' });
+    /* Altura — umbrales sacados de los percentiles reales del pool (p25 177,
+       p50 182, p75 186), no a ojo: "180 cm o más" lo cumplia el 59%. */
+    candidates.push({ type:'height_le', value:176, label:'Mide 176 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
+    candidates.push({ type:'height_ge', value:185, label:'Mide 185 cm o más',    imgUrl:null, icon:'📏', family:'height' });
     candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
 
-    /* Pie */
+    /* Pie — solo Zurdo. "Diestro" lo cumplia el 71% del pool (los ambidiestros
+       valen para las dos), asi que era un hueco regalado, y encima salia mucho
+       porque _ensureSolution premia lo que nunca bloquea la solucion. */
     candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
-    candidates.push({ type:'foot', value:'right', label:'Diestro',     imgUrl:null, icon:'🦶', family:'foot' });
 
     /* Posición portero */
     candidates.push({ type:'position_gk',  label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
@@ -974,16 +983,20 @@ const Restrictions = (() => {
     candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_le', value:50,  label:'50 o menos internacionalidades', imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_0',              label:'Sin internacionalidades',        imgUrl:null, icon:'🌍', family:'caps' });
-    candidates.push({ type:'caps_ge', value:1,   label:'Internacional (≥1 partido)',     imgUrl:null, icon:'🌍', family:'caps' });
+    /* Fuera "Internacional (≥1 partido)": lo cumplia el 98,7% del pool y aun
+       asi era la 3ª restriccion mas frecuente del juego. En su sitio, un
+       umbral que si parte la baraja (p75 del pool = 87 internacionalidades). */
+    candidates.push({ type:'caps_ge', value:75,  label:'75 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
 
-    /* Clubes */
-    candidates.push({ type:'clubs_ge', value:3, label:'Ha jugado en 3 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
-    candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
+    /* Clubes — la mediana del pool son 6, asi que "3 o mas" pasaba el 92%. */
+    candidates.push({ type:'clubs_ge', value:7, label:'Ha jugado en 7 o más clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
+    candidates.push({ type:'clubs_le', value:4, label:'Ha jugado en 4 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
 
-    /* Valor de traspaso */
-    candidates.push({ type:'fee_gt', value:70000000, label:'Traspaso de más de 70M €',  imgUrl:null, icon:'💰', family:'fee' });
-    candidates.push({ type:'fee_lt', value:70000000, label:'Traspaso de menos de 70M €',imgUrl:null, icon:'💰', family:'fee' });
+    /* Valor de traspaso — mediana 10,5M y p90 42M. Con el corte en 70M,
+       "menos de 70M" lo cumplia el 96% y "mas de 70M" solo el 3%. */
+    candidates.push({ type:'fee_gt', value:40000000, label:'Traspaso de más de 40M €',  imgUrl:null, icon:'💰', family:'fee' });
+    candidates.push({ type:'fee_lt', value:10000000, label:'Traspaso de menos de 10M €',imgUrl:null, icon:'💰', family:'fee' });
 
     /* Goles en Champions League (precomputado desde performances) */
     candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
@@ -1132,10 +1145,18 @@ const Restrictions = (() => {
     /* ══ PASO 2: Pool de candidatos ══ */
     const candidates = _buildCandidates(rng);
 
-    /* ══ PASO 3: Filtrar jugables (mín 1 para compañeros, mín 2 para el resto) ══ */
+    /* ══ PASO 3: Filtrar jugables (mín 1 para compañeros, mín 2 para el resto) ══
+       Los compañeros se resuelven con el mapa inverso (O(1) por id) en vez de
+       recorrer el pool entero por cada uno: con 227 en la lista ese filtro era
+       el grueso del coste de generate(). */
+    const dbIds = new Set(db.map(p => p.id));
     const playable = candidates.filter(r => {
-      const min = r.type === 'teammate' ? 1 : 2;
-      return _matching(r, db) >= min;
+      if (r.type === 'teammate') {
+        const s = _REVERSE_TEAMMATE_IDS[normalize(r.value)];
+        if (s) { for (const id of s) if (dbIds.has(id)) return true; }
+        return _matching(r, db, 1) >= 1;
+      }
+      return _matching(r, db) >= 2;
     });
 
     /* ══ PASO 4: D — Selección ponderada por familia ══
@@ -1901,7 +1922,7 @@ const App = (() => {
            sala generan rejillas distintas con la misma semilla. Sin ?v= el
            navegador se quedaba con el worker viejo indefinidamente mientras
            script.js si se actualizaba: justo la divergencia que hay que evitar. */
-        worker = new Worker('js/restrictions-worker.js?v=20260819a');
+        worker = new Worker('js/restrictions-worker.js?v=20260820a');
       } catch(e) {
         finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(err); } });
         return;
@@ -1928,6 +1949,10 @@ const App = (() => {
         db,
         reverseTeammate:    rtSerialized,
         reverseTeammateIds: rtIdsSerialized,
+        /* Fuente unica de la lista de compañeros: la construye este hilo desde
+           compañeros_principal.json y el worker la usa tal cual, en vez de
+           llevar su propia copia escrita a mano que podria divergir. */
+        teammates:          TEAMMATES_LIST,
       });
     });
   }
