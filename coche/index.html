@@ -26,9 +26,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260809a">
+  <link rel="stylesheet" href="css/style.css?v=20260819a">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
+  <link rel="stylesheet" href="../css/volver.css?v=20260819a">
+  <link rel="stylesheet" href="../css/sala.css?v=20260819a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -36,7 +38,7 @@
 <!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
      :root[data-theme="v2"]: sin ese atributo no pinta nada.
      Va la ultima para poder ganar a igual especificidad. -->
-<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260814a">
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260819a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -106,7 +108,7 @@
      PANTALLA 1: MENÚ
      ═══════════════════════════════════════════ -->
 <div id="screen-menu" class="screen active">
-  <a href="../index.html" class="back-btn">← Volver</a>
+  <a href="../index.html" class="fh-volver">← Volver</a>
 
   <div class="menu-hero">
     <h1 class="menu-title">COCHE</h1>
@@ -178,17 +180,17 @@
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:0.1em;color:var(--np-ink-mid);text-transform:uppercase;">Puntos para ganar</span>
           <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="App.adjustLocalPoints(-1)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+            <button aria-label="Quitar un punto para ganar" onclick="App.adjustLocalPoints(-1)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
             <span id="local-points-display" style="font-family:'Anton',sans-serif;font-size:1.4rem;color:var(--np-red);min-width:20px;text-align:center;">7</span>
-            <button onclick="App.adjustLocalPoints(1)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+            <button aria-label="Sumar un punto para ganar" onclick="App.adjustLocalPoints(1)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:0.1em;color:var(--np-ink-mid);text-transform:uppercase;">Segundos por ronda</span>
           <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="App.adjustLocalSecs(-10)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+            <button aria-label="Quitar diez segundos por ronda" onclick="App.adjustLocalSecs(-10)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
             <span id="local-secs-display" style="font-family:'Anton',sans-serif;font-size:1.4rem;color:var(--np-red);min-width:30px;text-align:center;">60</span>
-            <button onclick="App.adjustLocalSecs(10)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+            <button aria-label="Sumar diez segundos por ronda" onclick="App.adjustLocalSecs(10)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
           </div>
         </div>
       </div>
@@ -205,9 +207,10 @@
      PANTALLA 2: LOBBY
      ═══════════════════════════════════════════ -->
 <div id="screen-lobby" class="screen">
-  <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
+  <button class="fh-volver" onclick="App.leaveRoom()">← Salir</button>
 
   <div class="lobby-wrap" style="justify-content:center;min-height:80vh;margin-top:20px;">
+    <h2 class="lobby-title">Sala de espera</h2>
 
     <div class="lobby-code-card" id="lobby-code-card">
       <div class="lobby-code-label">Código de sala</div>
@@ -245,19 +248,19 @@
       <div class="settings-row">
         <span class="settings-label">PUNTOS PARA GANAR</span>
         <div class="settings-control">
-          <button class="settings-btn" onclick="App.adjustOnlinePoints(-1)">−</button>
+          <button aria-label="Quitar un punto para ganar" class="settings-btn" onclick="App.adjustOnlinePoints(-1)">−</button>
           <span class="settings-value" id="online-points-display">7</span>
           <span class="settings-unit">pts</span>
-          <button class="settings-btn" onclick="App.adjustOnlinePoints(1)">+</button>
+          <button aria-label="Sumar un punto para ganar" class="settings-btn" onclick="App.adjustOnlinePoints(1)">+</button>
         </div>
       </div>
       <div class="settings-row">
         <span class="settings-label">SEGUNDOS POR RONDA</span>
         <div class="settings-control">
-          <button class="settings-btn" onclick="App.adjustOnlineSecs(-10)">−</button>
+          <button aria-label="Quitar diez segundos por ronda" class="settings-btn" onclick="App.adjustOnlineSecs(-10)">−</button>
           <span class="settings-value" id="online-secs-display">60</span>
           <span class="settings-unit">seg</span>
-          <button class="settings-btn" onclick="App.adjustOnlineSecs(10)">+</button>
+          <button aria-label="Sumar diez segundos por ronda" class="settings-btn" onclick="App.adjustOnlineSecs(10)">+</button>
         </div>
       </div>
     </div>
@@ -434,7 +437,7 @@
 </script>
 
 <script src="../js/supabase-config.js"></script>
-<script src="../js/futbol-restrictions.js?v=20260814b"></script>
+<script src="../js/futbol-restrictions.js?v=20260819a"></script>
 <script src="../js/vendor/supabase-js.min.js"></script>
 <script src="../js/auth.js?v=20260722g"></script>
 <script src="../js/progress-sync.js?v=20260808a"></script>
@@ -478,7 +481,7 @@
   /* Version FIJA, no Date.now(): con el timestamp la URL cambiaba en cada
      carga y script.js (213 KB) se volvia a descargar SIEMPRE, sin caché de
      navegador ni de service worker. Al tocar el archivo, sube la letra. */
-  const V = '?v=20260808a';
+  const V = '?v=20260819a';
 
   const s = document.createElement('script');
   s.src = 'js/script.js' + V;

@@ -60,24 +60,10 @@ a      { text-decoration: none; }
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-.ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.ad-strip--accent {
-  border-color: rgba(181,34,30,0.20);
-  background: rgba(181,34,30,0.022);
-}
-.ad-strip-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 /* Empuja contenido para no quedar bajo las columnas */
 @media (min-width: 760px) {
@@ -94,18 +80,9 @@ a      { text-decoration: none; }
 /* ═══════════════════════════════════════════
    BOTÓN VOLVER — absoluto dentro de cada screen
    ═══════════════════════════════════════════ */
-.back-btn {
-  position: absolute; top: 14px; left: 14px;
-  text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-  z-index: 5;
-  font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
-  color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
-  border: 1px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2);
-  border-radius: var(--r-md, 0); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  transition: background 0.12s, color 0.12s;
-  cursor: pointer;
-}
-.back-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+/* La regla .back-btn de este juego se quedo sin ningun elemento al migrar el
+   boton de volver/salir a .fh-volver (css/volver.css). El unico juego que
+   sigue usando .back-btn es En el Once, para el boton de su modal. */
 
 /* ═══════════════════════════════════════════
    MENÚ
@@ -272,10 +249,7 @@ a      { text-decoration: none; }
   display:block; border-radius:50%;
 }
 .lobby-player-name { flex:1; font-size:0.95rem; color: var(--np-ink); }
-.lobby-player-host {
-  font-family: 'DM Mono', monospace;
-  font-size:0.6rem; letter-spacing:0.14em; color: var(--np-red); text-transform: uppercase;
-}
+/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
 .lobby-section { width:100%; }
 .lobby-section-kicker {
   font-family: 'DM Mono', monospace;
@@ -326,15 +300,10 @@ a      { text-decoration: none; }
 .settings-unit { font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--np-ink-mid); letter-spacing:1px; }
 
 /* Botón copiar enlace */
-#btn-copy-link {
-  margin-top: 8px;
-  background: transparent !important; border: 1px solid var(--bd-c, var(--np-ink)) !important;
-  color: var(--np-ink) !important; font-family: 'DM Mono',monospace !important;
-  font-size: 0.65rem !important; font-weight: 500 !important; cursor: pointer;
-  letter-spacing: 0.12em !important; padding: 5px 12px !important;
-  border-radius: var(--r-md, 0) !important; transition: background 0.12s, color 0.12s;
-}
-#btn-copy-link:hover { background: var(--np-ink) !important; color: var(--np-paper) !important; }
+/* #btn-copy-link vive ahora en css/sala.css, una sola vez para las seis
+   salas. Aquí estaba con !important en casi cada línea, lo que además le
+   impedía al tema Moderno convertirlo en píldora de cristal como al resto de
+   botones secundarios. */
 
 #lobby-link-display { font-family:'DM Mono',monospace !important; font-size:0.58rem !important; color:var(--np-ink-mid) !important; opacity:1 !important; }
 #lobby-mode-badge   { font-family:'DM Mono',monospace !important; font-size:0.62rem !important; color:var(--np-ink-mid) !important; opacity:1 !important; letter-spacing:0.12em !important; text-transform:uppercase !important; }

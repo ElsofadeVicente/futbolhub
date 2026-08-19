@@ -726,6 +726,23 @@ const Restrictions = (() => {
     { tmNat:'Cameroon',    display:'Camerún',   adj:'Camerunés',  flag:'🇨🇲', flagImg:sbStorageUrl('team-flags','cm.png') },
     { tmNat:'Morocco',     display:'Marruecos', adj:'Marroquí',   flag:'🇲🇦', flagImg:sbStorageUrl('team-flags','ma.png') },
     { tmNat:'Japan',       display:'Japón',     adj:'Japonés',    flag:'🇯🇵', flagImg:sbStorageUrl('team-flags','jp.png') },
+    /* Ampliacion 2026-08-19: de 13 a 23 nacionalidades. Todas tienen >=67
+       jugadores en data/players/chunks (el liston lo marcaba Japon con 49) y
+       bandera en el bucket team-flags. Van AL FINAL para no mover el orden de
+       las 13 de siempre. Esta lista esta duplicada en tres sitios
+       (js/futbol-restrictions.js, coche/js/script.js y
+       coche/js/restrictions-worker.js): si divergen, dos jugadores de la misma
+       sala de Coche generan rejillas distintas con la misma semilla. */
+    { tmNat:'Portugal', display:'Portugal', adj:'Portugués', flag:'🇵🇹', flagImg:sbStorageUrl('team-flags','pt.png') },
+    { tmNat:'Belgium', display:'Bélgica', adj:'Belga', flag:'🇧🇪', flagImg:sbStorageUrl('team-flags','be.png') },
+    { tmNat:'Croatia', display:'Croacia', adj:'Croata', flag:'🇭🇷', flagImg:sbStorageUrl('team-flags','hr.png') },
+    { tmNat:'Serbia', display:'Serbia', adj:'Serbio', flag:'🇷🇸', flagImg:sbStorageUrl('team-flags','rs.png') },
+    { tmNat:'Denmark', display:'Dinamarca', adj:'Danés', flag:'🇩🇰', flagImg:sbStorageUrl('team-flags','dk.png') },
+    { tmNat:'Colombia', display:'Colombia', adj:'Colombiano', flag:'🇨🇴', flagImg:sbStorageUrl('team-flags','co.png') },
+    { tmNat:'Mexico', display:'México', adj:'Mexicano', flag:'🇲🇽', flagImg:sbStorageUrl('team-flags','mx.png') },
+    { tmNat:'United States', display:'Estados Unidos', adj:'Estadounidense', flag:'🇺🇸', flagImg:sbStorageUrl('team-flags','us.png') },
+    { tmNat:'Nigeria', display:'Nigeria', adj:'Nigeriano', flag:'🇳🇬', flagImg:sbStorageUrl('team-flags','ng.png') },
+    { tmNat:'Ivory Coast', display:'Costa de Marfil', adj:'Marfileño', flag:'🇨🇮', flagImg:sbStorageUrl('team-flags','ci.png') },
   ];
 
   /* Icono de silueta por continente (bucket league-logos, reutilizado) */
@@ -740,7 +757,7 @@ const Restrictions = (() => {
   const CONTINENT_NAT = {
     europeo:    ['Spain','England','France','Germany','Netherlands','Portugal','Italy',
                  'Belgium','Croatia','Serbia','Denmark','Sweden','Norway','Poland',
-                 'Czech Republic','Czech','Switzerland','Austria','Turkey','Türkiye','Greece','Hungary',
+                 'Czech Republic','Czech','Switzerland','Austria','Turkey','Türkiye','Turkiye','Czechia','Republic of Ireland','Israel','Belarus','Greece','Hungary',
                  'Slovakia','Romania','Ukraine','Russia','Scotland','Wales','Northern Ireland',
                  'Finland','Albania','Slovenia','Bosnia-Herzegovina','Montenegro','Iceland',
                  'Ireland','Georgia','Kosovo','North Macedonia','North','Bulgaria','Cyprus','Latvia',
@@ -748,13 +765,13 @@ const Restrictions = (() => {
                  'Faroe','Faroe Islands'],
     americano:  ['Argentina','Brazil','Colombia','Uruguay','Chile','Mexico','Paraguay',
                  'Bolivia','Peru','Venezuela','Ecuador','United States','Jamaica',
-                 'Trinidad and Tobago','Honduras','Costa Rica','Costa','Panama','Guatemala',
+                 'Trinidad and Tobago','Curaçao','Suriname','Guadeloupe','Martinique','Montserrat','Puerto Rico','Honduras','Costa Rica','Costa','Panama','Guatemala',
                  'El Salvador','Cuba','Dominican Republic','Canada','Haiti'],
     africano:   ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cote','Cameroon',
                  'Morocco','Egypt','Algeria','Tunisia','South Africa','South','Mali','Guinea',
-                 'Burkina Faso','DR Congo','DR','Congo','Republic of the Congo','Togo','Gabon',
+                 'Burkina Faso','DR Congo','DR','Congo','Democratic Republic of the Congo','Republic of the Congo','Togo','Gabon',
                  'Equatorial Guinea','Equatorial','Zimbabwe','Kenya','Cape Verde','Cape','Sierra Leone',
-                 'Liberia','Gambia','The','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
+                 'Liberia','Gambia','The','Guinea-Bissau','The Gambia','Rwanda','Ethiopia','Tanzania',
                  'Zambia','Uganda','Angola','Mauritius','Mozambique','Madagascar',
                  'Benin','Niger','Chad','Sudan','South Sudan','Somalia','Eritrea',
                  'Djibouti','Comoros','Lesotho','Botswana','Namibia','Malawi',
@@ -762,7 +779,7 @@ const Restrictions = (() => {
     asiatico:   ['Japan','South Korea','Iran','Saudi Arabia','Saudi','Qatar','UAE','Australia',
                  'China','Iraq','Jordan','Bahrain','Kuwait','Uzbekistan','Vietnam',
                  'Thailand','Indonesia','Philippines','India','Pakistan','Bangladesh',
-                 'North Korea','Malaysia','Oman','Lebanon','Palestine','Syria',
+                 'North Korea','Hong Kong','Malaysia','Oman','Lebanon','Palestine','Syria',
                  'New','New Zealand'],
   };
 
@@ -1879,7 +1896,12 @@ const App = (() => {
         fn();
       };
       try {
-        worker = new Worker('js/restrictions-worker.js');
+        /* Con version: el worker lleva su PROPIA copia de NATIONALITIES y CLUBS_LIST,
+           y tiene que ser identica a la de este archivo o dos jugadores de la misma
+           sala generan rejillas distintas con la misma semilla. Sin ?v= el
+           navegador se quedaba con el worker viejo indefinidamente mientras
+           script.js si se actualizaba: justo la divergencia que hay que evitar. */
+        worker = new Worker('js/restrictions-worker.js?v=20260819a');
       } catch(e) {
         finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(err); } });
         return;
@@ -2840,8 +2862,8 @@ const App = (() => {
           <div class="lobby-player-row">
             <div class="lobby-player-avatar">${_avatarInner(p)}</div>
             <span class="lobby-player-name">${_escHtml(p.name)}</span>
-            ${p.isHost ? '<span class="lobby-player-host">HOST</span>' : ''}
-            ${pid===_playerId ? '<span style="margin-left:auto;font-size:.7rem;opacity:.4;letter-spacing:1px;">← TÚ</span>' : ''}
+            ${p.isHost ? '<span class="lobby-player-host">ANFITRIÓN</span>' : ''}
+            ${pid===_playerId ? '<span class="lobby-player-you">← TÚ</span>' : ''}
           </div>
         `).join('');
     }
@@ -4049,10 +4071,10 @@ const App = (() => {
 
   function _acHighlight(name, query) {
     const q = _acNorm(query);
-    if (!q) return name;
+    if (!q) return _escHtml(name);
     const n = _acNorm(name);
     const idx = n.indexOf(q);
-    if (idx === -1) return name;
+    if (idx === -1) return _escHtml(name);
     /* La normalización puede cambiar longitudes (Ø→o, æ→ae, espacios colapsados),
        así que no se puede usar idx directamente sobre 'name'. Mapeamos carácter a
        carácter: avanzamos por 'name' acumulando su forma normalizada hasta cubrir
@@ -4063,10 +4085,13 @@ const App = (() => {
       if (normPos >= idx + q.length) { endRaw = i; break; }
       if (i < name.length) normPos += _acNorm(name[i]).length;
     }
-    if (startRaw === -1) return name;
-    return name.slice(0, startRaw)
-      + '<span class="autocomplete-highlight">' + name.slice(startRaw, endRaw) + '</span>'
-      + name.slice(endRaw);
+    if (startRaw === -1) return _escHtml(name);
+    /* El resultado va a innerHTML: hay que escapar los trozos. En el Top y La
+       Carrera ya lo hacen en su highlight(); aquí faltaba, así que un nombre
+       de la base con &, < o > rompía el marcado de la lista. */
+    return _escHtml(name.slice(0, startRaw))
+      + '<span class="autocomplete-highlight">' + _escHtml(name.slice(startRaw, endRaw)) + '</span>'
+      + _escHtml(name.slice(endRaw));
   }
 
   function _acRender(items, query) {

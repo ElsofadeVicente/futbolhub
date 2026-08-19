@@ -51,6 +51,11 @@ el-estadio/data/_backup/
 mentiroso/js/data.js
 coche/data/*.json
 data/general/*.json
+# OJO: la regla de arriba lleva *.json, que en git NO entra en subcarpetas.
+# Los respaldos que deja admin/build_restricciones_db.py se colaban en el
+# repo por ese hueco (data/transfers/ y data/higher-or-lower/ no lo tienen
+# porque están ignoradas enteras).
+data/general/_backup_*/
 data/bingo/
 # Volcado de solo lectura del pool del Bingo (admin/build_bingo_pool.py --list)
 admin/bingo_pool_actual.txt

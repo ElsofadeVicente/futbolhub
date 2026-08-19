@@ -77,24 +77,10 @@ body {
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-.ad-strip {
-    flex: 1; margin: 5px;
-    border: 1px dashed var(--np-ink-soft);
-    background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-    display: flex; align-items: center; justify-content: center;
-    min-height: 80px;
-}
-.ad-strip--accent {
-    border-color: rgba(181,34,30,0.20);
-    background: rgba(181,34,30,0.022);
-}
-.ad-strip-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 5.5px; letter-spacing: 0.16em;
-    text-transform: uppercase; text-align: center;
-    color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 @media (min-width: 760px) {
     .once-menu-screen, #game { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
@@ -116,25 +102,16 @@ body {
     background: transparent;
 }
 
-.menu-back-btn {
-    position: absolute;
-    top: 18px; left: 18px;
-    z-index: 10;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
-    color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
-    border: 1px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2);
-    border-radius: var(--r-md, 0); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-    transition: background 0.12s, color 0.12s;
-    cursor: pointer;
-}
-.menu-back-btn:hover { background: var(--np-ink); color: var(--np-paper); transform: none; }
-
-/* Botón de estadísticas — gemelo del de volver, pero en la esquina derecha */
+/* El botón de volver del menú era .menu-back-btn (absolute, 18px). Ahora es
+   .fh-volver, ver css/volver.css. Lo que queda aquí es su gemelo de la
+   esquina derecha, que se coloca en espejo exacto: mismo top y el mismo
+   calc contra --ad-col-w, para que los dos queden a la misma altura y a la
+   misma distancia del borde del área de juego. */
 .menu-stats-btn {
-    position: absolute;
-    top: 18px; right: 18px;
-    z-index: 10;
+    position: fixed;
+    top: calc(var(--volver-gap, 14px) + env(safe-area-inset-top, 0px));
+    right: calc(var(--ad-col-w, 0px) + var(--volver-gap, 14px));
+    z-index: 30;
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
     color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
@@ -324,42 +301,13 @@ body {
     position: relative;
 }
 
-.home-btn {
-    position: fixed;
-    top: 14px; left: 14px;
-    text-decoration: none;
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 0.6rem;
-    letter-spacing: 0.14em;
-    z-index: 200;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    padding:5px 10px;
-    border-radius:var(--r-md, 0);
-    border:1px solid var(--bd-c, var(--np-ink));
-    background: var(--np-paper2);
-    color: var(--np-ink);
-    text-transform: uppercase;
-    box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-    transition: background 0.12s, color 0.12s;
-}
-.home-btn:hover {
-    background: var(--np-ink);
-    color: var(--np-paper);
-    transform: none;
-}
-
-/* .home-btn es position:fixed (ignora el margin-push de #game),
-   hay que desplazarlo a mano para que no quede debajo de la columna de anuncios.
-   Esta regla debe ir DESPUÉS de la definición base de .home-btn: al tener la
-   misma especificidad, si fuera anterior en el archivo el navegador aplicaría
-   la base (left:14px) por ir después en el cascade, anulando este ajuste. */
-@media (min-width: 760px) {
-    .home-btn { left: 86px; }
-}
+/* El botón de volver de la cabecera del partido era .home-btn: position:fixed
+   con left:14px y un parche de left:86px a partir de 760px para esquivar la
+   columna de anuncios. Ese 86 se quedó corto cuando las columnas pasaron de
+   72 a 172px (ver css/ads.css), así que en pantallas de 1240px o más el
+   botón caía DENTRO de la columna izquierda. Ahora usa .fh-volver
+   (css/volver.css), que se coloca en calc(var(--ad-col-w) + 14px) y por
+   definición nunca la pisa. */
 
 .competition-name {
     font-family: 'DM Mono', monospace;
@@ -1130,9 +1078,9 @@ body {
 
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 600px) {
-    .menu-back-btn { top: 12px; left: 12px; padding: 6px 12px; font-size: 0.85rem; }
-    .menu-back-btn span { display: none; }
-    .menu-stats-btn { top: 12px; right: 12px; padding: 6px 12px; font-size: 0.85rem; }
+    /* El SVG basta: el rótulo "STATS" se cae para no competir con el título.
+       Las coordenadas ya no se tocan aquí — las pone el mismo calc que
+       .fh-volver, así que los dos botones siguen alineados. */
     .menu-stats-btn span { display: none; }
     .mode-title { font-size: 2.6rem; letter-spacing: 6px; }
     .mode-btn { padding: 14px 16px; }

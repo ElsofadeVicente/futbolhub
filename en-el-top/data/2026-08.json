@@ -395,6 +395,85 @@
           "v": 26
         }
       ]
+    },
+    "2026-08-18": {
+      "id": "maximos-asistentes-de-premier-league-2023-24-msyqeus9",
+      "q": "Maximos asistentes de Premier League 2023/24",
+      "unit": "asistencias",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Anthony Gordon",
+          "nat": "GB-ENG",
+          "id": "503733",
+          "v": 15
+        },
+        {
+          "r": 2,
+          "n": "Ollie Watkins",
+          "nat": "GB-ENG",
+          "id": "324358",
+          "v": 15
+        },
+        {
+          "r": 3,
+          "n": "Pedro Neto",
+          "nat": "PT",
+          "id": "487465",
+          "v": 12
+        },
+        {
+          "r": 4,
+          "n": "Bukayo Saka",
+          "nat": "GB-ENG",
+          "id": "433177",
+          "v": 12
+        },
+        {
+          "r": 5,
+          "n": "Pascal Groß",
+          "nat": "DE",
+          "id": "82873",
+          "v": 11
+        },
+        {
+          "r": 6,
+          "n": "Brennan Johnson",
+          "nat": "GB-WLS",
+          "id": "470607",
+          "v": 11
+        },
+        {
+          "r": 7,
+          "n": "Martin Ødegaard",
+          "nat": "NO",
+          "id": "316264",
+          "v": 11
+        },
+        {
+          "r": 8,
+          "n": "Cole Palmer",
+          "nat": "GB-ENG",
+          "id": "568177",
+          "v": 11
+        },
+        {
+          "r": 9,
+          "n": "Kieran Trippier",
+          "nat": "GB-ENG",
+          "id": "95810",
+          "v": 10
+        },
+        {
+          "r": 10,
+          "n": "Jérémy Doku",
+          "nat": "BE",
+          "id": "486049",
+          "v": 10
+        }
+      ]
     }
   }
 }

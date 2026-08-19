@@ -73,31 +73,15 @@ a      { text-decoration: none; }
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-.ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.ad-strip--accent {
-  border-color: rgba(181,34,30,0.20);
-  background: rgba(181,34,30,0.022);
-}
-.ad-strip-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 /* Empuja contenido en desktop para no quedar bajo las columnas */
 @media (min-width: 760px) {
   .hol-mode-menu,
   .hol-game { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
-  /* .hol-back-btn--ingame es position:fixed con top/left explícitos: ignora el margin-push, hay que desplazarlo a mano */
-  .hol-back-btn--ingame { left: 88px; }
 }
 @media (max-width: 759px) {
   .ad-col { display: none; }
@@ -105,31 +89,13 @@ a      { text-decoration: none; }
 
 /* ═══════════════════════════════════════════
    BOTÓN VOLVER
+   Estaba definido aquí dos veces (.hol-back-btn para el menú de modo y
+   .hol-back-btn--ingame para la partida, esta última fixed en left:16px más
+   un parche de left:88px a partir de 760px). El 88 nunca llegó a cubrir la
+   columna de anuncios cuando esta pasó a medir 172px, así que en pantallas
+   grandes el botón de durante la partida quedaba ENCIMA del anuncio. Ahora
+   los dos usan .fh-volver; ver css/volver.css.
    ═══════════════════════════════════════════ */
-.hol-back-btn,
-.back-btn {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 160;
-  text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-  font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
-  color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
-  border: 1px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2);
-  border-radius: var(--r-md, 0); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  transition: background 0.12s, color 0.12s;
-  cursor: pointer;
-}
-.hol-back-btn:hover,
-.back-btn:hover { background: var(--np-ink); color: var(--np-paper); }
-
-/* Durante el juego necesita fixed para no depender del scroll */
-.hol-back-btn--ingame {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 60;
-}
 
 /* ── JUEGO — oculto hasta que se seleccione un modo ── */
 .hol-game {
@@ -694,14 +660,6 @@ a      { text-decoration: none; }
 }
 
 .hol-mode-menu.active { display: flex; }
-
-/* Botón ← HUB dentro del menú (única entrada que va al Hub) */
-.hol-mode-menu .back-to-hub-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 160;
-}
 
 .hol-mode-menu-inner {
   display: flex;

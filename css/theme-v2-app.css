@@ -290,8 +290,13 @@
 :root[data-theme="v2"] .btn-primary:disabled,
 :root[data-theme="v2"] .btn-confirmar:disabled { box-shadow: none; filter: grayscale(0.5); }
 
-/* Secundarios y "volver": cristal con filete de un pelo. */
+/* Secundarios y "volver": cristal con filete de un pelo.
+   .fh-volver es el botón único de volver/salir (ver css/volver.css); las
+   clases sueltas que quedan debajo son las piezas que NO son ese botón y
+   siguen usando el mismo vocabulario visual. */
 :root[data-theme="v2"] .btn-secondary,
+:root[data-theme="v2"] .fh-volver,
+:root[data-theme="v2"] #btn-copy-link,
 :root[data-theme="v2"] .back-btn,
 :root[data-theme="v2"] .hub-back-link,
 :root[data-theme="v2"] .home-btn,
@@ -315,6 +320,8 @@
   transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 :root[data-theme="v2"] .btn-secondary:hover:not(:disabled),
+:root[data-theme="v2"] .fh-volver:hover,
+:root[data-theme="v2"] #btn-copy-link:hover,
 :root[data-theme="v2"] .back-btn:hover,
 :root[data-theme="v2"] .hub-back-link:hover,
 :root[data-theme="v2"] .home-btn:hover,

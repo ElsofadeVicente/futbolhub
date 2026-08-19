@@ -438,6 +438,7 @@ let _idx = 0;             // índice de la edición actual dentro de _editions
 let _target = null;       // { id, name, img, career:[] }
 let _total = 0, _attempt = 1, _visible = 1;
 let _ended = false, _won = false, _isToday = false, _statsSaved = false;
+let _hoyFalta = false;
 
 let _acItems = [], _acIdx = -1, _acDebounce = null, _cdInterval = null, _acSeq = 0;
 
@@ -503,6 +504,9 @@ async function init() {
     .sort();   // ascendente: edición 1 = la más antigua
 
   if (!_editions.length) return fail('No hay carrera disponible todavía.');
+
+  /* ¿Falta la edición de hoy? Se calcula UNA vez, al cargar los meses. */
+  _hoyFalta = !(_days[today] && _days[today].id);
 
   // Al entrar, la de HOY (o la más reciente disponible).
   _idx = _editions.indexOf(today);
@@ -630,6 +634,7 @@ function startGame() {
   elNav.classList.remove('hidden');
   renderNav();
   elArchiveTag.classList.toggle('hidden', _isToday);
+  renderAvisoAtrasada(_editions[_idx]);
   elInput.disabled = false; elSkip.disabled = false; elInput.value = '';
   renderTable(elCareer, false);
   updateBadge();
@@ -971,3 +976,30 @@ function renderHistogram(stats) {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+/* ── Aviso de edicion atrasada ──────────────────────────────
+   Si la edición de HOY no existe, el juego cae a la última disponible sin
+   decir nada: en pantalla parece que todo va bien. Esto lo dice. Ojo a la
+   diferencia con el sello "Archivo", que sale cuando eres TÚ quien navega a
+   una edición pasada — eso es normal y no hay nada que avisar. */
+function _fechaLarga(iso) {
+  const M = ['enero','febrero','marzo','abril','mayo','junio','julio',
+             'agosto','septiembre','octubre','noviembre','diciembre'];
+  const p = String(iso).split('-');
+  return p.length === 3 ? `${parseInt(p[2], 10)} de ${M[parseInt(p[1], 10) - 1]}` : iso;
+}
+function renderAvisoAtrasada(fechaMostrada) {
+  const anfitrion = document.getElementById('game-main') || document.getElementById('game-screen');
+  if (!anfitrion) return;
+  let el = document.getElementById('aviso-atrasada');
+  const debeVerse = _hoyFalta && fechaMostrada === _editions[_editions.length - 1];
+  if (!debeVerse) { if (el) el.classList.add('hidden'); return; }
+  if (!el) {
+    el = document.createElement('p');
+    el.id = 'aviso-atrasada';
+    el.className = 'fh-atrasado';
+    anfitrion.insertBefore(el, anfitrion.firstChild);
+  }
+  el.classList.remove('hidden');
+  el.textContent = `La edición de hoy todavía no está lista. Mientras tanto, aquí tienes la del ${_fechaLarga(fechaMostrada)}.`;
+}

@@ -69,24 +69,10 @@ a      { text-decoration: none; }
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-.ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.ad-strip--accent {
-  border-color: rgba(181,34,30,0.20);
-  background: rgba(181,34,30,0.022);
-}
-.ad-strip-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 @media (min-width: 760px) {
   .screen { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
@@ -107,21 +93,18 @@ a      { text-decoration: none; }
 }
 .screen.active { display: flex; }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* Solo opacidad, sin el translateY(6px) que tenía antes. Mientras la
+   animación corre, un transform en .screen la convierte en bloque contenedor
+   de los position:fixed que cuelgan de ella, y el botón de volver
+   (.fh-volver, css/volver.css) se descolocaba 180px durante ese cuarto de
+   segundo en cada cambio de pantalla. El desplazamiento no aportaba
+   prácticamente nada; el fundido sí. */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── BACK BTN ─────────────────────────────── */
-.back-btn {
-  position: absolute; top: 14px; left: 14px;
-  text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-  z-index: 12;
-  font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
-  color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
-  border: 1px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2);
-  border-radius: var(--r-md, 0); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  transition: background 0.12s, color 0.12s;
-  cursor: pointer;
-}
-.back-btn:hover { background: var(--np-ink); color: var(--np-paper); transform: none; }
+/* La regla .back-btn de este juego se quedo sin ningun elemento al migrar el
+   boton de volver/salir a .fh-volver (css/volver.css). El unico juego que
+   sigue usando .back-btn es En el Once, para el boton de su modal. */
 
 /* ── MENÚ ─────────────────────────────────── */
 .menu-center {
@@ -307,7 +290,7 @@ a      { text-decoration: none; }
   font-family: 'Anton', sans-serif; font-size: 0.8rem; flex-shrink: 0;
 }
 .lobby-player-name { flex: 1; font-family: 'DM Mono', monospace; font-weight: 500; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--np-ink); text-transform: uppercase; }
-.lobby-player-host { font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.14em; color: var(--np-red); margin-left: auto; text-transform: uppercase; }
+/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
 .lobby-mode { font-size: 0.78rem; font-family: 'DM Mono', monospace; color: var(--np-ink-mid); }
 .lobby-hint { font-size: 0.7rem; font-family: 'DM Mono', monospace; color: var(--np-ink-mid); text-align: center; max-width: 280px; letter-spacing: 0.04em; }
 
@@ -706,12 +689,8 @@ a      { text-decoration: none; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   text-align: left;
 }
-.lobby-copy-btn {
-  background: transparent; border: 1px solid var(--bd-c, var(--np-ink)); cursor: pointer; font-size: 0.95rem;
-  padding: 3px 7px; opacity: 1; transition: background 0.15s, color 0.15s;
-  flex-shrink: 0; color: var(--np-ink);
-}
-.lobby-copy-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+/* El icono 📋 suelto (.lobby-copy-btn) se sustituyó por el mismo
+   #btn-copy-link que usan las otras cinco salas; ver css/sala.css. */
 
 /* Lista de jugadores del lobby (patrón compartido lobby-players-list) */
 .lobby-players-list,

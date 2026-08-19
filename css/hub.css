@@ -217,6 +217,17 @@ body.np-body .np-layout .ad-col {
   background: var(--np-white);
   border: 1px solid var(--np-ink-soft);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  /* La tarjeta es un <a> y esta hoja no traía ningún reset de enlace (los CSS
+     de los juegos sí lo tienen: `a { text-decoration: none }`). Sin esto el
+     navegador le aplicaba su estilo por defecto: azul #0000EE con subrayado,
+     que se propaga a TODO el texto de dentro — título, descripción y "Jugar".
+     Y como el color por defecto de un enlace ya visitado es el morado
+     #551A8B, los juegos a los que ya habías jugado salían con las rayas
+     oscuras y el resto azules: de ahí que no hubiera dos tarjetas iguales.
+     Los colores reales de cada pieza los ponen .np-title / .np-desc /
+     .np-cta, así que aquí solo hay que apagar el estilo heredado. */
+  color: var(--np-ink);
+  text-decoration: none;
 }
 .np-card:hover {
   transform: translateY(-2px);

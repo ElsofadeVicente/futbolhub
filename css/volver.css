@@ -1,0 +1,120 @@
+/* =============================================
+   VOLVER.CSS — el botón de "volver / salir" de los 13 juegos
+   FutbolHUB
+
+   Igual que ads.css y guia-link.css, esto NO es el design system de los
+   juegos: cada uno mantiene su paleta, su tipografía y su :root. Aquí vive
+   UNA sola pieza, la que saca al jugador de donde está.
+
+   EL PROBLEMA QUE RESUELVE
+   Había SIETE clases distintas para lo mismo (.back-btn, .hol-back-btn,
+   .hub-back-link, .menu-back-btn, .hud-back, #mode-back, #game-back), OCHO
+   textos ("← Volver", "← Hub", "← Volver al Hub", "Volver al hub", "← MENÚ",
+   "VOLVER AL MENU", "Salir", "← Salir") y cinco posiciones distintas
+   (top 14/16/18/22/28px, y en La Carrera y En el Top ni siquiera era un
+   botón de esquina: iba metido en el flujo de la tarjeta). Además el de
+   Higher or Lower durante la partida era `fixed; left:16px`, o sea que en
+   pantallas de 1240px o más quedaba ENCIMA de la columna de anuncios
+   izquierda, y Blackjack tenía un parche `left:110px` para dos pantallas
+   sueltas por lo mismo.
+
+   AHORA
+   Una clase, `.fh-volver`, fija en la esquina superior izquierda del ÁREA DE
+   JUEGO — no del viewport: el `left` se calcula sumando --ad-col-w, así que
+   nunca pisa la columna de anuncios y en móvil (donde --ad-col-w vale 0) se
+   pega al borde. Misma caja, mismo tamaño y mismo sitio en las 13 portadas,
+   en todas sus pantallas.
+
+   TEXTO
+     · "← VOLVER"  → navegar hacia atrás (al hub, o al menú del propio juego).
+     · "← SALIR"   → abandonar una sala online. Es la única excepción, y es a
+                     propósito: ahí el botón no solo navega, te saca de la
+                     partida de los demás.
+
+   COLORES
+   Se leen de los tokens que ya define cada juego (--np-ink, --np-paper2…) y
+   de los del tema Moderno con respaldo (--r-md, --bd-c, --sh-*), así que
+   funciona igual en los dos diseños sin tocar nada. Ver CLAUDE.md,
+   "Diseños de la web".
+   ============================================= */
+
+:root {
+  /* Separación al borde del área de juego. Un único sitio donde tocarla. */
+  --volver-gap: 14px;
+}
+
+.fh-volver {
+  position: fixed;
+  top: calc(var(--volver-gap) + env(safe-area-inset-top, 0px));
+  left: calc(var(--ad-col-w, 0px) + var(--volver-gap));
+  /* Por encima de las columnas de anuncios (z-index 3-20 según el juego) y
+     del contenido, pero por DEBAJO de cualquier modal, menú a pantalla
+     completa o toast (todos ≥ 50 en los 13 juegos). */
+  z-index: 30;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 5px 10px;
+
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+
+  color: var(--np-ink);
+  background: var(--np-paper2);
+  border: 1px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0);
+  box-shadow: var(--sh-x, 2px) var(--sh-y, 2px) var(--sh-b, 0) var(--sh-c, var(--np-ink));
+
+  transition: background 0.12s, color 0.12s;
+  cursor: pointer;
+  transform: none;
+  /* Blackjack y El Mentiroso le ponían backdrop-filter a sus botones
+     secundarios; aquí no hace falta y en Street View emborronaba el fondo. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Esta hoja se carga DESPUÉS del CSS de cada juego, así que su
+   `display:inline-flex` le ganaría por orden al `.hidden { display:none }`
+   que define cada juego (misma especificidad). Blackjack y Bingo esconden
+   así botones de salir que solo salen en modo local: sin esto aparecerían
+   siempre. */
+.fh-volver.hidden,
+.fh-volver[hidden] { display: none; }
+
+.fh-volver:hover {
+  background: var(--np-ink);
+  color: var(--np-paper);
+  transform: none;
+  box-shadow: var(--sh-x, 2px) var(--sh-y, 2px) var(--sh-b, 0) var(--sh-c, var(--np-ink));
+}
+
+/* El botón se apoya muchas veces sobre papel claro, donde el outline por
+   defecto casi no se ve. */
+.fh-volver:focus-visible {
+  outline: 2px solid var(--np-red);
+  outline-offset: 2px;
+}
+
+/* Hueco para las pantallas cuyo contenido empieza pegado arriba a la
+   izquierda. En La Carrera, En el Top y El Crucigrama el enlace iba DENTRO
+   del flujo (en la barra superior o en la tarjeta); al sacarlo de ahí, en
+   pantallas estrechas el contenido que quedaba detrás pasaría por debajo del
+   botón. Se usa margin-top y no padding-top a propósito: los elementos a los
+   que se aplica se seleccionan por #id y una regla de id le ganaría al
+   padding de esta clase, pero ninguno declara margin-top. */
+.fh-volver-hueco { margin-top: 44px; }
+
+@media (min-width: 900px) {
+  /* A partir de aquí el contenido de esos tres juegos (máx. 640-720px
+     centrado) deja a la izquierda más margen del que ocupa el botón, así
+     que este flota en hueco vacío y la reserva sobra. */
+  .fh-volver-hueco { margin-top: 0; }
+}

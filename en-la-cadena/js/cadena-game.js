@@ -462,8 +462,8 @@ const App = (() => {
       return `<div class="lobby-player-item">
         <div class="lobby-player-avatar">${_avatarInner(p)}</div>
         <span class="lobby-player-name">${escapeHtml(p.name)}</span>
-        ${pid === 0 ? '<span class="lobby-player-host">👑 Host</span>' : ''}
-        ${pid === myId ? '<span class="lobby-player-host">← Tú</span>' : ''}
+        ${pid === 0 ? '<span class="lobby-player-host">ANFITRIÓN</span>' : ''}
+        ${pid === myId ? '<span class="lobby-player-you">← TÚ</span>' : ''}
       </div>`;
     }).join('');
 

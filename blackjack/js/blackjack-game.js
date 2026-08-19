@@ -509,7 +509,7 @@ const BlackjackGame = (() => {
       'Denmark':'dk','Sweden':'se','Norway':'no','Poland':'pl',
       'Czech Republic':'cz','Austria':'at','Scotland':'gb-sct',
       'Wales':'gb-wls','Ireland':'ie','Greece':'gr',
-      'Türkiye':'tr','Turkey':'tr','Russia':'ru','Ukraine':'ua',
+      'Türkiye':'tr','Turkiye':'tr','Turkey':'tr','Russia':'ru','Ukraine':'ua',
       'Serbia':'rs','Slovakia':'sk','Hungary':'hu','Romania':'ro',
       'Slovenia':'si','Albania':'al','Iceland':'is','Finland':'fi',
       'Georgia':'ge','Kosovo':'xk','Bosnia and Herzegovina':'ba',

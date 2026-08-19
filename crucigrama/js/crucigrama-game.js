@@ -243,7 +243,7 @@ function crucFatal(texto) {
     const screen = document.getElementById('crucigrama-screen');
     if (!screen) return;
     screen.innerHTML = `
-        <button class="back-to-hub-btn" onclick="goToHub()">← VOLVER</button>
+        <button class="fh-volver" onclick="goToHub()">← Volver</button>
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:20px;">
             <div style="font-size:3rem;">😓</div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:3px;color:var(--neon-yellow);text-align:center;">
@@ -252,7 +252,7 @@ function crucFatal(texto) {
             <div style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:var(--text-light);opacity:0.7;text-align:center;max-width:320px;">
                 ${texto}
             </div>
-            <button class="next-btn" style="margin-top:10px;" onclick="goToHub()">← Volver al hub</button>
+            <button class="next-btn" style="margin-top:10px;" onclick="goToHub()">← VOLVER AL HUB</button>
         </div>`;
 }
 
@@ -441,7 +441,7 @@ function buildCrucigramaScreen() {
         <!-- HEADER -->
         <div class="cruc-header">
             <div class="cruc-nav-row">
-                <button class="cruc-back-btn" onclick="goToHub()">← VOLVER</button>
+                <button class="fh-volver" onclick="goToHub()">← Volver</button>
                 <div class="cruc-title-block">
                     <!-- h1: este render sustituye el innerHTML del contenedor y se
                          llevaba por delante el único encabezado de la página, así
@@ -466,7 +466,7 @@ function buildCrucigramaScreen() {
                 <button class="cruc-nav-btn cruc-nav-btn--edge" ${alFinal ? 'disabled' : ''}
                         title="Última edición" onclick="crucGoEdition(${crucEditions.length - 1})">»</button>
             </div>
-            ${crucAtrasado ? `<p class="cruc-atrasado">El crucigrama de hoy todavía no
+            ${crucAtrasado ? `<p class="fh-atrasado">El crucigrama de hoy todavía no
                está listo. Mientras tanto, aquí tienes el del ${crucFechaLarga(crucData.date)}.</p>` : ''}
             <!-- Enlace a la guía del juego. Va aquí y no solo en el HTML porque
                  este render sustituye el innerHTML del contenedor entero. -->

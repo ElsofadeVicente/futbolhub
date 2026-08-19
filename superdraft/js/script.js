@@ -538,7 +538,46 @@
     $('sd-end-best').textContent = isBest
       ? '¡Tu mejor marca de este día!'
       : `Tu mejor marca: ${fmtTotal(best, D.objective)}`;
+    setReplayVisible(D.day !== todayNumber());
+    if (D.day === todayNumber()) {
+      $('sd-end-best').textContent = 'Partida de hoy completada. Vuelve mañana.';
+    }
     setTimeout(() => showScreen('screen-end'), 650);
+  }
+
+  /* Compartir. Superdraft era el unico de los cuatro diarios sin este boton, y
+     es lo que hace que un juego diario circule. Mismo patron que La Carrera:
+     navigator.share en movil, portapapeles en escritorio y textarea de
+     emergencia para navegadores viejos.
+     El texto NO revela ningun futbolista: solo el objetivo, la formacion y el
+     total, para que se pueda pegar sin destripar el reto del dia. */
+  function doShare() {
+    const btn = $('sd-share-btn');
+    if (!btn) return;
+    const texto =
+      `Superdraft · FutbolHUB · Partida n.º ${D.day}
+` +
+      `${D.objective.title}
+` +
+      `${fmtTotal(S.total, D.objective)} · formación ${D.formation.name}
+` +
+      window.location.origin + window.location.pathname;
+    const aviso = () => {
+      const antes = btn.innerHTML;
+      btn.innerHTML = '✓ ¡Copiado!';
+      setTimeout(() => { btn.innerHTML = antes; }, 2000);
+    };
+    if (navigator.share) { navigator.share({ text: texto }).catch(() => {}); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(aviso).catch(() => {});
+      return;
+    }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = texto; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); aviso();
+    } catch (e) { /* sin portapapeles: el boton no hace nada, pero no rompe */ }
   }
 
   function bestKey(day) { return 'superdraft-best-' + day; }
@@ -567,6 +606,43 @@
     } catch (e) {}
   }
 
+  /* Devuelve la partida de HOY si ya se jugo, o null.
+     Superdraft es un juego DIARIO: una edicion, un intento. Antes se podia
+     reintentar sin limite y solo se guardaba la mejor marca, asi que
+     "compartir tu resultado" no significaba nada y la racha premiaba a quien
+     insistiera, no a quien acertara. Ahora se juega una vez y hasta manana.
+     El archivo (dias pasados) SI se puede repetir: no cuenta para la racha,
+     igual que en La Carrera y En el Top. */
+  function loadDailyResult(day) {
+    if (day !== todayNumber()) return null;
+    try {
+      const raw = localStorage.getItem(`superdraft_day_${todayMadrid()}`);
+      if (!raw) return null;
+      const r = JSON.parse(raw);
+      if (!r || r.day !== day) return null;
+      // Si el objetivo guardado no es el que genera hoy el codigo, ese
+      // resultado es de otra generacion: no se puede pintar contra este dia.
+      if (r.objective && D && D.objective && r.objective !== D.objective.key) return null;
+      return r;
+    } catch (e) { return null; }
+  }
+
+  /* Pinta el final con un resultado ya guardado, sin volver a jugar. */
+  function showSavedResult(r) {
+    S.over = true;
+    $('sd-end-title').textContent = D.objective.title;
+    $('sd-end-total').textContent = fmtTotal(r.total, D.objective);
+    $('sd-end-best').textContent = 'Ya has jugado la partida de hoy. Vuelve mañana.';
+    setReplayVisible(false);
+    showScreen('screen-end');
+  }
+
+  /* El boton de reintentar solo tiene sentido en el archivo. */
+  function setReplayVisible(visible) {
+    const b = $('sd-replay-btn');
+    if (b) b.style.display = visible ? '' : 'none';
+  }
+
   /* ═══════════════════ PANTALLAS / NAV ═══════════════════ */
   function showScreen(id) {
     ['screen-intro','screen-game','screen-end'].forEach(s => {
@@ -589,6 +665,10 @@
     $('nav-last').disabled = curDay >= maxDay;
     $('nav-prev').disabled = curDay <= 1;
     $('nav-first').disabled = curDay <= 1;
+
+    const yaJugada = loadDailyResult(curDay);
+    if (yaJugada) { showSavedResult(yaJugada); return; }
+    setReplayVisible(curDay !== todayNumber());
     showScreen('screen-intro');
   }
 
@@ -624,7 +704,15 @@
     loadDay(maxDay);
 
     // Listeners
-    $('sd-start-btn').addEventListener('click', startGame);
+    /* Un solo manejador: el que comprueba si la partida de hoy ya se jugo.
+       Antes aqui habia un addEventListener directo a startGame(); dejar los
+       dos haria que cada clic disparara las dos cosas. */
+    $('sd-start-btn').addEventListener('click', () => {
+      const ya = loadDailyResult(curDay);
+      if (ya) { showSavedResult(ya); return; }   // por si se recargo la pantalla
+      startGame();
+    });
+    $('sd-share-btn').addEventListener('click', doShare);
     $('sd-replay-btn').addEventListener('click', () => { loadDay(curDay); startGame(); });
     $('sd-menu-btn').addEventListener('click', () => loadDay(curDay));
     $('nav-prev').addEventListener('click',  () => loadDay(curDay - 1));

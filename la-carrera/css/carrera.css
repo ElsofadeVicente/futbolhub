@@ -51,21 +51,10 @@ body::before {
 }
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
-.ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.ad-strip--accent { border-color: rgba(181,34,30,0.20); background: rgba(181,34,30,0.022); }
-.ad-strip-label {
-  font-family: var(--font-mono);
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 @media (min-width: 760px) {
   #intro-screen, #game-screen, #end-screen { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
@@ -113,17 +102,9 @@ body::before {
 #mode-art-overlay .eyebrow-num, #mode-art-overlay .eyebrow-sep { color: rgba(var(--np-paper-rgb, 244,234,210), 0.85); }
 #mode-art-overlay .eyebrow-cat { color: #f4b89a; }
 #mode-body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 12px; border-top: 2px solid var(--bd-c, var(--np-ink)); }
-/* Mismo tratamiento visual que .back-btn de Coche: caja con borde y sombra dura. */
-#mode-back {
-  align-self: flex-start; display: inline-flex; align-items: center;
-  font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
-  text-transform: uppercase; text-decoration: none;
-  color: var(--np-ink); background: var(--np-paper2);
-  border: 1px solid var(--bd-c, var(--np-ink)); padding: 5px 10px;
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  transition: background 0.12s, color 0.12s;
-}
-#mode-back:hover { background: var(--np-ink); color: var(--np-paper); }
+/* El enlace de volver de la portada (#mode-back) iba aquí dentro, en el
+   flujo de la tarjeta. Ahora es .fh-volver y cuelga de #intro-screen; ver
+   css/volver.css. */
 #mode-title { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1.0; color: var(--np-ink); letter-spacing: -0.01em; }
 #mode-desc { font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: var(--np-ink-mid); }
 .mode-rule { height: 1px; background: var(--np-ink-soft); }
@@ -173,16 +154,7 @@ body::before {
 #day-nav button:disabled { opacity: .28; cursor: not-allowed; }
 #nav-label { font-family: var(--font-display); font-size: .95rem; letter-spacing: .05em; min-width: 96px; text-align: center; }
 #top-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; padding-top: 8px; }
-#game-back {
-  display: inline-flex; align-items: center;
-  font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
-  text-transform: uppercase; text-decoration: none;
-  color: var(--np-ink); background: var(--np-paper2);
-  border: 1px solid var(--bd-c, var(--np-ink)); padding: 4px 9px;
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  transition: background 0.12s, color 0.12s;
-}
-#game-back:hover { background: var(--np-ink); color: var(--np-paper); }
+/* #game-back vivía en #top-bar; ahora es .fh-volver, ver css/volver.css. */
 #attempt-badge { font-family: var(--font-display); font-size: 1rem; color: var(--np-red); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
 #archive-tag { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--np-ink-mid); border: 1px solid var(--np-ink-soft); padding: 3px 6px; }
 

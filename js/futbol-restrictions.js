@@ -243,6 +243,23 @@ window.FR = (function () {
     { tmNat:'Cameroon',    display:'Camerún',   adj:'Camerunés',  flag:'🇨🇲', flagImg:sbStorageUrl('team-flags','cm.png') },
     { tmNat:'Morocco',     display:'Marruecos', adj:'Marroquí',   flag:'🇲🇦', flagImg:sbStorageUrl('team-flags','ma.png') },
     { tmNat:'Japan',       display:'Japón',     adj:'Japonés',    flag:'🇯🇵', flagImg:sbStorageUrl('team-flags','jp.png') },
+    /* Ampliacion 2026-08-19: de 13 a 23 nacionalidades. Todas tienen >=67
+       jugadores en data/players/chunks (el liston lo marcaba Japon con 49) y
+       bandera en el bucket team-flags. Van AL FINAL para no mover el orden de
+       las 13 de siempre. Esta lista esta duplicada en tres sitios
+       (js/futbol-restrictions.js, coche/js/script.js y
+       coche/js/restrictions-worker.js): si divergen, dos jugadores de la misma
+       sala de Coche generan rejillas distintas con la misma semilla. */
+    { tmNat:'Portugal', display:'Portugal', adj:'Portugués', flag:'🇵🇹', flagImg:sbStorageUrl('team-flags','pt.png') },
+    { tmNat:'Belgium', display:'Bélgica', adj:'Belga', flag:'🇧🇪', flagImg:sbStorageUrl('team-flags','be.png') },
+    { tmNat:'Croatia', display:'Croacia', adj:'Croata', flag:'🇭🇷', flagImg:sbStorageUrl('team-flags','hr.png') },
+    { tmNat:'Serbia', display:'Serbia', adj:'Serbio', flag:'🇷🇸', flagImg:sbStorageUrl('team-flags','rs.png') },
+    { tmNat:'Denmark', display:'Dinamarca', adj:'Danés', flag:'🇩🇰', flagImg:sbStorageUrl('team-flags','dk.png') },
+    { tmNat:'Colombia', display:'Colombia', adj:'Colombiano', flag:'🇨🇴', flagImg:sbStorageUrl('team-flags','co.png') },
+    { tmNat:'Mexico', display:'México', adj:'Mexicano', flag:'🇲🇽', flagImg:sbStorageUrl('team-flags','mx.png') },
+    { tmNat:'United States', display:'Estados Unidos', adj:'Estadounidense', flag:'🇺🇸', flagImg:sbStorageUrl('team-flags','us.png') },
+    { tmNat:'Nigeria', display:'Nigeria', adj:'Nigeriano', flag:'🇳🇬', flagImg:sbStorageUrl('team-flags','ng.png') },
+    { tmNat:'Ivory Coast', display:'Costa de Marfil', adj:'Marfileño', flag:'🇨🇮', flagImg:sbStorageUrl('team-flags','ci.png') },
   ];
 
   const CONTINENT_LOGOS = {
@@ -254,7 +271,7 @@ window.FR = (function () {
   const CONTINENT_NAT = {
     europeo:    ['Spain','England','France','Germany','Netherlands','Portugal','Italy',
                  'Belgium','Croatia','Serbia','Denmark','Sweden','Norway','Poland',
-                 'Czech Republic','Czech','Switzerland','Austria','Turkey','Türkiye','Greece','Hungary',
+                 'Czech Republic','Czech','Switzerland','Austria','Turkey','Türkiye','Turkiye','Czechia','Republic of Ireland','Israel','Belarus','Greece','Hungary',
                  'Slovakia','Romania','Ukraine','Russia','Scotland','Wales','Northern Ireland',
                  'Finland','Albania','Slovenia','Bosnia-Herzegovina','Montenegro','Iceland',
                  'Ireland','Georgia','Kosovo','North Macedonia','North','Bulgaria','Cyprus','Latvia',
@@ -262,13 +279,13 @@ window.FR = (function () {
                  'Faroe','Faroe Islands'],
     americano:  ['Argentina','Brazil','Colombia','Uruguay','Chile','Mexico','Paraguay',
                  'Bolivia','Peru','Venezuela','Ecuador','United States','Jamaica',
-                 'Trinidad and Tobago','Honduras','Costa Rica','Costa','Panama','Guatemala',
+                 'Trinidad and Tobago','Curaçao','Suriname','Guadeloupe','Martinique','Montserrat','Puerto Rico','Honduras','Costa Rica','Costa','Panama','Guatemala',
                  'El Salvador','Cuba','Dominican Republic','Canada','Haiti'],
     africano:   ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cote','Cameroon',
                  'Morocco','Egypt','Algeria','Tunisia','South Africa','South','Mali','Guinea',
-                 'Burkina Faso','DR Congo','DR','Congo','Republic of the Congo','Togo','Gabon',
+                 'Burkina Faso','DR Congo','DR','Congo','Democratic Republic of the Congo','Republic of the Congo','Togo','Gabon',
                  'Equatorial Guinea','Equatorial','Zimbabwe','Kenya','Cape Verde','Cape','Sierra Leone',
-                 'Liberia','Gambia','The','Guinea-Bissau','Rwanda','Ethiopia','Tanzania',
+                 'Liberia','Gambia','The','Guinea-Bissau','The Gambia','Rwanda','Ethiopia','Tanzania',
                  'Zambia','Uganda','Angola','Mauritius','Mozambique','Madagascar',
                  'Benin','Niger','Chad','Sudan','South Sudan','Somalia','Eritrea',
                  'Djibouti','Comoros','Lesotho','Botswana','Namibia','Malawi',
@@ -276,7 +293,7 @@ window.FR = (function () {
     asiatico:   ['Japan','South Korea','Iran','Saudi Arabia','Saudi','Qatar','UAE','Australia',
                  'China','Iraq','Jordan','Bahrain','Kuwait','Uzbekistan','Vietnam',
                  'Thailand','Indonesia','Philippines','India','Pakistan','Bangladesh',
-                 'North Korea','Malaysia','Oman','Lebanon','Palestine','Syria',
+                 'North Korea','Hong Kong','Malaysia','Oman','Lebanon','Palestine','Syria',
                  'New','New Zealand'],
   };
 
@@ -853,6 +870,12 @@ window.FR = (function () {
       case 'clubs_ge': return (player.teams || []).length >= r.value;
       case 'clubs_le': return (player.teams || []).length <= r.value;
       case 'one_club': return (player.teams || []).length === 1;
+      /* Goles y partidos de TODA la carrera. Los dos campos ya venian en cada
+         chunk (chunk.goals / chunk.apps) y ya se copiaban al objeto jugador,
+         pero no habia ninguna restriccion que los usara. Cobertura: apps en el
+         100% de la base, goals en el ~90%. */
+      case 'career_goals_ge': return (player.goals || 0) >= r.value;
+      case 'career_apps_ge':  return (player.apps  || 0) >= r.value;
       case 'champions_goals_ge': return (player.clg || 0) >= r.value;
       case 'season_goals_ge':    return (player.bsg || 0) >= r.value;
       case 'natGoals_ge':        return (player.natGoals || 0) >= r.value;
@@ -901,6 +924,14 @@ window.FR = (function () {
     if (rA.type === 'champions_goals_ge' && rB.type === 'champions_goals_ge' && rA.value > rB.value) return true;
     if (rA.type === 'season_goals_ge'    && rB.type === 'season_goals_ge'    && rA.value > rB.value) return true;
     if (rA.type === 'natGoals_ge'        && rB.type === 'natGoals_ge'        && rA.value > rB.value) return true;
+    if (rA.type === 'career_goals_ge' && rB.type === 'career_goals_ge' && rA.value > rB.value) return true;
+    if (rA.type === 'career_apps_ge'  && rB.type === 'career_apps_ge'  && rA.value > rB.value) return true;
+    /* Quien lleva 500 partidos oficiales casi seguro ha marcado alguno y ha
+       pasado por varios clubes: no tiene gracia cruzarlo con umbrales bajos. */
+    if (rA.type === 'career_apps_ge' && rA.value >= 500 && rB.type === 'career_goals_ge' && rB.value <= 50) return true;
+    if (rB.type === 'career_apps_ge' && rB.value >= 500 && rA.type === 'career_goals_ge' && rA.value <= 50) return true;
+    if (rA.type === 'one_club' && rB.type === 'clubs_le') return true;
+    if (rB.type === 'one_club' && rA.type === 'clubs_le') return true;
     if (rA.type === 'one_club' && rB.type === 'clubs_ge') return true;
     if (rB.type === 'one_club' && rA.type === 'clubs_ge') return true;
     if (rA.type === 'position_gk'  && rB.type === 'trophy' && SCORER_TROPHIES.has(rB.value)) return true;
@@ -980,6 +1011,21 @@ window.FR = (function () {
 
     candidates.push({ type:'clubs_ge', value:3, label:'Ha jugado en 3 o más clubes',  imgUrl:null, icon:'🏟️', family:'clubs_count' });
     candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes', imgUrl:null, icon:'🏟️', family:'clubs_count' });
+    /* one_club estaba implementado y validado desde siempre, pero no se
+       generaba nunca: la categoria existia y no salia jamas. 313 jugadores la
+       cumplen, mas que varias nacionalidades. */
+    candidates.push({ type:'one_club', value:1, label:'Ha jugado en un solo club', imgUrl:null, icon:'🏟️', family:'clubs_count' });
+
+    /* Umbrales elegidos sobre la base real (8.245 jugadores):
+       goles  50 -> 2.340 · 100 -> 1.135 · 200 -> 338
+       partidos 500 -> 1.714 · 700 -> 437
+       Ninguno deja el candidato tan fino como para atascar la generacion. */
+    candidates.push({ type:'career_goals_ge', value:50,  label:'50+ goles en su carrera',  imgUrl:null, icon:'⚽', family:'career_goals' });
+    candidates.push({ type:'career_goals_ge', value:100, label:'100+ goles en su carrera', imgUrl:null, icon:'⚽', family:'career_goals' });
+    candidates.push({ type:'career_goals_ge', value:200, label:'200+ goles en su carrera', imgUrl:null, icon:'⚽', family:'career_goals' });
+
+    candidates.push({ type:'career_apps_ge', value:500, label:'500+ partidos oficiales', imgUrl:null, icon:'📋', family:'career_apps' });
+    candidates.push({ type:'career_apps_ge', value:700, label:'700+ partidos oficiales', imgUrl:null, icon:'📋', family:'career_apps' });
 
     candidates.push({ type:'fee_gt', value:70000000, label:'Traspaso de más de 70M €',  imgUrl:null, icon:'💰', family:'fee' });
     candidates.push({ type:'fee_lt', value:70000000, label:'Traspaso de menos de 70M €', imgUrl:null, icon:'💰', family:'fee' });

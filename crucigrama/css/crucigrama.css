@@ -63,24 +63,10 @@ a      { text-decoration: none; }
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-.ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.ad-strip--accent {
-  border-color: rgba(181,34,30,0.20);
-  background: rgba(181,34,30,0.022);
-}
-.ad-strip-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 @media (min-width: 760px) {
   #crucigrama-screen { margin-left: var(--ad-col-w, 72px); margin-right: var(--ad-col-w, 72px); }
@@ -115,25 +101,15 @@ a      { text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 10px;
+  /* El botón de volver (.cruc-back-btn) iba aquí dentro, como primer
+     elemento de la fila. Ahora es .fh-volver (css/volver.css), que es
+     position:fixed y flota sobre esta cabecera, así que hay que reservarle
+     el ancho o el título centrado se le mete debajo en pantallas estrechas. */
+  padding-left: 92px;
 }
-
-/* ── BOTÓN VOLVER (estilo newspaper, inline en la cabecera) ── */
-.cruc-back-btn,
-.back-to-hub-btn {
-  white-space: nowrap;
-  flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
-  color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
-  border: 1px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2);
-  border-radius: var(--r-md, 0); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  transition: background 0.12s, color 0.12s;
-  cursor: pointer;
-}
-.cruc-back-btn:hover,
-.back-to-hub-btn:hover {
-  background: var(--np-ink); color: var(--np-paper);
-  transform: none;
+@media (min-width: 900px) {
+  /* Con la cabecera ancha el título queda centrado muy lejos del botón. */
+  .cruc-nav-row { padding-left: 0; }
 }
 
 .cruc-title-block {

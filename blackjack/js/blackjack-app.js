@@ -123,8 +123,18 @@ const App = (() => {
   function init() {
     _showScreen('screen-menu');
     _setupAccountName();
-    loadStats?.();
-    loadSettings?.();
+    /* Aquí había un `loadStats?.(); loadSettings?.();`.
+       loadSettings NO EXISTE en ninguna parte del proyecto, y el `?.` no
+       protege contra un identificador no declarado (solo contra null o
+       undefined): lanzaba ReferenceError y ABORTABA init() en esta línea,
+       en cada carga del juego. Lo que se quedaba sin ejecutar era todo lo de
+       abajo — la precarga de nombres de bots y, sobre todo, el auto-relleno
+       de ?sala=, o sea que los enlaces de invitación a Blackjack no hacían
+       nada al abrirse.
+       loadStats sí existe (es global, de js/shared.js), pero tampoco pinta
+       nada aquí: lee las estadísticas de En el Once y las vuelca en unos
+       #stat-* que Blackjack no tiene, y shared.js ya lo llama por su cuenta
+       en su DOMContentLoaded. */
 
     // Los escudos/banderas se resuelven por ruta local (BlackjackGame._getLogoUrl
     // / _getFlagUrl), sin JSON ni fetch — no hay nada que precargar aquí.
@@ -726,8 +736,8 @@ const App = (() => {
         <div class="lobby-player-row">
           <div class="lobby-player-avatar">${_avatarInner(p)}</div>
           <span class="lobby-player-name">${escapeHtml(p.name)}</span>
-          ${p.isHost ? '<span class="lobby-player-host">HOST</span>' : ''}
-          ${pid === _playerId ? '<span style="margin-left:auto;font-family:\'Rajdhani\',sans-serif;font-size:0.7rem;opacity:0.4;letter-spacing:1px;">← TÚ</span>' : ''}
+          ${p.isHost ? '<span class="lobby-player-host">ANFITRIÓN</span>' : ''}
+          ${pid === _playerId ? '<span class="lobby-player-you">← TÚ</span>' : ''}
         </div>
       `).join('');
     }

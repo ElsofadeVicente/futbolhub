@@ -164,6 +164,7 @@ let _days     = {};   // { "AAAA-MM-DD": entry } de todos los meses cargados
 let _editions = [];   // fechas jugables (<= hoy), ASCENDENTE (edición 1 = la más antigua)
 let _idx      = 0;    // índice de la edición actual dentro de _editions
 let _isToday  = false;
+let _hoyFalta = false;
 
 let _acItems    = [];
 let _acIdx      = -1;
@@ -248,6 +249,9 @@ async function init() {
     elLoading.innerHTML = '<p style="color:#b5221e;font-family:\'DM Mono\',monospace;font-size:12px;letter-spacing:.15em;text-align:center">No hay preguntas disponibles todavía.</p>';
     return;
   }
+
+  /* ¿Falta la edición de hoy? Se calcula UNA vez, al cargar los meses. */
+  _hoyFalta = !(_days[today] && _days[today].id);
 
   // Al entrar, la de HOY (o la más reciente disponible).
   _idx = _editions.indexOf(today);
@@ -398,6 +402,7 @@ function startGame() {
   elNav.classList.remove('hidden');
   renderNav();
   elArchiveTag.classList.toggle('hidden', _isToday);
+  renderAvisoAtrasada(_editions[_idx]);
 
   if (_mode === 'normal') {
     elTimerTrack.classList.add('hidden');
@@ -890,3 +895,29 @@ function renderHistogram(hist) {
 //  BOOT
 // ══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', init);
+
+/* ── Aviso de edicion atrasada ──────────────────────────────
+   Si la edición de HOY no existe, el juego cae a la última disponible sin
+   decir nada. Esto lo dice. No confundir con el sello "Archivo": ese sale
+   cuando eres TÚ quien navega a una edición pasada, que es lo normal. */
+function _fechaLarga(iso) {
+  const M = ['enero','febrero','marzo','abril','mayo','junio','julio',
+             'agosto','septiembre','octubre','noviembre','diciembre'];
+  const p = String(iso).split('-');
+  return p.length === 3 ? `${parseInt(p[2], 10)} de ${M[parseInt(p[1], 10) - 1]}` : iso;
+}
+function renderAvisoAtrasada(fechaMostrada) {
+  const anfitrion = document.getElementById('game-main') || document.getElementById('game-screen');
+  if (!anfitrion) return;
+  let el = document.getElementById('aviso-atrasada');
+  const debeVerse = _hoyFalta && fechaMostrada === _editions[_editions.length - 1];
+  if (!debeVerse) { if (el) el.classList.add('hidden'); return; }
+  if (!el) {
+    el = document.createElement('p');
+    el.id = 'aviso-atrasada';
+    el.className = 'fh-atrasado';
+    anfitrion.insertBefore(el, anfitrion.firstChild);
+  }
+  el.classList.remove('hidden');
+  el.textContent = `La edición de hoy todavía no está lista. Mientras tanto, aquí tienes la del ${_fechaLarga(fechaMostrada)}.`;
+}

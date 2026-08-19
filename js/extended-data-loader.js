@@ -3,7 +3,7 @@
    Loader para datos extendidos de jugadores
 
    Lee desde Supabase Storage (bucket "player-db"), subido con
-   admin/upload_player_db_to_storage.py:
+   admin/sync_supabase.py (sync.bat):
      - performances  → player-db/performances/chunks/ + manifest.json
      - transfers     → player-db/transfers/chunks/    + manifest.json
      - teammates     → player-db/teammates/chunks/    + manifest.json

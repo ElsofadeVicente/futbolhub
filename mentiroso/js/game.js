@@ -306,13 +306,13 @@ function _onRoomUpdate(room){
 function _renderLobby(room){
   showScreen('#screen-lobby');
   $('#lobby-code').textContent=_roomCode;
-  $('#lobby-mode-pill').textContent=room.mode==='easy'?'FACIL':'DIFICIL';
+  $('#lobby-mode-pill').textContent=room.mode==='easy'?'FÁCIL':'DIFÍCIL';
   const players=Object.entries(room.players||{});
   $('#lobby-count').textContent=`(${players.length})`;
   const list=$('#lobby-players');list.innerHTML='';
   players.forEach(([pid,p])=>{
     const d=document.createElement('div');d.className=`lobby-player-row${pid===_playerId?' me':''}`;
-    d.innerHTML=`<span class="lobby-player-avatar">${_avatarInner(p)}</span><span class="lobby-player-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>${p.isHost?'<span class="lobby-player-host">HOST</span>':''}`;
+    d.innerHTML=`<span class="lobby-player-avatar">${_avatarInner(p)}</span><span class="lobby-player-name">${escapeHtml(p.name)}</span>${p.isHost?'<span class="lobby-player-host">ANFITRIÓN</span>':''}${pid===_playerId?'<span class="lobby-player-you">← TÚ</span>':''}`;
     list.appendChild(d);
   });
   $('#btn-start').disabled=!_isHost||players.length<2;
@@ -754,7 +754,14 @@ function boot(){
   $('#btn-continue')?.addEventListener('click',_continueRound);
   $('#btn-menu')?.addEventListener('click',_leaveRoom);
   $('[data-action="leave-lobby"]')?.addEventListener('click',_leaveRoom);
-  $('#btn-copy-code')?.addEventListener('click',()=>{navigator.clipboard?.writeText(_roomCode||'').then(()=>toast('Código copiado','success')).catch(()=>{});});
+  /* Copia el ENLACE de invitación, como el resto de salas: El Mentiroso ya
+     lee ?sala= de la URL al arrancar (más abajo en esta misma función), así
+     que quien lo reciba entra directo con el código puesto. */
+  $('#btn-copy-link')?.addEventListener('click',()=>{
+    if(!_roomCode){toast('Todavía no hay sala','error');return;}
+    const url=window.location.origin+window.location.pathname+'?sala='+_roomCode;
+    navigator.clipboard?.writeText(url).then(()=>toast('¡Enlace copiado!','success')).catch(()=>toast(url,'info'));
+  });
   /* Guess stepper */
   $('#guess-minus')?.addEventListener('click',()=>{_guessDraft=Math.max(0,_guessDraft-1);$('#step-guess').textContent=_guessDraft;});
   $('#guess-plus')?.addEventListener('click',()=>{const m=Number($('#guess-max').textContent)||0;_guessDraft=Math.min(m,_guessDraft+1);$('#step-guess').textContent=_guessDraft;});

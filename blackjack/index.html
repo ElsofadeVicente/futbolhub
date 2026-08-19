@@ -26,9 +26,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/blackjack.css?v=20260809a" />
+  <link rel="stylesheet" href="css/blackjack.css?v=20260819a" />
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
+  <link rel="stylesheet" href="../css/volver.css?v=20260819a">
+  <link rel="stylesheet" href="../css/sala.css?v=20260819a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -36,7 +38,7 @@
 <!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
      :root[data-theme="v2"]: sin ese atributo no pinta nada.
      Va la ultima para poder ganar a igual especificidad. -->
-<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260814a">
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260819a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -93,7 +95,7 @@
      PANTALLA 1: MENÚ PRINCIPAL
      ═══════════════════════════════════════════════ -->
 <div id="screen-menu" class="screen active" style="position:relative;">
-  <a href="../index.html" class="back-btn">← Volver</a>
+  <a href="../index.html" class="fh-volver">← Volver</a>
 
   <div class="menu-hero">
     <div class="menu-logo">Blackjack · Est. 2026</div>
@@ -169,9 +171,10 @@
      PANTALLA 2: LOBBY
      ═══════════════════════════════════════════════ -->
 <div id="screen-lobby" class="screen" style="position:relative;">
-  <button class="back-btn" onclick="App.leaveRoom()">← Salir</button>
+  <button class="fh-volver" onclick="App.leaveRoom()">← Salir</button>
 
   <div class="lobby-wrap">
+    <h2 class="lobby-title">Sala de espera</h2>
 
     <div class="lobby-code-card" id="lobby-code-card">
       <div class="lobby-code-label">Código de sala</div>
@@ -232,7 +235,7 @@
   <div class="selecting-body">
 
     <!-- Botón salir (solo modo local) -->
-    <button class="back-btn back-btn-local hidden" id="btn-local-exit-selecting" onclick="App.leaveRoom()">← Salir</button>
+    <button class="fh-volver" id="btn-local-exit-selecting" onclick="App.leaveRoom()">← Salir</button>
 
     <!-- Timer -->
     <div class="card-timer-wrap">
@@ -273,7 +276,7 @@
      PANTALLA 4: ESPERANDO AL RESTO
      ═══════════════════════════════════════════════ -->
 <div id="screen-waiting" class="screen">
-  <button class="back-btn back-btn-local hidden" id="btn-local-exit-waiting" onclick="App.leaveRoom()">← Salir</button>
+  <button class="fh-volver" id="btn-local-exit-waiting" onclick="App.leaveRoom()">← Salir</button>
   <div class="waiting-icon">⏳</div>
   <h2 class="waiting-title">Esperando a los demás…</h2>
   <p class="waiting-subtitle">Ya has terminado de elegir tus cartas</p>
@@ -286,7 +289,7 @@
 <div id="screen-reveal" class="screen">
 
   <div class="reveal-header">
-    <button class="back-btn back-btn-local hidden" id="btn-local-exit-reveal" onclick="App.leaveRoom()">← Salir</button>
+    <button class="fh-volver" id="btn-local-exit-reveal" onclick="App.leaveRoom()">← Salir</button>
     <div class="reveal-title">REVELANDO CARTAS</div>
     <div class="reveal-objective">Objetivo: <span id="reveal-objective-val">—</span></div>
   </div>
@@ -379,7 +382,7 @@
   /* Version FIJA, no Date.now(): con el timestamp ninguno de estos scripts
      se cacheaba nunca — se bajaban enteros en cada carga. Al tocar
      cualquiera de ellos, sube la letra. */
-  const V = '?v=20260808a';
+  const V = '?v=20260819a';
   const scripts = [
     '../js/supabase-config.js',
     '../js/vendor/supabase-js.min.js',

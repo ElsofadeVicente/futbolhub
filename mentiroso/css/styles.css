@@ -89,24 +89,10 @@ input {
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-.ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.ad-strip--accent {
-  border-color: rgba(181,34,30,0.20);
-  background: rgba(181,34,30,0.022);
-}
-.ad-strip-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 @media (min-width: 760px) {
   /* width:auto es imprescindible: .screen viene con width:100% (= todo el
@@ -131,37 +117,8 @@ input {
   background: transparent;
 }
 
-.hub-back-link,
-.back-btn {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: var(--r-md, 0);
-  border: 1px solid var(--bd-c, var(--np-ink));
-  background: var(--np-paper2);
-  color: var(--np-ink);
-  text-decoration: none;
-  font-family: 'DM Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  z-index: 12;
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
-}
-
-.hub-back-link:hover,
-.back-btn:hover {
-  background: var(--np-ink);
-  color: var(--np-paper);
-  transform: none;
-}
+/* .hub-back-link (menú) y .back-btn (sala) eran los dos botones de salir de
+   este juego. Ahora los dos son .fh-volver; ver css/volver.css. */
 
 .menu-hero {
   text-align: center;
@@ -502,16 +459,7 @@ input {
 
 .lobby-player-name { flex: 1; font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--np-ink); text-transform: uppercase; }
 
-.lobby-player-host {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.64rem;
-  letter-spacing: 0.1em;
-  color: var(--np-red);
-  padding: 2px 7px;
-  border: 1px solid var(--np-red);
-  border-radius: var(--r-md, 0);
-  text-transform: uppercase;
-}
+/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
 
 #screen-game {
   background: transparent;
@@ -1090,8 +1038,8 @@ input {
   .center-cards, .my-hand { gap: 6px; }
 }
 
-/* --- Soporte para moviles con notch / barra inferior --- */
-.hub-back-link, .back-btn { margin-top: env(safe-area-inset-top, 0px); }
+/* El hueco del notch de los móviles lo aplica ahora .fh-volver para los 13
+   juegos a la vez (css/volver.css). */
 
 /* Boton de saltar turno bloqueado */
 .tc-skip {

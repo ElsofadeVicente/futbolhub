@@ -49,24 +49,10 @@ body {
 .bj-ad-sidebar--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .bj-ad-sidebar--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-.bj-ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.bj-ad-strip--accent {
-  border-color: rgba(181,34,30,0.20);
-  background: rgba(181,34,30,0.022);
-}
-.bj-ad-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.bj-ad-strip--accent .bj-ad-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 /* Empuja contenido en desktop */
 @media (min-width: 760px) {
@@ -268,13 +254,7 @@ body {
   padding: 0 8px; text-align: center; line-height: 1.4;
 }
 
-#btn-copy-link {
-  margin-top: 8px; background: none; border: 1px solid var(--bd-c, var(--np-ink));
-  color: var(--np-ink); font-family: 'DM Mono', monospace;
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
-  padding: 6px 14px; cursor: pointer; text-transform: uppercase;
-}
-#btn-copy-link:hover { background: var(--np-ink); color: var(--np-paper); }
+/* #btn-copy-link vive ahora en css/sala.css, una sola vez para las seis salas. */
 
 .lobby-section { width: 100%; }
 .lobby-section-kicker {
@@ -315,10 +295,7 @@ body {
 }
 
 .lobby-player-name { flex: 1; color: var(--np-ink); }
-.lobby-player-host {
-  font-family: 'DM Mono', monospace; font-size: 0.58rem;
-  letter-spacing: 0.14em; color: var(--np-red);
-}
+/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
 
 .lobby-mode-badge {
   font-family: 'DM Mono', monospace; font-size: 0.65rem;
@@ -853,28 +830,16 @@ body {
 .toast.error   { background: var(--np-red); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
 .toast.warning { background: var(--np-paper3); color: var(--np-ink); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
 
-.back-btn {
-  position: absolute !important; top: 14px !important; left: 14px !important;
-  text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important;
-  z-index: 5 !important;
-  font-family: 'DM Mono', monospace !important; font-size: 0.6rem !important; font-weight: 700 !important; letter-spacing: 0.14em !important;
-  color: var(--np-ink) !important; text-transform: uppercase !important; padding: 5px 10px !important;
-  border: 1px solid var(--bd-c, var(--np-ink)) !important; background: var(--np-paper2) !important;
-  border-radius: var(--r-md, 0) !important; box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink)) !important;
-  transition: background 0.12s, color 0.12s !important;
-  cursor: pointer !important;
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  transform: none !important; gap: 0 !important;
-}
-.back-btn:hover { background: var(--np-ink) !important; color: var(--np-paper) !important; transform: none !important; box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink)) !important; }
+/* La regla .back-btn de este juego se quedo sin ningun elemento al migrar el
+   boton de volver/salir a .fh-volver (css/volver.css). El unico juego que
+   sigue usando .back-btn es En el Once, para el boton de su modal. */
 
-/* #btn-local-exit-waiting y #btn-local-exit-reveal cuelgan directamente del
-   borde del .screen (a diferencia del de "selecting", que está centrado
-   dentro de .selecting-body con más margen) — con solo 14px quedan pegados
-   a la columna de anuncios (72px) en desktop. Separarlos explícitamente. */
-@media (min-width: 760px) {
-  #btn-local-exit-waiting, #btn-local-exit-reveal { left: 110px !important; }
-}
+/* Aquí había un parche que empujaba #btn-local-exit-waiting y
+   #btn-local-exit-reveal a left:110px en escritorio, porque colgaban del
+   borde del .screen y con 14px quedaban pegados a la columna de anuncios.
+   Ya no hace falta: los tres botones de salir usan .fh-volver
+   (css/volver.css), que se coloca en calc(var(--ad-col-w) + 14px) y por
+   definición nunca pisa la columna. */
 
 #screen-selecting, #screen-waiting, #screen-reveal { position: relative; }
 

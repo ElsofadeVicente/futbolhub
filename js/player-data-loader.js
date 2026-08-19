@@ -4,7 +4,7 @@
    QUIÉN COÑO FALTA
 
    Lee los chunks desde Supabase Storage (bucket "player-db"), subidos con
-   admin/upload_player_db_to_storage.py. Misma API de siempre
+   admin/sync_supabase.py (sync.bat). Misma API de siempre
    (PlayerDB.init/getPlayer/getPlayers/searchByName/...).
    Requiere que js/supabase-config.js esté cargado antes que este archivo.
    ============================================= */

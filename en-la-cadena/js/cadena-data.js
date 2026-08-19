@@ -284,15 +284,25 @@ const CadenaData = (() => {
     }
   }
 
+  /* El resultado se inserta con innerHTML, así que los trozos van escapados.
+     En el Top y La Carrera ya lo hacían en su highlight(); aquí no, y un
+     nombre de la base con &, < o > rompía el marcado de la lista. */
+  function _esc(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   function highlightMatch(name, query) {
     const q = norm(query);
     const n = norm(name);
     const idx = n.indexOf(q);
-    if (idx === -1) return name;
+    if (idx === -1) return _esc(name);
     const before = name.slice(0, idx);
     const match  = name.slice(idx, idx + query.length);
     const after  = name.slice(idx + query.length);
-    return `${before}<span class="sug-highlight">${match}</span>${after}`;
+    return `${_esc(before)}<span class="sug-highlight">${_esc(match)}</span>${_esc(after)}`;
   }
 
   function renderSuggestions(items, query) {

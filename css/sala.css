@@ -1,0 +1,100 @@
+/* =============================================
+   SALA.CSS — vocabulario común de las salas de espera
+   FutbolHUB
+
+   Los seis juegos con sala online (En la Cadena, Coche, Blackjack, El
+   Mentiroso, Tres en Raya y Bingo) llegaron cada uno por su lado a la misma
+   pantalla: código de sala, lista de jugadores, quién manda y un botón de
+   empezar. Pero la llamaban de formas distintas:
+
+     · Al creador de la sala: "ANFITRIÓN" en Bingo, "HOST" en Blackjack,
+       Coche y El Mentiroso, "Host" en Tres en Raya y "👑 Host" en la Cadena.
+     · A ti mismo: "← TÚ" (Coche y Blackjack, con estilos escritos a mano en
+       el propio JS), "← Tú" (la Cadena, reutilizando la clase del anfitrión,
+       así que los dos distintivos se veían iguales), "(tu)" sin tilde en El
+       Mentiroso, y nada en Bingo ni Tres en Raya.
+     · Y la etiqueta del anfitrión estaba definida cuatro veces con cuatro
+       tamaños (0.58, 0.6, 0.64rem) y dos formas (texto suelto o píldora).
+
+   Aquí vive UNA definición de cada cosa, igual que ads.css, guia-link.css y
+   volver.css. La hoja se carga después del CSS de cada juego, así que gana
+   por orden a las definiciones antiguas que sigan por ahí.
+
+   Los textos ("ANFITRIÓN", "← TÚ") los escribe el JS de cada juego; lo que
+   se unifica aquí es cómo se ven.
+   ============================================= */
+
+/* Quién ha creado la sala. Píldora con filete para que se lea como una
+   condición del jugador y no como parte de su nombre. */
+.lobby-player-host {
+  flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--np-red);
+  background: transparent;
+  padding: 2px 7px;
+  border: 1px solid var(--np-red);
+  border-radius: var(--r-md, 0);
+  /* Sin margin-left:auto a propósito: .lobby-player-name lleva flex:1 en los
+     seis juegos y ya empuja los distintivos a la derecha. Con "auto" y dos
+     distintivos en la misma fila, el segundo se separaba del primero. */
+  margin-left: 0;
+}
+
+/* Cuál de la lista eres tú. Discreto: es una ayuda, no un rango. */
+.lobby-player-you {
+  flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--np-ink-mid);
+  padding: 2px 0 2px 4px;
+}
+
+/* Título de la pantalla. En la Cadena era el único que lo tenía ("⛓️ Sala de
+   Espera", con emoji y con la clase genérica .section-title del juego); los
+   otros cinco entraban directamente en la tarjeta del código. Ahora los seis
+   abren igual y, de paso, la pantalla tiene un encabezado de verdad. */
+.lobby-title {
+  margin: 0 0 4px;
+  font-family: 'Anton', sans-serif;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--np-ink);
+}
+
+/* Copiar el enlace de invitación. Estaba definido en Coche (con !important en
+   casi todas las líneas) y otra vez en Blackjack, En la Cadena lo tenía como
+   un icono 📋 suelto y El Mentiroso copiaba solo el CÓDIGO, no el enlace.
+   Ahora es el mismo botón, con el mismo texto y la misma función en los seis:
+   copia una URL con ?sala=CÓDIGO que abre el juego con el código puesto. */
+#btn-copy-link {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0);
+  color: var(--np-ink);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+#btn-copy-link:hover { background: var(--np-ink); color: var(--np-paper); }

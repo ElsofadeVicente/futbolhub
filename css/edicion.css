@@ -1,0 +1,43 @@
+/* =============================================
+   EDICION.CSS — el aviso de "la edición de hoy no está lista"
+   FutbolHUB
+
+   Los juegos con calendario (La Carrera, El Crucigrama, En el Top y En el
+   Once) NO fallan cuando falta el día de hoy: caen al último disponible y se
+   quedan tan anchos. En pantalla parece que todo va bien aunque lleven
+   semanas sirviendo ediciones viejas — y eso es lo que hizo que en agosto de
+   2026 cuatro juegos estuvieran atrasados sin que nadie se enterara.
+
+   El Crucigrama ya avisaba (tenía su propia .cruc-atrasado). Esto saca esa
+   pieza a un sitio común para que avisen los cuatro igual.
+
+   OJO A LA DIFERENCIA, que es todo el sentido del aviso:
+     · "Archivo"  → has ido TÚ a una edición pasada. Es normal, no es un fallo.
+     · .fh-atrasado → la de hoy NO EXISTE y el juego ha caído a otra. Eso sí
+       hay que decirlo, y hay que poder verlo desde fuera sin abrir el bucket.
+
+   Para saber cuál falta sin abrir la web: py admin/estado_calendario.py
+   ============================================= */
+
+.fh-atrasado {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--bd-c, var(--np-ink));
+  border-left: 3px solid var(--np-red, #b5221e);
+  border-radius: var(--r-md, 0);
+  background: rgba(181, 34, 30, 0.07);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--np-ink);
+  text-align: center;
+}
+
+.fh-atrasado.hidden { display: none; }
+
+/* En el tema Moderno el rojo del filete se aclara para que se vea sobre
+   fondo oscuro (mismo criterio que .cruc-atrasado tenía por su cuenta). */
+:root[data-theme="v2"] .fh-atrasado {
+  border-left-color: #ff6b66;
+  background: rgba(255, 107, 102, 0.10);
+}

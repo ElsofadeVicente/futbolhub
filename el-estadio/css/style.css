@@ -50,24 +50,10 @@ a      { text-decoration: none; }
 }
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
-.ad-strip {
-  flex: 1; margin: 5px;
-  border: 1px dashed var(--np-ink-soft);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.018);
-  display: flex; align-items: center; justify-content: center;
-  min-height: 80px;
-}
-.ad-strip--accent {
-  border-color: rgba(181,34,30,0.20);
-  background: rgba(181,34,30,0.022);
-}
-.ad-strip-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 5.5px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-align: center;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.24); line-height: 1.7;
-}
-.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
+/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
+   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
+   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
+   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
 
 /* ══════════════════════════════════════════════
    SCREENS
@@ -86,19 +72,9 @@ a      { text-decoration: none; }
 /* ══════════════════════════════════════════════
    BACK BTN
    ══════════════════════════════════════════════ */
-.back-btn {
-  position: absolute; top: 14px; left: 14px;
-  display: inline-flex; align-items: center;
-  z-index: 5;
-  font-family: 'DM Mono', monospace; font-size: 0.6rem;
-  font-weight: 700; letter-spacing: 0.14em;
-  color: var(--np-ink); text-transform: uppercase;
-  padding: 5px 10px;
-  border: 1px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2);
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  transition: background 0.12s, color 0.12s;
-}
-.back-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+/* La regla .back-btn de este juego se quedo sin ningun elemento al migrar el
+   boton de volver/salir a .fh-volver (css/volver.css). El unico juego que
+   sigue usando .back-btn es En el Once, para el boton de su modal. */
 
 /* ══════════════════════════════════════════════
    PANTALLA MENÚ
@@ -233,26 +209,21 @@ a      { text-decoration: none; }
 }
 
 /* HUD */
+/* El botón de volver del HUD era .hud-back y estaba metido en este flex como
+   primer elemento, con justify-content:space-between. Ahora usa .fh-volver
+   (css/volver.css), que es position:fixed y por tanto SALE del flujo: si se
+   dejara space-between con dos hijos, "RONDA" se iría al borde izquierdo.
+   Se centra el bloque de ronda y se ancla la puntuación a la derecha, que
+   además es más estable que depender de cuántos hijos haya. */
 #game-hud {
   position: absolute; top: 0; left: 0; right: 0;
   z-index: 20;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center;
   padding: 10px 16px;
   background: linear-gradient(to bottom, rgba(var(--np-ink-rgb, 15,18,14), 0.72) 0%, transparent 100%);
   pointer-events: none;
 }
 #game-hud > * { pointer-events: auto; }
-
-.hud-back {
-  font-family: 'DM Mono', monospace; font-size: 0.6rem;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--np-paper);
-  padding: 5px 10px;
-  border: 1px solid rgba(var(--np-paper-rgb, 244,234,210), 0.4);
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.5);
-  transition: background 0.12s;
-}
-.hud-back:hover { background: rgba(var(--np-ink-rgb, 15,18,14), 0.8); }
 
 .hud-center {
   display: flex; flex-direction: column; align-items: center;
@@ -271,6 +242,9 @@ a      { text-decoration: none; }
 
 .hud-score {
   display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+  /* Anclada al borde derecho del HUD para que "RONDA" quede centrado de
+     verdad (ver el comentario de #game-hud). */
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
 }
 #hud-score {
   font-family: 'Anton', sans-serif; font-size: 1.4rem;

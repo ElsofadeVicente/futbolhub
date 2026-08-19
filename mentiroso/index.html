@@ -28,9 +28,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-  <link rel="stylesheet" href="./css/styles.css?v=20260809a" />
+  <link rel="stylesheet" href="./css/styles.css?v=20260819a" />
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
+  <link rel="stylesheet" href="../css/volver.css?v=20260819a">
+  <link rel="stylesheet" href="../css/sala.css?v=20260819a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -38,7 +40,7 @@
 <!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
      :root[data-theme="v2"]: sin ese atributo no pinta nada.
      Va la ultima para poder ganar a igual especificidad. -->
-<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260814a">
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260819a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -102,7 +104,7 @@
 </aside>
 
 <div id="screen-menu" class="screen active">
-  <a href="../" class="hub-back-link">← Volver al Hub</a>
+  <a href="../" class="fh-volver">← Volver</a>
   <div class="menu-hero">
     <div class="menu-logo">🎭</div>
     <h1 class="menu-title">EL MENTIROSO</h1>
@@ -122,29 +124,29 @@
       <div class="panel-hint">Elige el modo de juego</div>
       <div class="mode-toggle">
         <button class="mode-opt active" data-mode="easy">
-          <div class="mode-opt-title">FACIL</div>
+          <div class="mode-opt-title">FÁCIL</div>
           <div class="mode-opt-sub">Ves el dato y si cada carta cumple</div>
         </button>
         <button class="mode-opt" data-mode="hard">
-          <div class="mode-opt-title">DIFICIL</div>
+          <div class="mode-opt-title">DIFÍCIL</div>
           <div class="mode-opt-sub">Solo ves nombre y pistas visibles</div>
         </button>
       </div>
 
       <div class="panel-hint">Rondas acertadas para ganar</div>
       <div class="setting-stepper">
-        <button class="step-btn" id="btn-points-minus">-</button>
+        <button aria-label="Quitar una ronda para ganar" class="step-btn" id="btn-points-minus">-</button>
         <div class="setting-value" id="create-points-value">3</div>
-        <button class="step-btn" id="btn-points-plus">+</button>
+        <button aria-label="Sumar una ronda para ganar" class="step-btn" id="btn-points-plus">+</button>
       </div>
 
       <button id="btn-create" class="btn-primary">CREAR SALA</button>
-      <div class="panel-hint">Se abre un lobby online real con codigo para compartir.</div>
+      <div class="panel-hint">Se abre una sala online real con código para compartir.</div>
     </div>
 
     <div class="menu-panel" data-panel="join">
       <input id="join-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" autocomplete="off" />
-      <input id="join-code" class="menu-input menu-code-input" type="text" placeholder="CODIGO" maxlength="6" autocomplete="off" />
+      <input id="join-code" class="menu-input menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6" autocomplete="off" />
       <button id="btn-join" class="btn-primary">ENTRAR</button>
       <div id="join-error" class="menu-error hidden">Sala no encontrada</div>
     </div>
@@ -154,9 +156,9 @@
       <div class="panel-hint">Juega contra bots para practicar sin conexion</div>
       <div class="panel-hint">Numero de bots</div>
       <div class="setting-stepper">
-        <button class="step-btn" id="btn-bots-minus">-</button>
+        <button aria-label="Quitar un jugador automatico" class="step-btn" id="btn-bots-minus">-</button>
         <div class="setting-value" id="practice-bots-value">2</div>
-        <button class="step-btn" id="btn-bots-plus">+</button>
+        <button aria-label="Sumar un jugador automatico" class="step-btn" id="btn-bots-plus">+</button>
       </div>
       <button id="btn-practice" class="btn-primary">EMPEZAR PRACTICA</button>
       <div class="panel-hint">Usa el modo y las rondas elegidos arriba en "Crear sala".</div>
@@ -181,26 +183,27 @@
 </div>
 
 <div id="screen-lobby" class="screen">
-  <button class="back-btn" data-action="leave-lobby">Salir</button>
+  <button class="fh-volver" data-action="leave-lobby">← Salir</button>
 
   <div class="lobby-wrap">
+    <h2 class="lobby-title">Sala de espera</h2>
     <div class="lobby-code-card">
-      <div class="lobby-code-label">Codigo de sala</div>
+      <div class="lobby-code-label">Código de sala</div>
       <div class="lobby-code-big" id="lobby-code">------</div>
-      <button class="btn-tiny" id="btn-copy-code">COPIAR CODIGO</button>
+      <button id="btn-copy-link">🔗 Copiar enlace de invitación</button>
     </div>
 
     <div class="lobby-section">
       <div class="lobby-section-kicker">Modo</div>
-      <div class="lobby-mode-pill" id="lobby-mode-pill">FACIL</div>
+      <div class="lobby-mode-pill" id="lobby-mode-pill">FÁCIL</div>
     </div>
 
     <div class="lobby-section">
       <div class="lobby-section-kicker">Rondas para ganar</div>
       <div class="setting-stepper hidden" id="lobby-points-controls">
-        <button class="step-btn" id="btn-lobby-points-minus">-</button>
+        <button aria-label="Quitar una ronda para ganar" class="step-btn" id="btn-lobby-points-minus">-</button>
         <div class="setting-value" id="lobby-points-value">3</div>
-        <button class="step-btn" id="btn-lobby-points-plus">+</button>
+        <button aria-label="Sumar una ronda para ganar" class="step-btn" id="btn-lobby-points-plus">+</button>
       </div>
       <div class="lobby-mode-pill hidden" id="lobby-points-readonly">
         <span>Objetivo</span>
@@ -250,9 +253,9 @@
     <div class="action-panel" id="action-panel">
       <div class="bet-row">
         <span class="bet-label">Tu apuesta:</span>
-        <button class="step-btn" id="guess-minus">−</button>
+        <button aria-label="Bajar la apuesta" class="step-btn" id="guess-minus">−</button>
         <div class="step-val" id="step-guess">0</div>
-        <button class="step-btn" id="guess-plus">+</button>
+        <button aria-label="Subir la apuesta" class="step-btn" id="guess-plus">+</button>
         <button class="btn-primary btn-confirm" id="btn-guess">CONFIRMAR</button>
       </div>
       <div class="bet-help">Cartas en juego: <span id="guess-max">0</span></div>
@@ -289,7 +292,7 @@
     <div class="finished-title">GANADOR</div>
     <div class="winner-name" id="winner-name">-</div>
     <div class="reveal-guesses" id="winner-scoreboard"></div>
-    <button class="btn-primary" id="btn-menu">VOLVER AL MENU</button>
+    <button class="btn-primary" id="btn-menu">VOLVER AL MENÚ</button>
   </div>
 </div>
 
@@ -326,7 +329,7 @@
   };
   window._FBOnDisconnect = onDisconnect;
 
-  const V = '?v=20260706a';
+  const V = '?v=20260819a';
   const scripts = [
     './js/game.js' + V
   ];

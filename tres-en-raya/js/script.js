@@ -1204,7 +1204,8 @@ window._AppReal = (function () {
         return `<div class="lobby-player-row">
           <div class="lobby-player-avatar">${esc(initial)}</div>
           <span class="lobby-player-name">${esc(p.name)}</span>
-          ${p.idx === 0 ? '<span class="lobby-player-host">Host</span>' : ''}
+          ${p.idx === 0 ? '<span class="lobby-player-host">ANFITRIÓN</span>' : ''}
+          ${p.idx === myIdx ? '<span class="lobby-player-you">← TÚ</span>' : ''}
         </div>`;
       }).join('');
       const kicker = $('lobby-count');

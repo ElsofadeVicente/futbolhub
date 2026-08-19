@@ -779,6 +779,7 @@
             <div class="lobby-player-avatar">${esc((p.name || '?')[0].toUpperCase())}</div>
             <span class="lobby-player-name">${esc(p.name || 'Jugador')}</span>
             ${id === room.host ? '<span class="lobby-player-host">ANFITRIÓN</span>' : ''}
+            ${id === myUid() ? '<span class="lobby-player-you">← TÚ</span>' : ''}
           </div>`).join('');
         $('btn-start-room').classList.toggle('hidden', !isHost);
         $('lobby-hint').textContent = isHost
