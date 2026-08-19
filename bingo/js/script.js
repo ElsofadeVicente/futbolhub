@@ -4,7 +4,8 @@
    -----------------------------------------------------------------------------
    Un carton 4x4 con 16 CATEGORIAS (club, pais, liga, titulo, entrenador,
    companero de...). Cada 10 segundos cae un FUTBOLISTA del pool curado
-   (data/bingo/pool.json) y hay que colocarlo en una casilla —o saltarlo—.
+   (del pool compartido, gen_pool.json) y hay que colocarlo en una casilla
+   —o saltarlo—.
 
    No se valida nada en caliente: colocas a ciegas y los aciertos y los fallos
    se revelan de golpe al cerrar el carton. Y es BINGO O NADA: o estan las 16
@@ -957,17 +958,19 @@
   function showRules()  { $('rules-overlay').classList.remove('hidden'); }
   function closeRules() { $('rules-overlay').classList.add('hidden'); }
 
-  /* ═══════════════ CARGA DEL POOL ═══════════════ */
-  async function loadPool() {
-    const urls = [sbStorageUrl('game-data', 'bingo/pool.json'), '../data/bingo/pool.json'];
-    for (const url of urls) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        return await res.json();
-      } catch { /* siguiente origen */ }
-    }
-    throw new Error('No se ha podido cargar el pool del Bingo');
+  /* ═══════════════ CARGA DEL POOL ═══════════════
+     Bingo ya NO tiene pool propio. Antes leia data/bingo/pool.json, que era una
+     copia de gen_pool.json hecha en su dia y que se habia quedado desfasada: los
+     dos tenian 1.516 futbolistas pero NO los mismos (Koke y Darijo Srna solo en
+     uno, Ndombele y Kadlec solo en el otro), porque gen_pool se regeneraba y
+     nadie regeneraba el de aqui detras. Ahora los tres juegos miran la misma
+     lista, que se cura en admin/generar_pool.py.
+
+     El filtro por foto NO es un detalle: en Bingo no escribes nombres, el juego
+     te suelta caras, asi que un futbolista sin retrato deja un hueco en la
+     pantalla. En Coche y en Tres en Raya da igual porque ahi se escribe. */
+  function poolDeFR() {
+    return (FR.genPool || []).filter(p => p && p.img);
   }
 
   /* ═══════════════ INIT ═══════════════ */
@@ -975,16 +978,15 @@
     renderBestBox();
     try {
       $('loading-text').textContent = 'Cargando base de datos…';
-      const [pool] = await Promise.all([loadPool(), FR.init()]);
+      await FR.init();
 
-      POOL_CATS = Array.isArray(pool.categories) ? pool.categories : [];
-      const byId = new Map(FR.getAllPlayers().map(p => [String(p.id), p]));
-      POOL = (pool.players || [])
-        .map(([id]) => byId.get(String(id)))
-        .filter(Boolean);
+      POOL_CATS = [];                    /* catalogo entero de restricciones */
+      POOL = poolDeFR();
 
       if (POOL.length < 200) throw new Error('El pool de futbolistas ha llegado incompleto');
-      console.log(`✅ [Bingo] Pool curado: ${POOL.length} futbolistas`);
+      const sinFoto = (FR.genPool || []).length - POOL.length;
+      console.log(`✅ [Bingo] Pool compartido: ${POOL.length} futbolistas`
+                  + (sinFoto ? ` (${sinFoto} descartados por no tener foto)` : ''));
     } catch (e) {
       console.error(e);
       $('loading-text').textContent = 'No se han podido cargar los datos. Recarga la página.';

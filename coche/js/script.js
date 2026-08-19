@@ -1950,7 +1950,7 @@ const App = (() => {
            sala generan rejillas distintas con la misma semilla. Sin ?v= el
            navegador se quedaba con el worker viejo indefinidamente mientras
            script.js si se actualizaba: justo la divergencia que hay que evitar. */
-        worker = new Worker('js/restrictions-worker.js?v=20260820b');
+        worker = new Worker('js/restrictions-worker.js?v=20260820c');
       } catch(e) {
         finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(err); } });
         return;
