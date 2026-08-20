@@ -419,6 +419,55 @@ body {
     font-weight: normal;
 }
 
+/* ===================== GOLEADORES ===================== */
+/* Bajo el marcador: quién marcó y en qué minuto. Los goles del equipo que hay
+   que adivinar salen con el nombre tapado hasta que aciertas a ese jugador; el
+   minuto se ve desde el principio. El tapado es de ancho FIJO a propósito: si
+   se dibujara una raya por letra, estaría cantando la longitud del apellido. */
+.match-goals {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 18px;
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.66rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+.match-goals:empty { display: none; }
+
+.mg-side { flex: 1 1 0; min-width: 0; max-width: 46%; }
+.mg-side--home { text-align: right; }
+.mg-side--away { text-align: left; }
+
+/* Envuelve en vez de cortar: en un movil de 375 px, «Raúl Tamudo 70' (p)» no
+   cabe en su media columna, y un nombre con puntos suspensivos se lee peor que
+   uno en dos lineas. */
+.mg-goal { white-space: normal; overflow-wrap: anywhere; }
+
+.mg-name {
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--np-ink-mid);
+}
+.mg-goal--revealed .mg-name { color: var(--np-ink); font-weight: 700; }
+
+.mg-hidden {
+    display: inline-block;
+    letter-spacing: 0.18em;
+    color: var(--np-red);
+    /* Sin opacidad: al 0.75 se quedaba en 3,47:1 sobre el papel crema. Es un
+       texto pequeno y tiene que leerse igual que el resto. */
+}
+
+.mg-min { color: var(--np-red); font-weight: 700; }
+.mg-tag { opacity: 0.7; }
+
+@media (max-width: 480px) {
+    .match-goals { font-size: 0.6rem; gap: 10px; }
+}
+
 /* ===================== PLAYING-TEAM BAR ===================== */
 .playing-team {
     background: var(--np-paper3);

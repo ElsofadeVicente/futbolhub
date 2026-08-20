@@ -598,6 +598,7 @@ async function loadDailyMatch(offsetDays) {
 
     setTeamBadge('home-badge', currentMatch.homeBadge, currentMatch.homeTeam);
     setTeamBadge('away-badge', currentMatch.awayBadge, currentMatch.awayTeam);
+    renderGoals();
 
     document.getElementById('next-match-btn').style.display = 'none';
 
@@ -737,6 +738,7 @@ function loadMatch() {
 
     setTeamBadge('home-badge', currentMatch.homeBadge, currentMatch.homeTeam);
     setTeamBadge('away-badge', currentMatch.awayBadge, currentMatch.awayTeam);
+    renderGoals();
 
     document.getElementById('next-match-btn').style.display = 'inline-block';
 
@@ -1263,6 +1265,64 @@ function openGuessModal(playerIndex) {
     }
 }
 
+// =============================================
+// GOLEADORES BAJO EL MARCADOR
+// =============================================
+
+/**
+ * Pinta los goles del partido debajo del marcador: minuto siempre, y el nombre
+ * solo si NO hay que adivinarlo o si ya se ha acertado.
+ *
+ * La regla no es "los goles del rival se ven": es "se tapa el nombre si el que
+ * marcó es TITULAR del equipo que hay que adivinar". La diferencia está en los
+ * goles en propia puerta, que cuentan para el rival pero los marca un jugador
+ * del equipo que estás adivinando: enseñarlos sería cantar un nombre del once.
+ * Un gol de un suplente sí se ve, porque no está en el once y no se puede
+ * acertar nunca.
+ *
+ * Los partidos curados antes de esto no traen `goals` y simplemente no pintan
+ * nada.
+ */
+function renderGoals() {
+    const box = document.getElementById('match-goals');
+    if (!box) return;
+    const goals = (currentMatch && currentMatch.goals) || [];
+    if (!goals.length) { box.innerHTML = ''; return; }
+
+    const lados = { home: [], away: [] };
+    goals.forEach(g => {
+        const lado = g.side === 'away' ? 'away' : 'home';
+        lados[lado].push(golHTML(g));
+    });
+
+    box.innerHTML =
+        `<div class="mg-side mg-side--home">${lados.home.join('')}</div>` +
+        `<div class="mg-side mg-side--away">${lados.away.join('')}</div>`;
+}
+
+function golHTML(g) {
+    const tapado  = (g.xi !== undefined && g.xi !== null);
+    const visto   = !tapado || revealedPlayers.has(g.xi);
+    // Si está en el once, el nombre bueno es el del once (por si se corrigió a
+    // mano en la herramienta después de sacar los goles).
+    const enOnce  = tapado ? getPlayerByIndex(g.xi) : null;
+    const nombre  = (enOnce && enOnce.name) || g.name || '';
+    const minuto  = `${g.minute}${g.added ? '+' + g.added : ''}'`;
+    const marcas  = [g.pen ? 'p' : '', g.own ? 'p.p.' : ''].filter(Boolean).join(' ');
+    const tag     = marcas ? ` <span class="mg-tag">(${escapeHtml(marcas)})</span>` : '';
+    const quien   = visto
+        ? `<span class="mg-name">${escapeHtml(nombre)}</span>`
+        : `<span class="mg-hidden" aria-label="goleador por descubrir">•••</span>`;
+    return `<div class="mg-goal${visto && tapado ? ' mg-goal--revealed' : ''}">`
+         + `${quien} <span class="mg-min">${escapeHtml(minuto)}</span>${tag}</div>`;
+}
+
+function escapeHtml(t) {
+    return String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function getPlayerByIndex(index) {
     let count = 0;
     for (const line of currentMatch.formation) {
@@ -1467,6 +1527,7 @@ function revealPlayer(playerIndex, isFailed = false) {
     if (isFailed) { failedPlayers.add(playerIndex); }
     else { delete playerGuessHistory[playerIndex]; delete playerAttempts[playerIndex]; }
     renderFormation();
+    renderGoals();      // si ese jugador marcó, su nombre ya se puede enseñar
     updateRevealedCount();
 }
 
