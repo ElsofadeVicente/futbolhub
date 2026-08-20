@@ -207,22 +207,65 @@ function buildCareer(transfersArr, perfArr) {
     if (!tidInfo.has(tid)) tidInfo.set(tid, { name: r.tn || ('#' + tid), m: r.m ? String(r.m) : null });
   }
 
-  // 3) Asignar cada (temporada,tid) a su etapa; lo que no case → sintéticas.
-  //    Toda etapa sin fichaje registrado también cuenta si hay datos de
-  //    actuaciones para ese club, sin exigir un mínimo de partidos.
-  const unmatched = new Map();
-  for (const { season, tid, app, g } of byKey.values()) {
-    const cands = stints.filter(s => s.tid === tid && s.start <= season + 1);
-    if (cands.length) {
-      const st = cands.reduce((a, b) => (a.start >= b.start ? a : b));
-      st.app += app; st.g += g; st.seasons.add(season);
-    } else {
-      if (!unmatched.has(tid)) unmatched.set(tid, { app: 0, g: 0, seasons: new Set() });
-      const u = unmatched.get(tid); u.app += app; u.g += g; u.seasons.add(season);
-    }
+  // 2b) Vueltas de cesión: no son etapas (no se filtran arriba a propósito),
+  //     pero desmienten un hueco — si volvió, es que nunca dejó el club.
+  const vueltas = new Map();
+  for (const m of tr) {
+    if (m.type !== 'Return from loan' || !m.tid) continue;
+    const k = String(m.tid);
+    if (!vueltas.has(k)) vueltas.set(k, new Set());
+    vueltas.get(k).add(seasonStartYear(m.s) || (m.d ? +String(m.d).slice(0, 4) : 0));
   }
-  for (const [tid, u] of unmatched) {
-    stints.push({ tid, start: Math.min(...u.seasons), loan: false, app: u.app, g: u.g, seasons: u.seasons });
+
+  // 3) Asignar cada (temporada,tid) a su etapa, EN ORDEN CRONOLÓGICO. Lo que
+  //    no case abre etapa nueva, aunque no haya fichaje registrado.
+  //    Y si entre la última temporada de una etapa y esta hay un hueco en el
+  //    que el jugador jugó en OTRO club, es OTRA etapa en el mismo club: la
+  //    base de traspasos no siempre registra la vuelta (Cancelo: Barça →
+  //    Al-Hilal → Barça salía como un único "2023-2025 Barcelona").
+  const clubsPorTemporada = new Map();
+  for (const { season, tid } of byKey.values()) {
+    if (!clubsPorTemporada.has(season)) clubsPorTemporada.set(season, new Set());
+    clubsPorTemporada.get(season).add(tid);
+  }
+  const cedidoEn = new Map();   // "temporada|tid" → estaba allí CEDIDO
+  function esFilialDe(otro, tid) {
+    const p = (tidInfo.get(otro) || {}).m || _RESERVE_PARENT[otro];
+    return p ? String(p) === tid : false;
+  }
+  function huecoConOtroClub(st, season) {
+    if (!st.seasons.size) return false;
+    const last = Math.max(...st.seasons);
+    if (season <= last + 1) return false;   // hace falta una temporada entera
+    const vu = vueltas.get(st.tid);
+    for (let y = last + 1; y < season; y++) {
+      const otros = [...(clubsPorTemporada.get(y) || [])].filter(o => {
+        if (o === st.tid || esFilialDe(o, st.tid)) return false;
+        const n = (tidInfo.get(o) || {}).name || '';
+        if (isYouth(n) || isReserve(n)) return false;   // un filial no es otro club
+        return !cedidoEn.get(y + '|' + o);              // estar CEDIDO tampoco
+      });
+      if (!otros.length) continue;
+      // una vuelta registrada de esa temporada en adelante dice que seguía
+      // siendo del club (Kuffour cedido al Nuremberg, Babbel al Hamburgo).
+      if (vu && [...vu].some(v => v >= y && v <= season)) continue;
+      return true;
+    }
+    return false;
+  }
+  const _porTemporada = [...byKey.values()].sort(
+    (a, b) => a.season - b.season || (a.tid < b.tid ? -1 : a.tid > b.tid ? 1 : 0));
+  for (const e of _porTemporada) {
+    const cands = stints.filter(s => s.tid === e.tid && s.start <= e.season + 1);
+    let st = cands.length ? cands.reduce((a, b) => (a.start >= b.start ? a : b)) : null;
+    if (st && huecoConOtroClub(st, e.season)) st = null;
+    if (!st) {
+      st = { tid: e.tid, start: e.season, loan: false, app: 0, g: 0, seasons: new Set(),
+             name: (tidInfo.get(e.tid) || {}).name || ('#' + e.tid) };
+      stints.push(st);
+    }
+    st.app += e.app; st.g += e.g; st.seasons.add(e.season);
+    cedidoEn.set(e.season + '|' + e.tid, !!st.loan);
   }
 
   // 4) Quedarse con TODAS las etapas (fichaje real o actuaciones reales);
@@ -250,24 +293,26 @@ function buildCareer(transfersArr, perfArr) {
 
   // los AÑOS del filial se anexan al club matriz, pero NO sus partidos ni
   // goles: son del filial, no del primer equipo.
-  function absorb(target, s) {
-    s.seasons.forEach(x => target.seasons.add(x));
-    target.startY = Math.min(target.startY, s.startY); target.endY = Math.max(target.endY, s.endY);
+  // Cada temporada del filial va a la etapa del club matriz MÁS CERCANA (idas
+  // y vueltas de cesión): volcarlas todas en una sola estiraba sus años hasta
+  // solapar con otra etapa del mismo club (Javi Ros: "2008" y "2008-2013").
+  function distAEtapa(o, y) {
+    return (o.startY <= y && y <= o.endY) ? 0 : Math.min(Math.abs(o.startY - y), Math.abs(o.endY - y));
   }
-  // de entre varias etapas del club matriz (idas y vueltas de cesión), la que
-  // ya estaba activa cuando terminó el filial; si el filial es posterior a
-  // todas, la más cercana en el tiempo.
-  function pickTarget(cands, s) {
-    const eligible = cands.filter(o => o.startY <= s.endY + 1);
-    if (eligible.length) return eligible.reduce((a, b) => (a.startY >= b.startY ? a : b));
-    return cands.reduce((a, b) => (Math.abs(a.startY - s.startY) <= Math.abs(b.startY - s.startY) ? a : b));
+  function absorb(cands, s) {
+    const years = s.seasons.size ? [...s.seasons] : [s.startY];
+    for (const y of years) {
+      const t = cands.reduce((a, b) => (distAEtapa(a, y) <= distAEtapa(b, y) ? a : b));
+      t.seasons.add(y);
+      t.startY = Math.min(t.startY, y); t.endY = Math.max(t.endY, y);
+    }
   }
 
   const kept = [];
   for (const s of rows) {
     if (s.parent && present.has(String(s.parent))) {
       const cands = rows.filter(o => o !== s && o.tid === String(s.parent));
-      if (cands.length) { absorb(pickTarget(cands, s), s); continue; }
+      if (cands.length) { absorb(cands, s); continue; }
     }
     kept.push(s);
   }
@@ -277,7 +322,7 @@ function buildCareer(transfersArr, perfArr) {
   for (const s of rows) {
     if (isReserve(s.name)) {
       const cands = rows.filter(o => o !== s && !isReserve(o.name) && samesClub(s.name, o.name));
-      if (cands.length) { absorb(pickTarget(cands, s), s); continue; }
+      if (cands.length) { absorb(cands, s); continue; }
       if (!s.app && !s.g) continue;
     }
     final.push(s);
