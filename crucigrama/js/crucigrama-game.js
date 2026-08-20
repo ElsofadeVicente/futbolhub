@@ -303,17 +303,45 @@ async function crucStart() {
     // silencio: el juego estuvo 102 días sirviendo el crucigrama del 7 de mayo
     // y en pantalla no se notaba nada raro.
     crucAtrasado = i < 0;
-    await crucGoEdition(i >= 0 ? i : crucEditions.length - 1);
+
+    /* Y si la URL pide una edición concreta, manda ella. Ojo: eso NO es estar
+       atrasado — el aviso de "la de hoy no está lista" es para cuando el juego
+       se desvía solo, no para cuando el desvío lo has pedido tú. */
+    const pedido  = window.FHRuta && FHRuta.fecha('dia');
+    const iPedido = pedido ? crucEditions.indexOf(pedido) : -1;
+
+    // El Atrás del móvil deshace la navegación por ediciones.
+    if (window.FHRuta) FHRuta.alVolver(() => {
+        const d = FHRuta.fecha('dia') || hoy;
+        const k = crucEditions.indexOf(d);
+        if (k >= 0 && k !== crucIdx) crucGoEdition(k, true);
+    });
+
+    await crucGoEdition(iPedido >= 0 ? iPedido : (i >= 0 ? i : crucEditions.length - 1),
+                        true);
+    /* Que la URL no mienta: el día que no existe (o el de hoy, que va sin
+       parámetro) se quita, para que recargar no repita el mismo desvío. */
+    if (window.FHRuta) {
+        const real = crucEditions[crucIdx];
+        FHRuta.set({ dia: real === hoy ? null : real });
+    }
 }
 
 /* Navega a la edición idx de crucEditions y la deja lista para jugar. */
-async function crucGoEdition(idx) {
+async function crucGoEdition(idx, sinTocarUrl) {
     // Se para ANTES de cambiar de puzzle: si no, el reloj de la edición que
     // dejas atrás sigue corriendo y le suma segundos a la que abres.
     crucRelojPara();
     idx = Math.max(0, Math.min(crucEditions.length - 1, idx));
     const fecha = crucEditions[idx];
     const mes   = fecha.slice(0, 7);
+
+    /* push: cambiar de edición SÍ es moverse a otro sitio y el Atrás debe
+       deshacerlo. Se salta en el arranque y cuando la llamada viene del propio
+       Atrás (la URL ya la ha cambiado el navegador). */
+    if (window.FHRuta && !sinTocarUrl) {
+        FHRuta.set({ dia: fecha === crucTodayMadrid() ? null : fecha }, { push: true });
+    }
 
     if (!crucMonthCache[mes]) crucLoading('CARGANDO...');
 
@@ -466,7 +494,8 @@ function buildCrucigramaScreen() {
                 <button class="cruc-nav-btn cruc-nav-btn--edge" ${alFinal ? 'disabled' : ''}
                         title="Última edición" onclick="crucGoEdition(${crucEditions.length - 1})">»</button>
             </div>
-            ${crucAtrasado ? `<p class="fh-atrasado">El crucigrama de hoy todavía no
+            ${crucAtrasado && crucIdx === crucEditions.length - 1
+               ? `<p class="fh-atrasado">El crucigrama de hoy todavía no
                está listo. Mientras tanto, aquí tienes el del ${crucFechaLarga(crucData.date)}.</p>` : ''}
             <!-- Enlace a la guía del juego. Va aquí y no solo en el HTML porque
                  este render sustituye el innerHTML del contenedor entero. -->

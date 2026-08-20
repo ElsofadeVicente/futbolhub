@@ -49,6 +49,17 @@
     return Math.max(1, Math.floor((todayUTC - EPOCH_UTC) / 86400000) + 1);
   }
 
+  /* Dentro del juego la edicion es un NUMERO (#17), pero en la URL va la FECHA,
+     como en el resto de diarios: '?dia=2026-08-20' se entiende y se comparte,
+     '?dia=17' no dice nada y ademas se rompe el dia que se mueva el EPOCH. */
+  function fechaDeDia(n) {
+    return new Date(EPOCH_UTC + (n - 1) * 86400000).toISOString().slice(0, 10);
+  }
+  function diaDeFecha(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    return Math.floor((Date.UTC(y, m - 1, d) - EPOCH_UTC) / 86400000) + 1;
+  }
+
   /* ─────────── Objetivos (metrica del dia, todo SUMA) ─────────── */
   /* families: badges que pueden salir.
      retiredOk: unica excepcion a "solo jugadores en activo" (ver cabecera). */
@@ -650,8 +661,14 @@
     });
   }
 
-  function loadDay(day) {
+  function loadDay(day, sinTocarUrl) {
     curDay = Math.max(1, Math.min(day, maxDay));
+    /* push: cambiar de edicion SI es moverse a otro sitio y el Atras debe
+       deshacerlo. Cuando el dia no cambia (Reintentar, volver al menu) set()
+       ve que no hay nada que escribir y no encadena entradas de historial. */
+    if (window.FHRuta && !sinTocarUrl) {
+      FHRuta.set({ dia: curDay === maxDay ? null : fechaDeDia(curDay) }, { push: true });
+    }
     D = generateDay(curDay);
     S = freshState(D);
     buildReelImages();
@@ -701,7 +718,22 @@
       return;
     }
     $('loading-overlay').classList.add('hidden');
-    loadDay(maxDay);
+
+    /* La URL manda al entrar. Se valida contra el rango real (dia 1 .. hoy):
+       una fecha de antes del lanzamiento o del futuro se ignora. */
+    const pedido = window.FHRuta && FHRuta.fecha('dia');
+    const nPedido = pedido ? diaDeFecha(pedido) : 0;
+    loadDay(nPedido >= 1 && nPedido <= maxDay ? nPedido : maxDay, true);
+    /* Que la URL no mienta si el dia pedido no valia. */
+    if (window.FHRuta) {
+      FHRuta.set({ dia: curDay === maxDay ? null : fechaDeDia(curDay) });
+    }
+
+    if (window.FHRuta) FHRuta.alVolver(() => {
+      const f = FHRuta.fecha('dia');
+      const n = f ? diaDeFecha(f) : maxDay;
+      if (n >= 1 && n <= maxDay && n !== curDay) loadDay(n, true);
+    });
 
     // Listeners
     /* Un solo manejador: el que comprueba si la partida de hoy ya se jugo.

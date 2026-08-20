@@ -6,7 +6,10 @@
    ============================================================================= */
 
 :root {
-  --bg-ok:   #2f7a45;   /* casilla acertada */
+  /* Casilla acertada. Se oscurecio de #2f7a45 a #2c7341 (2026-08-21): con el
+     nombre en papel encima se quedaba en 4,40:1, justo por debajo del minimo,
+     y el nombre de la casilla no es texto grande (0,68rem). Ahora 4,83:1. */
+  --bg-ok:   #2c7341;   /* casilla acertada */
   --bg-bad:  #b5221e;   /* casilla fallada  */
   --bg-line: #e8b93a;   /* línea de bingo   */
 }
@@ -159,15 +162,33 @@
   padding: 0 2px; word-break: break-word;
 }
 
-/* Con futbolista dentro: el símbolo se encoge y manda el nombre */
-.bcell.filled { background: var(--np-paper2); cursor: default; }
-.bcell.filled .cat-media { width: clamp(18px, 5.2vw, 26px); height: clamp(18px, 5.2vw, 26px); opacity: .5; }
-.bcell.filled .bcell-cat  { opacity: .42; font-size: clamp(.42rem, 1.8vw, .46rem); }
-.bcell.filled .bcell-name { display: block; }
+/* Con futbolista dentro: el símbolo se encoge y manda el nombre.
+
+   LA CASILLA SE INVIERTE, y el color está elegido con cuidado: en este juego
+   NO se sabe si has acertado hasta que se cierra el cartón, así que "colocada"
+   no puede parecerse a "buena" ni a "mala". Verde (--bg-ok), rojo (--bg-bad) y
+   dorado (--bg-line) ya significan algo en el revelado, y cualquiera de ellos
+   aquí sería cantar el resultado antes de tiempo. La tinta no significa nada:
+   solo dice "esta ya está puesta".
+
+   Antes era --np-paper2 sobre --np-paper: un 4% de diferencia, o sea nada. Se
+   veía que la casilla estaba ocupada porque salía el nombre, no por el color. */
+.bcell.filled {
+  background: var(--np-ink);
+  cursor: default;
+  box-shadow: inset 0 0 0 1px var(--np-paper);
+}
+.bcell.filled .cat-media { width: clamp(18px, 5.2vw, 26px); height: clamp(18px, 5.2vw, 26px); opacity: .55; }
+.bcell.filled .bcell-cat  { opacity: .55; font-size: clamp(.42rem, 1.8vw, .46rem); color: var(--np-paper); }
+.bcell.filled .bcell-name { display: block; color: var(--np-paper); }
+/* El escudo/bandera va sobre tinta: un aro claro para que no se pierda. */
+.bcell.filled .cat-media--avatar { border-color: var(--np-paper); }
 .bcell.pop { animation: cellPop .42s cubic-bezier(.2,.9,.3,1.4); }
+/* El destello de colocar tiene que verse SOBRE la casilla ya invertida, así
+   que el aro va en papel: en tinta sobre tinta no se veía nada. */
 @keyframes cellPop {
   0%   { transform: scale(1); }
-  40%  { transform: scale(1.13); box-shadow: inset 0 0 0 3px var(--np-ink); }
+  40%  { transform: scale(1.13); box-shadow: inset 0 0 0 3px var(--np-paper); }
   100% { transform: scale(1); }
 }
 

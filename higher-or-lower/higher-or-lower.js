@@ -194,9 +194,13 @@ function buildModeMenu() {
 function showModeMenu() {
   cancelPendingTimers();
   HOL.isAnimating = false;
+  HOL.currentMode = null;
   buildModeMenu();
   DOM.modeMenu.classList.add('active');
   DOM.game.classList.remove('active');
+  /* El menú es la URL limpia: si no, recargar te devolvería al modo que
+     acabas de abandonar. */
+  if (window.FHRuta) FHRuta.borrar('modo');
 }
 
 function hideModeMenu() {
@@ -207,6 +211,15 @@ function hideModeMenu() {
 async function selectMode(modeKey) {
   hideModeMenu();
   HOL.currentMode = modeKey;
+
+  /* El modo en la URL: recargar (o abrir el enlace que te han pasado) te deja
+     en La Liga o en Top Players, no en el menú. replace y no push: el Atrás
+     debe sacarte del juego de una vez, no recorrer los modos visitados.
+     Se escribe SIEMPRE, tambien al entrar por la propia URL: showModeMenu()
+     la acaba de limpiar (el menú es la URL limpia) y sin volver a ponerla
+     recargar te mandaría al menú justo por el camino que venías a evitar.
+     Si el valor ya era ese, set() lo ve y no toca nada. */
+  if (window.FHRuta) FHRuta.set({ modo: modeKey });
 
   const mode = HOL_CONFIG.modes.find(m => m.key === modeKey);
   DOM.loading.classList.remove('hidden');
@@ -282,8 +295,28 @@ async function initGame() {
     showModeMenu();
   });
 
+  /* Se lee ANTES de pintar el menú: showModeMenu() limpia ?modo= (el menú es
+     la URL limpia), así que leerlo después devolvería siempre null. */
+  const pedido = window.FHRuta ? FHRuta.get('modo') : null;
+
   DOM.loading.classList.add('hidden');
   showModeMenu();
+
+  /* La URL manda al entrar. El modo se comprueba contra la lista real de
+     HOL_CONFIG: cualquier otra cosa se ignora y se entra por el menú. */
+  if (window.FHRuta) {
+    if (pedido && HOL_CONFIG.modes.some(m => m.key === pedido)) selectMode(pedido);
+
+    FHRuta.alVolver(() => {
+      const m = FHRuta.get('modo');
+      if (m && HOL_CONFIG.modes.some(x => x.key === m)) {
+        if (m !== HOL.currentMode) selectMode(m);
+      } else if (HOL.currentMode) {
+        DOM.gameoverScreen.classList.remove('active');
+        showModeMenu();
+      }
+    });
+  }
 }
 
 /* ── LÓGICA DEL JUEGO ── */

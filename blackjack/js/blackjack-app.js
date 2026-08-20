@@ -144,25 +144,108 @@ const App = (() => {
     // sala pública no tenga que esperar a la red.
     if (typeof BotNames !== 'undefined') BotNames.load();
 
+    /* El modo que traiga la URL, marcado en el menú antes que nada. Se valida
+       contra los tres que existen: lo escribe cualquiera en la barra. */
+    if (window.FHRuta) {
+      const m = FHRuta.get('modo');
+      if (MODOS_URL.includes(m)) {
+        const btn = document.querySelector(`.mode-btn[data-mode="${m}"]`);
+        if (btn) selectMode(btn);
+      } else if (m) {
+        FHRuta.borrar('modo');   // que la URL no mienta
+      }
+    }
+
     // Auto-rellenar código si la URL trae ?sala=XXXXXX
-    const urlParams = new URLSearchParams(window.location.search);
-    const salaCode  = urlParams.get('sala');
+    const salaCode = window.FHRuta ? FHRuta.sala()
+                                   : new URLSearchParams(window.location.search).get('sala');
     if (salaCode) {
       const input = document.getElementById('input-join-code');
       if (input) input.value = salaCode.toUpperCase();
       setTab('private');
+      _volverALaSala(salaCode);
     }
 
     console.log('✅ Blackjack App iniciado');
   }
 
+  /* Volver a la sala tras recargar. Dos intentos, en este orden:
+       1. tryReconnect con el playerId de la sesión de pestaña. Es el bueno:
+          vuelves siendo TÚ, con tu sitio y tu condición de anfitrión.
+       2. Si eso no vale (cerraste la pestaña, o Firebase ya te borró al
+          desconectar), entrar como jugador nuevo con el nombre recordado.
+     Si tampoco, se deja el código puesto y se pide el nombre, como siempre. */
+  async function _volverALaSala(code) {
+    const rec = window.FHRuta && FHRuta.salaRecordada('blackjack', code);
+    /* Ojo: BlackjackSync se declara con `const` en su archivo, así que es un
+       global léxico y NO está en window — comprobarlo con window.BlackjackSync
+       daba siempre falso y cortaba la vuelta antes de intentarla. */
+    if (!rec || typeof BlackjackSync === 'undefined') return;
+    const name = rec.nombre;
+
+    const ses = _loadSession();
+    if (ses && ses.code === code && ses.playerId) {
+      try {
+        if (await BlackjackSync.tryReconnect(code, ses.playerId, name, _accAvatar())) {
+          _roomCode = code;
+          _playerId = ses.playerId;
+          _isHost   = !!ses.isHost;
+          _isPublic = !!ses.isPublic;
+          if (ses.mode && MODOS_URL.includes(ses.mode)) _mode = ses.mode;
+          _listenRoom();
+          _showLobby();
+          return;
+        }
+      } catch (e) { /* abajo se prueba entrando de cero */ }
+    }
+
+    try {
+      const r = await BlackjackSync.joinRoom(code, name, _accAvatar());
+      _roomCode = r.code;
+      _playerId = r.playerId;
+      _isHost   = false;
+      _isPublic = false;
+      _saveSession();
+      _recordarSala(name);
+      _listenRoom();
+      _showLobby();
+    } catch (e) {
+      if (window.FHRuta) { FHRuta.borrar('sala'); _olvidarSala(); }
+      _showError('error-private', e.message || 'No se ha podido volver a la sala');
+    }
+  }
+
   /* ══════════════════════════════════════════
      MENÚ — SELECCIÓN DE MODO Y TAB
      ══════════════════════════════════════════ */
+  const MODOS_URL = ['mv', 'national', 'age'];
+
+  /* Lo que haya en la query aparte de ?sala=, para no perderlo al reescribirla
+     a mano (el modo, sin ir más lejos). */
+  function _restoQuery() {
+    const p = new URLSearchParams(window.location.search);
+    p.delete('sala');
+    const q = p.toString();
+    return q ? '&' + q : '';
+  }
+
   function selectMode(btn) {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     _mode = btn.dataset.mode;
+    /* El modo elegido va a la URL: recargar el menú ya no te devuelve a "Valor
+       mercado" por defecto. replace y no push: elegir modo no es navegar. */
+    if (window.FHRuta) FHRuta.set({ modo: _mode === 'mv' ? null : _mode });
+  }
+
+  /* Estar en una sala se nota en la URL, y con qué nombre entraste apuntado al
+     lado, para poder volver sin escribirlo. El nombre va en localStorage y no
+     en la URL: ahí sería un dato personal a la vista. */
+  function _recordarSala(name) {
+    if (window.FHRuta && _roomCode) FHRuta.recordarSala('blackjack', _roomCode, name);
+  }
+  function _olvidarSala() {
+    if (window.FHRuta) FHRuta.olvidarSala('blackjack');
   }
 
   function setTab(tab) {
@@ -250,6 +333,7 @@ const App = (() => {
       _isHost   = true;
       _isPublic = false;
       _saveSession();
+      _recordarSala(name);
       _listenRoom();
       _showLobby();
     } catch (e) {
@@ -279,6 +363,7 @@ const App = (() => {
       _isHost   = false;
       _isPublic = false;
       _saveSession();
+      _recordarSala(name);
       _listenRoom();
       _showLobby();
     } catch (e) {
@@ -483,13 +568,16 @@ const App = (() => {
     _applyPublicChrome(_isPublic);
     _syncMyIdentityToRoom();   // por si entramos antes de que resolviera la sesión
 
-    // Solo las salas privadas ponen el código en la URL (para compartir).
-    // En públicas no hay código que compartir, como en Coche.
+    /* El código va a la URL estés en sala privada o pública. Antes la pública
+       la borraba ("no hay nada que compartir"), y con eso recargar dentro de
+       una partida pública te devolvía al menú sin remedio. El enlace de
+       invitación sigue sin ofrecerse en las públicas — eso lo decide el lobby,
+       no la barra de direcciones. */
     if (_roomCode && !_isPublic) {
-      const newUrl = window.location.pathname + '?sala=' + _roomCode;
+      const newUrl = window.location.pathname + '?sala=' + _roomCode + _restoQuery();
       history.pushState({ sala: _roomCode }, '', newUrl);
-    } else if (_isPublic) {
-      history.replaceState({}, '', window.location.pathname);
+    } else if (_isPublic && _roomCode) {
+      if (window.FHRuta) FHRuta.set({ sala: _roomCode });
     }
 
     // Mostrar enlace completo a la sala (solo privadas)
@@ -710,10 +798,11 @@ const App = (() => {
       document.getElementById('game-topbar')?.classList.add('hidden');
       // La URL solo refleja el código en salas privadas (en públicas no hay
       // nada que compartir, igual que en Coche).
-      if (_roomCode && !_isPublic && !window.location.search.includes(_roomCode)) {
-        history.replaceState({ sala: _roomCode }, '', window.location.pathname + '?sala=' + _roomCode);
-      } else if (_isPublic && window.location.search) {
-        history.replaceState({}, '', window.location.pathname);
+      if (_roomCode && !window.location.search.includes(_roomCode)) {
+        if (window.FHRuta) FHRuta.set({ sala: _roomCode });
+        else history.replaceState({ sala: _roomCode }, '', window.location.pathname + '?sala=' + _roomCode);
+      } else if (!_roomCode && window.location.search) {
+        if (window.FHRuta) FHRuta.borrar('sala');
       }
     }
 
@@ -1364,8 +1453,10 @@ const App = (() => {
       _localScores     = {};
     }
 
-    // Limpiar ?sala= de la URL al volver al menú
-    history.replaceState({}, '', window.location.pathname);
+    /* Limpiar ?sala= de la URL al volver al menú. Solo esa clave: un
+       replaceState al pathname pelado se llevaba por delante también ?modo=. */
+    if (window.FHRuta) { FHRuta.borrar('sala'); _olvidarSala(); }
+    else history.replaceState({}, '', window.location.pathname);
 
     _showScreen('screen-menu');
     document.getElementById('game-topbar')?.classList.add('hidden');
@@ -1415,7 +1506,8 @@ const App = (() => {
 
     // Asegurarse de salir del juego limpiamente
     document.getElementById('game-topbar')?.classList.add('hidden');
-    history.replaceState({}, '', window.location.pathname);
+    if (window.FHRuta) { FHRuta.borrar('sala'); _olvidarSala(); }
+    else history.replaceState({}, '', window.location.pathname);
 
     _showScreen('screen-menu');
     setTimeout(() => showToast(msg, 'error'), 300);
@@ -1593,6 +1685,7 @@ const App = (() => {
         code:     _roomCode,
         playerId: _playerId,
         isHost:   _isHost,
+        isPublic: _isPublic,
         mode:     _mode,
       }));
     } catch (e) {}

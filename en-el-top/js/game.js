@@ -253,9 +253,18 @@ async function init() {
   /* ¿Falta la edición de hoy? Se calcula UNA vez, al cargar los meses. */
   _hoyFalta = !(_days[today] && _days[today].id);
 
-  // Al entrar, la de HOY (o la más reciente disponible).
-  _idx = _editions.indexOf(today);
+  // Al entrar, la de HOY (o la más reciente disponible)... salvo que la URL
+  // pida otra. Se valida contra _editions: un ?dia= inventado se ignora.
+  const pedido = window.FHRuta && FHRuta.fecha('dia');
+  const iPedido = pedido ? _editions.indexOf(pedido) : -1;
+  _idx = iPedido >= 0 ? iPedido : _editions.indexOf(today);
   if (_idx < 0) _idx = _editions.length - 1;
+  /* Y que la URL no mienta: el día que no existe (o el de hoy, que va sin
+     parámetro) se quita, para que recargar no repita el mismo desvío. */
+  if (window.FHRuta) {
+    const real = _editions[_idx];
+    FHRuta.set({ dia: real === today ? null : real });
+  }
 
   // Siempre vincular modales (necesario tanto para partida nueva como ya jugada)
   bindModalEvents();
@@ -263,6 +272,13 @@ async function init() {
   elNavPrev .addEventListener('click', () => goEdition(_idx - 1));
   elNavNext .addEventListener('click', () => goEdition(_idx + 1));
   elNavLast .addEventListener('click', () => goEdition(_editions.length - 1));
+
+  // El Atrás del móvil deshace la navegación por ediciones, no sale del juego.
+  if (window.FHRuta) FHRuta.alVolver(() => {
+    const d = FHRuta.fecha('dia') || today;
+    const i = _editions.indexOf(d);
+    if (i >= 0 && i !== _idx) goEdition(i, true);
+  });
 
   prepareQuestion(_idx);
 
@@ -309,10 +325,18 @@ function prepareQuestion(idx) {
 /* Navega a otra edición (desde el juego o el final) y la carga de cero,
    salvo que sea la de hoy y ya esté jugada: entonces muestra ese resultado
    guardado en vez de reiniciar la partida (igual que la-carrera). */
-function goEdition(idx) {
+function goEdition(idx, desdeAtras) {
   idx = Math.max(0, Math.min(_editions.length - 1, idx));
   _idx = idx;
   prepareQuestion(_idx);
+
+  /* push: cambiar de edición SÍ es moverse a otro sitio y el Atrás debe
+     deshacerlo. Cuando la llamada VIENE del Atrás no se toca la URL: ya la ha
+     cambiado el navegador, y volver a escribirla encadenaría entradas. */
+  if (window.FHRuta && !desdeAtras) {
+    const date = _editions[_idx];
+    FHRuta.set({ dia: _isToday ? null : date }, { push: true });
+  }
 
   const todayResult = _isToday ? loadTodayResult() : null;
   if (todayResult && todayResult.questionId === _question.id) {

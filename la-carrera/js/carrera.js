@@ -553,9 +553,19 @@ async function init() {
   /* ¿Falta la edición de hoy? Se calcula UNA vez, al cargar los meses. */
   _hoyFalta = !(_days[today] && _days[today].id);
 
-  // Al entrar, la de HOY (o la más reciente disponible).
-  _idx = _editions.indexOf(today);
+  // Al entrar, la de HOY (o la más reciente disponible)... salvo que la URL
+  // pida otra. Se valida contra _editions: un ?dia= inventado se ignora y se
+  // entra por hoy, en vez de dejar la pantalla en blanco.
+  const pedido = window.FHRuta && FHRuta.fecha('dia');
+  const iPedido = pedido ? _editions.indexOf(pedido) : -1;
+  _idx = iPedido >= 0 ? iPedido : _editions.indexOf(today);
   if (_idx < 0) _idx = _editions.length - 1;
+  /* Y que la URL no mienta: si el día pedido no existe (o es el de hoy, que va
+     sin parámetro) se quita, para que recargar no repita el mismo desvío. */
+  if (window.FHRuta) {
+    const real = _editions[_idx];
+    FHRuta.set({ dia: real === today ? null : real });
+  }
 
   elStartBtn.addEventListener('click', () => playCurrent());
   elStatsOpen.addEventListener('click', openStats);
@@ -563,6 +573,14 @@ async function init() {
   elNavPrev .addEventListener('click', () => goEdition(_idx - 1));
   elNavNext .addEventListener('click', () => goEdition(_idx + 1));
   elNavLast .addEventListener('click', () => goEdition(_editions.length - 1));
+
+  // El botón Atrás del móvil: la navegación por días deja rastro (pushState),
+  // así que tiene que llevar de vuelta a la edición anterior y no fuera del juego.
+  if (window.FHRuta) FHRuta.alVolver(() => {
+    const d = FHRuta.fecha('dia') || today;
+    const i = _editions.indexOf(d);
+    if (i >= 0 && i !== _idx) { _idx = i; playCurrent(); }
+  });
 
   // ¿Ya jugaste hoy?
   const saved = loadTodayResult();
@@ -606,6 +624,12 @@ function playCurrent() {
 function goEdition(idx) {
   idx = Math.max(0, Math.min(_editions.length - 1, idx));
   _idx = idx;
+  /* push: cambiar de edición SÍ es moverse a otro sitio, así que el Atrás
+     tiene que deshacerlo. Hoy no lleva ?dia= — la URL limpia es la de hoy. */
+  if (window.FHRuta) {
+    const date = _editions[_idx];
+    FHRuta.set({ dia: date === getTodayMadrid() ? null : date }, { push: true });
+  }
   playCurrent();
 }
 

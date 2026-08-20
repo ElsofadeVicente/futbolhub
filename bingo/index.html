@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Tres en Raya) -->
   <link rel="stylesheet" href="../coche/css/style.css?v=20260819a">
-  <link rel="stylesheet" href="css/style.css?v=20260809a">
+  <link rel="stylesheet" href="css/style.css?v=20260821b">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
@@ -319,6 +319,7 @@
 <script src="../js/hub-streaks.js?v=20260808a"></script>
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260809a"></script>
+<script src="../js/ruta.js?v=20260820a"></script>
 <script src="../js/futbol-restrictions.js?v=20260820c"></script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -344,7 +345,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260820c';
+  s.src = 'js/script.js?v=20260821c';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }

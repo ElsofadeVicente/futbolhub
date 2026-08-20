@@ -331,7 +331,15 @@
           <span class="bcell-stamp"></span>
         </span>
       </button>`).join('');
-    requestAnimationFrame(() => board.classList.add('in'));
+    /* 'in' se queda pegada de la partida anterior, y con ella puesta las casillas
+       nacen ya visibles: la entrada en cascada solo se veia en la primera.
+       El reflow (offsetWidth) es lo que hace que el navegador se quede con la
+       posicion de salida antes de encender la transicion. Con rAF tambien
+       funcionaba, pero rAF no corre en una pestaña en segundo plano y el carton
+       se quedaba invisible hasta volver a ella. */
+    board.classList.remove('in');
+    void board.offsetWidth;
+    board.classList.add('in');
   }
 
   function paintCell(i) {
@@ -392,6 +400,91 @@
     _callerSwap = setTimeout(swapIn, mode === 'fly' ? 200 : 190);
   }
 
+  /* ═══════════════ PARTIDA A MEDIAS ═══════════════
+     Recargar la pagina perdia el carton entero: cuatro casillas colocadas y a
+     empezar de cero. Ahora se guarda lo justo para reconstruirla, que es MUY
+     poco porque la partida es determinista: con la SEMILLA, buildGame() vuelve
+     a dar exactamente las mismas 16 categorias y la misma secuencia de
+     futbolistas. Solo hay que apuntar por donde ibas.
+
+     Ni las categorias ni los futbolistas se guardan: son objetos gordos (con
+     fotos, escudos y listas de ids) y ademas se quedarian congelados si algun
+     dia cambia el pool. */
+  const CLAVE_PARTIDA = 'bingo-partida';
+  const CADUCIDAD_PARTIDA_MS = 3 * 60 * 60 * 1000;   // 3 h, como las salas
+
+  function guardarPartida(msRestantes) {
+    if (G.phase !== 'playing') return;
+    try {
+      localStorage.setItem(CLAVE_PARTIDA, JSON.stringify({
+        seed: G.seed,
+        mode: G.mode,
+        sala: G.mode === 'online' ? (Sync.code || null) : null,
+        idx:  G.idx,
+        /* Por casilla, la posicion en la secuencia del que pusiste ahi. */
+        board: G.board.map(c => (c && c.seqIdx != null) ? c.seqIdx : null),
+        /* Huella del carton. La semilla sola NO basta: buildGame() sortea sobre
+           el pool, asi que si el pool cambia (un sync de gen_pool.json) la misma
+           semilla da OTRAS 16 categorias — y las fichas guardadas caerian en
+           casillas que no son, sin fallar ni avisar. Con la huella se detecta y
+           se descarta la partida en vez de servir un carton falso. */
+        cats: G.cats.map(catKey),
+        msLeft: msRestantes != null ? msRestantes : TURN_MS,
+        ts: Date.now(),
+      }));
+    } catch (e) { /* sin espacio o en incognito: se juega igual, sin red */ }
+  }
+
+  function leerPartida() {
+    try {
+      const d = JSON.parse(localStorage.getItem(CLAVE_PARTIDA) || 'null');
+      if (!d || typeof d.seed !== 'number' || !Array.isArray(d.board)) return null;
+      if (d.board.length !== CELLS) return null;
+      if (Date.now() - (d.ts || 0) > CADUCIDAD_PARTIDA_MS) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function olvidarPartida() {
+    try { localStorage.removeItem(CLAVE_PARTIDA); } catch (e) {}
+  }
+
+  /* Rehace la partida desde lo guardado. Devuelve false si la semilla ya no
+     produce un carton valido (el pool ha cambiado): entonces mas vale empezar
+     de cero que dejar a medias un carton que no cuadra. */
+  function reanudarPartida(d) {
+    const built = buildGame(d.seed);
+    if (!built) return false;
+    /* Que el carton sea EL MISMO, no solo uno hecho con la misma semilla. */
+    if (Array.isArray(d.cats)) {
+      const ahora = built.cats.map(catKey);
+      if (d.cats.length !== ahora.length || d.cats.some((k, i) => k !== ahora[i])) return false;
+    }
+
+    G.mode  = d.mode === 'online' ? 'online' : 'solo';
+    G.phase = 'playing';
+    G.seed  = d.seed;
+    G.cats  = built.cats;
+    G.seq   = built.seq;
+    G.idx   = Math.max(0, Math.min(d.idx | 0, built.seq.length - 1));
+    G.board = d.board.map(si =>
+      (si != null && built.seq[si]) ? { player: built.seq[si], ok: null, seqIdx: si } : null);
+    /* Los saltados no se guardan: son los que ya pasaron y no estan en el
+       carton, asi que salen solos. */
+    G.skipped = built.seq.slice(0, G.idx).filter((_, i) => !d.board.includes(i));
+    G.result = null;
+
+    $('caller').classList.remove('done', 'urgent');
+    $('rivals').classList.toggle('hidden', G.mode !== 'online');
+    $('game-hint').textContent = 'Coloca al futbolista en la casilla que creas que cumple';
+    showScreen('screen-game');
+    renderBoard();
+    for (let i = 0; i < CELLS; i++) if (G.board[i]) paintCell(i);
+    renderCaller('first');
+    startTimer(d.msLeft);
+    return true;
+  }
+
   /* ═══════════════ FLUJO DE PARTIDA ═══════════════ */
   function startGame(seed, mode) {
     const built = buildGame(seed);
@@ -406,7 +499,12 @@
     G.board  = new Array(CELLS).fill(null);
     G.skipped = [];
     G.result = null;
+    olvidarPartida();          // la partida nueva sustituye a la que hubiera
 
+    /* 'done' la pone finish() para apagar el locutor al cerrar el carton, y nadie
+       la quitaba: a partir de la segunda partida el futbolista salia a media tinta.
+       'urgent' se recalcula en cada tick, pero se limpia aqui por si acaso. */
+    $('caller').classList.remove('done', 'urgent');
     $('rivals').classList.toggle('hidden', mode !== 'online');
     $('game-hint').textContent = 'Coloca al futbolista en la casilla que creas que cumple';
     showScreen('screen-game');
@@ -416,9 +514,11 @@
     return true;
   }
 
-  function startTimer() {
+  /* ms: cuánto tiempo dar. Sin argumento, el turno entero. Al reanudar una
+     partida se pasa lo que quedaba, para que recargar no regale 10 segundos. */
+  function startTimer(ms) {
     stopTimer();
-    G.deadline = Date.now() + TURN_MS;
+    G.deadline = Date.now() + (ms > 0 ? Math.min(ms, TURN_MS) : TURN_MS);
     tick();
     G.tickId = setInterval(tick, 80);
   }
@@ -448,7 +548,7 @@
     if (!player) return;
 
     stopTimer();
-    G.board[i] = { player, ok: null };
+    G.board[i] = { player, ok: null, seqIdx: G.idx };
     /* Se pinta YA: la ficha que vuela es decoración y no puede ser de la que
        dependa el estado (en una pestaña en segundo plano no llega a animarse). */
     paintCell(i);
@@ -470,6 +570,10 @@
   function advance(mode) {
     G.idx++;
     if (filledCount() === CELLS || G.idx >= G.seq.length) { finish(); return; }
+    /* Se guarda en cada jugada por si el navegador se cierra de golpe. El
+       tiempo que se apunta es el entero, porque el del que entra aun no ha
+       empezado a correr; el beforeunload lo afina con lo que quede de verdad. */
+    guardarPartida(TURN_MS);
     /* El reloj arranca cuando el nuevo futbolista ya se ve, no antes. */
     renderCaller(mode, startTimer);
   }
@@ -510,6 +614,7 @@
   function finish() {
     stopTimer();
     G.phase = 'reveal';
+    olvidarPartida();          // carton cerrado: ya no hay nada que reanudar
     $('caller').classList.add('done');
     $('game-hint').textContent = 'CARTÓN CERRADO — revelando…';
 
@@ -761,7 +866,12 @@
       }
       unsub = F.onValue(roomRef, (snap) => {
         room = snap.val();
-        if (!room) { leave(); showToast('La sala ya no existe', 'warning'); return; }
+        /* La sala ha desaparecido mientras estabas dentro: fuera también el
+           rastro, o recargar intentaría volver a una sala que no existe.
+           Se limpia aquí y no dentro de leave(), porque leave() lo llama
+           también el beforeunload de una recarga — y ahí borrar la URL sería
+           justo cargarse la vuelta. */
+        if (!room) { desmarcarSala(); leave(); showToast('La sala ya no existe', 'warning'); return; }
         project();
       });
     }
@@ -879,8 +989,39 @@
       showScreen('screen-menu');
     }
 
+    /* Mirar una sala sin engancharse a ella: hace falta para decidir si se
+       puede reanudar ANTES de escuchar, porque el primer aviso del listener
+       llama a project() y ese arrancaría una partida nueva encima. */
+    async function peek(c) {
+      const F = fb();
+      if (!F || !c) return null;
+      try {
+        const snap = await F.get(F.ref(F.db, `bingo/rooms/${c}`));
+        return snap.exists() ? snap.val() : null;
+      } catch { return null; }
+    }
+
+    /* Volver a una sala que YA está en juego. join() lo prohíbe a propósito
+       (nadie puede colarse a mitad de partida), pero volver no es colarse: se
+       exige haber guardado una partida de ESA sala y con SU misma semilla, o
+       sea que ya estabas dentro cuando empezó. */
+    async function rejoin(name, joinCode, filled) {
+      const F = fb();
+      if (!F) throw new Error('sin-firebase');
+      code = joinCode;
+      const snap = await F.get(F.ref(F.db, `bingo/rooms/${code}`));
+      if (!snap.exists()) { code = null; throw new Error('no-existe'); }
+      isHost = snap.val().host === myUid();
+      await F.set(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`), {
+        name, filled: filled || 0, done: false, joinedAt: F.serverTimestamp(),
+      });
+      listen();
+      return code;
+    }
+
     return {
       create, join, findPublic, start, leave, reportProgress, reportResult,
+      peek, rejoin,
       get code() { return code; },
       get inRoom() { return !!code; },
     };
@@ -900,10 +1041,25 @@
     return v.slice(0, 16);
   }
 
+  /* Estar en una sala se nota en la URL, y con quién eres apuntado al lado:
+     así una recarga (o volver a la pestaña) te devuelve a la sala en vez de
+     al menú. El nombre va en localStorage y no en la URL — en la URL sería
+     un dato personal a la vista y compartible sin querer. */
+  function marcarSala(code, name) {
+    if (!window.FHRuta || !code) return;
+    FHRuta.set({ sala: code });
+    FHRuta.recordarSala('bingo', code, name);
+  }
+  function desmarcarSala() {
+    if (!window.FHRuta) return;
+    FHRuta.borrar('sala');
+    FHRuta.olvidarSala('bingo');
+  }
+
   async function createRoom() {
     const name = nameFrom('input-host-name', 'private');
     if (!name) return;
-    try { G.phase = 'idle'; await Sync.create(name, false); }
+    try { G.phase = 'idle'; await Sync.create(name, false); marcarSala(Sync.code, name); }
     catch (e) { showError('private', e.message === 'sin-firebase' ? 'El modo online no está disponible ahora mismo' : 'No se ha podido crear la sala'); }
   }
 
@@ -912,7 +1068,7 @@
     if (!name) return;
     const code = ($('input-join-code')?.value || '').trim().toUpperCase();
     if (code.length !== 6) { showError('private', 'El código tiene 6 caracteres'); return; }
-    try { G.phase = 'idle'; await Sync.join(name, code); }
+    try { G.phase = 'idle'; await Sync.join(name, code); marcarSala(code, name); }
     catch (e) {
       showError('private',
         e.message === 'no-existe' ? 'No existe ninguna sala con ese código' :
@@ -926,13 +1082,13 @@
     if (!name) return;
     const btn = $('btn-find-public');
     btn.disabled = true; btn.textContent = 'BUSCANDO…';
-    try { G.phase = 'idle'; await Sync.findPublic(name); }
+    try { G.phase = 'idle'; await Sync.findPublic(name); marcarSala(Sync.code, name); }
     catch { showError('public', 'No se ha podido buscar sala'); }
     finally { btn.disabled = false; btn.textContent = 'BUSCAR SALA ▶'; }
   }
 
   function startRoom() { Sync.start(); }
-  function leaveRoom()  { Sync.leave(); }
+  function leaveRoom()  { desmarcarSala(); Sync.leave(); }
 
   function copyLink() {
     const url = `${location.origin}${location.pathname}?sala=${Sync.code}`;
@@ -949,6 +1105,8 @@
 
   function showMenu() {
     stopTimer();
+    olvidarPartida();          // salir al menu es abandonar la partida
+    desmarcarSala();
     if (Sync.inRoom) Sync.leave();
     G.phase = 'idle';
     $('ranking').classList.add('hidden');
@@ -974,6 +1132,83 @@
   }
 
   /* ═══════════════ INIT ═══════════════ */
+  /* Al abrir el juego: volver a la sala, a la partida a medias, o a ninguna de
+     las dos. Es lo primero que se hace, y no devuelve nada — quien llama solo
+     necesita saber que ya ha terminado de intentarlo. */
+  /* Se pierde la sala pero no el cartón: sigues la misma partida tú solo. */
+  function seguirSinSala() {
+    G.mode = 'solo';
+    $('rivals').classList.add('hidden');
+    desmarcarSala();
+    guardarPartida(Math.max(0, G.deadline - Date.now()));   // ya como partida local
+    showToast('La sala ya no está — sigues tú solo', 'warning');
+  }
+
+  async function retomarDondeLoDejaste() {
+    const code = window.FHRuta ? FHRuta.sala()
+                               : new URLSearchParams(location.search).get('sala');
+    const guardada = leerPartida();
+
+    /* Sin sala en la URL: la partida de práctica que dejaste a medias. Se
+       reanuda sola, que es lo que espera quien acaba de recargar sin querer. */
+    if (!code) {
+      if (guardada && guardada.mode !== 'online') {
+        if (reanudarPartida(guardada)) showToast('Sigues donde lo dejaste', 'ok');
+        else olvidarPartida();
+      }
+      return;
+    }
+
+    $('tab-private')?.click();
+    const input = $('input-join-code');
+    if (input) input.value = code.toUpperCase();
+
+    const rec = window.FHRuta && FHRuta.salaRecordada('bingo', code);
+    if (!rec) return;           // te han pasado el enlace: que escriba su nombre
+
+    /* Si dejaste una partida a medias EN ESTA sala, no se entra de nuevo: se
+       vuelve al cartón que tenías. Se comprueba la SEMILLA contra la de la
+       sala, que es la prueba de que sigue siendo la misma partida y no otra
+       que haya empezado mientras no estabas. */
+    const eraDeEstaSala = guardada && guardada.mode === 'online' &&
+      String(guardada.sala || '').toUpperCase() === code.toUpperCase();
+
+    if (eraDeEstaSala) {
+      const sala = await Sync.peek(code);
+      const mismaPartida = sala && sala.status === 'playing' && sala.seed === guardada.seed;
+
+      if (mismaPartida && reanudarPartida(guardada)) {
+        try {
+          await Sync.rejoin(rec.nombre, code, filledCount());
+          marcarSala(code, rec.nombre);
+          showToast('Sigues donde lo dejaste', 'ok');
+        } catch (e) {
+          seguirSinSala();
+        }
+        return;
+      }
+
+      /* La sala ya no existe. Pasa siempre que estuvieras SOLO en ella: al
+         recargar, el beforeunload te saca y, sin nadie dentro, la sala se
+         borra. Perder la sala es un incordio; perder el cartón con doce
+         casillas puestas es mucho peor, así que la partida continúa en local. */
+      if (!sala && reanudarPartida(guardada)) { seguirSinSala(); return; }
+
+      olvidarPartida();         // esa partida ya no se corresponde con la sala
+    }
+
+    try {
+      await Sync.join(rec.nombre, code);
+      marcarSala(code, rec.nombre);
+    } catch (e) {
+      desmarcarSala();
+      showToast(
+        e.message === 'no-existe' ? 'Esa sala ya no existe' :
+        e.message === 'empezada'  ? 'La partida empezó sin ti' :
+        'No se ha podido volver a la sala', 'warning');
+    }
+  }
+
   async function init() {
     renderBestBox();
     try {
@@ -995,13 +1230,11 @@
 
     $('loading-overlay').classList.add('hidden');
 
-    /* Deep link ?sala=CODE → pestaña privada con el código puesto */
-    const code = new URLSearchParams(location.search).get('sala');
-    if (code) {
-      $('tab-private')?.click();
-      const input = $('input-join-code');
-      if (input) input.value = code.toUpperCase();
-    }
+    /* Volver a la sala y/o al cartón a medias. Los manejadores globales de
+       abajo se registran SIEMPRE, pase lo que pase aquí: cuando esto iba
+       entrelazado en init(), un `return` temprano dejaba el juego sin teclado
+       y sin guardar al salir. */
+    await retomarDondeLoDejaste();
 
     /* Teclado: 1-9 y letras no; espacio salta. */
     document.addEventListener('keydown', (e) => {
@@ -1009,7 +1242,19 @@
       if (e.code === 'Space') { e.preventDefault(); skip(); }
     });
 
-    window.addEventListener('beforeunload', () => { if (Sync.inRoom) Sync.leave(); });
+    /* El momento exacto de una recarga: aqui se apunta el tiempo REAL que
+       quedaba, que es lo unico que las guardas de cada jugada no saben. */
+    const apuntarDondeIba = () => {
+      if (G.phase === 'playing') guardarPartida(Math.max(0, G.deadline - Date.now()));
+    };
+    window.addEventListener('beforeunload', () => {
+      apuntarDondeIba();
+      if (Sync.inRoom) Sync.leave();
+    });
+    /* pagehide SOLO guarda, no sale de la sala: en movil salta cada vez que
+       cambias de app, y ahi no te has ido a ninguna parte — echarte de la sala
+       por mirar una notificacion seria peor que el problema que arregla. */
+    window.addEventListener('pagehide', apuntarDondeIba);
   }
 
   window._AppReal = {

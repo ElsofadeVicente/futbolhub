@@ -194,6 +194,7 @@ const App = (() => {
     CadenaGame.FBSync.cleanup();
     // Limpiar el parámetro ?sala= de la URL al volver al menú
     history.pushState(null, '', window.location.pathname);
+    if (window.FHRuta) FHRuta.olvidarSala('en-la-cadena');
     showScreen('screen-menu');
   }
   function showCreateGame() { showScreen('screen-create'); }
@@ -575,12 +576,42 @@ const App = (() => {
     }
   }
 
+  /* Volver al lobby DESPUÉS de recargar la página.
+     Ojo, no vale _rejoinLobby(): esa es la de "jugar otra vez" y el anfitrión
+     RESETEA la sala (players: null), que aquí borraría a todos los que están
+     esperando. Y tampoco vale joinRoom(), que AÑADE un jugador al final: como
+     La Cadena no borra a nadie al desconectarse, tu registro anterior sigue
+     ahí y acabarías duplicado junto a tu propio fantasma (probado: salían dos
+     "Vicente", uno de ellos con el ANFITRIÓN).
+     Lo que toca es reocupar TU asiento, que es justo el que sigue libre. */
+  async function _volverALaSala(roomCode, myName, myId) {
+    const FB = window._FB;
+    if (!FB?.configured || typeof myId !== 'number') return false;
+    try {
+      const { db, ref, get } = FB;
+      const snap = await get(ref(db, 'rooms/' + roomCode));
+      if (!snap.exists()) { showToast('Esa sala ya no existe', 'error'); return false; }
+      const room = snap.val();
+      if (room.status !== 'lobby') { showToast('La partida empezó sin ti', 'error'); return false; }
+      const players = toPlayersArray(room.players);
+      const mio = players.find(p => p && p.id === myId && p.name === myName);
+      if (!mio) return false;              // tu sitio ya no está: que se una como uno nuevo
+      _enterLobby(roomCode, myId, myName, room.lives, players);
+      return true;
+    } catch (e) { return false; }
+  }
+
   /* Muestra la pantalla de lobby y registra el listener
      myName: nombre propio (pasado directamente, no derivado del array) */
   function _enterLobby(roomCode, myId, myName, lives, currentPlayers) {
     // Actualizar URL con el código de sala
     const _shareUrl = window.location.origin + window.location.pathname + '?sala=' + roomCode;
     history.pushState(null, '', window.location.pathname + '?sala=' + roomCode);
+    /* La URL ya decía en qué sala estabas, pero no con qué nombre: al recargar
+       tocaba escribirlo otra vez y pulsar UNIRSE. Apuntándolo aquí, la vuelta
+       es sola. En localStorage y no en la URL: en la URL sería un dato personal
+       a la vista y compartible sin querer. */
+    if (window.FHRuta) FHRuta.recordarSala('en-la-cadena', roomCode, myName, { id: myId, lives });
     showScreen('screen-lobby');
     // Mostrar enlace compartible en el lobby
     const _shareEl = document.getElementById('lobby-share-url');
@@ -736,7 +767,25 @@ const App = (() => {
       // Pre-rellenar el código y poner el foco en el nombre
       const codeInput = document.getElementById('menu-join-code');
       if (codeInput) codeInput.value = salaCode.toUpperCase();
-      showToast(`Código ${salaCode} detectado — escribe tu nombre y pulsa UNIRSE`, 'success');
+
+      /* Dos casos distintos:
+           · Venías de esta misma sala (recargaste, volviste a la pestaña): se
+             sabe con qué nombre entraste, así que se vuelve solo.
+           · Te acaban de pasar el enlace: se pide el nombre, como siempre.
+         Si la sala ya no existe o arrancó sin ti, menuJoinRoom lo dice con su
+         propio mensaje en vez de dejarte en el menú sin explicación. */
+      const rec = window.FHRuta && FHRuta.salaRecordada('en-la-cadena', salaCode);
+      const nameInput = document.getElementById('menu-player-name');
+      if (rec && nameInput) {
+        nameInput.value = rec.nombre;
+        const id = rec.datos && rec.datos.id;
+        /* Primero se intenta recuperar el asiento de antes; solo si ya no está
+           se entra como jugador nuevo. */
+        _volverALaSala(salaCode.toUpperCase(), rec.nombre, id)
+          .then(ok => { if (!ok) menuJoinRoom(); });
+      } else {
+        showToast(`Código ${salaCode} detectado — escribe tu nombre y pulsa UNIRSE`, 'success');
+      }
     }
   }
 
@@ -1179,9 +1228,18 @@ const App = (() => {
 /* ══════════════════════════════════════════════
    ARRANQUE
    ══════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+/* OJO con el DOMContentLoaded: este archivo NO va en un <script src> del HTML,
+   lo inyecta el index dentro del onload de cadena-data.js. Para cuando llega,
+   el DOMContentLoaded ya ha saltado hace rato y el listener no se ejecutaba
+   NUNCA — o sea que App.init() no corría, y con él se quedaban sin hacer el
+   deep link de ?sala= (el código no se rellenaba) y el _setupAccountName().
+   No daba error por ningún lado: el juego arranca igual porque todo lo demás
+   cuelga de los onclick del HTML. */
+function _arrancar() {
   App.init();
   // Precargar índices y todos los chunks en background nada más cargar la página
   CadenaData.init().catch(() => {});
   CadenaData.preloadAllChunks().catch(() => {});
-});
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _arrancar);
+else _arrancar();

@@ -36,6 +36,9 @@ function goBackToMenu() {
     // Reset estado
     currentMode = null;
     currentMatch = null;
+    // El menu es la URL limpia: si no, recargar te devolveria al modo que
+    // acabas de abandonar.
+    if (window.FHRuta) FHRuta.borrar('modo', 'dia');
 }
 
 // ── NOMBRE DE EQUIPO EN EL MARCADOR ─────────
@@ -121,6 +124,24 @@ function getSpainDate(offsetDays = 0) {
     const get = type => parseInt(parts.find(p => p.type === type).value, 10);
     return { year: get('year'), month: get('month'), day: get('day') };
 }
+
+/* En el juego la edicion diaria es un OFFSET (0 = hoy, 3 = hace tres dias),
+   pero en la URL va la FECHA como en el resto de diarios: un '?dia=3' de hoy
+   apuntaria a otro partido manana, y un enlace compartido dejaria de valer. */
+function fechaDiaria(offsetDays = 0) {
+    const { year, month, day } = getSpainDate(offsetDays);
+    return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+function offsetDeFecha(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const hoy = getSpainDate(0);
+    return Math.round((Date.UTC(hoy.year, hoy.month - 1, hoy.day)
+                     - Date.UTC(y, m - 1, d)) / 86400000);
+}
+
+/* Los cinco modos del menu. La URL solo acepta estos: cualquier otra cosa se
+   ignora y se entra por el menu, en vez de arrancar un modo que no existe. */
+const MODOS_URL = ['diario', 'liga', 'champions', 'historico', 'random'];
 
 /** Clave de localStorage: oncediario_YYYYMMDD */
 function getDailyKey(offsetDays = 0) {
@@ -488,11 +509,17 @@ function getDailyDateLabel(offsetDays) {
 // INICIAR JUEGO
 // =============================================
 
-async function startGame(mode) {
+async function startGame(mode, offsetInicial, sinTocarUrl) {
     currentMode  = mode;
     dailyOffset  = 0;
     hideAllScreens();
     document.getElementById('loading').style.display = 'block';
+
+    /* El modo entra en la URL: recargar (o volver desde otra pestana, o abrir
+       un enlace compartido) te devuelve al modo en el que estabas y no al menu.
+       replace y no push: el Atras tiene que sacarte al menu de una vez, no
+       recorrer los modos por los que hayas pasado. */
+    if (window.FHRuta && !sinTocarUrl) FHRuta.set({ modo: mode, dia: null });
 
     const loaded = await loadMatchData(mode, 0);
     document.getElementById('loading').style.display = 'none';
@@ -500,7 +527,7 @@ async function startGame(mode) {
     if (!loaded) { goBackToMenu(); return; }
 
     currentMatchIndex = 0;
-    if (mode === 'diario') loadDailyMatch(0);
+    if (mode === 'diario') loadDailyMatch(offsetInicial || 0);
     else loadMatch();
 }
 
@@ -547,8 +574,17 @@ async function checkDayAvailable(offsetDays) {
     }
 }
 
-async function loadDailyMatch(offsetDays) {
+async function loadDailyMatch(offsetDays, sinTocarUrl) {
     dailyOffset = offsetDays;
+
+    /* push: cambiar de edicion SI es moverse a otro sitio, y el Atras debe
+       deshacerlo. Hoy va sin parametro, que la URL corta es la de hoy. */
+    if (window.FHRuta && !sinTocarUrl) {
+        /* set() no toca el historial si el valor ya era ese, asi que arrancar
+           el modo (que ya deja ?modo=diario) no encadena una entrada de mas. */
+        FHRuta.set({ modo: 'diario', dia: offsetDays === 0 ? null : fechaDiaria(offsetDays) },
+                   { push: true });
+    }
 
     // Cargar el pool correcto si cambia de mes o está vacío.
     // FIX: comparar con el archivo REALMENTE cargado (dailyLoadedFile), no con el
@@ -1944,6 +1980,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mostrar menú del once por defecto
     hideAllScreens();
     document.getElementById('once-menu').style.display = 'flex';
+
+    /* ...salvo que la URL diga otra cosa. Nada de esto es de fiar (lo escribe
+       cualquiera en la barra): el modo se comprueba contra la lista real y el
+       dia contra la ventana de 30 dias que admite la navegacion diaria. */
+    if (window.FHRuta) {
+        const modo = FHRuta.get('modo');
+        if (MODOS_URL.includes(modo)) {
+            let off = 0;
+            if (modo === 'diario') {
+                const f = FHRuta.fecha('dia');
+                const o = f ? offsetDeFecha(f) : 0;
+                if (o >= 0 && o <= 30) off = o;
+            }
+            startGame(modo, off, true);
+        } else if (modo) {
+            FHRuta.borrar('modo', 'dia');   // que la URL no mienta
+        }
+
+        /* El Atras: dentro del diario recorre las ediciones; en cualquier otro
+           modo (y al llegar a la URL limpia) devuelve al menu. */
+        FHRuta.alVolver(() => {
+            const m = FHRuta.get('modo');
+            if (!MODOS_URL.includes(m)) { if (currentMode) goBackToMenu(); return; }
+            if (m === 'diario' && currentMode === 'diario') {
+                const f = FHRuta.fecha('dia');
+                const o = f ? offsetDeFecha(f) : 0;
+                if (o >= 0 && o <= 30 && o !== dailyOffset) loadDailyMatch(o, true);
+                return;
+            }
+            if (m !== currentMode) startGame(m, 0, true);
+        });
+    }
 
     // Actualizar subtítulo del botón diario con la fecha de hoy
     const subtitleEl = document.getElementById('daily-btn-subtitle');

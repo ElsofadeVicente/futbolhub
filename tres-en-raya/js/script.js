@@ -501,7 +501,8 @@ window._AppReal = (function () {
        el botón "🏠 Menú" del final dejaba tu jugador dentro para siempre: la
        sala no se borraba nunca y seguías escuchándola de fondo. leave() borra
        el código y vuelve a llamar aquí, así que no hay recursión. */
-    if (Sync.getCode()) { Sync.leave(); return; }
+    if (Sync.getCode()) { desmarcarSala(); Sync.leave(); return; }
+    desmarcarSala();
     G = null; pickIdx = -1;
     clearTimeout(_finishTimer); clearTimeout(_roundTimer);
     stopTurnTimer();
@@ -1224,24 +1225,41 @@ window._AppReal = (function () {
     };
   })();
 
-  function createRoom() {
+  /* Estar en una sala se nota en la URL, y con quién eres apuntado al lado:
+     así una recarga te devuelve a la sala en vez de al menú. El nombre va en
+     localStorage y no en la URL — ahí sería un dato personal a la vista. */
+  function marcarSala(name) {
+    const code = Sync.getCode();
+    if (!window.FHRuta || !code) return;
+    FHRuta.set({ sala: code });
+    FHRuta.recordarSala('tres-en-raya', code, name);
+  }
+  function desmarcarSala() {
+    if (!window.FHRuta) return;
+    FHRuta.borrar('sala');
+    FHRuta.olvidarSala('tres-en-raya');
+  }
+
+  async function createRoom() {
     const name = ($('input-host-name').value || '').trim();
     if (!dataReady) { showToast('Cargando datos…'); return; }
-    Sync.create(name, false, hostTarget);
+    await Sync.create(name, false, hostTarget);
+    marcarSala(name || 'Jugador 1');
   }
-  function joinRoom() {
+  async function joinRoom() {
     const name = ($('input-join-name').value || '').trim();
     const code = ($('input-join-code').value || '').trim().toUpperCase();
     if (!code) { showToast('Escribe un código', 'err'); return; }
     if (!dataReady) { showToast('Cargando datos…'); return; }
-    Sync.join(code, name);
+    if (await Sync.join(code, name)) marcarSala(name || 'Jugador 2');
   }
-  function findPublicRoom() {
+  async function findPublicRoom() {
     const name = ($('input-public-name').value || '').trim();
     if (!dataReady) { showToast('Cargando datos…'); return; }
-    Sync.findPublic(name);
+    await Sync.findPublic(name);
+    marcarSala(name || 'Jugador');
   }
-  function leaveRoom() { Sync.leave(); }
+  function leaveRoom() { desmarcarSala(); Sync.leave(); }
   function copyLink() {
     const code = Sync.getCode();
     if (!code) return;
@@ -1270,13 +1288,27 @@ window._AppReal = (function () {
     }
     $('loading-overlay').classList.add('hidden');
 
-    /* Deep link ?sala=CODE → pestaña privada con el código prellenado */
+    /* Deep link ?sala=CODE. Dos casos distintos:
+         · Venías de esta misma sala (recargaste, volviste a la pestaña): se
+           sabe con qué nombre entraste, así que se vuelve solo.
+         · Te acaban de pasar el enlace: se rellena el código y se pide nombre.
+       Si la vuelta no sale, Sync.join() ya lo dice con su propio aviso
+       ("La partida ya ha empezado", "Sala no encontrada"…). */
     try {
-      const sala = new URLSearchParams(location.search).get('sala');
+      const sala = window.FHRuta ? FHRuta.sala()
+                                 : new URLSearchParams(location.search).get('sala');
       if (sala) {
         const btn = $('tab-private'); if (btn) btn.click();
         const inp = $('input-join-code'); if (inp) inp.value = sala.toUpperCase();
-        showToast('Escribe tu nombre y pulsa UNIRSE');
+
+        const rec = window.FHRuta && FHRuta.salaRecordada('tres-en-raya', sala);
+        if (rec) {
+          const inp2 = $('input-join-name'); if (inp2) inp2.value = rec.nombre;
+          if (await Sync.join(sala, rec.nombre)) marcarSala(rec.nombre);
+          else desmarcarSala();
+        } else {
+          showToast('Escribe tu nombre y pulsa UNIRSE');
+        }
       }
     } catch (e) {}
   }

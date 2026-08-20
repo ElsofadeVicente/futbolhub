@@ -2361,12 +2361,13 @@ const App = (() => {
        primera sala pública no tenga que esperar a la red. */
     if (typeof BotNames !== 'undefined') BotNames.load();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const salaCode  = urlParams.get('sala');
+    const salaCode = window.FHRuta ? FHRuta.sala()
+                                   : new URLSearchParams(window.location.search).get('sala');
     if (salaCode) {
       const input = document.getElementById('input-join-code');
       if (input) input.value = salaCode.toUpperCase();
       setTab('private');
+      _volverALaSala(salaCode);
     }
 
     const pi = document.getElementById('player-input');
@@ -2421,6 +2422,44 @@ const App = (() => {
   /* ════════════════════════════════════════
      CREAR SALA PRIVADA
      ════════════════════════════════════════ */
+  /* Volver a la sala tras recargar. La sesión guardada (sessionStorage, y
+     localStorage por si se cerró la app) ya traía el playerId; ahora trae
+     también el nombre, que es lo que faltaba para reconectar sin preguntar.
+     tryReconnect reutiliza TU hueco: entrar de cero te duplicaría en tu propia
+     sala, que es justo el fallo contra el que avisa _saveSession(). Si la sala
+     ya no existe o la partida arrancó, se deja el código puesto y se pide el
+     nombre, como siempre. */
+  async function _volverALaSala(code) {
+    if (!window._FB?.configured) return;
+    const ses = _loadSession();
+    if (!ses || !ses.playerId || !ses.name) return;
+    if (String(ses.code || '').toUpperCase() !== String(code).toUpperCase()) return;
+    try {
+      if (await Sync.tryReconnect(ses.code, ses.playerId, ses.name, _accountAvatar())) {
+        _newSession();
+        _roomCode = ses.code; _playerId = ses.playerId;
+        _isHost = !!ses.isHost; _isPublic = !!ses.isPublic;
+        _isLocal = false; _localName = ses.name;
+        _saveSession(); _listenRoom(); _showLobby();
+        return;
+      }
+      /* tryReconnect pide que tu registro siga en la sala, y al recargar
+         Firebase ya lo ha borrado por el onDisconnect: es una carrera que se
+         pierde casi siempre. Cuando pasa no hay nada que duplicar, así que se
+         entra de cero con el mismo nombre. Se intenta en este orden y no al
+         revés porque reconectar conserva tu sitio y tu condición de anfitrión. */
+      const r = await Sync.joinRoom(ses.code, ses.name, _accountAvatar());
+      _newSession();
+      _roomCode = r.code; _playerId = r.playerId;
+      _isHost = false; _isPublic = false; _isLocal = false; _localName = ses.name;
+      _saveSession(); _listenRoom(); _showLobby();
+    } catch (e) {
+      _clearSession();
+      if (window.FHRuta) FHRuta.borrar('sala');
+      _showError('error-private', e.message || 'No se ha podido volver a la sala');
+    }
+  }
+
   async function createRoom() {
     if (!window._FB?.configured) {
       showToast('⚠️ Firebase no disponible — comprueba la conexión', 'error');
@@ -2670,7 +2709,8 @@ const App = (() => {
     }
     _clearSession(); _resetState();
     _showScreen('screen-menu');
-    history.replaceState({}, '', window.location.pathname);
+    if (window.FHRuta) FHRuta.borrar('sala');
+    else history.replaceState({}, '', window.location.pathname);
   }
 
   /* ════════════════════════════════════════
@@ -2898,7 +2938,13 @@ const App = (() => {
     }
     if (room.players?.[_playerId]) { _isHost = room.players[_playerId].isHost === true; }
     if (typeof room.isPublic === 'boolean') { _isPublic = room.isPublic; }
-    if (_roomCode && !_isPublic) {
+    /* El código va a la URL estés en sala privada o pública. Antes la pública
+       no lo escribía ("no hay nada que compartir") y con eso recargar dentro
+       de una partida pública te devolvía al menú sin remedio. Que el enlace de
+       invitación no se ofrezca en las públicas lo sigue decidiendo el lobby
+       (lobby-code-card se oculta), no la barra de direcciones. */
+    if (_roomCode && window.FHRuta) FHRuta.set({ sala: _roomCode });
+    else if (_roomCode && !_isPublic) {
       const targetUrl = window.location.pathname + '?sala=' + _roomCode;
       if (!window.location.search.includes(_roomCode)) history.replaceState(null, '', targetUrl);
     }
@@ -3899,7 +3945,8 @@ const App = (() => {
     if (_unsubRoom) { _unsubRoom(); _unsubRoom=null; }
     _clearSession(); _resetState();
     _showScreen('screen-menu');
-    history.replaceState({}, '', window.location.pathname);
+    if (window.FHRuta) FHRuta.borrar('sala');
+    else history.replaceState({}, '', window.location.pathname);
     const pBtn=document.getElementById('btn-find-public');
     if (pBtn) { pBtn.disabled=false; pBtn.textContent='BUSCAR PARTIDA ▶'; }
     setTab('private');
@@ -3914,7 +3961,8 @@ const App = (() => {
     if (_unsubRoom) { _unsubRoom(); _unsubRoom=null; }
     _clearSession(); _resetState();
     _showScreen('screen-menu');
-    history.replaceState({}, '', window.location.pathname);
+    if (window.FHRuta) FHRuta.borrar('sala');
+    else history.replaceState({}, '', window.location.pathname);
     setTab('private');
     setTimeout(()=>showToast(msg,'error'), 300);
   }
@@ -4414,7 +4462,9 @@ const App = (() => {
   }
 
   function _saveSession() {
-    const data = JSON.stringify({code:_roomCode,playerId:_playerId,isHost:_isHost,isPublic:_isPublic,ts:Date.now()});
+    /* El nombre entra en la sesión: tryReconnect lo pide, y sin él la vuelta
+       automática tras una recarga tendría que preguntarlo otra vez. */
+    const data = JSON.stringify({code:_roomCode,playerId:_playerId,isHost:_isHost,isPublic:_isPublic,name:_localName||'',ts:Date.now()});
     try { sessionStorage.setItem('coche_session', data); } catch(e){}
     /* Además en localStorage: al CERRAR la app (no solo recargar la pestaña)
        sessionStorage se borra, y sin la sesión el jugador vuelve a entrar a su

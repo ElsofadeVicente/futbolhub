@@ -248,7 +248,37 @@ const Sync=(()=>{
     }catch(e){}
   }
 
-  return {createRoom,joinRoom,listenRoom,startRound,submitGuess,triggerReveal,setFinished,disconnect,getRoom,updateSettings,kick,markConnected};
+  /* Volver a una sala DESPUÉS de una recarga, con nombre.
+     markConnected() por su cuenta no basta en el lobby: el beforeunload llama
+     a disconnect(), que estando en 'waiting' BORRA tu registro entero, así que
+     el update de {connected:true} recreaba un jugador sin nombre, sin avatar y
+     sin anfitrión — se veía un "?" en la lista y el botón de empezar
+     desaparecía. Aquí se comprueba si el registro sigue vivo (partida en
+     curso: disconnect solo marca connected:false y no se pierde nada) y, si no,
+     se vuelve a escribir entero.
+     El anfitrión NO se roba: disconnect() ya asciende a otro al salir el host,
+     así que solo se recupera si la sala se quedó sin ninguno. */
+  async function rejoin(code,playerId,name,avatar){
+    const{get,update}=FB();
+    const snap=await get(_ref(`${PATH}/${code}`));
+    if(!snap.exists())throw new Error('Sala no encontrada');
+    const room=snap.val();
+    const players=room.players||{};
+    const yo=players[playerId];
+    if(yo&&yo.name){
+      await update(_ref(`${PATH}/${code}/players/${playerId}`),{connected:true});
+      _registerPresence(code,playerId);
+      return {isHost:!!yo.isHost};
+    }
+    if(room.status!=='waiting')throw new Error('La partida ya ha comenzado');
+    const hayHost=Object.values(players).some(p=>p&&p.isHost);
+    await update(_ref(`${PATH}/${code}/players/${playerId}`),{
+      name,avatar:avatar||null,score:(yo&&yo.score)||0,connected:true,isHost:!hayHost});
+    _registerPresence(code,playerId);
+    return {isHost:!hayHost};
+  }
+
+  return {createRoom,joinRoom,listenRoom,startRound,submitGuess,triggerReveal,setFinished,disconnect,getRoom,updateSettings,kick,markConnected,rejoin};
 })();
 
 /* ═══ 5. ESTADO APP ════════════════════════════════════════ */
@@ -257,8 +287,22 @@ let _pointsDraft=3,_modeDraft='easy',_botsDraft=2,_guessDraft=0;
 let _revealTriggered=false,_skipTimer=null;
 let _local=false,_localRoom=null;
 
-function _saveSession(){try{if(!_local)sessionStorage.setItem('mentiroso_s',JSON.stringify({code:_roomCode,pid:_playerId}));}catch{}}
-function _clearSession(){try{sessionStorage.removeItem('mentiroso_s');}catch{}}
+/* La sesión en sessionStorage ya devolvía a la sala al RECARGAR, pero muere
+   con la pestaña y no se veía por ningún lado: la barra de direcciones no
+   decía que estuvieras dentro de una sala. Ahora, además, ?sala= en la URL
+   (que se puede compartir y sobrevive a cerrar la pestaña) y el nombre
+   apuntado aparte para poder volver sin escribirlo otra vez. */
+function _saveSession(nombre){
+  try{if(!_local)sessionStorage.setItem('mentiroso_s',JSON.stringify({code:_roomCode,pid:_playerId}));}catch{}
+  if(!_local&&_roomCode&&window.FHRuta){
+    FHRuta.set({sala:_roomCode});
+    if(nombre)FHRuta.recordarSala('mentiroso',_roomCode,nombre);
+  }
+}
+function _clearSession(){
+  try{sessionStorage.removeItem('mentiroso_s');}catch{}
+  if(window.FHRuta){FHRuta.borrar('sala');FHRuta.olvidarSala('mentiroso');}
+}
 function _reset(){
   _roomCode=null;_playerId=null;_isHost=false;_lastRoom=null;
   _revealTriggered=false;_guessDraft=0;_local=false;_localRoom=null;
@@ -670,7 +714,7 @@ async function _createRoom(){
   try{
     const{code,playerId}=await Sync.createRoom(name,_modeDraft,_pointsDraft,_accAvatar());
     _local=false;_roomCode=code;_playerId=playerId;_isHost=true;
-    _saveSession();_unsub=Sync.listenRoom(code,_onRoomUpdate);
+    _saveSession(name);_unsub=Sync.listenRoom(code,_onRoomUpdate);
   }catch(e){toast(e.message,'error');}
 }
 async function _joinRoom(){
@@ -682,7 +726,7 @@ async function _joinRoom(){
   try{
     const r=await Sync.joinRoom(code,name,_accAvatar());
     _local=false;_roomCode=r.code;_playerId=r.playerId;_isHost=false;
-    _saveSession();_unsub=Sync.listenRoom(code,_onRoomUpdate);
+    _saveSession(name);_unsub=Sync.listenRoom(code,_onRoomUpdate);
   }catch(e){$('#join-error').textContent=e.message;$('#join-error').classList.remove('hidden');}
 }
 async function _startGame(){
@@ -768,10 +812,38 @@ function boot(){
   /* beforeunload — solo lobby online */
   window.addEventListener('beforeunload',()=>{if(!_local&&_roomCode&&_playerId&&_lastRoom?.status==='waiting')Sync.disconnect(_roomCode,_playerId).catch(()=>{});});
   /* ?sala= */
-  const sala=new URLSearchParams(window.location.search).get('sala');
+  const sala=window.FHRuta?FHRuta.sala():new URLSearchParams(window.location.search).get('sala');
   if(sala){$('#join-code').value=sala;$$('.menu-tab').forEach(t=>t.classList.remove('active'));$('.menu-tab[data-tab="join"]')?.classList.add('active');$$('.menu-panel').forEach(p=>p.classList.remove('active'));$('.menu-panel[data-panel="join"]')?.classList.add('active');}
-  /* Restaurar sesión online */
-  try{const s=JSON.parse(sessionStorage.getItem('mentiroso_s')||'null');if(s&&s.code&&s.pid&&window._FB?.configured){_roomCode=s.code;_playerId=s.pid;Sync.markConnected(s.code,s.pid);_unsub=Sync.listenRoom(s.code,_onRoomUpdate);return;}}catch{}
+  /* Restaurar sesión online. Primero la de la pestaña, que es la buena: trae
+     el playerId exacto, así que vuelves siendo TÚ y no un jugador nuevo. */
+  try{
+    const s=JSON.parse(sessionStorage.getItem('mentiroso_s')||'null');
+    if(s&&s.code&&s.pid&&window._FB?.configured){
+      _roomCode=s.code;_playerId=s.pid;
+      const rec=window.FHRuta&&FHRuta.salaRecordada('mentiroso',s.code);
+      if(rec){
+        Sync.rejoin(s.code,s.pid,rec.nombre,_accAvatar())
+          .then(r=>{_isHost=!!r.isHost;})
+          .catch(e=>{_clearSession();toast(e.message||'No se ha podido volver a la sala','error');});
+      }else{
+        Sync.markConnected(s.code,s.pid);
+      }
+      _unsub=Sync.listenRoom(s.code,_onRoomUpdate);
+      return;
+    }
+  }catch{}
+  /* Y si no la hay (cerraste la pestaña, o abriste el enlace en otra) pero la
+     URL trae la sala y se recuerda con qué nombre entraste, se vuelve solo.
+     Aquí sí se entra como jugador nuevo: es lo máximo que se puede hacer sin
+     el playerId. Si la sala ya no existe o arrancó, _joinRoom lo dice. */
+  if(sala&&window.FHRuta&&window._FB?.configured){
+    const rec=FHRuta.salaRecordada('mentiroso',sala);
+    if(rec){
+      const inp=$('#join-name');if(inp)inp.value=rec.nombre;
+      $('#join-code').value=sala;
+      _joinRoom();
+    }
+  }
   if($('#create-points-value'))$('#create-points-value').textContent=_pointsDraft;
   showScreen('#screen-menu');
 }
