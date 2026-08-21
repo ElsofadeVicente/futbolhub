@@ -87,11 +87,20 @@ function setTeamBadge(badgeElId, badgeVal, teamName) {
         img.src = crestUrl;
         img.alt = teamName || '';
         img.loading = 'eager';
-        // Si el escudo no carga (y img-heal ya agotó sus reintentos), quitamos
-        // .has-crest para recuperar el nombre grande centrado.
+        // Si el escudo no carga, quitamos .has-crest y el CSS (.team-badge está
+        // display:none salvo con .has-crest) esconde el escudo y recupera el
+        // nombre grande centrado. IMPORTANTE: NO borramos la <img> del DOM
+        // (nada de innerHTML=''), porque img-heal.js reintenta las imágenes
+        // externas que fallan y aborta el reintento si la <img> ya no está
+        // conectada. Dejándola puesta, un fallo transitorio de la CDN (típico
+        // en móvil, sobre todo al volver de segundo plano) se recupera solo.
         img.addEventListener('error', () => {
             if (info) info.classList.remove('has-crest');
-            badgeEl.innerHTML = '';
+        });
+        // Al cargar —también cuando el reintento de img-heal cuela— volvemos a
+        // marcar .has-crest para que reaparezca el escudo en su sitio.
+        img.addEventListener('load', () => {
+            if (info) info.classList.add('has-crest');
         });
         badgeEl.appendChild(img);
     } else {
