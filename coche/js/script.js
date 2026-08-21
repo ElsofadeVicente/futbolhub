@@ -3210,15 +3210,15 @@ const App = (() => {
     grid.innerHTML = restrictions.map(r => {
       /* Contenido visual: imagen con fallback a emoji */
       const iconHtml = r.imgUrl
-        ? `<img class="restriction-img" src="${r.imgUrl}"
+        ? `<img class="restriction-img" src="${_escHtml(r.imgUrl)}"
                onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'"
                alt="">
-           <span class="restriction-icon-fallback" style="display:none">${r.icon||'❓'}</span>`
-        : `<span class="restriction-icon-fallback">${r.icon||'❓'}</span>`;
+           <span class="restriction-icon-fallback" style="display:none">${_escHtml(r.icon||'❓')}</span>`
+        : `<span class="restriction-icon-fallback">${_escHtml(r.icon||'❓')}</span>`;
 
       return `<div class="restriction-card">
         <div class="restriction-icon">${iconHtml}</div>
-        <div class="restriction-label">${r.label}</div>
+        <div class="restriction-label">${_escHtml(r.label)}</div>
       </div>`;
     }).join('');
 
@@ -4081,7 +4081,7 @@ const App = (() => {
         const noSubmit=!r.playerName;
 
         const photoHtml = (r.valid && r.footballerImg)
-          ? `<img class="result-footballer-photo" src="${r.footballerImg}" alt="" loading="lazy"
+          ? `<img class="result-footballer-photo" src="${_escHtml(r.footballerImg)}" alt="" loading="lazy"
                  onerror="this.style.display='none'">`
           : '';
 
@@ -4089,13 +4089,13 @@ const App = (() => {
           ? restrictions.map((rs,i) => {
               if (!r.matches?.[i]) return '';
               const iconHtml = rs.imgUrl
-                ? `<img class="rr-badge-img" src="${rs.imgUrl}"
+                ? `<img class="rr-badge-img" src="${_escHtml(rs.imgUrl)}"
                        onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" alt="">
-                   <span style="display:none">${rs.icon||'❓'}</span>`
-                : `<span class="rr-badge-icon">${rs.icon||'❓'}</span>`;
-              return `<div class="rr-badge met" title="${rs.label}">
+                   <span style="display:none">${_escHtml(rs.icon||'❓')}</span>`
+                : `<span class="rr-badge-icon">${_escHtml(rs.icon||'❓')}</span>`;
+              return `<div class="rr-badge met" title="${_escHtml(rs.label)}">
                 <span class="rr-badge-icon-wrap">${iconHtml}</span>
-                <span>${rs.label}</span>
+                <span>${_escHtml(rs.label)}</span>
               </div>`;
             }).join('')
           : '';
@@ -4144,10 +4144,11 @@ const App = (() => {
           ${restrictions.map(r=>`
             <div style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--np-ink);font-weight:600;margin-bottom:5px;">
               ${r.imgUrl
-                ? `<img src="${r.imgUrl}" style="width:18px;height:18px;object-fit:contain;flex:0 0 auto;"
-                      onerror="this.outerHTML='<span>${r.icon||'❓'}</span>'" alt="">`
-                : `<span style="flex:0 0 auto;">${r.icon||'❓'}</span>`}
-              <span>${r.label}</span>
+                ? `<img src="${_escHtml(r.imgUrl)}" style="width:18px;height:18px;object-fit:contain;flex:0 0 auto;"
+                      onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" alt="">
+                   <span style="flex:0 0 auto;display:none;">${_escHtml(r.icon||'❓')}</span>`
+                : `<span style="flex:0 0 auto;">${_escHtml(r.icon||'❓')}</span>`}
+              <span>${_escHtml(r.label)}</span>
             </div>`).join('')}
         </div>`;
     }

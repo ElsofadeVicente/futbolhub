@@ -303,10 +303,24 @@
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
+    /* Una foto de perfil solo es de fiar si vive en NUESTRO bucket de avatares.
+       En la base, la constraint avatar_url_propio ya lo garantiza para
+       profiles.avatar_url; pero en los juegos online el avatar viaja por
+       Firebase (room.players[x].avatar), donde un cliente malicioso puede
+       escribir CUALQUIER cadena y saltarse esa constraint. Sin este filtro,
+       ese avatar se cargaría como <img src="http://tracker.evil/..."> en el
+       navegador de todos los rivales: un píxel de rastreo de terceros con la
+       cara (y la IP) de la víctima. Aquí solo se acepta el origen de Storage;
+       cualquier otra cosa cae a la inicial, como si no hubiera foto. */
+    const AVATAR_OK_RE = /^https:\/\/rssvejgdekwysiseqzkd\.supabase\.co\/storage\/v1\/object\/public\/avatars\/[^"'<>\\ ]+$/i;
+    function isSafeAvatarUrl(url) {
+        return typeof url === 'string' && AVATAR_OK_RE.test(url);
+    }
+
     /* HTML para meter DENTRO del contenedor de avatar que ya tiene cada juego:
-       una <img> si hay foto, o la inicial del nombre si no. */
+       una <img> si hay foto (y es de nuestro Storage), o la inicial del nombre. */
     function avatarInner(name, avatarUrl) {
-        if (avatarUrl) {
+        if (isSafeAvatarUrl(avatarUrl)) {
             return `<img src="${escHtml(avatarUrl)}" alt="" class="fh-avatar-img" ` +
                    `style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;">`;
         }
@@ -338,6 +352,7 @@
         identity,
         onIdentity,
         avatarInner,
+        isSafeAvatarUrl,
         escHtml,
     };
 })();

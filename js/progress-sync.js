@@ -281,6 +281,10 @@
 
             const allKeys = new Set([...Object.keys(localValues), ...Object.keys(remoteKeys)]);
             for (const key of allKeys) {
+                /* Claves que envenenarían el prototipo al hacer merged[key]=…
+                   El progreso remoto es propio (RLS por fila), así que esto solo
+                   sería auto-infligible, pero cortarlo aquí es gratis. */
+                if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
                 const rule = ruleFor(key);
                 if (!rule) continue;
 

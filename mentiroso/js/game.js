@@ -626,7 +626,7 @@ function _renderFinished(room){
 function renderCard(card,opts){
   const{reveal,showMatch,cond,alwaysShowMatch}=opts;
   const el=document.createElement('div');el.className='tcard';
-  const photo=`https://tmssl.akamaized.net/images/foto/small/${card.playerId}.jpg`;
+  const photo=`https://tmssl.akamaized.net/images/foto/small/${encodeURIComponent(card.playerId)}.jpg`;
   const ini=(card.playerName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 
   let matches=null;
