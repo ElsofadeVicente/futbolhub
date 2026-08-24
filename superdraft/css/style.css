@@ -331,11 +331,15 @@
 }
 .sd-modal-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 
-/* ═══════════════ FIN ═══════════════ */
+/* ═══════════════ FIN ═══════════════
+   Se muestra dentro de #sd-result-modal (reutiliza .sd-modal), ENCIMA del
+   once ya completado en pantalla 2, no como pantalla propia: por eso el
+   padding es el de una tarjeta de modal, no el de una pantalla entera. */
 .sd-end-wrap {
-  max-width: 460px; margin: 0 auto; padding: 72px 22px 40px;
+  max-width: 460px; margin: 0 auto; padding: 6px 2px 2px;
   display: flex; flex-direction: column; align-items: center; text-align: center;
 }
+#sd-result-modal .sd-modal-card { width: min(460px, 94vw); }
 .sd-end-emoji { font-size: 3rem; margin-bottom: 6px; }
 .sd-end-title {
   font-family: 'Anton', sans-serif;

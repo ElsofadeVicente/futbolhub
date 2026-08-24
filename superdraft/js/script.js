@@ -107,6 +107,57 @@
     return null;
   }
 
+  /* ─────────── Versatilidad de posiciones ───────────
+     posBucket() da la linea PRIMARIA (util para mostrar "Defensa" en el
+     autocompletado), pero un futbolista real vale para mas de una linea:
+     un central puede jugar de lateral, un lateral puede subir a un
+     mediocampo ancho, un extremo puede bajar al centro del campo o jugar de
+     punta, etc. (reglas del usuario, 2026-08-24). Se lee del detalle fino de
+     posicion (chunk.pf, p.ej. "Defender - Right-Back"), no del bucket
+     GK/DEF/MID/FWD que ya es la linea base.
+     Las condiciones "en un mediocampo de 4 o 5" existen porque las lineas no
+     distinguen slot ancho/central (son N huecos anonimos): se concede la
+     linea MID entera cuando hay sitio para un puesto de banda. Con 3 en el
+     centro (4-3-3, 5-3-2) no hay banda y no se concede. */
+  function posDetail(p) {
+    const raw = String(p && p.posDetail || '').trim();
+    if (!raw) return '';
+    const parts = raw.split(' - ');
+    return (parts.length > 1 ? parts[1] : parts[0]).trim();
+  }
+
+  /* Todas las lineas en las que puede jugar HOY, segun la formacion del dia
+     (el ancho del mediocampo condiciona a laterales y extremos). */
+  function posBucketsFor(p, formation) {
+    const base = posBucket(p);
+    if (!base) return [];
+    const set = new Set([base]);
+    const wideMidOk = !!(formation && formation.MID >= 4);
+    switch (posDetail(p)) {
+      case 'Left-Back':
+      case 'Right-Back':
+        set.add('DEF');
+        if (wideMidOk) set.add('MID');
+        break;
+      case 'Left Winger':
+      case 'Right Winger':
+        if (wideMidOk) set.add('MID');
+        set.add('FWD');
+        break;
+      case 'Defensive Midfield':
+        set.add('DEF');
+        set.add('MID');
+        break;
+      case 'Attacking Midfield':
+        set.add('MID');
+        set.add('FWD');
+        break;
+      default:
+        break;  // central/mediocentro/punta genericos: solo su linea base
+    }
+    return [...set];
+  }
+
   /* ─────────── Metrica de un jugador ─────────── */
   function metricValue(p, metric) {
     switch (metric) {
@@ -193,13 +244,14 @@
     return false;
   }
 
-  /* Nº de jugadores del pool que cumplen badge Y son de la posicion pedida. */
-  function countFor(badge, obj, pos, pool, min) {
+  /* Nº de jugadores del pool que cumplen badge Y pueden jugar en esa
+     posicion (linea base o por versatilidad, segun la formacion del dia). */
+  function countFor(badge, obj, pos, pool, min, formation) {
     const lim = min || 1;
     let c = 0;
     for (let i = 0; i < pool.length; i++) {
       const p = pool[i];
-      if (posBucket(p) === pos && matchesBadge(p, badge, obj)) { if (++c >= lim) return c; }
+      if (posBucketsFor(p, formation).includes(pos) && matchesBadge(p, badge, obj)) { if (++c >= lim) return c; }
     }
     return c;
   }
@@ -235,9 +287,9 @@
         const b = pools[Math.floor(rng() * pools.length)];
         const key = b.kind + ':' + b.value;
         const min = need(b, pos);
-        const allC = countFor(b, objective, pos, all, min + 2);
+        const allC = countFor(b, objective, pos, all, min + 2, formation);
         if (allC < min) continue;                  // sin solucion posible -> descartar
-        const genC = countFor(b, objective, pos, gen, 1);   // ¿reconocible?
+        const genC = countFor(b, objective, pos, gen, 1, formation);   // ¿reconocible?
         let score = allC + (genC > 0 ? 1000 : 0) + (used.has(key) ? -500 : 0);
         if (score > bestScore) { bestScore = score; best = b; }
         if (genC > 0 && !used.has(key)) break;     // suficientemente bueno
@@ -246,7 +298,7 @@
         // Fallback: cualquiera que aun tenga jugadores libres para esa posicion.
         for (const b of FR.rng.shuffle(pools, rng)) {
           const min = need(b, pos);
-          if (countFor(b, objective, pos, all, min) >= min) { best = b; break; }
+          if (countFor(b, objective, pos, all, min, formation) >= min) { best = b; break; }
         }
         best = best || pools[0];
       }
@@ -272,7 +324,7 @@
       MID: Array(def.formation.MID).fill(null),
       FWD: Array(def.formation.FWD).fill(null),
     };
-    return { lines, usedIds: new Set(), round: 0, total: 0, over: false, spinning: false, curBadge: null, pickSlot: null };
+    return { lines, usedIds: new Set(), round: 0, total: 0, over: false, spinning: false, curBadge: null, pickSlot: null, picks: [] };
   }
 
   /* ═══════════════════ TOAST ═══════════════════ */
@@ -473,6 +525,14 @@
     if (q.length < 2) { list.classList.add('hidden'); acItems = []; return; }
     const soloActivos = activeRequired(D && D.objective);
     acItems = FR.suggest(q, 8, { filter: (m) => !soloActivos || isActive(m) });
+    /* Deduplicar el mismo jugador indexado dos veces con IDs distintos pero
+       datos identicos (mismo patron que Coche: nombre + año + nacion + posicion). */
+    const seenFp = new Set();
+    acItems = acItems.filter(it => {
+      const fp = norm(it.name) + '|' + (it.birthYear || '') + '|' + (it.nationalTeam || '') + '|' + (it.position || '');
+      if (seenFp.has(fp)) return false;
+      seenFp.add(fp); return true;
+    });
     acIndex = 0;                               // primera preseleccionada -> Enter la elige
     if (!acItems.length) { list.classList.add('hidden'); return; }
     const porNombre = {};
@@ -563,7 +623,7 @@
       }
 
       const { bucket, idx } = S.pickSlot;
-      if (posBucket(player) !== bucket) {
+      if (!posBucketsFor(player, D.formation).includes(bucket)) {
         toast(`${player.name} no juega de ${LINE_LABEL[bucket].toLowerCase()}`, 'warn'); return;
       }
       if (S.lines[bucket][idx]) { toast('Ese puesto ya está ocupado', 'warn'); return; }
@@ -572,6 +632,10 @@
       S.lines[bucket][idx] = { player, badge };
       S.usedIds.add(String(player.id));
       S.total += metricValue(player, D.objective.metric);
+      /* Se guarda el pick (no el badge: se re-deriva de D.badges[round] al
+         reconstruir, que es determinista para el dia) para poder redibujar
+         el once completo si se reabre la partida tras recargar. */
+      S.picks.push({ bucket, idx, id: String(player.id) });
       S.round++;
       closePick();
       renderField();
@@ -602,7 +666,16 @@
     if (D.day === todayNumber()) {
       $('sd-end-best').textContent = 'Partida de hoy completada. Vuelve mañana.';
     }
-    setTimeout(() => showScreen('screen-end'), 650);
+    /* El resultado se abre ENCIMA del once ya completado (pantalla 2 sigue
+       activa debajo), no como pantalla propia: se puede cerrar para verlo. */
+    setTimeout(() => openResultModal(), 650);
+  }
+
+  function openResultModal() {
+    const m = $('sd-result-modal'); if (m) m.classList.remove('hidden');
+  }
+  function closeResultModal() {
+    const m = $('sd-result-modal'); if (m) m.classList.add('hidden');
   }
 
   /* Compartir. Superdraft era el unico de los cuatro diarios sin este boton, y
@@ -662,6 +735,10 @@
     try {
       localStorage.setItem(`superdraft_day_${todayMadrid()}`, JSON.stringify({
         day, total, objective: objective.key, unit: objective.unit,
+        /* Los picks (no el once entero: se re-derivan de D, que es
+           determinista para el dia) permiten redibujar el campo completo si
+           se reabre la partida de hoy tras recargar la página. */
+        picks: S.picks || [],
       }));
     } catch (e) {}
   }
@@ -687,14 +764,42 @@
     } catch (e) { return null; }
   }
 
-  /* Pinta el final con un resultado ya guardado, sin volver a jugar. */
-  function showSavedResult(r) {
-    S.over = true;
+  /* Reconstruye el campo completo a partir de los picks guardados: D es
+     determinista para el dia (mismo seed), asi que D.badges[r] es siempre el
+     badge de la ronda r, sin necesidad de haberlo guardado tambien. */
+  async function applySavedPicks(saved) {
+    const s = freshState(D);
+    if (Array.isArray(saved.picks)) {
+      for (let r = 0; r < saved.picks.length; r++) {
+        const pk = saved.picks[r];
+        const badge = D.badges[r];
+        if (!pk || !badge || !s.lines[pk.bucket]) continue;
+        try {
+          const player = await FR.resolvePlayerById(pk.id);
+          if (!player) continue;
+          s.lines[pk.bucket][pk.idx] = { player, badge };
+          s.usedIds.add(String(pk.id));
+          s.total += metricValue(player, D.objective.metric);
+          s.round++;
+        } catch (e) { /* jugador que ya no resuelve: se deja el hueco vacio */ }
+      }
+    }
+    s.over = true;
+    S = s;
+  }
+
+  /* Pinta el final con un resultado ya guardado, sin volver a jugar: se
+     reconstruye el once (ver applySavedPicks) para que "Ver el once" tenga
+     algo real que enseñar, en vez de un campo vacío. */
+  async function showSavedResult(r) {
+    await applySavedPicks(r);
+    renderField();
+    showScreen('screen-game');
     $('sd-end-title').textContent = D.objective.title;
     $('sd-end-total').textContent = fmtTotal(r.total, D.objective);
     $('sd-end-best').textContent = 'Ya has jugado la partida de hoy. Vuelve mañana.';
     setReplayVisible(false);
-    showScreen('screen-end');
+    openResultModal();
   }
 
   /* El boton de reintentar solo tiene sentido en el archivo. */
@@ -705,12 +810,13 @@
 
   /* ═══════════════════ PANTALLAS / NAV ═══════════════════ */
   function showScreen(id) {
-    ['screen-intro','screen-game','screen-end'].forEach(s => {
+    ['screen-intro','screen-game'].forEach(s => {
       const el = $(s); if (el) el.classList.toggle('active', s === id);
     });
   }
 
   function loadDay(day, sinTocarUrl) {
+    closeResultModal();
     curDay = Math.max(1, Math.min(day, maxDay));
     /* push: cambiar de edicion SI es moverse a otro sitio y el Atras debe
        deshacerlo. Cuando el dia no cambia (Reintentar, volver al menu) set()
@@ -749,6 +855,7 @@
   }
 
   function startGame() {
+    closeResultModal();
     S = freshState(D);
     renderField();
     showScreen('screen-game');
@@ -795,15 +902,22 @@
     });
     $('sd-share-btn').addEventListener('click', doShare);
     $('sd-replay-btn').addEventListener('click', () => { loadDay(curDay); startGame(); });
-    $('sd-menu-btn').addEventListener('click', () => loadDay(curDay));
+    /* "Objetivo": cerrar el resultado y volver a la pantalla de intro (donde
+       vive el día-nav para jugar otro día), sin pasar por loadDay(): si hoy
+       ya está jugada, loadDay volvería a abrir este mismo resultado y el
+       botón no llevaría a ningún sitio. Los datos de la intro ya están
+       puestos desde la última loadDay(), así que no hace falta recalcular. */
+    $('sd-menu-btn').addEventListener('click', () => { closeResultModal(); showScreen('screen-intro'); });
+    $('sd-close-result-btn').addEventListener('click', () => closeResultModal());
     $('nav-prev').addEventListener('click',  () => loadDay(curDay - 1));
     $('nav-next').addEventListener('click',  () => loadDay(curDay + 1));
     $('nav-first').addEventListener('click', () => loadDay(1));
     $('nav-last').addEventListener('click',  () => loadDay(maxDay));
   }
 
-  /* API minima para el HTML inline (autocompletado). */
-  window.SD = { pick, openPick, closePick, submit, onInput, onKey, generateDay, matchesBadge, posBucket, dbg: () => ({ D, S }) };
+  /* API minima para el HTML inline (autocompletado + modal de resultado). */
+  window.SD = { pick, openPick, closePick, submit, onInput, onKey, generateDay, matchesBadge, posBucket, posBucketsFor,
+    closeResult: closeResultModal, dbg: () => ({ D, S }) };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

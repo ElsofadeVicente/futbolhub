@@ -484,6 +484,7 @@ window.FR = (function () {
       goals: typeof chunk.goals === 'number' ? chunk.goals : null,
       apps:  typeof chunk.apps  === 'number' ? chunk.apps  : null,
       position: chunk.p || null,
+      posDetail: chunk.pf || null,
       caps: chunk.nt ? (parseInt(chunk.nt.c ?? 0, 10) || 0) : 0,
       natGoals: (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0,
       maxFee: _maxFee(chunk.tr || []),
@@ -526,6 +527,7 @@ window.FR = (function () {
         inDB.goals = typeof chunk.goals === 'number' ? chunk.goals : null;
         inDB.apps  = typeof chunk.apps  === 'number' ? chunk.apps  : null;
         inDB.position = chunk.p || null;
+        inDB.posDetail = chunk.pf || null;
         inDB.nationalTeam = chunk.nat || null;
         inDB.caps = chunk.nt ? (parseInt(chunk.nt.c ?? 0, 10) || 0) : 0;
         inDB.natGoals = (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0;
@@ -560,6 +562,7 @@ window.FR = (function () {
       inDB.goals = typeof chunk.goals === 'number' ? chunk.goals : null;
       inDB.apps  = typeof chunk.apps  === 'number' ? chunk.apps  : null;
       inDB.position = chunk.p || null;
+      inDB.posDetail = chunk.pf || null;
       inDB.nationalTeam = chunk.nat || null;
       inDB.caps = chunk.nt ? (parseInt(chunk.nt.c ?? 0, 10) || 0) : 0;
       inDB.natGoals = (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0;
@@ -787,6 +790,7 @@ window.FR = (function () {
         goals: typeof chunk.goals === 'number' ? chunk.goals : null,
         apps:  typeof chunk.apps  === 'number' ? chunk.apps  : null,
         position: chunk.p || null,
+        posDetail: chunk.pf || null,
         caps: chunk.nt ? (parseInt((chunk.nt.c !== undefined ? chunk.nt.c : chunk.nt) || '0', 10) || 0) : 0,
         natGoals: (chunk.nt && typeof chunk.nt === 'object') ? (parseInt(chunk.nt.g ?? 0, 10) || 0) : 0,
         maxFee: _maxFee(chunk.tr || []),
