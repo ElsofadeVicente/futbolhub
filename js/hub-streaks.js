@@ -12,7 +12,7 @@
      La Carrera   → carrera_day_YYYY-MM-DD  {won}
      Crucigrama   → cruc_YYYYMMDD           {completed, clean}
      En el Top    → enteltop_day_YYYY-MM-DD {score}
-     En el Once   → oncediario_YYYYMMDD     {matchStats:{guessed}}
+     En el Once   → oncediario_YYYYMMDD     {matchStats:{guessed}, completed}
      El Estadio   → estadio_daily_YYYY-MM-DD {total}   (racha de días jugados)
 
    Fuera del hub no hay tarjetas que pintar, pero el archivo
@@ -106,12 +106,12 @@
       today: madridToday,
       stateFor(day) {
         const s = readJSON(`oncediario_${day.replace(/-/g, '')}`);
-        if (!s || !s.matchStats) return null;
+        if (!s || !s.matchStats || s.completed === false) return null;
         return s.matchStats.guessed === 11 ? 'win' : 'loss';
       },
       detailFor(day) {
         const s = readJSON(`oncediario_${day.replace(/-/g, '')}`);
-        if (!s || !s.matchStats) return null;
+        if (!s || !s.matchStats || s.completed === false) return null;
         return `${s.matchStats.guessed} de 11`;
       },
     },

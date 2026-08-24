@@ -167,6 +167,23 @@ function loadDailyResult(offsetDays) {
     return raw ? JSON.parse(raw) : null;
 }
 
+/**
+ * Guarda el progreso de la partida diaria EN CURSO (completed:false), para
+ * que otro dispositivo pueda recogerla a medias — antes solo se escribía al
+ * terminar el partido entero, así que abrir la web en otro sitio antes de
+ * acabar no encontraba nada que sincronizar. No hace falta un reloj que
+ * preservar (a diferencia de Bingo): basta con guardar tras cada intento.
+ */
+function saveDailyProgress() {
+    if (currentMode !== 'diario') return;
+    saveDailyResult(dailyOffset, {
+        revealedPlayers: Array.from(revealedPlayers),
+        failedPlayers:   Array.from(failedPlayers),
+        matchStats:      { ...matchStats },
+        completed:       false
+    });
+}
+
 // =============================================
 // ESTADÍSTICAS DEL ONCE DIARIO
 // =============================================
@@ -187,6 +204,10 @@ function computeOnceStats() {
         let data;
         try { data = JSON.parse(localStorage.getItem(key)); } catch { continue; }
         if (!data) continue;
+        // Partidas a medias (completed:false) no cuentan como jugadas todavía;
+        // las entradas de antes de esto no llevan el campo y sí cuentan (solo
+        // se guardaban al terminar).
+        if (data.completed === false) continue;
         const guessed = Number(data.matchStats?.guessed ?? 0);
         days.push({ ymd, guessed: Math.max(0, Math.min(11, guessed)) });
     }
@@ -654,9 +675,15 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
     document.getElementById('game').style.display = 'block';
 
     const saved = loadDailyResult(offsetDays);
-    if (saved) {
+    if (saved && saved.completed !== false) {
+        // Partida terminada (o guardada antes de que existiera el campo
+        // completed, que solo se escribía al terminar): pantalla de "ya jugaste".
         renderFormationFromSaved(saved);
         showDailyAlreadyPlayed(saved, offsetDays);
+    } else if (saved) {
+        // Partida a medias, guardada desde este mismo dispositivo u otro:
+        // se retoma donde se dejó, sin pasar por la pantalla de resultado.
+        renderFormationFromSaved(saved);
     } else {
         renderFormation();
         updateRevealedCount();
@@ -719,8 +746,19 @@ function renderFormationFromSaved(saved) {
     failedPlayers   = new Set(saved.failedPlayers   || []);
     matchStats      = saved.matchStats || { guessed: 0, failed: 0, revealed: 0 };
     renderFormation();
-    const total = currentMatch.formation.reduce((s, l) => s + l.length, 0);
-    document.getElementById('revealed-count').textContent = total;
+    // El renderGoals() de más arriba (en loadDailyMatch) corrió con
+    // revealedPlayers todavía vacío, antes de aplicar este guardado: sin
+    // repetirlo aquí, un gol de un jugador ya revelado se queda tapado para
+    // siempre al cargar desde otro dispositivo (o al recargar).
+    renderGoals();
+    if (saved.completed === false) {
+        // A medias: el contador es el de verdad y puede completar el partido
+        // desde aquí (updateRevealedCount ya sabe disparar el modal si toca).
+        updateRevealedCount();
+    } else {
+        const total = currentMatch.formation.reduce((s, l) => s + l.length, 0);
+        document.getElementById('revealed-count').textContent = total;
+    }
 }
 
 function showDailyAlreadyPlayed(saved, offsetDays) {
@@ -1236,7 +1274,12 @@ function renderFormation() {
 
 function openGuessModal(playerIndex) {
     if (revealedPlayers.has(playerIndex) && !failedPlayers.has(playerIndex)) return;
-    if (currentMode === 'diario' && loadDailyResult(dailyOffset) !== null) return;
+    if (currentMode === 'diario') {
+        const saved = loadDailyResult(dailyOffset);
+        // Solo bloquea si el día ya está TERMINADO — una partida a medias
+        // (completed:false) tiene que poder seguir jugándose.
+        if (saved && saved.completed !== false) return;
+    }
 
     currentPlayerIndex = playerIndex;
     currentGuess       = [];
@@ -1574,6 +1617,10 @@ function revealPlayer(playerIndex, isFailed = false) {
     renderFormation();
     renderGoals();      // si ese jugador marcó, su nombre ya se puede enseñar
     updateRevealedCount();
+    // Si esto completa el partido, updateRevealedCount ya dispara
+    // showCompletionModal (con completed:true) 600ms después, que pisa este
+    // guardado a medias con el resultado final.
+    saveDailyProgress();
 }
 
 function revealPlayerFromModal() {
@@ -1674,14 +1721,16 @@ function showCompletionModal() {
         saveDailyResult(0, {
             revealedPlayers: Array.from(revealedPlayers),
             failedPlayers:   Array.from(failedPlayers),
-            matchStats:      { ...matchStats }
+            matchStats:      { ...matchStats },
+            completed:       true
         });
     } else if (currentMode === 'diario' && dailyOffset > 0) {
         // Guardar el resultado del día anterior también (para no perder el progreso)
         saveDailyResult(dailyOffset, {
             revealedPlayers: Array.from(revealedPlayers),
             failedPlayers:   Array.from(failedPlayers),
-            matchStats:      { ...matchStats }
+            matchStats:      { ...matchStats },
+            completed:       true
         });
         if (countdownEl) countdownEl.style.display = 'none';
         if (dailyCountdownInterval) clearInterval(dailyCountdownInterval);
