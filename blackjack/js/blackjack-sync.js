@@ -26,11 +26,35 @@ const BlackjackSync = (() => {
       .filter(pid => pid !== exceptId && !_isBot(players[pid]));
   }
 
+  /* ─── CANCELAR ANTES DE ARMAR, SIEMPRE ───
+     Las operaciones de onDisconnect se ACUMULAN en el mismo camino, no se
+     sustituyen. Al entrar al lobby se arma .remove() y al empezar la partida
+     .update({connected:false}); sin cancelar el primero, Firebase se queda con
+     el remove ya aplicado y le mete el update encima, o sea que al cortarse la
+     conexión escribe el nodo entero como {connected:false} — borrando nombre,
+     avatar, puntuación e isHost. Justo lo contrario de lo que pretende
+     rearmOnDisconnect ahí abajo ("permitir reconexión sin perder
+     nombre/puntuación").
+
+     Comprobado contra Firebase real forzando el corte con goOffline/goOnline:
+     sin cancel() queda {connected:false} a secas; con cancel() queda
+     {connected:false, isHost:true, name:…, score:…}. Mismo fallo que tenía
+     Coche (ver coche/js/script.js); Tres en Raya ya lo hacía bien. */
+  function _cancelOnDisconnect(path) {
+    try {
+      if (window._FBOnDisconnect) {
+        const { db, ref } = FB();
+        window._FBOnDisconnect(ref(db, path)).cancel().catch(() => {});
+      }
+    } catch (e) { /* sin onDisconnect no hay nada que cancelar */ }
+  }
+
   /* ─── onDisconnect: elimina nodo cuando el cliente se desconecta ─── */
   function _onDisconnectRemove(path) {
     try {
       if (window._FBOnDisconnect) {
         const { db, ref } = FB();
+        _cancelOnDisconnect(path);
         window._FBOnDisconnect(ref(db, path)).remove().catch(() => {});
       }
     } catch (e) {
@@ -43,6 +67,7 @@ const BlackjackSync = (() => {
     try {
       if (window._FBOnDisconnect) {
         const { db, ref } = FB();
+        _cancelOnDisconnect(path);
         window._FBOnDisconnect(ref(db, path)).update({ connected: false }).catch(() => {});
       }
     } catch (e) {
