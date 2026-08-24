@@ -666,16 +666,19 @@
     if (D.day === todayNumber()) {
       $('sd-end-best').textContent = 'Partida de hoy completada. Vuelve mañana.';
     }
-    /* El resultado se abre ENCIMA del once ya completado (pantalla 2 sigue
-       activa debajo), no como pantalla propia: se puede cerrar para verlo. */
-    setTimeout(() => openResultModal(), 650);
+    /* El once se queda montado en pantalla 2: "Ver el once" desde el
+       resultado y "Ver resultado" desde el campo (ver setResultBtnVisible)
+       alternan entre las dos sin perder ninguna, así que siempre hay vuelta. */
+    setResultBtnVisible(true);
+    setTimeout(() => showScreen('screen-end'), 650);
   }
 
-  function openResultModal() {
-    const m = $('sd-result-modal'); if (m) m.classList.remove('hidden');
-  }
-  function closeResultModal() {
-    const m = $('sd-result-modal'); if (m) m.classList.add('hidden');
+  /* El botón "Ver resultado" solo tiene sentido con la partida terminada:
+     mientras se juega no hay resultado al que volver, y dejarlo visible
+     invitaría a pulsar algo que no hace nada. */
+  function setResultBtnVisible(visible) {
+    const b = $('sd-view-result-btn');
+    if (b) b.classList.toggle('hidden', !visible);
   }
 
   /* Compartir. Superdraft era el unico de los cuatro diarios sin este boton, y
@@ -793,13 +796,13 @@
      algo real que enseñar, en vez de un campo vacío. */
   async function showSavedResult(r) {
     await applySavedPicks(r);
-    renderField();
-    showScreen('screen-game');
+    renderField();          // deja el once ya montado en pantalla 2, listo para "Ver el once"
+    setResultBtnVisible(true);
     $('sd-end-title').textContent = D.objective.title;
     $('sd-end-total').textContent = fmtTotal(r.total, D.objective);
     $('sd-end-best').textContent = 'Ya has jugado la partida de hoy. Vuelve mañana.';
     setReplayVisible(false);
-    openResultModal();
+    showScreen('screen-end');
   }
 
   /* El boton de reintentar solo tiene sentido en el archivo. */
@@ -810,13 +813,13 @@
 
   /* ═══════════════════ PANTALLAS / NAV ═══════════════════ */
   function showScreen(id) {
-    ['screen-intro','screen-game'].forEach(s => {
+    ['screen-intro','screen-game','screen-end'].forEach(s => {
       const el = $(s); if (el) el.classList.toggle('active', s === id);
     });
   }
 
   function loadDay(day, sinTocarUrl) {
-    closeResultModal();
+    setResultBtnVisible(false);
     curDay = Math.max(1, Math.min(day, maxDay));
     /* push: cambiar de edicion SI es moverse a otro sitio y el Atras debe
        deshacerlo. Cuando el dia no cambia (Reintentar, volver al menu) set()
@@ -855,7 +858,7 @@
   }
 
   function startGame() {
-    closeResultModal();
+    setResultBtnVisible(false);
     S = freshState(D);
     renderField();
     showScreen('screen-game');
@@ -902,22 +905,25 @@
     });
     $('sd-share-btn').addEventListener('click', doShare);
     $('sd-replay-btn').addEventListener('click', () => { loadDay(curDay); startGame(); });
-    /* "Objetivo": cerrar el resultado y volver a la pantalla de intro (donde
-       vive el día-nav para jugar otro día), sin pasar por loadDay(): si hoy
-       ya está jugada, loadDay volvería a abrir este mismo resultado y el
-       botón no llevaría a ningún sitio. Los datos de la intro ya están
-       puestos desde la última loadDay(), así que no hace falta recalcular. */
-    $('sd-menu-btn').addEventListener('click', () => { closeResultModal(); showScreen('screen-intro'); });
-    $('sd-close-result-btn').addEventListener('click', () => closeResultModal());
+    /* "Objetivo": ir a la pantalla de intro (donde vive el día-nav para jugar
+       otro día) directamente, sin pasar por loadDay(): si hoy ya está jugada,
+       loadDay volvería a abrir este mismo resultado y el botón no llevaría a
+       ningún sitio. Los datos de la intro ya están puestos desde la última
+       loadDay(), así que no hace falta recalcular. */
+    $('sd-menu-btn').addEventListener('click', () => showScreen('screen-intro'));
+    /* Ver el once ↔ Ver resultado: dos pantallas ya montadas (el campo sigue
+       completo detrás), así que ninguna de las dos se pierde al alternar. */
+    $('sd-view-pitch-btn').addEventListener('click', () => showScreen('screen-game'));
+    $('sd-view-result-btn').addEventListener('click', () => showScreen('screen-end'));
     $('nav-prev').addEventListener('click',  () => loadDay(curDay - 1));
     $('nav-next').addEventListener('click',  () => loadDay(curDay + 1));
     $('nav-first').addEventListener('click', () => loadDay(1));
     $('nav-last').addEventListener('click',  () => loadDay(maxDay));
   }
 
-  /* API minima para el HTML inline (autocompletado + modal de resultado). */
+  /* API minima para el HTML inline (autocompletado) + funciones de depuracion. */
   window.SD = { pick, openPick, closePick, submit, onInput, onKey, generateDay, matchesBadge, posBucket, posBucketsFor,
-    closeResult: closeResultModal, dbg: () => ({ D, S }) };
+    dbg: () => ({ D, S }) };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

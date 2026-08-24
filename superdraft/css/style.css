@@ -286,6 +286,26 @@
   min-height: 1.2em; line-height: 1.05;
 }
 
+/* Boton "Ver resultado" (solo con la partida terminada): mismo patron que
+   el enlace de estadisticas de La Carrera/En el Top (icono + texto, pildora
+   fina), adaptado a la paleta oscura del panel de Superdraft. Vive DENTRO
+   de .sd-panel para no añadir cromo flotante nuevo al campo. */
+.stats-link-btn {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 4px;
+  padding: 8px 16px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.stats-link-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.6); }
+.stats-link-btn.hidden { display: none; }
+
 /* ===== MODAL: buscar jugador (se abre desde la posición pulsada) ===== */
 .sd-modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .sd-modal.hidden { display: none; }
@@ -331,15 +351,11 @@
 }
 .sd-modal-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 
-/* ═══════════════ FIN ═══════════════
-   Se muestra dentro de #sd-result-modal (reutiliza .sd-modal), ENCIMA del
-   once ya completado en pantalla 2, no como pantalla propia: por eso el
-   padding es el de una tarjeta de modal, no el de una pantalla entera. */
+/* ═══════════════ FIN ═══════════════ */
 .sd-end-wrap {
-  max-width: 460px; margin: 0 auto; padding: 6px 2px 2px;
+  max-width: 460px; margin: 0 auto; padding: 72px 22px 40px;
   display: flex; flex-direction: column; align-items: center; text-align: center;
 }
-#sd-result-modal .sd-modal-card { width: min(460px, 94vw); }
 .sd-end-emoji { font-size: 3rem; margin-bottom: 6px; }
 .sd-end-title {
   font-family: 'Anton', sans-serif;
