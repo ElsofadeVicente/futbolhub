@@ -18,7 +18,6 @@ data/transfers/
 data/teammates/
 data/performances/
 data/national/
-data/higher-or-lower/
 data/transfermarkt_api_exports/
 
 # Imágenes (escudos/banderas/trofeos/entrenadores) ya subidas a Supabase
@@ -44,6 +43,7 @@ crucigrama/data/
 la-torre/data/
 en-el-once/data/
 en-el-top/data/enteltop.json
+higher-or-lower/data/
 el-estadio/data/estadios.json
 # Las copias que deja generar_estadios.py al guardar: son respaldos de un
 # archivo que ya esta ignorado y que viaja a Supabase con sync.bat estadio.
@@ -53,7 +53,7 @@ coche/data/*.json
 data/general/*.json
 # OJO: la regla de arriba lleva *.json, que en git NO entra en subcarpetas.
 # Los respaldos que deja admin/build_restricciones_db.py se colaban en el
-# repo por ese hueco (data/transfers/ y data/higher-or-lower/ no lo tienen
+# repo por ese hueco (data/transfers/ y higher-or-lower/data/ no lo tienen
 # porque están ignoradas enteras).
 data/general/_backup_*/
 data/bingo/
@@ -105,3 +105,6 @@ CLAUDE.md
 admin/crucigrama_banco.json
 admin/_backup_banco/
 admin/.crucigrama_meta.json
+
+# Notas personales sueltas en la raiz, no son parte del sitio
+Tutorial CMD Github.txt

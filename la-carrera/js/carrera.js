@@ -118,8 +118,11 @@ function careerTokens(s) {
   return norm(s).split(' ').filter(t => t.length >= 2);
 }
 
-// Clubes ficticios de Transfermarkt (Retirado / Sin club / Career break / Unknown)
-const _PSEUDO_CLUB_TIDS = new Set(['123', '515', '2113', '75']);
+// Clubes ficticios de Transfermarkt (Retirado / Sin club / Career break /
+// Unknown) más equipos de exhibición de un solo partido (All-Star-Team,
+// Denmark League, Team America) que build_performances_db.py ya excluye al
+// descargar; se filtran también aquí por si aparece otro caso similar.
+const _PSEUDO_CLUB_TIDS = new Set(['123', '515', '2113', '75', '42237', '67194', '51521']);
 
 // ── Reglas de filiales y juveniles ──
 // Juveniles / sub-19 / U18 / academias: NUNCA entran.
@@ -1026,11 +1029,12 @@ function renderStatsModal(stats) {
 }
 function renderHistogram(stats) {
   elHistBars.innerHTML = ''; elHistLabels.innerHTML = '';
-  let maxK = 6;
-  for (let k = 1; k < stats.hist.length; k++) if (stats.hist[k] > 0) maxK = Math.max(maxK, k);
-  if (_ended && _won) maxK = Math.max(maxK, _attempt);
+  const CAP = 10;
   const bins = [];
-  for (let k = 1; k <= maxK; k++) bins.push({ label: String(k), count: stats.hist[k] || 0, current: _ended && _won && _attempt === k });
+  for (let k = 1; k < CAP; k++) bins.push({ label: String(k), count: stats.hist[k] || 0, current: _ended && _won && _attempt === k });
+  let sumCap = 0;
+  for (let k = CAP; k < stats.hist.length; k++) sumCap += stats.hist[k] || 0;
+  bins.push({ label: CAP + '+', count: sumCap, current: _ended && _won && _attempt >= CAP });
   bins.push({ label: '✗', count: stats.losses || 0, current: _ended && !_won });
   const maxCount = Math.max(...bins.map(b => b.count), 1);
   bins.forEach(b => {
