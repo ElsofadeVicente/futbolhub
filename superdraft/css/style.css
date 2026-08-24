@@ -263,13 +263,20 @@
   min-height: 240px;
 }
 .sd-req { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.sd-req-frame { width: 132px; height: 132px; display: flex; align-items: center; justify-content: center; }
+/* La tragaperras es UNA tira vertical que se desplaza con un solo transform, no
+   un <img> al que se le cambia el src fotograma a fotograma. Asi el navegador
+   la compone en GPU: ni un reflow ni un decodificado de imagen por fotograma.
+   Si cambias 132px aqui, cambia REEL_CELL en js/script.js. */
+.sd-req-frame { width: 132px; height: 132px; overflow: hidden; position: relative; }
+.sd-reel-strip { display: flex; flex-direction: column; will-change: transform; }
+.sd-reel-cell {
+  flex: 0 0 132px; width: 132px; height: 132px;
+  display: flex; align-items: center; justify-content: center;
+}
 .sd-req-frame img {
   max-width: 100%; max-height: 100%; object-fit: contain;
   filter: drop-shadow(0 5px 12px rgba(0,0,0,0.55));
 }
-.sd-req-frame.pop { animation: reelPop 120ms ease; }
-@keyframes reelPop { 0%{transform:scale(0.86);opacity:.55;} 100%{transform:scale(1);opacity:1;} }
 #sd-reel.locked .sd-req-frame { animation: reelLock 0.4s cubic-bezier(0.34,1.56,0.64,1); }
 @keyframes reelLock { 0%{transform:scale(1);} 45%{transform:scale(1.18);} 100%{transform:scale(1);} }
 .sd-req-name {

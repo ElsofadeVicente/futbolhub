@@ -342,11 +342,34 @@
     return parts[0][0] + '. ' + parts.slice(1).join(' ');
   }
 
-  /* ═══════════════════ TRAGAPERRAS (reel) ═══════════════════ */
-  let _reelImgs = [];
+  /* ═══════════════════ TRAGAPERRAS (reel) ═══════════════════
+     La tirada es UN transform sobre una tira vertical de escudos, con
+     desaceleracion. La version anterior cambiaba el src del mismo <img> siete
+     veces con setTimeout y forzaba un reflow (void offsetWidth) en cada
+     cambio: como los PNG no estaban precargados, cada fotograma pedia su
+     imagen a Storage y se veia el hueco en blanco hasta que bajaba, asi que la
+     tragaperras iba a tirones. Ahora las imagenes se precargan al cargar el
+     dia y el navegador compone la tirada en GPU, sin un solo reflow. */
+  const REEL_CELL   = 132;   // alto de .sd-reel-cell en css/style.css
+  const REEL_FRAMES = 14;    // escudos que pasan antes del objetivo
+  const REEL_MS     = 2400;
+  let _reelImgs = [], _reelPreload = [], _reelTimer = null, _reelDestino = 0;
+
   function buildReelImages() {
     const pools = buildBadgePools(D.objective.families);
     _reelImgs = pools.map(b => b.img).filter(Boolean);
+    /* Se guardan las referencias a proposito: un Image() sin referencia lo
+       puede tirar el recolector y la precarga no serviria de nada. */
+    _reelPreload = _reelImgs.map(src => {
+      const im = new Image();
+      im.decoding = 'async';
+      im.src = src;
+      return im;
+    });
+  }
+
+  function _sinMovimiento() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
   function startRound() {
@@ -355,42 +378,68 @@
     S.curBadge = badge;
     S.spinning = true;
     renderField();                 // deshabilita clicks en los slots mientras gira
-    const reel = $('sd-reel-img');
-    const cap  = $('sd-reel-label');
+    const cap = $('sd-reel-label');
     cap.textContent = '';
     cap.classList.remove('locked');
 
-    // 7 imagenes en ~3s a velocidad constante, parada SECA en el objetivo.
-    const pool = _reelImgs.filter(Boolean);
-    const rng  = Math.random;
-    const frames = [];
-    for (let k = 0; k < 6; k++) frames.push(pool[Math.floor(rng() * pool.length)] || badge.img);
-    frames.push(badge.img);        // 7º = objetivo (donde para)
-    const N = frames.length;       // 7
-    const interval = 3000 / N;     // ~428ms, constante
+    if (_reelTimer) { clearTimeout(_reelTimer); _reelTimer = null; }
 
-    let i = 0;
-    const tick = () => {
-      const src = frames[i];
-      if (src) { reel.style.display = ''; reel.src = src; } else { reel.style.display = 'none'; }
-      const fr = reel.parentElement;
-      fr.classList.remove('pop'); void fr.offsetWidth; fr.classList.add('pop');
-      i++;
-      if (i < N) setTimeout(tick, interval);
-      else setTimeout(() => lockBadge(badge), interval);
+    const strip = $('sd-reel-strip');
+    const pool  = _reelImgs.filter(Boolean);
+    const rapido = _sinMovimiento() || pool.length === 0;
+
+    const frames = [];
+    if (!rapido) {
+      for (let k = 0; k < REEL_FRAMES; k++) frames.push(pool[Math.floor(Math.random() * pool.length)]);
+    }
+    frames.push(badge.img);        // ultimo = objetivo, donde para
+
+    const celda = (src) => `<div class="sd-reel-cell">${
+      src ? `<img src="${esc(src)}" alt="" onerror="this.style.visibility='hidden'">` : ''}</div>`;
+
+    strip.style.transition = 'none';
+    strip.style.transform  = 'translate3d(0,0,0)';
+    strip.innerHTML = frames.map(celda).join('');
+    void strip.offsetHeight;       // un unico reflow para fijar el punto de partida
+
+    const dur  = rapido ? 200 : REEL_MS;
+    const dist = (frames.length - 1) * REEL_CELL;
+    _reelDestino = dist;
+    strip.style.transition = `transform ${dur}ms cubic-bezier(.16,.62,.16,1)`;
+    strip.style.transform  = `translate3d(0,-${dist}px,0)`;
+
+    /* transitionend + red de seguridad: si la pestaña esta en segundo plano o
+       la transicion se cancela, el evento puede no llegar y la ronda se
+       quedaria colgada con los slots deshabilitados. */
+    let hecho = false;
+    const fin = () => {
+      if (hecho) return;
+      hecho = true;
+      strip.removeEventListener('transitionend', fin);
+      if (_reelTimer) { clearTimeout(_reelTimer); _reelTimer = null; }
+      lockBadge(badge);
     };
-    tick();
+    strip.addEventListener('transitionend', fin);
+    _reelTimer = setTimeout(fin, dur + 400);
   }
 
   function lockBadge(badge) {
     S.spinning = false;
-    const reel = $('sd-reel-img');
-    reel.style.display = ''; reel.src = badge.img;
+    /* Clavar la tira en su sitio sin transicion: si la animacion se cancelo o
+       nunca llego a correr (pestaña en segundo plano, y entonces cierra la red
+       de seguridad y no transitionend), el escudo que se ve tiene que ser el
+       del badge igualmente, no el fotograma en el que se quedo. */
+    const strip = $('sd-reel-strip');
+    if (strip) {
+      strip.style.transition = 'none';
+      strip.style.transform  = `translate3d(0,-${_reelDestino}px,0)`;
+    }
     const cap = $('sd-reel-label');
     cap.textContent = badge.label;
     cap.classList.add('locked');
-    $('sd-reel').classList.add('locked');
-    setTimeout(() => $('sd-reel').classList.remove('locked'), 420);
+    const reel = $('sd-reel');
+    reel.classList.add('locked');
+    setTimeout(() => reel.classList.remove('locked'), 420);
     renderField();                 // ahora los slots vuelven a ser clicables
   }
 

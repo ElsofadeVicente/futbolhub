@@ -1456,10 +1456,38 @@ const Sync = (() => {
      hueco, duplican al jugador al volver y, si eran host, congelan la sala);
      con la partida en curso solo marca connected:false para permitir
      reconectar sin perder nombre/puntuación. Mismo criterio que Blackjack. */
+
+  /* CANCELAR ANTES DE ARMAR, SIEMPRE.
+
+     Las operaciones de onDisconnect se ACUMULAN en el mismo camino, no se
+     sustituyen: si al entrar al lobby se armo un .remove() y luego, al
+     empezar la partida, se arma un .update({connected:false}), Firebase se
+     queda con el remove ya aplicado y le mete el update encima, o sea que al
+     cortarse la conexion escribe el nodo entero como {connected:false} —
+     borrando nombre, puntuacion y isHost.
+
+     Eso es exactamente lo que dejaba al anfitrion fuera de su propia partida
+     al irse la app a segundo plano: su nodo quedaba SIN NOMBRE, los demas lo
+     filtraban de _players (nodo fantasma), el failover promovia a otro y la
+     limpieza de fantasmas que hace el anfitrion nuevo lo borraba del todo.
+     Al volver, tryReconnect no encontraba su hueco y joinRoom respondia "la
+     partida ya ha comenzado".
+
+     Con el cancel() previo, el update en partida solo toca `connected` y el
+     nodo sobrevive entero. */
+  function _cancelOnDisconnect(path) {
+    try {
+      if (window._FBOnDisconnect) {
+        const {db,ref}=FB();
+        window._FBOnDisconnect(ref(db,path)).cancel().catch(()=>{});
+      }
+    } catch(e) { /* sin onDisconnect no hay nada que cancelar */ }
+  }
   function _onDisconnectRemove(path) {
     try {
       if (window._FBOnDisconnect) {
         const {db,ref}=FB();
+        _cancelOnDisconnect(path);
         window._FBOnDisconnect(ref(db,path)).remove().catch(()=>{});
       }
     } catch(e) { console.warn('[Sync] onDisconnect no disponible:', e); }
@@ -1468,6 +1496,7 @@ const Sync = (() => {
     try {
       if (window._FBOnDisconnect) {
         const {db,ref}=FB();
+        _cancelOnDisconnect(path);
         window._FBOnDisconnect(ref(db,path)).update({connected:false}).catch(()=>{});
       }
     } catch(e) { console.warn('[Sync] onDisconnect no disponible:', e); }
@@ -1796,6 +1825,36 @@ const Sync = (() => {
     _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${playerId}`);
   }
 
+  /* Volver a una partida YA EMPEZADA reocupando tu propio hueco.
+     rejoinRoom exige 'waiting' porque es la de "jugar de nuevo"; esta es para
+     el caso contrario: te fuiste a segundo plano en mitad de la ronda, tu nodo
+     desaparecio y al volver no hay hueco que reconectar. Se reescribe con TU
+     playerId de siempre (no se duplica) y con la puntuacion que tuvieras, que
+     el cliente conserva de la ultima foto de la sala. */
+  async function rejoinInProgress(code, playerId, playerName, avatar, score, wasHost) {
+    const {get,update}=FB();
+    const snap = await get(_ref(`${ROOMS_PATH}/${code}`));
+    if (!snap.exists()) throw new Error('Sala no encontrada');
+    const room = snap.val();
+    if (room.status === 'expired') throw new Error('La sala expiró');
+    if (room.status === 'waiting' || room.status === 'resetting')
+      throw new Error('La sala volvió al lobby');
+    /* La corona NO se recupera sola: si mientras faltabas promovieron a otro,
+       el que manda es el que esta dentro. Solo se conserva si nadie la tiene. */
+    const hayHost = Object.values(room.players||{}).some(p => p && p.isHost===true && p.connected!==false);
+    /* Si el nodo sigue ahi (solo se perdio la conexion), manda SU puntuacion:
+       la que traiga quien llama es un respaldo para cuando el nodo ya no
+       existe, y pisar la buena con ella seria robarle puntos al jugador. */
+    const previo = (room.players||{})[playerId];
+    const pts = previo && typeof previo.score === 'number' ? previo.score : (Number(score)||0);
+    await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
+      name:playerName, avatar:avatar||null, score:pts,
+      connected:true, isHost: (!hayHost && !!wasHost),
+    });
+    rearmOnDisconnect(code, playerId, room.status);
+    return { isHost: (!hayHost && !!wasHost) };
+  }
+
   async function expirePublicRoom(code) {
     const {update,remove}=FB();
     try {
@@ -1861,7 +1920,7 @@ const Sync = (() => {
   return {
     createRoom, joinRoom, findOrCreatePublicRoom, listenRoom,
     startGame, nextRound, submitAnswer, startReveal, setFinished,
-    resetToLobby, claimReset, rejoinRoom, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
+    resetToLobby, claimReset, rejoinRoom, rejoinInProgress, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
     tryReconnect, rearmOnDisconnect, resume,
   };
 })();
@@ -2471,10 +2530,23 @@ const App = (() => {
          pierde casi siempre. Cuando pasa no hay nada que duplicar, así que se
          entra de cero con el mismo nombre. Se intenta en este orden y no al
          revés porque reconectar conserva tu sitio y tu condición de anfitrión. */
+      /* Si la partida esta EN MARCHA, joinRoom responde "La partida ya ha
+         comenzado" y el jugador se queda fuera de su propia sala — que es
+         justo lo que pasaba al volver tras una llamada. Antes de rendirse se
+         reocupa el hueco propio con el playerId guardado. */
+      try {
+        const rip = await Sync.rejoinInProgress(ses.code, ses.playerId, ses.name, _accountAvatar(), 0, ses.isHost);
+        _newSession();
+        _roomCode = ses.code; _playerId = ses.playerId;
+        _isHost = !!rip.isHost; _isPublic = !!ses.isPublic;
+        _isLocal = false; _localName = ses.name;
+        _saveSession(); _listenRoom();
+        return;
+      } catch (e) { /* la sala esta en lobby o ya no existe: flujo normal */ }
       const r = await Sync.joinRoom(ses.code, ses.name, _accountAvatar());
       _newSession();
       _roomCode = r.code; _playerId = r.playerId;
-      _isHost = false; _isPublic = false; _isLocal = false; _localName = ses.name;
+      _isHost = false; _isPublic = !!ses.isPublic; _isLocal = false; _localName = ses.name;
       _saveSession(); _listenRoom(); _showLobby();
     } catch (e) {
       _clearSession();
@@ -2750,6 +2822,125 @@ const App = (() => {
 
   let _lastArmedStatus = null;   // último status para el que se rearmó onDisconnect
 
+
+  /* Puntuacion propia segun la ultima foto de la sala. Se conserva aparte
+     porque si el nodo se borra ya no se puede leer de room.players. */
+  let _miPuntuacion = 0;
+  let _reingresando = false;
+
+  /* Volver a entrar en la partida reocupando el hueco propio. Un solo intento
+     por corte: si la sala ya no admite el reingreso (expiro, volvio al lobby)
+     se sale al menu diciendo por que, en vez de dejar al jugador mirando una
+     sala de la que ya no forma parte. */
+  async function _reingresarEnPartida() {
+    if (_reingresando) return;
+    if (!_roomCode || !_playerId || !_localName) { _handleKicked('Has salido de la sala'); return; }
+    _reingresando = true;
+    const token = _sessionToken, sala = _roomCode;
+    try {
+      const r = await Sync.rejoinInProgress(sala, _playerId, _localName, _accountAvatar(), _miPuntuacion, _isHost);
+      if (_sessionToken !== token || _roomCode !== sala) return;
+      _isHost = !!r.isHost;
+      _saveSession();
+      const fresh = await Sync.getRoom(sala);
+      if (_sessionToken === token && _roomCode === sala && fresh) _onRoomUpdate(fresh);
+    } catch (e) {
+      if (_sessionToken !== token || _roomCode !== sala) return;
+      _handleKicked(e.message || 'Has salido de la sala');
+    } finally {
+      _reingresando = false;
+    }
+  }
+
+  /* ── Failover de anfitrion ──
+     Se llama desde _onRoomUpdate y tambien desde el vigilante de 2 s: si el
+     que se fue era el anfitrion y nadie mas escribe en la sala, no llegan mas
+     eventos de Firebase y sin el vigilante nadie llegaria a promoverse. */
+  function _failoverHost(room) {
+    if (!_isLocal && _playerId && room.players?.[_playerId]
+        && (room.status==='waiting' || room.status==='playing' || room.status==='reveal')) {
+      const humans = Object.entries(room.players)
+        .filter(([,p]) => !p.isBot && p.connected!==false);
+      const hasHost = humans.some(([,p]) => p.isHost===true);
+      if (!hasHost && humans.length > 0) {
+        const candidate = humans.map(([pid])=>pid).sort()[0];
+        if (candidate === _playerId && !_isHost) {
+          _isHost = true;
+          _saveSession();   // que una recarga posterior recuerde que somos host
+          try {
+            const {db,ref,update}=window._FB;
+            update(ref(db,`restricciones/rooms/${_roomCode}/players/${_playerId}`),{isHost:true}).catch(()=>{});
+            /* Y se le quita la corona al que se fue: si vuelve con isHost
+               puesto habría dos anfitriones repartiendo a la vez. */
+            const viejo = Object.entries(room.players)
+              .find(([pid,p]) => pid!==_playerId && p && p.isHost===true && p.connected===false);
+            if (viejo) update(ref(db,`restricciones/rooms/${_roomCode}/players/${viejo[0]}`),{isHost:false}).catch(()=>{});
+          } catch(e) {}
+          /* Asumir las funciones AQUI, no esperando al eco de Firebase: con
+             _isHost ya puesto a true, la deteccion por transicion de arriba no
+             volveria a saltar y nos quedariamos con la corona pero sin hacer
+             nada con ella. */
+          _alHeredarHost(room);
+          _sincronizarBotonSiguienteRonda(room);
+        }
+      }
+    }
+  }
+
+  /* ── Asumir las funciones de anfitrion ──
+     Se llama tanto cuando Firebase nos dice que ya somos host (transicion)
+     como en el momento de autopromocionarnos en el failover. Es idempotente:
+     _triggerReveal se protege con _revealTriggered y los bots se reprograman
+     sobre el reloj real de la ronda. */
+  function _alHeredarHost(room) {
+    if (_isLocal || !room) return;
+    if (room.status !== 'playing' && room.status !== 'reveal') return;
+
+    if (room.status === 'playing' && !_revealTriggered) {
+      /* Si ya estaban todas las respuestas y nadie disparo el reveal (el que
+         debia hacerlo se fue), dispararlo ahora. */
+      const connected = _players.filter(p=>p.connected!==false);
+      const expected = _isSuddenDeath
+        ? connected.filter(p => _suddenDeathPlayers.includes(p.id)).length
+        : connected.length;
+      if (expected>0 && (room.doneCount||0)>=expected) { _triggerReveal(room); return; }
+      /* Heredamos tambien los bots: sus respuestas las tenia programadas el
+         host anterior, asi que hay que reprogramarlas o la ronda se quedaria
+         esperandolos. Se les pasa el reloj real de la ronda (inicio +
+         duracion): ellos mismos reparten lo que quede. */
+      if (_isPublic && typeof CocheBots !== 'undefined' && _timerStartAt) {
+        const left = _timerTotalSecs - Math.floor((Date.now()-_timerStartAt)/1000);
+        if (left > 3) CocheBots.onRound({
+          code: _roomCode, room, restrictions: _restrictions,
+          roundSecs: _timerTotalSecs, startAt: _timerStartAt,
+          isSuddenDeath: _isSuddenDeath,
+          suddenDeathPlayers: _suddenDeathPlayers,
+        });
+      }
+      return;
+    }
+
+    if (room.status === 'reveal' && _currentScreen()==='screen-results') {
+      _preGenerateNextRestrictions();
+    }
+  }
+
+  /* El boton de pasar de ronda es del anfitrion, y quien lo sea puede cambiar
+     a mitad de partida. Repintarlo en cada foto de la sala es lo que evita el
+     bloqueo: sin esto, el jugador recien promovido se quedaba en la pantalla
+     de resultados con el boton escondido y la partida no avanzaba mas. */
+  function _sincronizarBotonSiguienteRonda(room) {
+    if (_isLocal || !room) return;
+    if (room.status !== 'reveal') { _nextRoundEnCurso = false; return; }
+    if (_currentScreen() !== 'screen-results') return;
+    if (_finishedDelayTimer) return;      // hay cuenta atras de ganador, no toca
+    if (_nextRoundEnCurso) return;        // ya pulsado aqui, la sala esta a punto de cambiar
+    const nxt = document.getElementById('btn-next-round');
+    if (!nxt) return;
+    nxt.classList.toggle('hidden', !_isHost);
+    if (_isHost) nxt.disabled = false;
+  }
+
   function _onRoomUpdate(room) {
     _lastRoom = room;
     if (room.status === 'expired') { _handleKicked('La sala pública expiró por inactividad ⏱️'); return; }
@@ -2765,7 +2956,14 @@ const App = (() => {
          no nos hemos re-unido. No expulsar — el jugador se re-unirá al pulsar
          "Jugar de nuevo" (playAgain reintenta hasta que el status sea waiting). */
       if (room.status === 'waiting' || room.status === 'resetting') return;
-      _handleKicked('Has sido expulsado de la sala'); return;
+      /* En partida, que tu nodo desaparezca NO es una expulsión: Coche no
+         tiene forma de echar a nadie. Es que el corte de conexión (una
+         llamada, cambiar de app) lo borró. Antes se salía al menú con
+         "Has sido expulsado" y ya no había manera de volver. Ahora se
+         reocupa el mismo hueco, con la puntuación que se tuviera, y solo si
+         eso falla se sale. */
+      _reingresarEnPartida();
+      return;
     }
     if (room.players) {
       _players = Object.entries(room.players)
@@ -2782,41 +2980,22 @@ const App = (() => {
          Permite el failover de host si el host original se desconecta
          a mitad de partida: el juego sigue avanzando. */
       if (!_isLocal && _playerId && room.players[_playerId]) {
+        /* Ultima foto conocida de nuestro registro: es lo que se reescribe si
+           el nodo desaparece por un corte (_reingresarEnPartida). */
+        _miPuntuacion = room.players[_playerId].score || 0;
         const wasHost = _isHost;
         _isHost = room.players[_playerId].isHost === true;
-        if (_isHost && !wasHost && (room.status==='playing' || room.status==='reveal')) {
-          /* Nos acaban de promover a host en plena partida: si ya estaban
-             todas las respuestas y nadie disparó el reveal, dispararlo ahora. */
-          if (room.status==='playing' && !_revealTriggered) {
-            const connected = _players.filter(p=>p.connected!==false);
-            const expected = _isSuddenDeath
-              ? connected.filter(p => _suddenDeathPlayers.includes(p.id)).length
-              : connected.length;
-            if (expected>0 && (room.doneCount||0)>=expected) _triggerReveal(room);
-            /* Heredamos también los bots: sus respuestas las tenía programadas
-               el host anterior, así que hay que reprogramarlas o la ronda se
-               quedaría esperándolos. Se les pasa el reloj real de la ronda
-               (inicio + duración): ellos mismos reparten lo que quede. */
-            else if (_isPublic && typeof CocheBots !== 'undefined' && _timerStartAt) {
-              const left = _timerTotalSecs - Math.floor((Date.now()-_timerStartAt)/1000);
-              if (left > 3) CocheBots.onRound({
-                code: _roomCode, room, restrictions: _restrictions,
-                roundSecs: _timerTotalSecs, startAt: _timerStartAt,
-                isSuddenDeath: _isSuddenDeath,
-                suddenDeathPlayers: _suddenDeathPlayers,
-              });
-            }
-          }
-          /* Si nos promovieron mientras ya veíamos la pantalla de resultados,
-             el botón "SIGUIENTE RONDA" estaba oculto (era de otro host).
-             Mostrarlo ahora para que el juego pueda avanzar (evita deadlock). */
-          if (room.status==='reveal' && _currentScreen()==='screen-results') {
-            const nxt=document.getElementById('btn-next-round');
-            if (nxt) { nxt.classList.remove('hidden'); nxt.disabled=false; }
-            _preGenerateNextRestrictions();
-          }
-        }
+        if (_isHost && !wasHost) _alHeredarHost(room);
       }
+      /* El boton "SIGUIENTE RONDA" se sincroniza con _isHost en CADA foto de
+         la sala, no solo en el instante de la promocion. La transicion
+         (_isHost && !wasHost) no basta: el failover de mas abajo ya pone
+         _isHost=true en local, asi que cuando vuelve el eco de Firebase con
+         isHost:true resulta que wasHost tambien es true y la transicion no
+         salta nunca. Ese era el motivo real de que el resto de la sala se
+         quedara sin poder pasar de ronda cuando el anfitrion se iba: se
+         promovia a otro jugador, pero a ese jugador no le salia el boton. */
+      _sincronizarBotonSiguienteRonda(room);
     }
 
     /* El host limpia nodos fantasma (sin nombre): se crean cuando una
@@ -2844,28 +3023,7 @@ const App = (() => {
        app, una llamada— la sala se quedaba congelada para todos los demás
        hasta que volviera. El bloque de más arriba ya contemplaba "nos acaban
        de promover en plena partida", pero nadie llegaba a promover nunca. */
-    if (!_isLocal && _playerId && room.players?.[_playerId]
-        && (room.status==='waiting' || room.status==='playing' || room.status==='reveal')) {
-      const humans = Object.entries(room.players)
-        .filter(([,p]) => !p.isBot && p.connected!==false);
-      const hasHost = humans.some(([,p]) => p.isHost===true);
-      if (!hasHost && humans.length > 0) {
-        const candidate = humans.map(([pid])=>pid).sort()[0];
-        if (candidate === _playerId && !_isHost) {
-          _isHost = true;
-          _saveSession();   // que una recarga posterior recuerde que somos host
-          try {
-            const {db,ref,update}=window._FB;
-            update(ref(db,`restricciones/rooms/${_roomCode}/players/${_playerId}`),{isHost:true}).catch(()=>{});
-            /* Y se le quita la corona al que se fue: si vuelve con isHost
-               puesto habría dos anfitriones repartiendo a la vez. */
-            const viejo = Object.entries(room.players)
-              .find(([pid,p]) => pid!==_playerId && p && p.isHost===true && p.connected===false);
-            if (viejo) update(ref(db,`restricciones/rooms/${_roomCode}/players/${viejo[0]}`),{isHost:false}).catch(()=>{});
-          } catch(e) {}
-        }
-      }
-    }
+    _failoverHost(room);
 
     switch(room.status) {
       case 'resetting':
@@ -3406,6 +3564,12 @@ const App = (() => {
   function _roundWatchdog() {
     if (_isLocal || !_roomCode || !_playerId)                 { _rondaAtascadaDesde = 0; return; }
     const room = _lastRoom;
+    /* Antes que nada, quien manda. Si el anfitrion se fue y nadie mas escribe
+       en la sala, Firebase no vuelve a avisar de nada y sin este repaso
+       periodico nadie llegaria a promoverse: la partida se quedaria esperando
+       eternamente a alguien que no va a volver. Y se repinta el boton de pasar
+       de ronda, que es lo que deja la pantalla de resultados sin salida. */
+    if (room) { _failoverHost(room); _sincronizarBotonSiguienteRonda(room); }
     if (!room || room.status !== 'playing' || _revealTriggered) { _rondaAtascadaDesde = 0; return; }
     if (!room.players || !room.players[_playerId])            { _rondaAtascadaDesde = 0; return; }
     if (!_rondaListaParaCerrar(room))                          { _rondaAtascadaDesde = 0; return; }
@@ -3841,7 +4005,9 @@ const App = (() => {
       nxtBtn.disabled = true;
       nxtBtn.classList.add('hidden');
     }
+    _nextRoundEnCurso = true;
     const _reenableBtn = () => {
+      _nextRoundEnCurso = false;
       if (nxtBtn) { nxtBtn.disabled = false; nxtBtn.classList.remove('hidden'); }
     };
     /* Vigilante: si en 12 s la sala no ha pasado a 'playing' (escritura
@@ -3900,6 +4066,10 @@ const App = (() => {
   /* Guarda los datos del finished para mostrarlos tras el delay */
   let _pendingFinishedRoom = null;
   let _finishedDelayTimer  = null;
+  /* El anfitrion acaba de pulsar SIGUIENTE RONDA y la escritura esta en
+     vuelo: mientras tanto la sala sigue en 'reveal', asi que sin esta marca
+     _sincronizarBotonSiguienteRonda volveria a enseñar el boton. */
+  let _nextRoundEnCurso    = false;
 
   function _doShowFinished(room) {
     _finishedDelayTimer = null;
