@@ -28,7 +28,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-  <link rel="stylesheet" href="./css/styles.css?v=20260819a" />
+  <link rel="stylesheet" href="./css/styles.css?v=20260824a" />
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
@@ -40,7 +40,7 @@
 <!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
      :root[data-theme="v2"]: sin ese atributo no pinta nada.
      Va la ultima para poder ganar a igual especificidad. -->
-<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260819a">
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260824a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -108,7 +108,7 @@
   <div class="menu-hero">
     <div class="menu-logo">🎭</div>
     <h1 class="menu-title">EL MENTIROSO</h1>
-    <div class="menu-subtitle">Apuesta al total exacto de cartas que cumplen la condicion</div>
+    <div class="menu-subtitle">Sube la apuesta, plántate o llama mentiroso</div>
   </div>
 
   <div class="menu-wrap">
@@ -124,29 +124,29 @@
       <div class="panel-hint">Elige el modo de juego</div>
       <div class="mode-toggle">
         <button class="mode-opt active" data-mode="easy">
-          <div class="mode-opt-title">FÁCIL</div>
-          <div class="mode-opt-sub">Ves el dato y si cada carta cumple</div>
+          <div class="mode-opt-title">FACIL</div>
+          <div class="mode-opt-sub">Tus cartas se marcan en verde si cumplen</div>
         </button>
         <button class="mode-opt" data-mode="hard">
-          <div class="mode-opt-title">DIFÍCIL</div>
-          <div class="mode-opt-sub">Solo ves nombre y pistas visibles</div>
+          <div class="mode-opt-title">DIFICIL</div>
+          <div class="mode-opt-sub">Ninguna carta se marca. Solo tu cabeza</div>
         </button>
       </div>
 
-      <div class="panel-hint">Rondas acertadas para ganar</div>
-      <div class="setting-stepper">
-        <button aria-label="Quitar una ronda para ganar" class="step-btn" id="btn-points-minus">-</button>
-        <div class="setting-value" id="create-points-value">3</div>
-        <button aria-label="Sumar una ronda para ganar" class="step-btn" id="btn-points-plus">+</button>
+      <div class="panel-hint">Vidas iniciales</div>
+      <div class="lives-toggle" id="lives-toggle">
+        <button class="lives-opt active" data-lives="3"><span class="lives-num">3</span><span class="lives-hearts">♥♥♥</span></button>
+        <button class="lives-opt" data-lives="5"><span class="lives-num">5</span><span class="lives-hearts">♥♥♥♥♥</span></button>
+        <button class="lives-opt" data-lives="7"><span class="lives-num">7</span><span class="lives-hearts">♥♥♥♥♥♥♥</span></button>
       </div>
 
       <button id="btn-create" class="btn-primary">CREAR SALA</button>
-      <div class="panel-hint">Se abre una sala online real con código para compartir.</div>
+      <div class="panel-hint">Se abre un lobby online real con codigo para compartir.</div>
     </div>
 
     <div class="menu-panel" data-panel="join">
       <input id="join-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="16" autocomplete="off" />
-      <input id="join-code" class="menu-input menu-code-input" type="text" placeholder="CÓDIGO" maxlength="6" autocomplete="off" />
+      <input id="join-code" class="menu-input menu-code-input" type="text" placeholder="CODIGO" maxlength="6" autocomplete="off" />
       <button id="btn-join" class="btn-primary">ENTRAR</button>
       <div id="join-error" class="menu-error hidden">Sala no encontrada</div>
     </div>
@@ -161,22 +161,30 @@
         <button aria-label="Sumar un jugador automatico" class="step-btn" id="btn-bots-plus">+</button>
       </div>
       <button id="btn-practice" class="btn-primary">EMPEZAR PRACTICA</button>
-      <div class="panel-hint">Usa el modo y las rondas elegidos arriba en "Crear sala".</div>
+      <div class="panel-hint">Usa el modo y las vidas elegidos arriba en "Crear sala".</div>
     </div>
+
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
     <p class="guia-link"><a href="/como-jugar/mentiroso/">Cómo se juega &rarr;</a></p>
+
+    <div class="db-status" id="db-status">
+      <div class="db-status-label" id="db-status-label">Cargando plantillas…</div>
+      <div class="db-bar"><div class="db-bar-fill" id="db-bar-fill"></div></div>
+    </div>
   </div>
 
   <div class="menu-rules">
     <details>
       <summary>Como se juega</summary>
       <ol>
-        <li>En cada ronda sale una condicion fija. Ejemplo: <em>Mas de 10 goles en Premier 24/25</em> o <em>han pasado por el Chelsea</em>.</li>
-        <li>Cada jugador mira sus cartas y las del centro para estimar cuantas cartas de toda la mesa cumplen esa condicion.</li>
-        <li>Por turnos, cada uno dice un numero exacto.</li>
-        <li>Cuando todos han apostado, se revela el total real.</li>
-        <li>Solo puntua quien acierta exacto. Si nadie acierta, no suma nadie.</li>
-        <li>Gana quien llegue antes al numero de rondas acertadas configurado.</li>
+        <li>Cada ronda sale una <em>condicion</em>: por ejemplo <em>han jugado en el Milan</em> o <em>han marcado mas de 120 goles</em>.</li>
+        <li>Se reparten cartas a cada jugador y unas cuantas al centro. <em>Todos los nombres son visibles</em>: lo que no sabes es cuantas cumplen de verdad.</li>
+        <li>Por turnos hay una <em>unica apuesta comun</em> que solo puede subir. En tu turno eliges: <em>subir</em>, <em>plantarte</em> o <em>desafiar</em>.</li>
+        <li><em>Plantarse</em> = afirmas que la apuesta es el numero exacto. Si aciertas ganas una vida; si fallas la pierdes.</li>
+        <li><em>Desafiar</em> = llamas mentiroso al ultimo que subio. Si se paso, pierde una vida. Si se quedo corto, la pierdes tu. Si habia clavado el numero, se lleva una vida de regalo.</li>
+        <li>Al abrirse cada ronda hay <em>30 segundos</em> para estudiar la mesa sin que nadie pueda apostar todavia. Con el boton <em>ESTOY LISTO</em> se corta esa espera en cuanto lo pulsan todos.</li>
+        <li>Cuando empieza la puja tienes <em>15 segundos</em> por turno. Si se agotan: si nadie habia abierto, subes al minimo; si ya habia apuesta, te plantas con ella.</li>
+        <li>Quien llega a <em>0 vidas</em> queda eliminado. Gana el ultimo jugador con vidas.</li>
       </ol>
     </details>
   </div>
@@ -188,26 +196,26 @@
   <div class="lobby-wrap">
     <h2 class="lobby-title">Sala de espera</h2>
     <div class="lobby-code-card">
-      <div class="lobby-code-label">Código de sala</div>
+      <div class="lobby-code-label">Codigo de sala</div>
       <div class="lobby-code-big" id="lobby-code">------</div>
-      <button id="btn-copy-link">🔗 Copiar enlace de invitación</button>
+      <button class="btn-tiny" id="btn-copy-code">COPIAR CODIGO</button>
     </div>
 
     <div class="lobby-section">
       <div class="lobby-section-kicker">Modo</div>
-      <div class="lobby-mode-pill" id="lobby-mode-pill">FÁCIL</div>
+      <div class="lobby-mode-pill" id="lobby-mode-pill">FACIL</div>
     </div>
 
     <div class="lobby-section">
-      <div class="lobby-section-kicker">Rondas para ganar</div>
-      <div class="setting-stepper hidden" id="lobby-points-controls">
-        <button aria-label="Quitar una ronda para ganar" class="step-btn" id="btn-lobby-points-minus">-</button>
-        <div class="setting-value" id="lobby-points-value">3</div>
-        <button aria-label="Sumar una ronda para ganar" class="step-btn" id="btn-lobby-points-plus">+</button>
+      <div class="lobby-section-kicker">Vidas iniciales</div>
+      <div class="lives-toggle hidden" id="lobby-lives-toggle">
+        <button class="lives-opt" data-lives="3"><span class="lives-num">3</span><span class="lives-hearts">♥♥♥</span></button>
+        <button class="lives-opt" data-lives="5"><span class="lives-num">5</span><span class="lives-hearts">♥♥♥♥♥</span></button>
+        <button class="lives-opt" data-lives="7"><span class="lives-num">7</span><span class="lives-hearts">♥♥♥♥♥♥♥</span></button>
       </div>
-      <div class="lobby-mode-pill hidden" id="lobby-points-readonly">
-        <span>Objetivo</span>
-        <span id="lobby-points-value-readonly">3</span>
+      <div class="lobby-mode-pill hidden" id="lobby-lives-readonly">
+        <span id="lobby-lives-value-readonly">3</span>
+        <span>VIDAS</span>
       </div>
     </div>
 
@@ -225,74 +233,118 @@
   <div class="game-topbar">
     <div class="gt-left">
       <div class="gt-round-label">RONDA <span id="game-round">1</span></div>
-      <div class="gt-round-stat" id="game-round-stat">-</div>
+      <div class="gt-mode" id="game-mode">FACIL</div>
     </div>
     <div class="gt-right">
       <div class="gt-code-label">SALA</div>
       <div class="gt-code" id="game-code">------</div>
     </div>
+    <button class="leave-game-btn" id="btn-leave-game">Abandonar</button>
   </div>
 
-  <div class="table-area">
-    <div class="seats-top" id="seats-top"></div>
-
-    <div class="felt">
-      <div class="felt-felt">
-        <div class="felt-label">MESA · cartas de todos</div>
-        <div class="center-cards" id="center-cards"></div>
-      </div>
+  <div class="cond-bar">
+    <div class="cond-icon" id="cond-icon"></div>
+    <div class="cond-text">
+      <div class="cond-kicker">CONDICION DE LA RONDA</div>
+      <div class="cond-label" id="cond-label">—</div>
     </div>
-
-    <div class="my-zone">
-      <div class="my-seat" id="my-seat"></div>
-      <div class="my-hand" id="my-hand"></div>
+    <div class="cond-total">
+      <div class="cond-total-num" id="cond-total">0</div>
+      <div class="cond-total-lbl">CARTAS<br>EN MESA</div>
     </div>
   </div>
 
-  <div class="action-bar" id="action-bar">
-    <div class="action-panel" id="action-panel">
-      <div class="bet-row">
-        <span class="bet-label">Tu apuesta:</span>
-        <button aria-label="Bajar la apuesta" class="step-btn" id="guess-minus">−</button>
-        <div class="step-val" id="step-guess">0</div>
-        <button aria-label="Subir la apuesta" class="step-btn" id="guess-plus">+</button>
-        <button class="btn-primary btn-confirm" id="btn-guess">CONFIRMAR</button>
+  <div class="game-scroll" id="game-scroll">
+
+    <!-- MESA. El tapete con las cartas comunes va en el centro y los
+         jugadores se reparten alrededor: yo siempre abajo y los
+         rivales en el lateral izquierdo, arriba y el lateral derecho,
+         en orden de turno. En pantallas estrechas la rejilla se
+         apila (rivales arriba, tapete, yo abajo) porque un tapete con
+         asientos a los lados no cabe a 375 px. -->
+    <div class="table-area" id="table-area">
+      <div class="seat-zone zone-left"   id="zone-left"></div>
+      <div class="seat-zone zone-top"    id="zone-top"></div>
+
+      <!-- El tapete lleva encima la apuesta y el reloj: en una mesa de
+           verdad el bote está en el centro, no en una barra aparte. -->
+      <div class="felt">
+        <div class="bid-panel">
+          <div class="bid-main">
+            <div class="bid-kicker" id="bid-kicker">APUESTA ACTUAL</div>
+            <div class="bid-value" id="bid-value">—</div>
+            <div class="bid-owner" id="bid-owner">Nadie ha abierto todavia</div>
+          </div>
+          <div class="bid-turn">
+            <div class="bid-kicker" id="turn-kicker">TURNO DE</div>
+            <div class="turn-name" id="turn-name">—</div>
+            <div class="timer-wrap"><div class="timer-fill" id="timer-fill"></div></div>
+            <div class="timer-num" id="timer-num">15s</div>
+          </div>
+        </div>
+        <div class="felt-label">MESA · CARTAS COMUNES <span class="block-count" id="center-count"></span></div>
+        <div class="hand-row" id="center-cards"></div>
       </div>
-      <div class="bet-help">Cartas en juego: <span id="guess-max">0</span></div>
+
+      <div class="seat-zone zone-right"  id="zone-right"></div>
+      <div class="seat-zone zone-bottom" id="zone-bottom"></div>
     </div>
-    <div class="action-waiting hidden" id="action-waiting">
-      <span class="wait-label" id="action-wait-label">Esperando a los demás</span>
+
+  </div>
+
+  <div class="action-bar">
+    <div class="action-panel hidden" id="action-panel">
+      <div class="raise-row">
+        <span class="bet-label">SUBIR A</span>
+        <button aria-label="Bajar la apuesta" class="step-btn" id="raise-minus">−</button>
+        <div class="step-val" id="raise-value">1</div>
+        <button aria-label="Subir la apuesta" class="step-btn" id="raise-plus">+</button>
+        <button class="btn-act btn-raise" id="btn-raise">SUBIR APUESTA</button>
+      </div>
+      <div class="act-row" id="act-row">
+        <button class="btn-act btn-stand" id="btn-stand">PLANTARME<small id="stand-hint"></small></button>
+        <button class="btn-act btn-challenge" id="btn-challenge">¡MENTIROSO!<small id="chal-hint"></small></button>
+      </div>
+      <div class="bet-help" id="bet-help"></div>
+    </div>
+    <div class="action-waiting" id="action-waiting">
+      <span class="wait-label" id="action-wait-label">Esperando…</span>
       <div class="waiting-dots"><span></span><span></span><span></span></div>
+      <button class="btn-ready hidden" id="btn-ready">ESTOY LISTO</button>
     </div>
   </div>
 </div>
 
 <div id="overlay-reveal" class="overlay hidden">
   <div class="overlay-inner">
-    <div class="reveal-tag" id="reveal-tag">ACIERTO EXACTO</div>
-    <div class="reveal-headline" id="reveal-headline">-</div>
-    <div class="reveal-sub" id="reveal-sub">-</div>
+    <div class="reveal-tag" id="reveal-tag">—</div>
+    <div class="reveal-headline" id="reveal-headline">—</div>
+    <div class="reveal-sub" id="reveal-sub">—</div>
 
-    <div class="reveal-count-block">
-      <div class="reveal-count-label">Total real que cumple</div>
-      <div class="reveal-count" id="reveal-count">0</div>
+    <div class="reveal-numbers">
+      <div class="rn-box"><div class="rn-label">APUESTA FINAL</div><div class="rn-value" id="reveal-bet">0</div></div>
+      <div class="rn-vs" id="reveal-vs">≠</div>
+      <div class="rn-box"><div class="rn-label">TOTAL REAL</div><div class="rn-value" id="reveal-actual">0</div></div>
     </div>
 
-    <div class="reveal-guesses" id="reveal-guesses"></div>
+    <div class="reveal-verdict" id="reveal-verdict">—</div>
+    <div class="reveal-lives" id="reveal-lives"></div>
+
+    <div class="reveal-cond" id="reveal-cond">—</div>
     <div class="reveal-cards" id="reveal-cards"></div>
 
-    <div class="reveal-verdict" id="reveal-verdict">-</div>
-    <button class="btn-primary hidden" id="btn-continue">SIGUIENTE RONDA</button>
+    <button class="btn-primary" id="btn-continue">SIGUIENTE RONDA</button>
+    <div class="continue-hint" id="continue-hint"></div>
   </div>
 </div>
 
 <div id="overlay-gameover" class="overlay hidden">
   <div class="overlay-inner gameover-inner">
     <div class="finished-trophy">🏆</div>
-    <div class="finished-title">GANADOR</div>
+    <div class="finished-title">ULTIMO EN PIE</div>
     <div class="winner-name" id="winner-name">-</div>
-    <div class="reveal-guesses" id="winner-scoreboard"></div>
-    <button class="btn-primary" id="btn-menu">VOLVER AL MENÚ</button>
+    <div class="reveal-lives" id="winner-scoreboard"></div>
+    <button class="btn-primary" id="btn-menu">VOLVER AL MENU</button>
   </div>
 </div>
 
@@ -330,31 +382,16 @@
   };
   window._FBOnDisconnect = onDisconnect;
 
-  const V = '?v=20260821a';
+  const V = '?v=20260824a';
+  // deck.js construye la baraja con la base de datos real de la web
+  // (chunks de player-db + lista de fama de Coche) y define las
+  // condiciones de cada ronda. game.js depende de window.MDeck.
   const scripts = [
-    './js/game.js' + V
+    './js/deck.js' + V,
+    './js/game.js' + V,
   ];
 
-  // Datos propios del juego (jugadores + definiciones de stats), ya migrados
-  // a Supabase (tablas mentiroso_players / mentiroso_stat_definitions).
-  // Se cargan ANTES que game.js, que espera window.PLAYERS/window.STAT_DEFINITIONS
-  // ya rellenos (antes los ponía ./js/data.js con un <script src>).
-  async function loadMentirosoData() {
-    try {
-      const [playerRows, statRows] = await Promise.all([
-        sbFetchAll('mentiroso_players?select=data'),
-        sbFetch('mentiroso_stat_definitions?id=eq.1&select=data'),
-      ]);
-      window.PLAYERS = playerRows.map(r => r.data);
-      window.STAT_DEFINITIONS = statRows.length ? statRows[0].data : [];
-    } catch (e) {
-      console.error('No se pudieron cargar los datos de Mentiroso desde Supabase', e);
-      window.PLAYERS = window.PLAYERS || [];
-      window.STAT_DEFINITIONS = window.STAT_DEFINITIONS || [];
-    }
-  }
-
-  let chain = loadMentirosoData();
+  let chain = Promise.resolve();
   scripts.forEach((src) => {
     chain = chain.then(() => new Promise((resolve) => {
       const script = document.createElement('script');

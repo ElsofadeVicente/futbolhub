@@ -2805,12 +2805,20 @@ const App = (() => {
         }
       }
     }
-    /* ── Failover de host en el LOBBY ──
+    /* ── Failover de host ──
        Si el host desapareció (su onDisconnect borró el nodo) o quedó
        desconectado, la sala se quedaba sin nadie que metiera bots, empezara
        la partida o la expirara. El primer humano conectado (orden
-       determinista por id) se autopromociona. Los bots nunca heredan. */
-    if (!_isLocal && _playerId && room.status==='waiting' && room.players?.[_playerId]) {
+       determinista por id) se autopromociona. Los bots nunca heredan.
+
+       Va también EN PARTIDA (playing / reveal), no solo en el lobby: casi
+       todo lo que hace avanzar la partida es cosa del anfitrión (cerrar la
+       ronda, repartir la siguiente), así que si se va a mitad —cambiar de
+       app, una llamada— la sala se quedaba congelada para todos los demás
+       hasta que volviera. El bloque de más arriba ya contemplaba "nos acaban
+       de promover en plena partida", pero nadie llegaba a promover nunca. */
+    if (!_isLocal && _playerId && room.players?.[_playerId]
+        && (room.status==='waiting' || room.status==='playing' || room.status==='reveal')) {
       const humans = Object.entries(room.players)
         .filter(([,p]) => !p.isBot && p.connected!==false);
       const hasHost = humans.some(([,p]) => p.isHost===true);
@@ -2822,6 +2830,11 @@ const App = (() => {
           try {
             const {db,ref,update}=window._FB;
             update(ref(db,`restricciones/rooms/${_roomCode}/players/${_playerId}`),{isHost:true}).catch(()=>{});
+            /* Y se le quita la corona al que se fue: si vuelve con isHost
+               puesto habría dos anfitriones repartiendo a la vez. */
+            const viejo = Object.entries(room.players)
+              .find(([pid,p]) => pid!==_playerId && p && p.isHost===true && p.connected===false);
+            if (viejo) update(ref(db,`restricciones/rooms/${_roomCode}/players/${viejo[0]}`),{isHost:false}).catch(()=>{});
           } catch(e) {}
         }
       }
@@ -3295,8 +3308,71 @@ const App = (() => {
       _startTimer(_timerStartAt, _timerTotalSecs);
     }
     _handleResume();
+    /* Y sin esperar los 2 s del intervalo: si la ronda ya estaba lista para
+       cerrarse mientras la app estaba fuera, se cierra al volver. */
+    _roundWatchdog();
   });
   window.addEventListener('online', _handleResume);
+
+  /* ════════════════════════════════════════
+     VIGILANTE DE RONDA
+
+     Cerrar la ronda dependia de dos avisos que se pueden perder LOS DOS a la
+     vez cuando el movil manda la app a segundo plano a mitad de partida:
+
+       · el reloj de la ronda — _triggerReveal lo apaga nada mas empezar, y
+       · los cambios de la sala — si ya ha contestado todo el mundo, nadie
+         vuelve a escribir en Firebase y no llega ningun evento mas.
+
+     Si encima el intento de cerrar se aborta a medias (al volver, la sesion
+     ya no cuadra y salta uno de los `if (!_live())`, o falla la escritura),
+     _revealTriggered vuelve a false y no queda NADIE que lo reintente: la
+     ronda se queda clavada aunque hayan respondido todos. Eso es justo lo
+     que pasaba al salir de la app en mitad de una partida y volver a entrar.
+
+     El vigilante mira cada 2 s el estado real de la sala y cierra la ronda
+     cuando toca. Dos detalles a proposito:
+
+       · cuenta las submissions de verdad, no doneCount: ese contador es una
+         escritura aparte y puede descuadrarse si se pierde por el camino.
+       · pasados 12 s puede cerrarla CUALQUIER jugador, no solo el anfitrion.
+         Si el que se fue era el, la sala ya no se queda esperandole. Cerrar
+         dos veces es inofensivo: startReveal cambia el estado con una
+         transaccion playing->reveal y los resultados salen de las mismas
+         submissions, asi que solo entra el primero.
+     ════════════════════════════════════════ */
+  const RESCATE_RONDA_MS = 12000;
+  let _rondaAtascadaDesde = 0;
+
+  function _rondaListaParaCerrar(room) {
+    const conectados = _players.filter(p => p.connected !== false);
+    const participantes = _isSuddenDeath
+      ? conectados.filter(p => _suddenDeathPlayers.includes(p.id))
+      : conectados;
+    if (!participantes.length) return false;
+    const subs = room.submissions || {};
+    if (participantes.every(p => subs[p.id])) return true;
+    /* O se acabo el tiempo. roundStartAt/roundSecs viven en la sala, asi que
+       valen aunque el reloj local se haya quedado parado en segundo plano. */
+    const inicio = Number(room.roundStartAt || 0);
+    const secs   = Number(room.roundSecs || ROUND_SECS);
+    return inicio > 0 && Date.now() > inicio + secs * 1000 + 2000;
+  }
+
+  function _roundWatchdog() {
+    if (_isLocal || !_roomCode || !_playerId)                 { _rondaAtascadaDesde = 0; return; }
+    const room = _lastRoom;
+    if (!room || room.status !== 'playing' || _revealTriggered) { _rondaAtascadaDesde = 0; return; }
+    if (!room.players || !room.players[_playerId])            { _rondaAtascadaDesde = 0; return; }
+    if (!_rondaListaParaCerrar(room))                          { _rondaAtascadaDesde = 0; return; }
+    if (!_rondaAtascadaDesde) _rondaAtascadaDesde = Date.now();
+    const rescate = Date.now() - _rondaAtascadaDesde >= RESCATE_RONDA_MS;
+    if (_isHost || rescate) {
+      _rondaAtascadaDesde = 0;
+      _triggerReveal(room);
+    }
+  }
+  setInterval(_roundWatchdog, 2000);
 
   /* ════════════════════════════════════════
      VOLVER A LA PARTIDA

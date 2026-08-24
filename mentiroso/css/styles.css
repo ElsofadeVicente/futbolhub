@@ -1,3 +1,10 @@
+/* ═══════════════════════════════════════════════════════════
+   EL MENTIROSO — hoja de estilos (rediseño puja + vidas)
+   Estética "newspaper" común al resto de FutbolHUB: papel
+   crema, tinta casi negra, rojo de titular, sombras duras sin
+   redondeos y tipografías Anton / DM Mono / Playfair / Rajdhani.
+   ═══════════════════════════════════════════════════════════ */
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -6,25 +13,20 @@
   --np-paper3:   #e4d3aa;
   --np-ink:      #0f120e;
   --np-red:      #b5221e;
-  --np-ink-mid:  rgba(var(--np-ink-rgb, 15,18,14), 0.68);
-  --np-ink-soft: rgba(var(--np-ink-rgb, 15,18,14), 0.16);
+  --np-ink-mid:  rgba(15,18,14,0.68);
+  --np-ink-soft: rgba(15,18,14,0.16);
   --np-white:    #ffffff;
-  --shadow:      var(--sh-x,5px) var(--sh-y,5px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  --shadow-soft: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  --shadow:      5px 5px 0 var(--np-ink);
+  --shadow-soft: 3px 3px 0 var(--np-ink);
 
-  /* Alias de variables antiguas (tema oscuro/dorado poker) -> newspaper */
   --bg:          var(--np-paper);
-  --bg-deep:     var(--np-paper2);
   --panel:       var(--np-paper2);
   --line:        var(--np-ink-soft);
-  --line-strong: var(--np-ink);
-  --gold:        var(--np-red);
-  --gold-bright: var(--np-red);
   --text:        var(--np-ink);
   --muted:       var(--np-ink-mid);
   --green-ok:    #2f7d32;
   --red-ko:      var(--np-red);
-  --shadow-old:  var(--shadow);
+  --blue-act:    #1e5f8f;
 }
 
 html, body {
@@ -32,13 +34,13 @@ html, body {
   background-color: var(--np-paper);
   background-image:
     radial-gradient(ellipse 115% 95% at 50% 50%,
-      transparent 55%, rgba(var(--np-ink-rgb, 15,18,14), 0.07) 100%),
+      transparent 55%, rgba(15,18,14,0.07) 100%),
     linear-gradient(180deg,
       rgba(201,168,76,0.06) 0%, transparent 45%),
     repeating-linear-gradient(
       90deg,
       transparent, transparent 159px,
-      rgba(var(--np-ink-rgb, 15,18,14), 0.042) 159px, rgba(var(--np-ink-rgb, 15,18,14), 0.042) 160px
+      rgba(15,18,14,0.042) 159px, rgba(15,18,14,0.042) 160px
     ),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
   background-size: auto, auto, auto, 280px 280px;
@@ -50,18 +52,10 @@ html, body {
 }
 
 button {
-  cursor: pointer;
-  border: none;
-  outline: none;
-  background: none;
-  font-family: 'Rajdhani', sans-serif;
-  color: inherit;
+  cursor: pointer; border: none; outline: none; background: none;
+  font-family: 'Rajdhani', sans-serif; color: inherit;
 }
-
-input {
-  outline: none;
-  font-family: 'Rajdhani', sans-serif;
-}
+input { outline: none; font-family: 'Rajdhani', sans-serif; }
 
 .hidden { display: none !important; }
 
@@ -73,7 +67,6 @@ input {
   width: 100%;
   position: relative;
 }
-
 .screen.active { display: flex; }
 
 /* ══════════════════════════════════════════════
@@ -81,7 +74,7 @@ input {
    ══════════════════════════════════════════════ */
 .ad-col {
   position: fixed;
-  top: 0; bottom: 0; width: var(--ad-col-w, 72px);
+  top: 0; bottom: 0; width: 72px;
   display: flex; flex-direction: column;
   z-index: 3;
   background: var(--np-paper);
@@ -89,27 +82,40 @@ input {
 .ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
 .ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
-/* Aqui vivian .ad-strip / .ad-strip--accent / .ad-strip-label: los recuadros
-   decorativos que ponian "ESPACIO PUBLICITARIO". La Fase 2 de anuncios los
-   quito del HTML (js/ads.js mete ahora un <ins> real), pero las reglas se
-   quedaron en los 12 CSS. Sin uso en ningun HTML ni JS del proyecto. */
+.ad-strip {
+  flex: 1; margin: 5px;
+  border: 1px dashed var(--np-ink-soft);
+  background: rgba(15,18,14,0.018);
+  display: flex; align-items: center; justify-content: center;
+  min-height: 80px;
+}
+.ad-strip--accent {
+  border-color: rgba(181,34,30,0.20);
+  background: rgba(181,34,30,0.022);
+}
+.ad-strip-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 5.5px; letter-spacing: 0.16em;
+  text-transform: uppercase; text-align: center;
+  color: rgba(15,18,14,0.24); line-height: 1.7;
+}
+.ad-strip--accent .ad-strip-label { color: rgba(181,34,30,0.30); }
 
 @media (min-width: 760px) {
-  /* width:auto es imprescindible: .screen viene con width:100% (= todo el
-     ancho de la ventana), así que con estos márgenes medía la pantalla
-     entera EMPEZANDO en 172px — 157px de contenido se iban por la derecha y
-     todo el juego quedaba descentrado. Con auto ocupa lo que queda entre
-     las dos columnas de anuncios, que era la intención. */
-  .screen {
-    margin-left: var(--ad-col-w, 72px);
-    margin-right: var(--ad-col-w, 72px);
-    width: auto;
-  }
+  /* El calc() no sobra: con width:100% y márgenes de 72 px la pantalla
+     medía 144 px más que la ventana y se salía por la derecha. El
+     overflow-x:hidden del body lo tapaba, así que no se veía... pero el
+     contenido quedaba descentrado 72 px y a la mesa, que ocupa todo el
+     ancho, se le comía el lateral derecho. */
+  .screen { width: calc(100% - 144px); margin-left: 72px; margin-right: 72px; }
 }
 @media (max-width: 759px) {
   .ad-col { display: none; }
 }
 
+/* ══════════════════════════════════════════════
+   MENÚ
+   ══════════════════════════════════════════════ */
 #screen-menu {
   justify-content: center;
   padding: clamp(16px, 3vh, 40px) 20px;
@@ -117,654 +123,817 @@ input {
   background: transparent;
 }
 
-/* .hub-back-link (menú) y .back-btn (sala) eran los dos botones de salir de
-   este juego. Ahora los dos son .fh-volver; ver css/volver.css. */
-
-.menu-hero {
-  text-align: center;
-  padding: 18px 22px 8px;
-  max-width: 620px;
+.hub-back-link,
+.back-btn {
+  position: absolute;
+  top: 16px; left: 16px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  border-radius: 0;
+  border: 1px solid var(--np-ink);
+  background: var(--np-paper2);
+  color: var(--np-ink);
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  box-shadow: 2px 2px 0 var(--np-ink);
+  z-index: 12; cursor: pointer;
+  transition: background 0.12s, color 0.12s;
 }
+.hub-back-link:hover, .back-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+
+.menu-hero { text-align: center; padding: 18px 22px 8px; max-width: 620px; }
 
 .menu-logo {
   font-size: clamp(2.2rem, 5.5vw, 3rem);
-  display: inline-grid;
-  place-items: center;
-  width: 84px;
-  height: 84px;
-  border-radius: var(--r-md, 0);
+  display: inline-grid; place-items: center;
+  width: 84px; height: 84px;
   background: var(--np-paper2);
-  border: 2px solid var(--bd-c, var(--np-ink));
-  box-shadow: var(--sh-x,4px) var(--sh-y,4px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  border: 2px solid var(--np-ink);
+  box-shadow: 4px 4px 0 var(--np-ink);
   margin-bottom: 14px;
 }
 
 .menu-title {
   font-family: 'Playfair Display', serif;
-  font-style: italic;
-  font-weight: 900;
+  font-style: italic; font-weight: 900;
   font-size: clamp(2.6rem, 9vw, 4.6rem);
   letter-spacing: -0.01em;
-  color: var(--np-ink);
-  line-height: 0.92;
+  color: var(--np-ink); line-height: 0.92;
 }
 
 .menu-subtitle {
   font-family: 'DM Mono', monospace;
   font-size: clamp(0.68rem, 1.6vw, 0.8rem);
   color: var(--np-ink-mid);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.16em; text-transform: uppercase;
 }
 
 .menu-wrap, .lobby-wrap {
-  width: 100%;
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column; gap: 14px;
   padding: 18px;
-  border-radius: var(--r-md, 0);
-  border: 2px solid var(--bd-c, var(--np-ink));
+  border: 2px solid var(--np-ink);
   background: var(--np-paper2);
   box-shadow: var(--shadow);
 }
 
 .menu-tabs {
   display: flex;
-  border-bottom: 2px solid var(--bd-c, var(--np-ink));
-  gap: 0;
-  background: transparent;
-  padding: 0;
-  border-radius: var(--r-md, 0);
-  overflow: visible;
+  border-bottom: 2px solid var(--np-ink);
 }
-
 .menu-tab {
-  flex: 1;
-  padding: 9px 6px;
-  opacity: 0.45;
-  font-family: 'DM Mono', monospace;
-  font-weight: 500;
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  border-radius: var(--r-md, 0);
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
+  flex: 1; padding: 9px 6px; opacity: 0.45;
+  font-family: 'DM Mono', monospace; font-weight: 500;
+  font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
   color: var(--np-ink);
   transition: opacity 0.14s, border-color 0.14s;
 }
-
-.menu-tab.active {
-  background: transparent;
-  opacity: 1;
-  color: var(--np-ink);
-  border-bottom-color: var(--np-red);
-}
+.menu-tab.active { opacity: 1; border-bottom-color: var(--np-red); }
 
 .menu-panel { display: none; flex-direction: column; gap: 10px; }
 .menu-panel.active { display: flex; }
 
 .menu-input {
   background: var(--np-paper);
-  border: 1.5px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
+  border: 1.5px solid var(--np-ink);
   padding: 10px 12px;
   color: var(--np-ink);
   font-family: 'DM Mono', monospace;
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.03em;
+  font-size: 0.82rem; font-weight: 500; letter-spacing: 0.03em;
   width: 100%;
   transition: border-color 0.14s, box-shadow 0.14s;
 }
-.menu-input:focus { border-color: var(--np-red); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c-red,var(--np-red)); }
-
+.menu-input:focus { border-color: var(--np-red); box-shadow: 2px 2px 0 var(--np-red); }
 .menu-input::placeholder { color: var(--np-ink); opacity: 0.3; font-weight: 400; }
 .menu-code-input { text-transform: uppercase; letter-spacing: 0.4em; text-align: center; font-family: 'Anton', sans-serif; font-size: 1.2rem; }
 
 .panel-hint, .lobby-hint {
   font-family: 'DM Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--np-ink-mid);
-  text-align: center;
-  line-height: 1.45;
-  letter-spacing: 0.04em;
+  font-size: 0.7rem; color: var(--np-ink-mid);
+  text-align: center; line-height: 1.45; letter-spacing: 0.04em;
 }
 
 .menu-error {
   color: var(--np-red);
   font-family: 'DM Mono', monospace;
-  font-size: 0.8rem;
-  text-align: center;
-  padding: 6px 0;
+  font-size: 0.8rem; text-align: center; padding: 6px 0;
 }
 
-.mode-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
+.mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mode-opt {
   background: var(--np-paper);
   border: 1.5px solid var(--np-ink-soft);
-  border-radius: var(--r-md, 0);
   padding: 12px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: flex-start;
-  text-align: left;
+  display: flex; flex-direction: column; gap: 2px;
+  align-items: flex-start; text-align: left;
   transition: border-color 0.15s, background 0.15s;
 }
-
 .mode-opt.active {
   border-color: var(--np-red);
   background: rgba(181,34,30,0.06);
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c-red,var(--np-red));
+  box-shadow: 2px 2px 0 var(--np-red);
 }
-
 .mode-opt-title {
-  font-family: 'Anton', sans-serif;
-  font-size: 1.05rem;
-  letter-spacing: 1px;
-  color: var(--np-ink);
-  text-transform: uppercase;
+  font-family: 'Anton', sans-serif; font-size: 1.05rem;
+  letter-spacing: 1px; color: var(--np-ink); text-transform: uppercase;
 }
-
 .mode-opt.active .mode-opt-title { color: var(--np-red); }
-.mode-opt-sub { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--np-ink-mid); }
+.mode-opt-sub { font-family: 'DM Mono', monospace; font-size: 0.64rem; color: var(--np-ink-mid); line-height: 1.35; }
 
-.setting-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 8px 0;
+/* ── Selector de vidas iniciales ── */
+.lives-toggle { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lives-opt {
+  background: var(--np-paper);
+  border: 1.5px solid var(--np-ink-soft);
+  padding: 10px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
+.lives-opt.active {
+  border-color: var(--np-red);
+  background: rgba(181,34,30,0.06);
+  box-shadow: 2px 2px 0 var(--np-red);
+}
+.lives-num { font-family: 'Anton', sans-serif; font-size: 1.5rem; line-height: 1; color: var(--np-ink); }
+.lives-opt.active .lives-num { color: var(--np-red); }
+.lives-hearts { font-size: 0.6rem; letter-spacing: 1px; color: var(--np-red); opacity: 0.55; }
+.lives-opt.active .lives-hearts { opacity: 1; }
 
+.setting-stepper { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 4px 0; }
 .setting-value {
-  min-width: 72px;
-  text-align: center;
-  font-family: 'Anton', sans-serif;
-  font-size: 1.7rem;
-  letter-spacing: 1px;
-  color: var(--np-red);
+  min-width: 72px; text-align: center;
+  font-family: 'Anton', sans-serif; font-size: 1.7rem;
+  letter-spacing: 1px; color: var(--np-red);
 }
 
-.menu-rules {
-  max-width: 520px;
-  width: 100%;
+/* ── Barra de carga de la base de datos ── */
+.db-status {
+  border-top: 1px solid var(--np-ink-soft);
+  padding-top: 10px;
+  display: flex; flex-direction: column; gap: 6px;
 }
+.db-status-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--np-ink-mid); text-align: center;
+}
+.db-status.error .db-status-label { color: var(--np-red); font-weight: 700; }
+.db-bar { height: 4px; background: rgba(15,18,14,0.10); border: 1px solid var(--np-ink-soft); }
+.db-bar-fill { height: 100%; width: 0; background: var(--np-red); transition: width 0.3s ease; }
+.db-status.done .db-bar-fill { background: var(--green-ok); }
+.db-status.error .db-bar-fill { background: var(--np-red); }
 
+.menu-rules { max-width: 520px; width: 100%; }
 .menu-rules details summary {
   cursor: pointer;
   font-family: 'DM Mono', monospace;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--np-ink);
-  padding: 8px 14px;
-  border: 1px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--np-ink); padding: 8px 14px;
+  border: 1px solid var(--np-ink);
   background: var(--np-paper2);
-  list-style: none;
-  text-align: center;
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  list-style: none; text-align: center;
+  box-shadow: 2px 2px 0 var(--np-ink);
 }
-
 .menu-rules details summary::after { content: ' ▾'; }
 .menu-rules details[open] summary::after { content: ' ▴'; }
-
 .menu-rules ol {
-  margin-top: 10px;
-  padding: 14px 18px 14px 34px;
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.02);
+  margin-top: 10px; padding: 14px 18px 14px 34px;
+  background: rgba(15,18,14,0.02);
   border: 1px solid var(--np-ink-soft);
-  border-radius: var(--r-md, 0);
   font-family: 'Rajdhani', sans-serif;
-  font-size: 0.9rem;
-  line-height: 1.55;
-  color: var(--np-ink-mid);
+  font-size: 0.9rem; line-height: 1.55; color: var(--np-ink-mid);
 }
-
 .menu-rules li { margin-bottom: 8px; }
-.menu-rules em { color: var(--np-red); font-style: normal; }
+.menu-rules em { color: var(--np-red); font-style: normal; font-weight: 700; }
 
 .btn-primary {
-  background: var(--np-ink);
-  color: var(--np-paper);
-  border: 2px solid var(--bd-c, var(--np-ink));
+  background: var(--np-ink); color: var(--np-paper);
+  border: 2px solid var(--np-ink);
   padding: 12px 22px;
-  border-radius: var(--r-md, 0);
   font-family: 'Anton', sans-serif;
-  font-size: 0.95rem;
-  font-weight: normal;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font-size: 0.95rem; letter-spacing: 0.2em; text-transform: uppercase;
   width: 100%;
-  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c-red,var(--np-red));
+  box-shadow: 3px 3px 0 var(--np-red);
   transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
 }
-
-.btn-primary:hover { background: var(--np-red); border-color: var(--np-red); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
+.btn-primary:hover:not(:disabled) { background: var(--np-red); border-color: var(--np-red); box-shadow: 3px 3px 0 var(--np-ink); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
 .btn-tiny {
   font-family: 'DM Mono', monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  font-weight: 700;
-  color: var(--np-ink);
-  padding: 5px 10px;
-  border: 1px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
+  font-size: 0.68rem; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--np-ink); padding: 5px 10px;
+  border: 1px solid var(--np-ink);
   background: var(--np-paper2);
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  box-shadow: 2px 2px 0 var(--np-ink);
   text-transform: uppercase;
   transition: background 0.12s, color 0.12s;
 }
 .btn-tiny:hover { background: var(--np-ink); color: var(--np-paper); }
 
-#screen-lobby {
-  justify-content: center;
-  padding: 24px 20px;
-  gap: 16px;
-}
+/* ══════════════════════════════════════════════
+   LOBBY
+   ══════════════════════════════════════════════ */
+#screen-lobby { justify-content: center; padding: 24px 20px; gap: 16px; }
 
 .lobby-code-card {
   width: 100%;
   background: var(--np-paper2);
-  border: 2px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
-  padding: 20px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border: 2px solid var(--np-ink);
+  padding: 20px; text-align: center;
+  display: flex; flex-direction: column; gap: 8px;
   box-shadow: var(--shadow);
 }
 
-.lobby-code-label, .lobby-section-kicker, .gt-code-label, .gt-round-label, .game-panel-title > span, .game-panel-note, .bet-field-label, .bet-field-help, .reveal-count-label {
+.lobby-code-label, .lobby-section-kicker, .gt-code-label, .gt-round-label,
+.cond-kicker, .bid-kicker, .felt-label, .rn-label {
   font-family: 'DM Mono', monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--np-ink-mid);
+  font-size: 0.62rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--np-ink-mid);
 }
 
 .lobby-code-big {
   font-family: 'Anton', sans-serif;
-  font-size: 3rem;
-  letter-spacing: 0.2em;
-  color: var(--np-red);
+  font-size: 3rem; letter-spacing: 0.2em; color: var(--np-red);
 }
 
 .lobby-mode-pill {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex; gap: 8px;
+  align-items: center; justify-content: center;
   font-family: 'Anton', sans-serif;
-  font-size: 1rem;
-  letter-spacing: 2px;
+  font-size: 1rem; letter-spacing: 2px;
   padding: 6px 16px;
-  border: 1px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
+  border: 1px solid var(--np-ink);
   background: var(--np-paper);
   color: var(--np-ink);
 }
 
-.lobby-players-list {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.lobby-section { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.lobby-section > .lives-toggle { width: 100%; }
+.lobby-section > .lobby-section-kicker { align-self: flex-start; }
+
+.lobby-players-list { width: 100%; display: flex; flex-direction: column; gap: 6px; }
 
 .lobby-player-row {
   background: var(--np-paper2);
   border: 1px solid var(--np-ink-soft);
-  border-left: 3px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
+  border-left: 3px solid var(--np-ink);
   padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  color: var(--np-ink);
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 600; color: var(--np-ink);
 }
-
-.lobby-player-row.me {
-  border-left-color: var(--np-red);
-  background: var(--np-paper3);
-}
+.lobby-player-row.me { border-left-color: var(--np-red); background: var(--np-paper3); }
 
 .lobby-player-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--r-md, 0);
+  width: 28px; height: 28px; flex-shrink: 0;
   background: var(--np-ink);
-  border: none;
-  display: grid;
-  place-items: center;
-  font-family: 'Anton', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--np-paper);
+  display: grid; place-items: center; overflow: hidden;
+  font-family: 'Anton', sans-serif; font-size: 0.8rem; color: var(--np-paper);
+}
+.lobby-player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.lobby-player-name { flex: 1; font-family: 'DM Mono', monospace; font-size: 0.85rem; text-transform: uppercase; }
+.lobby-player-lives { font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
+
+.lobby-player-host {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.1em;
+  color: var(--np-red); padding: 2px 7px;
+  border: 1px solid var(--np-red); text-transform: uppercase;
 }
 
-.lobby-player-name { flex: 1; font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--np-ink); text-transform: uppercase; }
-
-/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
-
+/* ══════════════════════════════════════════════
+   PARTIDA
+   ══════════════════════════════════════════════ */
 #screen-game {
   background: transparent;
-  height: 100vh;
-  height: 100dvh;
+  height: 100vh; height: 100dvh;
   padding: 0;
   align-items: stretch;
   overflow: hidden;
+
+  /* Tamanos de la mesa. La partida tiene que caber ENTERA en la
+     pantalla (de 2 a 8 jugadores, de un movil de 320 px a un
+     monitor), asi que no son valores fijos: _fitTable() mide y va
+     poniendo .d1 / .d2 / .d3 hasta que la mesa deja de desbordar. */
+  --mine-cw:   clamp(70px, 9.4vw, 104px);   /* mis cartas, con foto  */
+  --center-cw: clamp(62px, 8.2vw, 92px);    /* cartas comunes        */
+  --chip-h:    22px;                        /* alto de chapa rival   */
+  --chip-fs:   0.6rem;
 }
+/* Los cuatro escalones siguen siendo relativos al ancho: en un movil
+   el clamp cae al minimo (que es lo que hace que quepa la mesa) y en
+   un monitor grande las cartas se quedan en un tamano decente aunque
+   haga falta comprimir por alto. */
+#screen-game.d1 { --mine-cw: clamp(60px, 7.8vw, 86px); --center-cw: clamp(54px, 6.8vw, 74px); --chip-h: 19px; --chip-fs: 0.56rem; }
+#screen-game.d2 { --mine-cw: clamp(52px, 6.4vw, 72px); --center-cw: clamp(46px, 5.6vw, 62px); --chip-h: 17px; --chip-fs: 0.53rem; }
+#screen-game.d3 { --mine-cw: clamp(46px, 5.2vw, 60px); --center-cw: clamp(40px, 4.6vw, 52px); --chip-h: 15px; --chip-fs: 0.5rem; }
+#screen-game.d4 { --mine-cw: clamp(40px, 4.4vw, 50px); --center-cw: clamp(36px, 4vw, 44px); --chip-h: 13px; --chip-fs: 0.47rem; }
 
 .game-topbar {
+  position: relative;
+  flex-shrink: 0;
   width: 100%;
   background: var(--np-paper2);
-  border-bottom: 2px solid var(--bd-c, var(--np-ink));
-  padding: 10px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  border-bottom: 2px solid var(--np-ink);
+  padding: 6px 108px 6px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.gt-left, .gt-right { display: flex; flex-direction: column; gap: 1px; }
+.gt-right { text-align: right; }
+.gt-mode {
+  font-family: 'Anton', sans-serif; font-size: 0.95rem;
+  letter-spacing: 2px; color: var(--np-ink);
+}
+.gt-code { font-family: 'Anton', sans-serif; font-size: 1.05rem; letter-spacing: 3px; color: var(--np-red); }
+
+.leave-game-btn {
+  position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--np-ink-mid);
+  padding: 5px 10px;
+  border: 1px solid var(--np-ink-soft);
+  background: transparent; z-index: 5;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.leave-game-btn:hover { color: var(--np-red); border-color: var(--np-red); background: rgba(181,34,30,0.06); }
+
+/* ── Titular de la condición ── */
+.cond-bar {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 16px;
+  background: var(--np-paper);
+  border-bottom: 2px solid var(--np-ink);
+}
+.cond-icon {
+  width: 42px; height: 42px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--np-ink);
+  background: var(--np-paper2);
+  box-shadow: 2px 2px 0 var(--np-ink);
+}
+.cond-icon img { max-width: 34px; max-height: 34px; object-fit: contain; }
+.cond-emoji { font-size: 1.5rem; line-height: 1; }
+.cond-text { flex: 1; min-width: 0; }
+.cond-label {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-style: italic;
+  font-size: clamp(1rem, 3.4vw, 1.5rem);
+  line-height: 1.1; color: var(--np-ink);
+}
+.cond-total { flex-shrink: 0; text-align: center; }
+.cond-total-num { font-family: 'Anton', sans-serif; font-size: 1.6rem; line-height: 1; color: var(--np-red); }
+.cond-total-lbl {
+  font-family: 'DM Mono', monospace; font-size: 0.5rem;
+  letter-spacing: 0.12em; color: var(--np-ink-mid); line-height: 1.2;
 }
 
-.gt-round-stat, .gt-code, .bet-current, .reveal-count, .winner-name {
+/* ── Zona de la mesa ──
+   Ya NO es una zona desplazable: la mesa tiene que verse entera de un
+   vistazo (contar cartas haciendo scroll es imposible). El overflow
+   queda en auto solo como red de seguridad para el caso extremo en el
+   que ni el nivel .d3 de compresion consiga meterlo todo. */
+.game-scroll {
+  flex: 1 1 auto; min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  padding: 10px 14px 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+/* ── Panel de apuesta + reloj ── */
+/* Vive dentro del tapete, así que no lleva marco propio: solo una
+   línea que lo separa de las cartas comunes. */
+.bid-panel {
+  width: 100%;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  border-bottom: 1px solid var(--np-ink-soft);
+  padding-bottom: 8px;
+}
+.bid-main, .bid-turn { padding: 2px 12px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.bid-turn { border-left: 1px solid var(--np-ink-soft); }
+.bid-value {
   font-family: 'Anton', sans-serif;
+  font-size: clamp(1.7rem, 5.4vw, 2.3rem); line-height: 1.05;
   color: var(--np-red);
 }
-
-.gt-round-stat {
-  font-size: 1.3rem;
-  letter-spacing: 1px;
+.bid-owner {
+  font-family: 'DM Mono', monospace; font-size: 0.64rem;
+  color: var(--np-ink-mid); line-height: 1.3;
 }
-
-.gt-code {
-  font-size: 1.2rem;
-  letter-spacing: 3px;
-}
-
-/* PANTALLA DE JUEGO - MESA */
-.game-topbar { flex-shrink: 0; position: static; }
-
-.table-area {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(8px, 1.4vh, 18px);
-  padding: clamp(8px, 1.6vh, 18px) 14px;
-  overflow: hidden;
-}
-
-/* ── Asientos (jugadores) ── */
-.seats-top {
-  flex-shrink: 0;
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 8px;
-  max-height: 22vh;
-  overflow-y: auto;
-}
-.seat {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px 6px 6px;
-  background: var(--np-paper2);
-  border: 1px solid var(--np-ink-soft);
-  border-radius: var(--r-md, 0);
-  position: relative;
-  min-width: 120px;
-  transition: border-color .2s, box-shadow .2s, transform .2s;
-}
-.seat.active {
-  border-color: var(--np-red);
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c-red,var(--np-red));
-  transform: translateY(-1px);
-}
-.seat.me { background: var(--np-paper3); border-color: var(--bd-c, var(--np-ink)); }
-.seat.off { opacity: 0.45; }
-.seat-av {
-  width: 30px; height: 30px; flex-shrink: 0;
-  border-radius: var(--r-md, 0);
-  display: grid; place-items: center;
-  background: var(--np-ink);
-  color: var(--np-paper);
-  font-family: 'Anton', sans-serif; font-size: 14px;
-  border: none;
-}
-.seat-body { display: flex; flex-direction: column; line-height: 1.15; }
-.seat-name { font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 700; white-space: nowrap; color: var(--np-ink); text-transform: uppercase; }
-.seat-meta { display: flex; align-items: center; gap: 7px; font-size: 0.72rem; }
-.seat-score { color: var(--np-red); font-weight: 700; }
-.seat-bet {
-  min-width: 22px; height: 20px; padding: 0 6px;
-  display: grid; place-items: center;
-  background: var(--np-red); color: var(--np-paper);
-  border-radius: var(--r-md, 0); font-weight: 800; font-size: 0.76rem;
+.turn-name {
   font-family: 'Anton', sans-serif;
+  font-size: clamp(1rem, 3.4vw, 1.3rem); line-height: 1.1;
+  color: var(--np-ink); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.seat-status { color: var(--np-ink-mid); font-family: 'DM Mono', monospace; font-size: 0.68rem; }
-.seat-status.thinking { color: var(--np-red); animation: blink 1.2s infinite; }
-@keyframes blink { 0%,100%{opacity:.4} 50%{opacity:1} }
-.seat-kick {
-  width: 18px; height: 18px; margin-left: 2px; padding: 0;
-  border: 1px solid var(--np-red); border-radius: var(--r-md, 0);
-  background: var(--np-paper); color: var(--np-red);
-  font-size: 12px; cursor: pointer; flex-shrink: 0;
+.timer-wrap {
+  height: 8px; margin-top: 6px;
+  background: rgba(15,18,14,0.10);
+  border: 1px solid var(--np-ink);
 }
-.seat-kick:hover { background: var(--np-red); color: var(--np-paper); }
+.timer-fill { height: 100%; width: 100%; background: var(--np-ink); transition: width 0.18s linear; }
 
-/* ── Fieltro (mesa) — reskin newspaper: tarjeta de papel, no fieltro verde ── */
-.felt {
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Fase de estudio: 30 s para mirar la mesa antes de que se pueda pujar. */
+.bid-panel.study { border-bottom-color: var(--np-red); }
+.bid-panel.study .bid-value { color: var(--np-red); }
+.bid-panel.study .timer-fill { background: var(--np-red); }
+.bid-panel.study .bid-kicker { color: var(--np-red); font-weight: 700; }
+.timer-fill.warn { background: var(--np-red); }
+.timer-num {
+  font-family: 'DM Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.1em; color: var(--np-ink-mid); margin-top: 2px;
 }
-.felt-felt {
-  background: var(--np-paper2);
-  border: 2px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
-  box-shadow: var(--sh-x,4px) var(--sh-y,4px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  padding: clamp(12px, 2vh, 22px) clamp(14px, 2.5vw, 30px);
-  max-width: 94%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+
+/* ══════════════════════════════════════════════
+   LA MESA
+   Tapete en el centro con las cartas comunes y los
+   jugadores sentados alrededor: yo abajo, y los rivales
+   en el lateral izquierdo, arriba y el lateral derecho,
+   siguiendo el orden de turno.
+   ══════════════════════════════════════════════ */
+.table-area {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "left top    right"
+    "left felt   right"
+    "left bottom right";
   gap: 10px;
+  align-items: center;
 }
+/* Los laterales llevan ancho fijo a propósito. Con `auto` los dictaba
+   su contenido, se quedaban estrechos, las cartas del rival se apilaban
+   de una en una (tres filas por mano) y encima le robaban sitio a la
+   columna del centro, con lo que la fila de arriba se partía en dos.
+   Con 132 px entran exactamente dos cartas por fila y el resto del
+   ancho es para el tapete. Cuando la zona va vacía se oculta y la
+   columna `auto` se cierra sola. */
+.zone-left   { grid-area: left;   flex-direction: column-reverse; width: 156px; }
+.zone-top    { grid-area: top;    flex-direction: row; flex-wrap: nowrap; align-items: flex-start; }
+.zone-top .seat { flex: 1 1 0; min-width: 0; max-width: 260px; }
+.zone-right  { grid-area: right;  flex-direction: column; width: 156px; }
+.zone-bottom { grid-area: bottom; flex-direction: row; }
+.zone-left .seat, .zone-right .seat { width: 100%; }
+.felt        { grid-area: felt; }
+
+.seat-zone {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+.zone-left.empty, .zone-right.empty { display: none; }
+
+/* ── Tapete ── */
+.felt {
+  min-width: 0; align-self: stretch;
+  border: 2px solid var(--np-ink);
+  /* El doble filo (borde + outline separado) es lo que lo hace leer
+     como el canto de una mesa sin recurrir a esquinas redondeadas,
+     que romperían la estética del resto de la web. */
+  outline: 1px solid var(--np-ink);
+  outline-offset: 4px;
+  background-color: var(--np-paper3);
+  background-image: radial-gradient(ellipse 72% 62% at 50% 44%,
+                                    rgba(255,255,255,0.40), transparent 72%);
+  box-shadow: 4px 4px 0 var(--np-ink);
+  padding: 11px 14px;
+  margin: 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+}
+.felt .hand-row .tcard { --cw: var(--center-cw); }
+.block-count { color: var(--np-red); }
 .felt-label {
   font-family: 'DM Mono', monospace;
-  font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--np-ink-mid); font-weight: 700;
-}
-.center-cards, .my-hand {
-  display: flex;
-  gap: clamp(6px, 0.8vw, 12px);
-  justify-content: center;
-  align-items: flex-start;
-  flex-wrap: nowrap;
-  max-width: 100%;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  font-size: 0.6rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--np-ink-mid); font-weight: 700;
 }
 
-/* ── Mi zona ── */
-.my-zone {
-  flex-shrink: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+/* ── Asiento ── */
+.seat {
+  min-width: 0;
+  border: 1px solid var(--np-ink-soft);
+  border-left: 3px solid var(--np-ink);
+  background: var(--np-paper);
+  padding: 6px 8px 7px;
+  transition: border-color .2s, box-shadow .2s, opacity .2s;
 }
-.my-seat { display: flex; }
-.my-seat .seat { min-width: 150px; }
+.seat.turn { border-color: var(--np-red); border-left-color: var(--np-red); box-shadow: 2px 2px 0 var(--np-red); }
+.seat.off  { opacity: 0.5; }
+.seat.out  { opacity: 0.38; filter: grayscale(0.8); }
 
-/* ── CARTA: foto + nombre — cromo vintage newspaper ── */
-.tcard {
-  --cw: clamp(62px, 8.5vw, 100px);
-  width: var(--cw);
-  flex-shrink: 0;
+.seat--me {
+  border: 2px solid var(--np-ink);
   background: var(--np-paper2);
-  border: 1.5px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
+  box-shadow: 3px 3px 0 var(--np-red);
+  padding: 8px 12px 10px;
+}
+.seat--me.turn { border-color: var(--np-red); }
+
+.seat-head { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.seat-av {
+  width: 24px; height: 24px; flex-shrink: 0;
+  background: var(--np-ink); color: var(--np-paper);
+  display: grid; place-items: center; overflow: hidden;
+  font-family: 'Anton', sans-serif; font-size: 0.72rem;
+}
+.seat-av img { width: 100%; height: 100%; object-fit: cover; }
+.seat-name {
+  font-family: 'DM Mono', monospace; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; color: var(--np-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.seat--me .seat-name { font-size: 0.76rem; }
+.seat-lives { margin-left: auto; font-size: 0.78rem; letter-spacing: 1px; white-space: nowrap; }
+.seat-tag {
+  /* Altura fija aunque esté vacío: si no, la mesa da un salto cada vez
+     que a alguien le toca el turno o deja de tocarle. */
+  min-height: 11px; margin-bottom: 5px;
+  font-family: 'DM Mono', monospace; font-size: 0.56rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--np-red); white-space: nowrap;
+}
+.seat.out .seat-tag { color: var(--np-ink-mid); }
+.seat-hint {
+  margin-top: 7px;
+  font-family: 'DM Mono', monospace; font-size: 0.58rem;
+  color: var(--np-ink-mid); letter-spacing: 0.04em; text-align: center;
+}
+
+/* Las cartas del rival van como CHAPA horizontal (miniatura + nombre)
+   y no como carta con foto grande. Con 8 jugadores hay hasta 22 cartas
+   en la mesa: con carta grande para todo el mundo no caben ni de lejos
+   en la pantalla de un movil, y lo unico que hace falta de la mano del
+   rival es leer el nombre para poder contar. Las fotos grandes se
+   guardan para lo que de verdad se mira: el tapete y mi mano. */
+.seat:not(.seat--me) .seat-cards {
+  flex-direction: column;
+  gap: 3px; overflow: visible; padding-bottom: 0;
+}
+.seat:not(.seat--me) .tcard {
+  width: 100%; display: flex; align-items: center; gap: 5px;
+  border-width: 1px; box-shadow: none;
+  background: var(--np-paper);
+}
+.seat:not(.seat--me) .tcard:hover { transform: none; box-shadow: none; }
+.seat:not(.seat--me) .tcard-photo {
+  height: var(--chip-h); width: auto; flex: 0 0 auto;
+  aspect-ratio: 10 / 13;
+}
+.seat:not(.seat--me) .tcard-badge { display: none; }
+.seat:not(.seat--me) .tcard-fallback { font-size: 9px; }
+.seat:not(.seat--me) .tcard-name {
+  flex: 1 1 auto; min-width: 0;
+  display: block; -webkit-line-clamp: none;
+  min-height: 0; padding: 1px 5px 1px 0;
+  text-align: left; background: transparent;
+  font-size: var(--chip-fs);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* El ultimo escalon de compresion tira hasta la miniatura. */
+#screen-game.d3 .seat:not(.seat--me) .tcard-photo { display: none; }
+
+.hand-row {
+  display: flex; gap: 6px;
+  align-items: flex-start;
+  overflow-x: auto; padding-bottom: 3px;
+  /* Imprescindible dentro de la rejilla de la mesa: por defecto un
+     hijo flex vale min-width:auto y se niega a encoger, así que la
+     fila de cartas empujaba el tapete y toda la mesa se salía por la
+     derecha. Con min-width:0 la fila se hace scroll en vez de
+     desbordar. */
+  min-width: 0; max-width: 100%;
+}
+.empty-inline {
+  color: var(--np-ink-mid); font-family: 'DM Mono', monospace;
+  font-size: 0.68rem; padding: 12px 4px;
+}
+/* ── CARTA ── */
+.tcard {
+  --cw: var(--mine-cw, clamp(70px, 9.4vw, 104px));
+  width: var(--cw); flex-shrink: 0;
+  position: relative;
+  background: var(--np-paper2);
+  border: 1.5px solid var(--np-ink);
   overflow: hidden;
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  box-shadow: 2px 2px 0 var(--np-ink);
   transition: transform .15s, box-shadow .15s, border-color .15s;
 }
-.tcard:hover { transform: translateY(-3px); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
+.tcard:hover { transform: translateY(-3px); box-shadow: 3px 3px 0 var(--np-ink); }
 .tcard-photo {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  position: relative; width: 100%;
+  /* Proporción nativa de los retratos de Transfermarkt (300×390): así
+     la foto sale entera y grande, sin recortar la cabeza. */
+  aspect-ratio: 10 / 13;
   background: var(--np-paper3);
   overflow: hidden;
 }
-.tcard-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; filter: sepia(10%) contrast(1.05); }
-.tcard-photo.no-photo img { display: none; }
+/* :not(.tcard-badge) es imprescindible: sin él esta regla también
+   pillaba al escudo (misma especificidad, pero va después) y le
+   imponía height:100%, estirándolo a lo alto de toda la foto. */
+.tcard-photo img:not(.tcard-badge) {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+  display: block; filter: sepia(10%) contrast(1.05);
+}
+.tcard-photo.no-photo > img:first-child { display: none; }
 .tcard-fallback {
   position: absolute; inset: 0; display: none;
   align-items: center; justify-content: center;
-  font-family: 'Anton', sans-serif; font-size: 22px;
-  color: rgba(var(--np-ink-rgb, 15,18,14), 0.18);
+  font-family: 'Anton', sans-serif; font-size: 20px;
+  color: rgba(15,18,14,0.20);
 }
 .tcard-photo.no-photo .tcard-fallback { display: flex; }
+
+/* Escudo del club: pequeño, esquina superior derecha de la foto. La
+   marca de ✓/✗ vive en la superior izquierda, así que no chocan. */
+.tcard-badge {
+  position: absolute; top: 3px; right: 3px;
+  /* Cuadrado fijo atado al ancho de la carta: el tamaño NO depende del
+     PNG, así que no se deforma mientras carga ni si el escudo no
+     existe. contain deja respirar a los que no son cuadrados. */
+  width: calc(var(--cw) * 0.22);  max-width: 20px;
+  height: calc(var(--cw) * 0.22); max-height: 20px;
+  object-fit: contain; display: block;
+  background: rgba(244,234,210,0.9);
+  padding: 1px;
+  border: 1px solid rgba(15,18,14,0.25);
+}
+/* Escudo de reserva: el bucket de escudos solo cubre los clubes
+   grandes, asi que los demas llevan el monograma del club en la misma
+   chapa. Antes se quitaba la imagen rota y quedaban cartas con escudo
+   y cartas sin el, que parecia un fallo del juego. */
+.tcard-badge--mono {
+  display: grid; place-items: center;
+  font-family: 'Anton', sans-serif;
+  font-size: calc(var(--cw) * 0.115);
+  line-height: 1; letter-spacing: 0.02em;
+  color: var(--np-ink);
+  background: rgba(244,234,210,0.94);
+}
+
+.tcard-mark {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 11px; font-weight: 800;
+  color: var(--np-paper);
+}
+.tcard-mark.ok { background: var(--green-ok); }
+.tcard-mark.ko { background: var(--np-red); }
+
 .tcard-name {
-  padding: 5px 6px;
+  padding: 4px 5px;
   font-family: 'DM Mono', monospace;
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-align: center;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.64rem; font-weight: 700;
+  text-align: center; line-height: 1.15;
   background: var(--np-paper);
   color: var(--np-ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-height: 2.4em;
 }
-.tcard-tick {
-  position: absolute; top: 4px; right: 4px;
-  width: 20px; height: 20px;
-  display: grid; place-items: center;
-  background: var(--green-ok); color: var(--np-paper);
-  border-radius: 50%; font-size: 12px; font-weight: 800;
-}
-/* Modo fácil: resalta las que cumplen */
-.tcard.is-match { border-color: var(--green-ok); box-shadow: 0 0 0 2px rgba(47,125,50,0.35), var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
-.tcard.is-match .tcard-name { color: var(--green-ok); }
-/* Reveal */
-.tcard.r-match { border-color: var(--green-ok); box-shadow: 0 0 0 2px rgba(47,125,50,0.4); }
-.tcard.r-no { opacity: 0.4; filter: grayscale(0.6); }
 
-.empty-inline { color: var(--np-ink-mid); font-family: 'DM Mono', monospace; font-size: 0.85rem; padding: 20px; }
+.tcard.is-match { border-color: var(--green-ok); box-shadow: 0 0 0 2px rgba(47,125,50,0.35), 2px 2px 0 var(--np-ink); }
+.tcard.is-match .tcard-name { color: var(--green-ok); }
+.tcard.r-match { border-color: var(--green-ok); box-shadow: 0 0 0 2px rgba(47,125,50,0.4); }
+.tcard.r-no { opacity: 0.42; filter: grayscale(0.65); }
+.tcard-missing { opacity: 0.5; }
 
 /* ── Barra de acción ── */
 .action-bar {
-  flex-shrink: 0;
-  width: 100%;
+  flex-shrink: 0; width: 100%;
   background: var(--np-paper2);
-  border-top: 2px solid var(--bd-c, var(--np-ink));
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  border-top: 2px solid var(--np-ink);
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.action-panel { width: 100%; max-width: 560px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.bet-row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center; }
-.bet-label { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--np-ink-mid); font-weight: 600; white-space: nowrap; }
+.action-panel { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 8px; }
+
+.raise-row { display: flex; align-items: center; gap: 8px; }
+.bet-label {
+  font-family: 'DM Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.14em; color: var(--np-ink-mid);
+  font-weight: 700; white-space: nowrap;
+}
 .step-btn {
-  width: 40px; height: 40px; flex-shrink: 0;
-  border-radius: var(--r-md, 0);
+  width: 38px; height: 38px; flex-shrink: 0;
   background: var(--np-paper);
-  border: 1.5px solid var(--bd-c, var(--np-ink));
+  border: 1.5px solid var(--np-ink);
   color: var(--np-ink);
-  font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer;
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c-soft,var(--np-ink-soft));
+  font-size: 1.3rem; font-weight: 700; line-height: 1;
+  box-shadow: 2px 2px 0 var(--np-ink-soft);
 }
 .step-btn:hover:not(:disabled) { background: var(--np-ink); color: var(--np-paper); }
 .step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .step-val {
-  min-width: 54px; text-align: center;
-  font-family: 'Anton', sans-serif; font-size: 1.7rem;
+  min-width: 46px; text-align: center;
+  font-family: 'Anton', sans-serif; font-size: 1.6rem;
   letter-spacing: 1px; color: var(--np-red);
 }
-.btn-confirm { width: auto; padding: 0 22px; height: 44px; white-space: nowrap; }
-.bet-help { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--np-ink-mid); }
 
-.action-waiting {
-  text-align: center;
-  padding: 18px 14px;
+.act-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.btn-act {
+  padding: 10px 12px;
+  border: 2px solid var(--np-ink);
+  font-family: 'Anton', sans-serif;
+  font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  line-height: 1.1;
+  transition: background .12s, color .12s, box-shadow .12s;
+}
+.btn-act small {
+  font-family: 'DM Mono', monospace; font-size: 0.56rem;
+  letter-spacing: 0.06em; text-transform: none; opacity: 0.75; font-weight: 400;
+}
+.btn-act:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+.btn-raise {
+  flex: 1; background: var(--np-ink); color: var(--np-paper);
+  box-shadow: 3px 3px 0 var(--np-red); min-height: 38px;
+}
+.btn-raise:hover:not(:disabled) { background: var(--np-red); border-color: var(--np-red); box-shadow: 3px 3px 0 var(--np-ink); }
+
+.btn-stand { background: var(--np-paper); color: var(--np-ink); box-shadow: 3px 3px 0 var(--np-ink); }
+.btn-stand:hover:not(:disabled) { background: var(--green-ok); border-color: var(--green-ok); color: var(--np-paper); }
+
+.btn-challenge { background: var(--np-red); color: var(--np-paper); border-color: var(--np-red); box-shadow: 3px 3px 0 var(--np-ink); }
+.btn-challenge:hover:not(:disabled) { background: var(--np-ink); border-color: var(--np-ink); }
+
+.bet-help {
+  font-family: 'DM Mono', monospace; font-size: 0.6rem;
+  color: var(--np-ink-mid); text-align: center; line-height: 1.35;
 }
 
-.waiting-dots {
-  display: inline-flex;
-  gap: 6px;
-  margin-top: 6px;
+.action-waiting { text-align: center; padding: 10px 14px; }
+.btn-ready {
+  display: inline-block; margin-top: 8px;
+  padding: 8px 20px;
+  border: 2px solid var(--np-ink);
+  background: var(--np-paper);
+  font-family: 'Anton', sans-serif;
+  font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+  box-shadow: 3px 3px 0 var(--np-red);
+  transition: background .12s, color .12s, box-shadow .12s;
 }
-
+.btn-ready:hover:not(:disabled) { background: var(--np-ink); color: var(--np-paper); box-shadow: 3px 3px 0 var(--np-ink); }
+.btn-ready:disabled { opacity: 0.45; box-shadow: none; cursor: default; }
+.wait-label { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; color: var(--np-ink-mid); }
+.waiting-dots { display: flex; gap: 6px; justify-content: center; margin-top: 6px; }
 .waiting-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--np-red);
-  opacity: 0.3;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--np-red); opacity: 0.3;
   animation: wDot 1.2s infinite;
 }
-
 .waiting-dots span:nth-child(2) { animation-delay: 0.15s; }
 .waiting-dots span:nth-child(3) { animation-delay: 0.3s; }
-
 @keyframes wDot {
   0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
   40% { opacity: 1; transform: scale(1.3); }
 }
 
+/* ── Corazones de vida ── */
+.hp { color: var(--np-red); }
+.hp.dead { color: var(--np-ink-mid); }
+.hp-x { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--np-red); margin-left: 2px; }
+
+.seat-kick {
+  width: 18px; height: 18px; padding: 0; margin-left: 4px;
+  border: 1px solid var(--np-red);
+  background: var(--np-paper); color: var(--np-red);
+  font-size: 12px; line-height: 1; flex-shrink: 0;
+}
+.seat-kick:hover { background: var(--np-red); color: var(--np-paper); }
+
+/* ══════════════════════════════════════════════
+   OVERLAYS
+   ══════════════════════════════════════════════ */
 .overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.72);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(15,18,14,0.72);
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px;
   backdrop-filter: blur(6px);
 }
 
 .overlay-inner {
-  width: 100%;
-  max-width: 760px;
-  max-height: calc(100vh - 40px);
+  width: 100%; max-width: 760px;
+  max-height: calc(100vh - 36px);
   overflow-y: auto;
   background: var(--np-paper);
-  border: 2px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
-  padding: 24px 20px;
+  border: 2px solid var(--np-ink);
+  padding: 16px 16px 18px;
   text-align: center;
   box-shadow: var(--shadow);
 }
@@ -772,299 +941,306 @@ input {
 .reveal-tag {
   display: inline-block;
   font-family: 'DM Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  color: var(--np-red);
-  padding: 4px 14px;
+  font-size: 0.64rem; letter-spacing: 0.16em;
+  color: var(--np-red); padding: 3px 12px;
   border: 1px solid var(--np-red);
-  border-radius: var(--r-md, 0);
   background: rgba(181,34,30,0.06);
-  margin-bottom: 14px;
-  text-transform: uppercase;
+  margin-bottom: 9px; text-transform: uppercase;
 }
 
 .reveal-headline {
   font-family: 'Anton', sans-serif;
-  font-size: clamp(1.5rem, 5vw, 2.2rem);
-  letter-spacing: 1px;
-  color: var(--np-ink);
-  line-height: 1.1;
-  margin-bottom: 6px;
-  text-transform: uppercase;
+  font-size: clamp(1.3rem, 4.6vw, 2rem);
+  letter-spacing: 1px; color: var(--np-ink);
+  line-height: 1.1; margin-bottom: 5px; text-transform: uppercase;
 }
 
 .reveal-sub {
   font-family: 'DM Mono', monospace;
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-  color: var(--np-ink-mid);
-  margin-bottom: 18px;
+  font-size: 0.78rem; color: var(--np-ink-mid); margin-bottom: 12px;
 }
 
-.reveal-count-block {
-  margin: 10px auto 16px;
-  padding: 12px 18px;
-  display: inline-block;
-  border: 1px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
+.reveal-numbers {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin-bottom: 11px;
+}
+.rn-box {
+  min-width: 110px;
+  border: 1.5px solid var(--np-ink);
   background: var(--np-paper2);
+  padding: 5px 12px;
 }
-
-.reveal-count {
-  font-size: 2.6rem;
-  letter-spacing: 1px;
-}
-
-.reveal-guesses {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.guess-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 14px;
-  border-radius: var(--r-md, 0);
-  background: var(--np-paper2);
-  border: 1px solid var(--np-ink-soft);
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--np-ink);
-}
-.guess-row.hit {
-  background: rgba(47,125,50,0.08);
-  border-color: rgba(47,125,50,0.4);
-  color: var(--green-ok);
-}
-
-.reveal-cards .tcard {
-  --cw: 76px;
-}
-
-/* ── Reveal en filas ── */
-.reveal-section {
-  width: 100%;
-  margin-bottom: 14px;
-  text-align: left;
-}
-.reveal-section-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--np-ink-mid);
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--bd-c, var(--np-ink));
-  font-weight: 700;
-}
-.reveal-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--np-ink-soft);
-}
-.reveal-row:last-child { border-bottom: none; }
-.reveal-row-name {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.78rem;
-  font-weight: 700;
-  min-width: 80px;
-  max-width: 100px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--np-ink-mid);
-  flex-shrink: 0;
-  text-transform: uppercase;
-}
-.reveal-row-name.is-me { color: var(--np-red); }
-.reveal-row-cards {
-  display: flex;
-  gap: 6px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-.reveal-row-cards .tcard { --cw: 68px; }
-
-/* Contador de rondas en topbar */
-.gt-progress {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.gt-progress-pip {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1.5px solid var(--bd-c, var(--np-ink));
-  background: transparent;
-  transition: background .2s, border-color .2s;
-}
-.gt-progress-pip.won {
-  background: var(--np-red);
-  border-color: var(--np-red);
-}
-
-/* Botón abandonar en partida */
-.leave-game-btn {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  font-family: 'DM Mono', monospace;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--np-ink-mid);
-  padding: 5px 10px;
-  border: 1px solid var(--np-ink-soft);
-  border-radius: var(--r-md, 0);
-  background: transparent;
-  cursor: pointer;
-  z-index: 20;
-  transition: color .15s, border-color .15s, background .15s;
-}
-.leave-game-btn:hover {
-  color: var(--np-red);
-  border-color: var(--np-red);
-  background: rgba(181,34,30,0.06);
-}
+.rn-value { font-family: 'Anton', sans-serif; font-size: 1.7rem; line-height: 1.05; color: var(--np-red); }
+.rn-vs { font-family: 'Anton', sans-serif; font-size: 1.6rem; color: var(--np-ink); }
 
 .reveal-verdict {
   font-family: 'Anton', sans-serif;
-  font-size: clamp(1.05rem, 3.2vw, 1.4rem);
+  font-size: clamp(1rem, 3.2vw, 1.35rem);
   letter-spacing: 0.5px;
-  margin: 14px 0 18px;
-  padding: 12px 16px;
-  border-radius: var(--r-md, 0);
-  line-height: 1.25;
-  text-transform: uppercase;
+  margin: 0 0 11px;
+  padding: 8px 14px;
+  line-height: 1.25; text-transform: uppercase;
 }
+.reveal-verdict.win  { color: var(--green-ok); background: rgba(47,125,50,0.08); border: 1px solid var(--green-ok); }
+.reveal-verdict.lose { color: var(--np-red);   background: rgba(181,34,30,0.07); border: 1px solid var(--np-red); }
 
-.reveal-verdict.win {
-  color: var(--green-ok);
-  background: rgba(47,125,50,0.08);
-  border: 1px solid var(--green-ok);
+.reveal-lives {
+  display: grid; gap: 5px; margin-bottom: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
-
-.reveal-verdict.neutral {
-  color: var(--np-ink);
+.life-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 10px;
   background: var(--np-paper2);
-  border: 1px solid var(--bd-c, var(--np-ink));
+  border: 1px solid var(--np-ink-soft);
+  font-size: 0.9rem;
+}
+.life-row.up   { border-color: var(--green-ok); background: rgba(47,125,50,0.08); }
+.life-row.down { border-color: var(--np-red);   background: rgba(181,34,30,0.07); }
+.life-row.out  { opacity: 0.55; }
+.life-name {
+  flex: 1; text-align: left;
+  font-family: 'DM Mono', monospace; font-size: 0.76rem;
+  text-transform: uppercase; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.life-hearts { letter-spacing: 1px; white-space: nowrap; }
+.life-delta {
+  font-family: 'DM Mono', monospace; font-size: 0.58rem;
+  letter-spacing: 0.04em; color: var(--np-ink-mid);
+  min-width: 56px; text-align: right; white-space: nowrap;
 }
 
-.gameover-inner { max-width: 480px; padding: 40px 24px; }
-
-.finished-trophy {
-  font-size: 5rem;
-  line-height: 1;
-  margin-bottom: 14px;
-  filter: grayscale(100%);
+.reveal-cond {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.14em;
+  color: var(--np-ink-mid);
+  padding: 5px 10px; margin-bottom: 8px;
+  border-top: 1px solid var(--np-ink); border-bottom: 1px solid var(--np-ink);
 }
 
+/* La resolucion es donde se comprueba el recuento, asi que tiene que
+   caber de una vez: nombre del jugador a la izquierda y sus cartas en
+   chapa con la marca de ✓/✗, en rejilla. Antes cada mano era una fila
+   de cartas con foto y scroll horizontal: para contar habia que
+   arrastrar siete filas. */
+.reveal-section {
+  display: flex; align-items: stretch; gap: 8px;
+  width: 100%; margin-bottom: 7px; text-align: left;
+}
+.reveal-section-label {
+  flex: 0 0 58px; display: flex; align-items: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 0.08em; line-height: 1.15;
+  text-transform: uppercase; color: var(--np-ink-mid);
+  padding-right: 6px; overflow: hidden;
+  border-right: 1px solid var(--np-ink); font-weight: 700;
+}
+.reveal-section-label.is-me { color: var(--np-red); }
+.reveal-row-cards {
+  flex: 1 1 auto; min-width: 0;
+  display: grid; gap: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+.reveal-row-cards .tcard {
+  width: auto; display: flex; align-items: center; gap: 4px;
+  border-width: 1px; box-shadow: none; background: var(--np-paper2);
+}
+.reveal-row-cards .tcard:hover { transform: none; box-shadow: none; }
+.reveal-row-cards .tcard-photo { display: none; }
+.reveal-row-cards .tcard-mark {
+  position: static; flex: 0 0 14px;
+  width: 14px; height: 14px; font-size: 9px;
+  margin: 2px 0 2px 3px;
+}
+.reveal-row-cards .tcard-name {
+  flex: 1 1 auto; min-width: 0;
+  display: block; -webkit-line-clamp: none; min-height: 0;
+  padding: 2px 5px 2px 0; text-align: left; background: transparent;
+  font-size: 0.56rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.continue-hint {
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--np-ink-mid);
+}
+
+/* El boton de la resolucion no necesita el mismo cuerpo que los del
+   menu: aqui cada pixel de alto cuenta para que la ronda quepa. */
+#overlay-reveal .btn-primary { padding: 9px 20px; font-size: 0.88rem; }
+
+.gameover-inner { max-width: 480px; padding: 36px 24px; }
+.finished-trophy { font-size: 4.4rem; line-height: 1; margin-bottom: 12px; filter: grayscale(100%); }
 .finished-title {
   font-family: 'Playfair Display', serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: clamp(2rem, 6vw, 2.8rem);
-  color: var(--np-ink);
-  margin-bottom: 12px;
+  font-style: italic; font-weight: 900;
+  font-size: clamp(1.7rem, 5.4vw, 2.4rem);
+  color: var(--np-ink); margin-bottom: 12px;
 }
-
 .winner-name {
-  font-size: 1.7rem;
-  letter-spacing: 2px;
-  padding: 10px 20px;
-  margin: 0 auto 20px;
-  border-radius: var(--r-md, 0);
-  background: var(--np-ink);
-  color: var(--np-paper) !important;
-  border: none;
-  box-shadow: var(--sh-x,4px) var(--sh-y,4px) var(--sh-b,0) var(--sh-c-red,var(--np-red));
+  font-family: 'Anton', sans-serif;
+  font-size: 1.6rem; letter-spacing: 2px;
+  padding: 10px 20px; margin: 0 auto 18px;
+  background: var(--np-ink); color: var(--np-paper);
+  box-shadow: 4px 4px 0 var(--np-red);
   display: inline-block;
 }
 
 .toast {
-  position: fixed;
-  bottom: 110px;
-  left: 50%;
+  position: fixed; bottom: 110px; left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: var(--np-ink);
-  border: none;
-  border-radius: var(--r-md, 0);
   padding: 8px 18px;
   font-family: 'DM Mono', monospace;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
   color: var(--np-paper);
-  z-index: 10000;
-  opacity: 0;
+  z-index: 10000; opacity: 0;
   transition: all 0.25s ease;
-  pointer-events: none;
-  white-space: nowrap;
-  max-width: 90vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  pointer-events: none; white-space: nowrap;
+  max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
   text-transform: uppercase;
-  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c-red,var(--np-red));
+  box-shadow: 3px 3px 0 var(--np-red);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--np-red); box-shadow: 3px 3px 0 var(--np-ink); }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════ */
+/* Por debajo de 760 px un tapete con asientos a izquierda y derecha no
+   cabe (a 375 px las columnas laterales dejarían el tapete en nada), así
+   que la mesa se apila: rivales arriba en orden de turno, tapete en
+   medio y yo abajo. Sigue leyéndose igual, solo que en vertical. */
+@media (max-width: 759px) {
+  .table-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  /* En movil no hay laterales: game.js manda a TODOS los rivales a la
+     zona de arriba y aqui se reparten en dos columnas. Con uno o dos
+     rivales partir la fila en dos no aporta nada, de ahi el data-n. */
+  .zone-top {
+    order: 0; width: 100%;
+    display: grid; gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .zone-top[data-n="1"] { grid-template-columns: minmax(0, 1fr); }
+  .zone-top .seat { max-width: none; }
+  .zone-left, .zone-right { display: none; }
+  .felt        { order: 1; margin: 2px 0; }
+  .zone-bottom { order: 2; }
 }
 
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast.error { box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); background: var(--np-red); }
-.toast.success { color: var(--np-paper); }
-
 @media (max-width: 600px) {
-  .game-topbar { padding: 10px 14px; }
-  .gt-round-stat { font-size: 1.05rem; }
-  .gt-code { font-size: 1.05rem; letter-spacing: 2px; }
-  .menu-title { letter-spacing: -0.01em; }
+  .game-topbar { padding: 7px 96px 7px 12px; }
+  .gt-mode { font-size: 0.85rem; }
+  .gt-code { font-size: 0.95rem; letter-spacing: 2px; }
+  .cond-bar { gap: 9px; padding: 8px 12px; }
+  .cond-icon { width: 38px; height: 38px; }
+  .cond-icon img { max-width: 27px; max-height: 27px; }
+  .game-scroll { padding: 10px 10px 14px; gap: 10px; }
+  .bid-main, .bid-turn { padding: 2px 8px; }
   .lobby-code-big { font-size: 2.4rem; letter-spacing: 0.12em; }
-  .tcard { --cw: 64px; }
-  .seat { min-width: 0; padding: 5px 8px 5px 5px; }
-  .seat-name { font-size: 0.68rem; }
-  .felt-felt { border-radius: var(--r-md, 0); padding: 12px 14px; }
+  .rn-box { min-width: 96px; padding: 7px 10px; }
+  .rn-value { font-size: 1.8rem; }
+  .life-delta { min-width: 68px; font-size: 0.56rem; }
+  .btn-act { font-size: 0.76rem; letter-spacing: 0.06em; padding: 9px 6px; }
+  .felt { padding: 10px 11px; }
+  .seat { padding: 5px 7px 6px; }
+  .seat--me { padding: 7px 9px 9px; }
 }
 
 @media (max-width: 400px) {
-  .tcard { --cw: 58px; }
-  .center-cards, .my-hand { gap: 6px; }
+  .hand-row { gap: 5px; }
+  .step-btn { width: 34px; height: 34px; }
+  .step-val { min-width: 38px; font-size: 1.35rem; }
+  .zone-top { gap: 5px; }
 }
 
-/* El hueco del notch de los móviles lo aplica ahora .fh-volver para los 13
-   juegos a la vez (css/volver.css). */
+/* ══════════════════════════════════════════════
+   NIVELES DE COMPRESION (los pone _fitTable)
+   Cada escalon recorta lo menos importante primero: primero el
+   tamano de las cartas, luego los textos de ayuda y las miniaturas
+   de los rivales. El objetivo es que la mesa quepa entera sin
+   scroll con 8 jugadores en un movil pequeno.
+   ══════════════════════════════════════════════ */
+#screen-game.d1 .game-scroll { padding: 8px 12px 10px; gap: 8px; }
+#screen-game.d1 .felt        { padding: 8px 10px; gap: 6px; }
+#screen-game.d1 .table-area  { gap: 7px; }
 
-/* Boton de saltar turno bloqueado */
-.tc-skip {
-  margin-left: 4px;
-  padding: 2px 8px;
-  border: 1px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0);
-  background: var(--np-paper2);
-  color: var(--np-ink);
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-  letter-spacing: 0.5px;
+#screen-game.d2 .game-scroll,
+#screen-game.d3 .game-scroll { padding: 6px 10px 8px; gap: 6px; }
+#screen-game.d2 .felt,
+#screen-game.d3 .felt        { padding: 6px 8px; gap: 5px; margin: 2px 0; }
+#screen-game.d2 .table-area,
+#screen-game.d3 .table-area  { gap: 6px; }
+#screen-game.d2 .seat-hint,
+#screen-game.d3 .seat-hint,
+#screen-game.d2 .bet-help,
+#screen-game.d3 .bet-help    { display: none; }
+#screen-game.d2 .bid-value   { font-size: 1.5rem; }
+#screen-game.d2 .seat        { padding: 4px 6px 5px; }
+#screen-game.d2 .seat--me    { padding: 5px 8px 6px; }
+
+#screen-game.d3 .game-topbar { padding-top: 4px; padding-bottom: 4px; }
+#screen-game.d3 .cond-bar    { padding: 5px 12px; }
+#screen-game.d3 .cond-icon   { width: 32px; height: 32px; }
+#screen-game.d3 .cond-icon img { max-width: 24px; max-height: 24px; }
+#screen-game.d3 .bid-value   { font-size: 1.3rem; }
+#screen-game.d3 .felt-label,
+#screen-game.d3 .bid-owner   { display: none; }
+#screen-game.d3 .seat        { padding: 3px 5px 4px; }
+#screen-game.d3 .seat--me    { padding: 4px 7px 5px; }
+#screen-game.d3 .seat-head   { margin-bottom: 2px; }
+#screen-game.d3 .seat-av     { width: 18px; height: 18px; font-size: 0.6rem; }
+#screen-game.d3 .action-waiting { padding: 6px 12px; }
+#screen-game.d2 .waiting-dots,
+#screen-game.d3 .waiting-dots { display: none; }
+
+/* d4: solo para pantallas bajas (un movil de 667 px con la sala
+   llena). Aqui ya se recorta la cabecera: las dos lineas de la barra
+   de arriba pasan a una sola y el titular de la ronda se queda en
+   cuerpo pequeno. Todo lo que se toca es rotulacion, nunca los
+   nombres de las cartas, que son los que hay que contar. */
+#screen-game.d4 .gt-left,
+#screen-game.d4 .gt-right    { flex-direction: row; align-items: baseline; gap: 6px; }
+#screen-game.d4 .game-topbar { padding-top: 3px; padding-bottom: 3px; }
+#screen-game.d4 .cond-bar    { padding: 4px 10px; gap: 8px; }
+#screen-game.d4 .cond-icon   { width: 26px; height: 26px; }
+#screen-game.d4 .cond-icon img { max-width: 19px; max-height: 19px; }
+#screen-game.d4 .cond-emoji  { font-size: 1rem; }
+#screen-game.d4 .cond-label  { font-size: 0.86rem; }
+#screen-game.d4 .cond-total-num { font-size: 1.2rem; }
+#screen-game.d4 .cond-total-lbl { display: none; }
+#screen-game.d4 .bid-panel   { padding-bottom: 5px; }
+#screen-game.d4 .bid-value   { font-size: 1.2rem; }
+#screen-game.d4 .timer-num,
+#screen-game.d4 .bet-label   { display: none; }
+#screen-game.d4 .seat-tag    { display: none; }
+#screen-game.d4 .seat-av     { width: 15px; height: 15px; font-size: 0.52rem; }
+#screen-game.d4 .seat-name   { font-size: 0.6rem; }
+#screen-game.d4 .game-scroll { padding: 4px 8px 6px; gap: 4px; }
+#screen-game.d4 .table-area,
+#screen-game.d4 .zone-top    { gap: 4px; }
+#screen-game.d4 .seat        { padding: 2px 4px 3px; }
+#screen-game.d4 .seat--me    { padding: 3px 6px 4px; }
+#screen-game.d4 .seat:not(.seat--me) .seat-cards { gap: 2px; }
+#screen-game.d4 .action-waiting { padding: 4px 10px; }
+#screen-game.d4 .btn-ready   { margin-top: 5px; padding: 6px 16px; font-size: 0.72rem; }
+#screen-game.d2 .action-bar  { padding-top: 8px; }
+/* En el ultimo escalon el rotulo de estado del rival sobra: quien
+   tiene el turno ya se ve por el marco rojo del asiento y la apuesta
+   y su dueno estan escritos en el tapete. El mio se queda. */
+#screen-game.d3 .seat:not(.seat--me) .seat-tag { display: none; }
+#screen-game.d3 .tcard-name {
+  -webkit-line-clamp: 1; min-height: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block; padding: 2px 4px;
 }
-.tc-skip:hover { background: var(--np-ink); color: var(--np-paper); }
-/* Antes era ".turn-chip.overdue", una clase que no existía en ningún elemento
-   (el asiento con turno usa "seat active", ver _seatChip en game.js) — por
-   eso el aviso de turno atascado nunca se veía. */
-.seat.overdue {
-  border-color: var(--np-red);
-  animation: pulse-warn 1.5s ease infinite;
-}
-@keyframes pulse-warn {
-  0%, 100% { box-shadow: none; }
-  50% { box-shadow: 0 0 0 3px rgba(181,34,30,0.25); }
-}
+
+/* --- Soporte para moviles con notch / barra inferior --- */
+.hub-back-link, .back-btn { margin-top: env(safe-area-inset-top, 0px); }

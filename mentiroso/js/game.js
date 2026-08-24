@@ -1,9 +1,32 @@
 /* ═══════════════════════════════════════════════════════════
-   GAME.JS — EL MENTIROSO  (reescrito limpio v8)
-   - Arquitectura del juego "Restricciones": set/update flat
-   - Cartas repartidas localmente por seed (deterministas)
-   - Turno DERIVADO de las apuestas (sin estado que sincronizar)
-   - MODO PRÁCTICA vs bots (para probar sin Firebase ni 2 PCs)
+   GAME.JS — EL MENTIROSO  (rediseño: puja ascendente + vidas)
+   ───────────────────────────────────────────────────────────
+   Mecánica nueva (sustituye a "cada uno dice un número a ciegas
+   y solo puntúa el exacto"):
+
+     · Cada ronda hay UNA apuesta común que solo puede subir.
+     · En tu turno: SUBIR, PLANTARTE o DESAFIAR.
+     · La ronda acaba en cuanto alguien se planta o desafía.
+     · El resultado mueve VIDAS, no puntos. Gana el último con
+       vidas > 0.
+
+   Diferencias de arquitectura respecto a la versión anterior:
+
+     · El turno YA NO se deriva de las apuestas (ya no hay una
+       apuesta por jugador): es estado explícito (room.turn) con
+       un contador room.turnSeq que sirve de token anti-carrera.
+       Todas las acciones se aplican con runTransaction validando
+       ese token, así que el reloj de 15 s del jugador y el
+       vigilante del anfitrión nunca pueden aplicarse dos veces.
+
+     · Las cartas YA NO se reparten por semilla en cada cliente:
+       el anfitrión reparte y publica los IDs (room.dealHands /
+       room.dealCenter). Con las reglas nuevas todos los nombres
+       son visibles de todas formas, así que publicarlos no
+       esconde menos que antes y a cambio elimina el riesgo de
+       que dos clientes calculen mesas distintas.
+
+   Depende de MDeck (js/deck.js) para la baraja y las condiciones.
    ═══════════════════════════════════════════════════════════ */
 'use strict';
 
@@ -18,6 +41,7 @@ function escapeHtml(s){
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&#39;');
 }
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
 /* ── Cuenta (FutbolHUB): si hay sesión, usar usuario y foto ── */
 function _accName(inputId){
@@ -55,109 +79,196 @@ function showScreen(id){$$('.screen').forEach(s=>s.classList.remove('active'));$
 function genCode(n=6){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:n},()=>c[Math.floor(Math.random()*c.length)]).join('');}
 function genId(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
 
-/* ═══ 3. CARTAS DETERMINISTAS ══════════════════════════════ */
-function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^(seed>>>15),1|seed);t=t+Math.imul(t^(t>>>7),61|t)^t;return ((t^(t>>>14))>>>0)/4294967296;};}
-function shuffleRng(arr,rng){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+/* ═══ 2. CONSTANTES DE RITMO ═══════════════════════════════ */
+const STUDY_MS      = 30000;  // fase de estudio al abrir la ronda: se ve
+                              // la mesa pero todavía no se puede pujar
+const TURN_MS       = 15000;  // reloj por turno (sección 2 de la spec)
+const HOST_GRACE_MS = 4000;   // margen antes de que el anfitrión resuelva por ti
+const ANY_GRACE_MS  = 10000;  // margen antes de que lo desatasque cualquiera
+const REVEAL_MS     = 12000;  // auto-avance de la pantalla de resolución
+/* Lo que tarda un bot en responder. Un bot que contesta en un segundo
+   canta que es una máquina, así que el reparto imita a una persona:
+   la mayoría de turnos entre 3 y 8 s, más rato cuando la decisión
+   cierra la ronda, y de vez en cuando una respuesta rápida. El tope
+   se queda por debajo de TURN_MS para que el reloj del turno no llegue
+   a cero con el bot todavía pensando. */
+const BOT_MIN_MS    = 3000, BOT_MAX_MS = 8000, BOT_CAP_MS = 12000;
 
-const HAND_CONFIG=[{min:1,max:2,hand:7,center:4},{min:3,max:3,hand:5,center:4},{min:4,max:4,hand:4,center:4},{min:5,max:5,hand:3,center:3},{min:6,max:10,hand:2,center:0}];
-function getHandConfig(n){return HAND_CONFIG.find(c=>c.min<=n&&n<=c.max)||HAND_CONFIG[0];}
-const CENTER_ATTRS=['flag','position','club'];
+/* ═══ 3. REGLAS (reductor puro) ════════════════════════════ */
+/* Se usa igual en online (dentro de runTransaction) y en práctica
+   (sobre el objeto local), así que las reglas viven en un único
+   sitio y no pueden desincronizarse entre los dos modos. */
 
-function createCard(p){return {playerId:p.id,playerName:p.name,country:p.country,countryFlag:p.countryFlag,club:p.club,clubBadge:p.clubBadge,position:p.position,stats:p.stats||{}};}
+function _seatsOf(room){ return Array.isArray(room.seats)?room.seats.filter(Boolean):[]; }
+function _lives(room,pid){ return Number(room.players?.[pid]?.lives||0); }
+function _aliveIds(room){ return Object.keys(room.players||{}).filter(pid=>_lives(room,pid)>0); }
 
-const _threshCache={};
-function getThresholds(key){
-  if(_threshCache[key])return _threshCache[key];
-  const vals=window.PLAYERS.map(p=>Number(p.stats[key])||0).filter(v=>v>0).sort((a,b)=>a-b);
-  if(!vals.length)return _threshCache[key]=[];
-  const set=new Set();[0.25,0.5,0.75].forEach(q=>{const v=vals[Math.floor(q*vals.length)];if(v>0)set.add(v);});
-  return _threshCache[key]=[...set].sort((a,b)=>a-b);
-}
-function cardMatchesCond(card,cond){
-  const v=card.stats[cond.key];
-  if(cond.type==='bool')return Boolean(v);
-  return Number(v||0)>(cond.threshold||0);
-}
-function chooseCondition(deck,rng){
-  const defs=window.STAT_DEFINITIONS;
-  for(let i=0;i<40;i++){
-    const def=defs[Math.floor(rng()*defs.length)];
-    let threshold=null,label=def.label;
-    if(def.type==='number'){
-      const opts=getThresholds(def.key);
-      if(!opts.length)continue;
-      threshold=opts[Math.floor(rng()*opts.length)];
-      label=`Mas de ${threshold} ${def.unit}`;
-    }
-    const cond={key:def.key,type:def.type,label,unit:def.unit||'',threshold};
-    const m=deck.reduce((n,c)=>n+(cardMatchesCond(c,cond)?1:0),0);
-    if(m>=1&&m<deck.length)return cond;
+/** Siguiente jugador vivo y conectado a partir de pid. */
+function _nextSeat(room,pid){
+  const s=_seatsOf(room);
+  if(!s.length)return null;
+  const i=s.indexOf(pid);
+  const from=i<0?-1:i;
+  for(let k=1;k<=s.length;k++){
+    const cand=s[(from+k+s.length)%s.length];
+    const p=room.players?.[cand];
+    if(p&&p.connected!==false&&Number(p.lives||0)>0)return cand;
   }
-  const def=defs.find(d=>d.type==='bool')||defs[0];
-  return {key:def.key,type:def.type,label:def.label,unit:def.unit||'',threshold:null};
-}
-/* ⚠️ LIMITACIÓN DE SEGURIDAD CONOCIDA (no solucionable solo con cambios de
-   cliente): el reparto de cartas es 100% determinista a partir de room.seed,
-   que se sincroniza a todos los clientes ANTES de que termine la ronda de
-   apuestas. Cualquier jugador con la consola del navegador abierta puede
-   ejecutar dealRound(room.seed, Object.keys(room.players)) y ver la mano de
-   todo el mundo y el total real antes de apostar. Arreglarlo de verdad exige
-   que el reparto se calcule en un sitio que el cliente no pueda leer antes de
-   tiempo — típicamente una Cloud Function que reparta las cartas y unas
-   Reglas de Seguridad de Firebase (+ Firebase Auth) que solo dejen a cada
-   jugador leer su propia mano. Eso son cambios de infraestructura del
-   proyecto Firebase (fuera de estos archivos estáticos) y no se pueden
-   aplicar solo editando este JS. Ver el informe de auditoría para más
-   detalle; si se quiere, puedo preparar el borrador de la Cloud Function y
-   las reglas de seguridad como punto de partida. */
-function dealRound(seed,sortedIds){
-  const rng=mulberry32(seed);
-  const n=sortedIds.length;
-  const cfg=getHandConfig(n);
-  const total=cfg.center+n*cfg.hand;
-  const deck=shuffleRng(window.PLAYERS,rng).slice(0,total).map(createCard);
-  let idx=0;const hands={};
-  sortedIds.forEach(pid=>{hands[pid]=deck.slice(idx,idx+cfg.hand);idx+=cfg.hand;});
-  const centerCards=deck.slice(idx).map(c=>({...c,visibleAttr:CENTER_ATTRS[Math.floor(rng()*3)]}));
-  const condition=chooseCondition(deck,rng);
-  return {hands,centerCards,condition,deck};
+  /* Todos los demás desconectados: sigue el orden sin filtrar para
+     no dejar la ronda sin turno. */
+  return s[(from+1+s.length)%s.length]||null;
 }
 
-/* ═══ TURNO derivado ═══════════════════════════════════════ */
-function getPlayerOrder(room){
-  // Antes se ordenaba alfabéticamente por id de Firebase (aleatorio), lo que
-  // hacía que el orden de turno no coincidiera con el orden mostrado en el
-  // lobby (que es el orden de entrada real). Al no ordenar, Object.keys
-  // conserva el orden de entrada — igual que Object.entries en _renderLobby —
-  // así que turno y lobby quedan alineados. Sigue siendo determinista para
-  // todos los clientes porque todos parten del mismo objeto room.players.
-  const ids=Object.keys(room.players||{});
-  if(!ids.length)return[];
-  const shift=((room.round||1)-1)%ids.length;
-  return [...ids.slice(shift),...ids.slice(0,shift)];
-}
-function getCurrentTurnId(room){
-  const g=room.guesses||{};
-  return getPlayerOrder(room).find(pid=>{
-    const p=room.players[pid];
-    if(p&&p.connected===false)return false;
-    return g[pid]===undefined||g[pid]===null;
-  })||null;
-}
-function allGuessed(room){
-  const g=room.guesses||{};
-  return Object.entries(room.players||{}).filter(([,p])=>p.connected!==false).every(([id])=>g[id]!==undefined&&g[id]!==null);
+/** Aplica el resultado de una plantada/desafío. Muta room. */
+function _resolve(room,res){
+  const before={},after={},eliminated=[];
+  Object.keys(res.deltas||{}).forEach(pid=>{
+    const p=room.players?.[pid]; if(!p)return;
+    const prev=Number(p.lives||0);
+    const next=Math.max(0,prev+res.deltas[pid]);
+    before[pid]=prev; after[pid]=next;
+    p.lives=next;
+    if(next===0&&prev>0)eliminated.push(pid);
+  });
+  res.before=before; res.after=after; res.eliminated=eliminated;
+  room.resolution=res;
+  room.status='reveal';
+  room.turn=null;
+  room.turnSeq=Number(room.turnSeq||0)+1;
+  room.resolvedAt=Date.now();
+
+  const alive=_aliveIds(room);
+  if(alive.length<=1){
+    room.finished=true;
+    room.winnerId=alive[0]||null;
+    room.winnerName=alive.length?(room.players[alive[0]].name||null):null;
+  }
+  return true;
 }
 
-/* ═══ 4. SYNC (Firebase) ═══════════════════════════════════ */
+/**
+ * Aplica una acción de turno. Devuelve true si se aplicó.
+ * act = {pid, turnSeq, type:'raise'|'stand'|'challenge', value?, actual?, auto?}
+ */
+function _applyAction(room,act){
+  if(!room||room.status!=='playing')return false;
+  if(room.turn!==act.pid)return false;
+  if(Number(room.turnSeq||0)!==Number(act.turnSeq))return false;
+  /* Fase de estudio: la mesa se ve pero todavía no se puja. Se dan 2 s
+     de margen porque cada cliente mira su propio reloj y no van finos
+     al milisegundo entre sí. */
+  if(Number(room.studyUntil||0)-Date.now()>2000)return false;
+
+  const bet=Number(room.bet||0);
+  const total=Number(room.totalCards||0);
+
+  if(act.type==='raise'){
+    const v=Math.floor(Number(act.value));
+    if(!Number.isFinite(v)||v<=bet||v>total)return false;
+    room.bet=v;
+    room.betOwner=act.pid;
+    room.lastAction={pid:act.pid,type:'raise',value:v,auto:!!act.auto};
+    room.turn=_nextSeat(room,act.pid);
+    room.turnSeq=Number(room.turnSeq||0)+1;
+    room.turnAt=Date.now();
+    return true;
+  }
+
+  if(act.type==='stand'){
+    if(bet<=0)return false;
+    const actual=Number(act.actual);
+    if(!Number.isFinite(actual))return false;
+    const hit=(bet===actual);
+    return _resolve(room,{
+      type:act.auto?'timeout':'stand',
+      actor:act.pid, target:null, bet, actual,
+      outcome:hit?'stand-hit':'stand-miss',
+      deltas:{[act.pid]:hit?1:-1},
+    });
+  }
+
+  if(act.type==='challenge'){
+    if(bet<=0)return false;
+    const owner=room.betOwner;
+    if(!owner||!room.players?.[owner])return false;
+    const actual=Number(act.actual);
+    if(!Number.isFinite(actual))return false;
+    let outcome,deltas;
+    if(bet>actual){        outcome='challenge-win';   deltas={[owner]:-1}; }
+    else if(bet===actual){ outcome='challenge-exact'; deltas={[owner]:+1}; }
+    else {                 outcome='challenge-short'; deltas={[act.pid]:-1}; }
+    return _resolve(room,{type:'challenge',actor:act.pid,target:owner,bet,actual,outcome,deltas});
+  }
+
+  return false;
+}
+
+/**
+ * Abre una ronda sobre el objeto room. Devuelve true si se aplicó.
+ * En la ronda 1 iguala las vidas de todos a startLives: el anfitrión
+ * puede cambiar ese ajuste en el lobby después de que alguien haya
+ * entrado, y sin esto se jugaba con las vidas del momento de entrar
+ * (el lobby prometía 5 y la partida empezaba con 3).
+ */
+function _applyRoundPayload(room,payload){
+  if(!room)return false;
+  if(Number(room.round||0)>=payload.round)return false;   // ya la abrió otro
+  if(payload.round===1){
+    const lives=Number(room.startLives||3);
+    Object.values(room.players||{}).forEach(p=>{p.lives=lives;});
+  }
+  Object.assign(room,payload);
+  room.finished=false;room.winnerId=null;room.winnerName=null;
+  return true;
+}
+
+/** ¿Qué hace el reloj cuando se agotan los 15 s? (spec 4.4) */
+function _timeoutAction(room){
+  const bet=Number(room.bet||0);
+  if(bet<=0)return {type:'raise',value:1,auto:true};
+  return {type:'stand',auto:true};
+}
+
+/* ═══ 4. CARTAS DE LA RONDA ════════════════════════════════ */
+function _handIds(room,pid){
+  const h=(room.dealHands||{})[pid];
+  return Array.isArray(h)?h.filter(x=>x!=null):[];
+}
+function _centerIds(room){
+  const c=room.dealCenter;
+  return Array.isArray(c)?c.filter(x=>x!=null):[];
+}
+function _allRoundIds(room){
+  const ids=[];
+  _seatsOf(room).forEach(pid=>ids.push(..._handIds(room,pid)));
+  ids.push(..._centerIds(room));
+  return ids;
+}
+function _condOf(room){
+  if(!room.condKey)return null;
+  return {
+    key:room.condKey,
+    arg:room.condArg??null,
+    num:(room.condNum===undefined||room.condNum===null)?null:Number(room.condNum),
+    label:room.condLabel||'',
+  };
+}
+/** Total real de cartas de la mesa que cumplen la condición. */
+function _actualTotal(room){
+  const ids=_allRoundIds(room);
+  const cards=MDeck.cardsByIds(ids);
+  if(cards.length!==ids.length)return null;   // falta alguna carta: no arriesgar
+  return MDeck.countMatches(cards,_condOf(room));
+}
+
+/* ═══ 5. SYNC (Firebase) ═══════════════════════════════════ */
 const Sync=(()=>{
   const PATH='restricciones/rooms';
   const FB=()=>window._FB;
   const _ref=p=>{const{db,ref}=FB();return ref(db,p);};
 
-  /* Presencia: al cerrar la pestaña, marcar connected:false automáticamente.
-     Sin esto, un jugador (o el host) que cierra a mitad de partida se queda
-     "conectado" para siempre y el turno/la partida se congela. */
+  /* Presencia: al cerrar la pestaña, marcar connected:false. Sin
+     esto un jugador que cierra a mitad de partida congela el turno. */
   function _registerPresence(code,playerId){
     try{
       if(!window._FBOnDisconnect)return;
@@ -166,18 +277,21 @@ const Sync=(()=>{
     }catch(e){}
   }
 
-  async function createRoom(hostName,mode,pointsToWin,avatar){
+  async function createRoom(hostName,mode,startLives,avatar){
     const{set}=FB();
     const code=genCode(),hostId=genId();
     await set(_ref(`${PATH}/${code}`),{
-      game:'mentiroso',status:'waiting',mode,pointsToWin,round:0,seed:0,
-      condKey:null,condType:null,condLabel:null,condUnit:null,condThreshold:null,
-      actualTotal:null,winners:null,winnerName:null,guesses:null,
-      players:{[hostId]:{name:hostName,avatar:avatar||null,score:0,connected:true,isHost:true}},
+      game:'mentiroso',status:'waiting',mode,startLives,
+      round:0,seed:0,turnSeq:0,bet:0,betOwner:null,turn:null,studyUntil:0,
+      condKey:null,condArg:null,condNum:null,condLabel:null,
+      totalCards:0,dealHands:null,dealCenter:null,
+      resolution:null,finished:null,winnerId:null,winnerName:null,
+      players:{[hostId]:{name:hostName,avatar:avatar||null,lives:startLives,connected:true,isHost:true}},
     });
     _registerPresence(code,hostId);
     return {code,playerId:hostId};
   }
+
   async function joinRoom(code,playerName,avatar){
     const{get,update}=FB();
     const snap=await get(_ref(`${PATH}/${code}`));
@@ -187,39 +301,70 @@ const Sync=(()=>{
     if(room.status!=='waiting')throw new Error('La partida ya ha comenzado');
     if(Object.keys(room.players||{}).length>=8)throw new Error('Sala llena');
     const playerId=genId();
-    await update(_ref(`${PATH}/${code}/players/${playerId}`),{name:playerName,avatar:avatar||null,score:0,connected:true,isHost:false});
+    await update(_ref(`${PATH}/${code}/players/${playerId}`),{
+      name:playerName,avatar:avatar||null,lives:room.startLives||3,connected:true,isHost:false,
+    });
     _registerPresence(code,playerId);
     return {code,playerId};
   }
+
   function listenRoom(code,cb){
     const{onValue}=FB();
     return onValue(_ref(`${PATH}/${code}`),snap=>{if(snap.exists())cb(snap.val());});
   }
-  async function startRound(code,roundNum,seed,cond,pointsToWin){
-    const{update}=FB();
-    await update(_ref(`${PATH}/${code}`),{
-      status:'playing',round:roundNum,seed,
-      condKey:cond.key,condType:cond.type,condLabel:cond.label,condUnit:cond.unit||'',condThreshold:cond.threshold??null,
-      guesses:null,actualTotal:null,winners:null,pointsToWin,
+
+  /** Escribe una ronda nueva. Transacción para que dos anfitriones
+   *  simultáneos (failover) no repartan dos veces. */
+  async function startRound(code,payload){
+    const{runTransaction}=FB();
+    const res=await runTransaction(_ref(`${PATH}/${code}`),room=>{
+      if(!room)return;
+      if(!_applyRoundPayload(room,payload))return;
+      return room;
+    });
+    return res&&res.committed;
+  }
+
+  /** Aplica una acción de turno con el token turnSeq como guardia. */
+  async function act(code,act_){
+    const{runTransaction}=FB();
+    const res=await runTransaction(_ref(`${PATH}/${code}`),room=>{
+      if(!room)return;
+      if(!_applyAction(room,act_))return;
+      return room;
+    });
+    return res&&res.committed;
+  }
+
+  /** Marca "listo" en la fase de estudio. Cuando lo estan todos los
+   *  vivos y conectados, la puja empieza sin esperar los 30 s. */
+  async function markReady(code,pid){
+    const{runTransaction}=FB();
+    await runTransaction(_ref(`${PATH}/${code}`),room=>{
+      if(!room||room.status!=='playing')return;
+      if(Number(room.studyUntil||0)<=Date.now())return;
+      const ready=Object.assign({},room.ready||{});
+      ready[pid]=true;
+      room.ready=ready;
+      const esperados=Object.keys(room.players||{}).filter(id=>{
+        const p=room.players[id];
+        return p&&p.connected!==false&&Number(p.lives||0)>0;
+      });
+      if(esperados.length&&esperados.every(id=>ready[id])){
+        room.studyUntil=Date.now();
+        /* turnAt viaja con studyUntil: si no, al saltarse la espera el
+           primer turno arrancaba con el reloj ya medio gastado. */
+        room.turnAt=Date.now();
+      }
+      return room;
     });
   }
-  async function submitGuess(code,playerId,guess){
+
+  async function setFinished(code){
     const{update}=FB();
-    /* Una sola escritura: el número de la apuesta. La presencia = ha apostado. */
-    await update(_ref(`${PATH}/${code}`),{[`guesses/${playerId}`]:guess});
+    await update(_ref(`${PATH}/${code}`),{status:'finished'});
   }
-  async function triggerReveal(code,actualTotal,winnerNames,scores){
-    const{update}=FB();
-    const batch={[`${PATH}/${code}/status`]:'reveal',[`${PATH}/${code}/actualTotal`]:actualTotal,[`${PATH}/${code}/winners`]:winnerNames};
-    for(const[pid,sc]of Object.entries(scores))batch[`${PATH}/${code}/players/${pid}/score`]=sc;
-    await update(_ref('/'),batch);
-  }
-  async function setFinished(code,winnerName,scores){
-    const{update}=FB();
-    const batch={[`${PATH}/${code}/status`]:'finished',[`${PATH}/${code}/winnerName`]:winnerName};
-    for(const[pid,sc]of Object.entries(scores))batch[`${PATH}/${code}/players/${pid}/score`]=sc;
-    await update(_ref('/'),batch);
-  }
+
   async function disconnect(code,playerId){
     const{get,update,remove:rm}=FB();
     try{
@@ -235,11 +380,10 @@ const Sync=(()=>{
       }
     }catch(e){console.warn('disconnect',e);}
   }
-  async function getRoom(code){const{get}=FB();const s=await get(_ref(`${PATH}/${code}`));return s.exists()?s.val():null;}
+
   async function updateSettings(code,o){const{update}=FB();await update(_ref(`${PATH}/${code}`),o);}
   async function kick(code,pid){const{remove:rm}=FB();await rm(_ref(`${PATH}/${code}/players/${pid}`));}
 
-  /* Reconexión (restaurar sesión): volver a marcar connected y re-registrar presencia */
   async function markConnected(code,playerId){
     try{
       const{update}=FB();
@@ -248,85 +392,43 @@ const Sync=(()=>{
     }catch(e){}
   }
 
-  /* Volver a una sala DESPUÉS de una recarga, con nombre.
-     markConnected() por su cuenta no basta en el lobby: el beforeunload llama
-     a disconnect(), que estando en 'waiting' BORRA tu registro entero, así que
-     el update de {connected:true} recreaba un jugador sin nombre, sin avatar y
-     sin anfitrión — se veía un "?" en la lista y el botón de empezar
-     desaparecía. Aquí se comprueba si el registro sigue vivo (partida en
-     curso: disconnect solo marca connected:false y no se pierde nada) y, si no,
-     se vuelve a escribir entero.
-     El anfitrión NO se roba: disconnect() ya asciende a otro al salir el host,
-     así que solo se recupera si la sala se quedó sin ninguno. */
-  async function rejoin(code,playerId,name,avatar){
-    const{get,update}=FB();
-    const snap=await get(_ref(`${PATH}/${code}`));
-    if(!snap.exists())throw new Error('Sala no encontrada');
-    const room=snap.val();
-    const players=room.players||{};
-    const yo=players[playerId];
-    if(yo&&yo.name){
-      await update(_ref(`${PATH}/${code}/players/${playerId}`),{connected:true});
-      _registerPresence(code,playerId);
-      return {isHost:!!yo.isHost};
-    }
-    if(room.status!=='waiting')throw new Error('La partida ya ha comenzado');
-    const hayHost=Object.values(players).some(p=>p&&p.isHost);
-    await update(_ref(`${PATH}/${code}/players/${playerId}`),{
-      name,avatar:avatar||null,score:(yo&&yo.score)||0,connected:true,isHost:!hayHost});
-    _registerPresence(code,playerId);
-    return {isHost:!hayHost};
-  }
-
-  return {createRoom,joinRoom,listenRoom,startRound,submitGuess,triggerReveal,setFinished,disconnect,getRoom,updateSettings,kick,markConnected,rejoin};
+  return {createRoom,joinRoom,listenRoom,startRound,act,setFinished,disconnect,updateSettings,kick,markConnected,markReady};
 })();
 
-/* ═══ 5. ESTADO APP ════════════════════════════════════════ */
+/* ═══ 6. ESTADO APP ════════════════════════════════════════ */
 let _roomCode=null,_playerId=null,_isHost=false,_unsub=null,_lastRoom=null;
-let _pointsDraft=3,_modeDraft='easy',_botsDraft=2,_guessDraft=0;
-let _revealTriggered=false,_skipTimer=null;
-let _local=false,_localRoom=null;
+let _livesDraft=3,_modeDraft='easy',_botsDraft=2,_raiseDraft=1;
+let _local=false,_localRoom=null,_botTimer=null;
+let _dealKey='',_autoKey='',_continueKey='',_raiseKey='',_studyOn=null;
+let _deckReady=false,_deckError=null;
 
-/* La sesión en sessionStorage ya devolvía a la sala al RECARGAR, pero muere
-   con la pestaña y no se veía por ningún lado: la barra de direcciones no
-   decía que estuvieras dentro de una sala. Ahora, además, ?sala= en la URL
-   (que se puede compartir y sobrevive a cerrar la pestaña) y el nombre
-   apuntado aparte para poder volver sin escribirlo otra vez. */
-function _saveSession(nombre){
-  try{if(!_local)sessionStorage.setItem('mentiroso_s',JSON.stringify({code:_roomCode,pid:_playerId}));}catch{}
-  if(!_local&&_roomCode&&window.FHRuta){
-    FHRuta.set({sala:_roomCode});
-    if(nombre)FHRuta.recordarSala('mentiroso',_roomCode,nombre);
-  }
-}
-function _clearSession(){
-  try{sessionStorage.removeItem('mentiroso_s');}catch{}
-  if(window.FHRuta){FHRuta.borrar('sala');FHRuta.olvidarSala('mentiroso');}
-}
+function _saveSession(){try{if(!_local)sessionStorage.setItem('mentiroso_s',JSON.stringify({code:_roomCode,pid:_playerId}));}catch{}}
+function _clearSession(){try{sessionStorage.removeItem('mentiroso_s');}catch{}}
 function _reset(){
   _roomCode=null;_playerId=null;_isHost=false;_lastRoom=null;
-  _revealTriggered=false;_guessDraft=0;_local=false;_localRoom=null;
-  clearTimeout(_skipTimer);_skipTimer=null;
+  _local=false;_localRoom=null;_dealKey='';_autoKey='';_continueKey='';_raiseKey='';_studyOn=null;_raiseDraft=1;
+  clearTimeout(_botTimer);_botTimer=null;
   if(_unsub){_unsub();_unsub=null;}
+  $('#overlay-reveal')?.classList.add('hidden');
+  $('#overlay-gameover')?.classList.add('hidden');
   _clearSession();
 }
-function _getCondition(r){return {key:r.condKey,type:r.condType,label:r.condLabel,unit:r.condUnit||'',threshold:r.condThreshold??null};}
 
-/* ═══ 6. ROUTER DE RENDER ══════════════════════════════════ */
+/* ═══ 7. ROUTER DE RENDER ══════════════════════════════════ */
 function _onRoomUpdate(room){
   _lastRoom=room;
   if(!room||!room.players)return;
   if(!_local&&!room.players[_playerId]){toast('Has salido de la sala','info');_reset();showScreen('#screen-menu');return;}
   _isHost=_local?true:(room.players[_playerId]?.isHost===true);
 
-  /* Failover de host: si el host está desconectado (cerró la pestaña) y la
-     partida está en curso, el primer jugador conectado (orden determinista
-     por id) se autopromociona para que el juego no se congele. */
+  /* Failover de anfitrión: si el anfitrión cerró la pestaña y la
+     partida sigue, el primer conectado (orden determinista por id)
+     se autopromociona para que el juego no se congele. */
   if(!_local&&_roomCode&&room.status!=='waiting'&&room.status!=='finished'){
-    const connectedP=Object.entries(room.players).filter(([,p])=>p&&p.connected!==false);
-    const hasHost=connectedP.some(([,p])=>p.isHost===true);
-    if(!hasHost&&connectedP.length){
-      const candidate=connectedP.map(([pid])=>pid).sort()[0];
+    const connected=Object.entries(room.players).filter(([,p])=>p&&p.connected!==false);
+    const hasHost=connected.some(([,p])=>p.isHost===true);
+    if(!hasHost&&connected.length){
+      const candidate=connected.map(([pid])=>pid).sort()[0];
       if(candidate===_playerId){
         try{
           const{db,ref,update}=window._FB;
@@ -338,439 +440,969 @@ function _onRoomUpdate(room){
       }
     }
   }
+
   switch(room.status){
-    case'waiting':_renderLobby(room);break;
-    case'playing':_renderGame(room);break;
-    case'reveal':_renderGame(room);_renderReveal(room);break;
-    case'finished':_renderGame(room);_renderFinished(room);break;
+    case'waiting':
+      $('#overlay-reveal').classList.add('hidden');
+      $('#overlay-gameover').classList.add('hidden');
+      _renderLobby(room);
+      break;
+    case'playing':
+      $('#overlay-reveal').classList.add('hidden');
+      $('#overlay-gameover').classList.add('hidden');
+      _renderGame(room);
+      break;
+    case'reveal':
+      $('#overlay-gameover').classList.add('hidden');
+      _renderGame(room);
+      _renderReveal(room);
+      break;
+    case'finished':
+      _renderGame(room);
+      $('#overlay-reveal').classList.add('hidden');
+      _renderFinished(room);
+      break;
   }
 }
 
-/* ═══ LOBBY ════════════════════════════════════════════════ */
+/* ═══ 8. LOBBY ═════════════════════════════════════════════ */
 function _renderLobby(room){
   showScreen('#screen-lobby');
-  $('#lobby-code').textContent=_roomCode;
-  $('#lobby-mode-pill').textContent=room.mode==='easy'?'FÁCIL':'DIFÍCIL';
+  $('#lobby-code').textContent=_roomCode||'——————';
+  $('#lobby-mode-pill').textContent=room.mode==='easy'?'FACIL':'DIFICIL';
+
   const players=Object.entries(room.players||{});
   $('#lobby-count').textContent=`(${players.length})`;
   const list=$('#lobby-players');list.innerHTML='';
   players.forEach(([pid,p])=>{
-    const d=document.createElement('div');d.className=`lobby-player-row${pid===_playerId?' me':''}`;
-    d.innerHTML=`<span class="lobby-player-avatar">${_avatarInner(p)}</span><span class="lobby-player-name">${escapeHtml(p.name)}</span>${p.isHost?'<span class="lobby-player-host">ANFITRIÓN</span>':''}${pid===_playerId?'<span class="lobby-player-you">← TÚ</span>':''}`;
+    const d=document.createElement('div');
+    d.className=`lobby-player-row${pid===_playerId?' me':''}`;
+    d.innerHTML=`<span class="lobby-player-avatar">${_avatarInner(p)}</span>`+
+      `<span class="lobby-player-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>`+
+      `<span class="lobby-player-lives">${_hearts(p.lives??room.startLives??3)}</span>`+
+      (p.isHost?'<span class="lobby-player-host">HOST</span>':'');
     list.appendChild(d);
   });
-  $('#btn-start').disabled=!_isHost||players.length<2;
-  const ch=$('#lobby-points-controls'),cr=$('#lobby-points-readonly');
-  if(_isHost){ch?.classList.remove('hidden');cr?.classList.add('hidden');if($('#lobby-points-value'))$('#lobby-points-value').textContent=room.pointsToWin;}
-  else{ch?.classList.add('hidden');cr?.classList.remove('hidden');if($('#lobby-points-value-readonly'))$('#lobby-points-value-readonly').textContent=room.pointsToWin;}
+
+  const toggle=$('#lobby-lives-toggle'),ro=$('#lobby-lives-readonly');
+  if(_isHost){
+    toggle.classList.remove('hidden');ro.classList.add('hidden');
+    $$('#lobby-lives-toggle .lives-opt').forEach(b=>b.classList.toggle('active',Number(b.dataset.lives)===Number(room.startLives)));
+  }else{
+    toggle.classList.add('hidden');ro.classList.remove('hidden');
+    $('#lobby-lives-value-readonly').textContent=room.startLives||3;
+  }
+
+  $('#btn-start').disabled=!_isHost||players.length<2||!_deckReady;
   const hint=$('#lobby-hint');
-  if(players.length<2)hint.textContent='Se necesitan al menos 2 jugadores.';
-  else if(_isHost)hint.textContent=`Gana quien llegue a ${room.pointsToWin} aciertos.`;
-  else hint.textContent='Esperando a que el host empiece.';
+  if(!_deckReady)hint.textContent=_deckError?'No se pudo cargar la base de jugadores.':'Cargando plantillas…';
+  else if(players.length<2)hint.textContent='Se necesitan al menos 2 jugadores.';
+  else if(_isHost)hint.textContent=`Cada jugador empieza con ${room.startLives} vidas. Gana el ultimo en pie.`;
+  else hint.textContent='Esperando a que el anfitrion empiece.';
 }
 
-/* ═══ GAME (mesa) ══════════════════════════════════════════ */
-function _seatChip(pid,p,opts){
-  const{isMe,isTurn,guess,canKick}=opts;
-  const chip=document.createElement('div');
-  chip.className=`seat${isMe?' me':''}${isTurn?' active':''}${p.connected===false?' off':''}`;
-  const ini=escapeHtml((p.name||'?')[0].toUpperCase());
-  let state;
-  if(guess!==undefined&&guess!==null) state=`<span class="seat-bet">${guess}</span>`;
-  else if(isTurn) state='<span class="seat-status thinking">pensando…</span>';
-  else state='<span class="seat-status">—</span>';
-  chip.innerHTML=`
-    <div class="seat-av">${ini}</div>
-    <div class="seat-body">
-      <div class="seat-name">${escapeHtml(p.name)}${isMe?' (tú)':''}</div>
-      <div class="seat-meta"><span class="seat-score">${p.score||0} pt</span>${state}</div>
+/* ═══ 9. PARTIDA ═══════════════════════════════════════════ */
+function _hearts(n){
+  n=Math.max(0,Number(n)||0);
+  if(n===0)return '<span class="hp dead">✕</span>';
+  if(n>7)return `<span class="hp">♥</span><span class="hp-x">×${n}</span>`;
+  return Array.from({length:n},()=>'<span class="hp">♥</span>').join('');
+}
+
+/* Iniciales del club para el escudo de reserva. Se descartan las
+   coletillas del nombre oficial (FC, CF, AC, SC...) para que
+   "Al-Nassr FC" de "AN" y no "AF", y "FC Barcelona" de "BA". */
+const _BADGE_SKIP=new Set(['FC','CF','AC','SC','CD','SD','UD','US','AS','SS','RC','CA','SL','GD','CS','AFC',
+  'BC','SV','VFL','VFB','TSG','SPVGG','FK','JK','SK','HNK','GNK','NK','MKE','CSD','RCD','ACF','SSC','LOSC',
+  'OGC','AJ','AZ','PEC','RKC','NEC','ADO','CFR','AE','AEK','UC','SSD','ASD','CLUB','DE','DEL','LA','EL']);
+function _clubInitials(club){
+  const words=String(club||'').replace(/[().,]/g,' ').split(/[\s-]+/).filter(Boolean);
+  const useful=words.filter(w=>!_BADGE_SKIP.has(w.toUpperCase())&&!/^[\d.]+$/.test(w));
+  const src=useful.length?useful:words;
+  if(!src.length)return '?';
+  if(src.length===1)return src[0].slice(0,2).toUpperCase();
+  return (src[0][0]+src[1][0]).toUpperCase();
+}
+/* El onerror de la etiqueta <img> no puede construir el monograma
+   solo, asi que llama aqui: cambia la imagen rota por la chapa de
+   texto sin dejar hueco. */
+window.MBadge={
+  fail(img){
+    const s=document.createElement('span');
+    s.className='tcard-badge tcard-badge--mono';
+    s.textContent=img.dataset.ini||'?';
+    if(img.dataset.club)s.title=img.dataset.club;
+    img.replaceWith(s);
+  },
+};
+
+/** Tarjeta de jugador (foto + nombre + escudo del club). */
+function renderCard(card,opts){
+  opts=opts||{};
+  const el=document.createElement('div');
+  el.className='tcard';
+  if(!card){
+    el.classList.add('tcard-missing');
+    el.innerHTML='<div class="tcard-photo"><div class="tcard-fallback">?</div></div><div class="tcard-name">—</div>';
+    return el;
+  }
+  const matches=opts.cond?MDeck.matches(card,opts.cond):false;
+  if(opts.reveal)el.classList.add(matches?'r-match':'r-no');
+  else if(opts.showMatch&&matches)el.classList.add('is-match');
+
+  /* Escudo del ultimo club. El bucket team-logos solo tiene los clubes
+     grandes (~190 de los 517 que salen en la baraja), asi que antes un
+     tercio largo de las cartas se quedaba sin escudo y parecia un fallo.
+     Ahora TODAS llevan la misma chapa: si hay PNG se pinta, y si no
+     (o si da 404) se pinta el monograma del club. */
+  const clubIni=_clubInitials(card.club);
+  const badge=card.badge
+    /* Sin loading="lazy": el escudo pesa poco, sale siempre en pantalla
+       y asi la carta se ve entera desde el primer momento. */
+    ? `<img class="tcard-badge" src="${escapeHtml(card.badge)}" alt="" data-ini="${escapeHtml(clubIni)}" data-club="${escapeHtml(card.club||'')}" onerror="MBadge.fail(this)">`
+    : `<span class="tcard-badge tcard-badge--mono" title="${escapeHtml(card.club||'')}">${escapeHtml(clubIni)}</span>`;
+  const mark=opts.reveal
+    ? `<div class="tcard-mark ${matches?'ok':'ko'}">${matches?'✓':'✕'}</div>`
+    : (opts.showMatch&&matches?'<div class="tcard-mark ok">✓</div>':'');
+
+  const ini=(card.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  el.title=`${card.name} · ${card.club||''}`;
+  /* La marca de ✓/✗ cuelga de la carta, no de la foto: en la pantalla
+     de resolucion las cartas van en chapa sin foto y la marca tiene
+     que seguir viendose. */
+  el.innerHTML=`
+    <div class="tcard-photo">
+      <img src="${escapeHtml(card.img)}" loading="lazy" alt="" onerror="this.closest('.tcard-photo').classList.add('no-photo')">
+      <div class="tcard-fallback">${escapeHtml(ini)}</div>
+      ${badge}
     </div>
-    ${canKick?'<button class="seat-kick" title="Quitar">×</button>':''}`;
-  const k=chip.querySelector('.seat-kick');
+    ${mark}
+    <div class="tcard-name">${escapeHtml(card.name)}</div>`;
+  return el;
+}
+
+function _fillRow(el,ids,opts){
+  el.innerHTML='';
+  if(!ids.length){el.innerHTML='<div class="empty-inline">Sin cartas</div>';return;}
+  ids.forEach(id=>el.appendChild(renderCard(MDeck.card(id),opts)));
+}
+
+/** Reconstruye la mesa. Solo cuando cambia el reparto/condición,
+ *  para que las fotos no parpadeen en cada acción. */
+/**
+ * Reparte a los rivales alrededor del tapete. Devuelve una zona
+ * ('left'|'top'|'right') por rival, en orden de turno: se sube por el
+ * lateral izquierdo, se cruza por arriba y se baja por el derecho, que
+ * es el sentido en el que van los turnos partiendo de mí (abajo).
+ * Se limita el techo de la fila de arriba a 3 asientos para que no se
+ * quede una hilera larguísima y las columnas vacías.
+ */
+/* Por debajo de 760 px la mesa se apila y ya no hay laterales: todos
+   los rivales van a una rejilla de dos columnas encima del tapete. */
+function _isNarrow(){ return window.matchMedia('(max-width: 759px)').matches; }
+
+function _seatZones(n){
+  if(_isNarrow())return Array.from({length:n},()=>'top');
+  const REPARTO={
+    0:[],
+    1:['top'],
+    2:['top','top'],
+    3:['left','top','right'],
+    4:['left','top','top','right'],
+    5:['left','top','top','top','right'],
+    6:['left','left','top','top','right','right'],
+    7:['left','left','top','top','top','right','right'],
+  };
+  if(REPARTO[n])return REPARTO[n];
+  /* Por encima de 7 rivales (la sala son 8 jugadores como mucho) se
+     reparte alternando para no dejar ninguna zona desbordada. */
+  const z=[];
+  for(let i=0;i<n;i++)z.push(['left','top','right'][i%3]);
+  return z;
+}
+
+/** Un asiento de la mesa: cabecera (avatar, nombre, vidas, estado) + su mano. */
+function _buildSeat(room,pid,opts){
+  const p=room.players[pid];
+  const box=document.createElement('div');
+  box.className='seat'+(opts.isMe?' seat--me':'');
+  box.dataset.pid=pid;
+  box.innerHTML=`
+    <div class="seat-head">
+      <span class="seat-av">${_avatarInner(p)}</span>
+      <span class="seat-name">${escapeHtml(p.name)}${opts.isMe?' (tu)':''}</span>
+      <span class="seat-lives"></span>
+      ${(!opts.isMe&&_isHost&&!_local)?'<button class="seat-kick" title="Quitar">×</button>':''}
+    </div>
+    <div class="seat-tag"></div>
+    <div class="hand-row seat-cards"></div>`;
+  const k=box.querySelector('.seat-kick');
   if(k)k.addEventListener('click',e=>{e.stopPropagation();_kick(pid,p.name);});
-  return chip;
+  _fillRow(box.querySelector('.seat-cards'),_handIds(room,pid),{cond:opts.cond,showMatch:opts.showMatch});
+  return box;
+}
+
+function _renderTable(room){
+  const cond=_condOf(room);
+  const key=[room.round,room.condKey,room.condArg,room.condNum,room.mode,_seatsOf(room).join(','),
+             Object.keys(room.players||{}).join(',')].join('|');
+  if(key===_dealKey)return;
+  _dealKey=key;
+
+  const easy=room.mode==='easy';
+
+  /* Cartas comunes: en el centro del tapete y nunca marcadas (spec 5). */
+  _fillRow($('#center-cards'),_centerIds(room),{cond,showMatch:false});
+  $('#center-count').textContent=_centerIds(room).length?`(${_centerIds(room).length})`:'';
+
+  const zones={left:$('#zone-left'),top:$('#zone-top'),right:$('#zone-right'),bottom:$('#zone-bottom')};
+  Object.values(zones).forEach(z=>{z.innerHTML='';});
+
+  /* Mi asiento, siempre abajo. En Fácil mis cartas van marcadas en
+     verde; en Difícil no se marca ninguna, ni las propias. */
+  const me=room.players[_playerId];
+  if(me){
+    const mySeat=_buildSeat(room,_playerId,{isMe:true,cond,showMatch:easy});
+    const hint=document.createElement('div');
+    hint.className='seat-hint';
+    const iPlay=_seatsOf(room).indexOf(_playerId)>=0;
+    if(!iPlay)hint.textContent='Estas eliminado: ves la partida pero no repartes ni juegas.';
+    else if(easy)hint.textContent='Modo facil: en verde, las tuyas que cumplen la condicion.';
+    else hint.textContent='Modo dificil: nadie ve que cartas cumplen. Tu criterio manda.';
+    mySeat.appendChild(hint);
+    zones.bottom.appendChild(mySeat);
+  }
+
+  /* Rivales, en orden de turno, repartidos por los tres lados libres. */
+  const seats=_seatsOf(room);
+  const others=Object.keys(room.players||{})
+    .filter(pid=>pid!==_playerId)
+    .sort((a,b)=>{
+      const ia=seats.indexOf(a),ib=seats.indexOf(b);
+      return (ia<0?99:ia)-(ib<0?99:ib);
+    });
+  const zonaDe=_seatZones(others.length);
+  others.forEach((pid,i)=>{
+    if(!room.players[pid])return;
+    zones[zonaDe[i]||'top'].appendChild(_buildSeat(room,pid,{isMe:false,cond,showMatch:false}));
+  });
+
+  /* Con pocos rivales las columnas laterales sobran: se ocultan para
+     que el tapete ocupe todo el ancho. */
+  ['left','right'].forEach(z=>zones[z].classList.toggle('empty',!zones[z].children.length));
+  /* data-n manda en la rejilla de rivales del movil: con uno o dos no
+     tiene sentido partir la fila en dos columnas. */
+  zones.top.dataset.n=String(zones.top.children.length);
+}
+
+/* ── Encaje en una pantalla ──────────────────────────────────
+   La mesa NO se desplaza: tiene que caber entera. Como el alto
+   depende de cuanta gente juegue (2 a 8) y del movil de cada uno,
+   se prueban tres niveles de compresion y se deja el primero que
+   entre. El ultimo escalon deja las cartas de los rivales en solo
+   nombre, que es lo unico imprescindible para contar. */
+const _DENSITY=['d1','d2','d3','d4'];
+function _fitTable(){
+  const scr=$('#screen-game');
+  if(!scr||!scr.classList.contains('active'))return;
+  const box=$('#game-scroll');
+  if(!box)return;
+  scr.classList.remove(..._DENSITY);
+  /* Los escalones se ACUMULAN (d1, luego d1+d2...): asi cada nivel solo
+     tiene que describir lo que recorta de nuevo y no puede pasar que un
+     nivel mas apretado se deje suelto algo que ya recortaba el anterior. */
+  for(const level of _DENSITY){
+    if(box.scrollHeight<=box.clientHeight+1)return;
+    scr.classList.add(level);
+  }
+}
+
+/* Al girar el movil o cambiar el tamano de la ventana cambia el
+   reparto de asientos (laterales / rejilla), asi que hay que repintar
+   la mesa entera, no solo recalcular la compresion. */
+let _resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{
+    const room=_local?_localRoom:_lastRoom;
+    if(!room||!$('#screen-game').classList.contains('active'))return;
+    _dealKey='';
+    _renderGame(room);
+  },180);
+});
+
+/** Refresca todo lo que cambia turno a turno (barato). */
+function _renderState(room){
+  const cond=_condOf(room);
+  $('#game-round').textContent=String(room.round||1);
+  $('#game-mode').textContent=room.mode==='easy'?'FACIL':'DIFICIL';
+  $('#game-code').textContent=_local?'PRACTICA':(_roomCode||'——————');
+  $('#cond-label').textContent=cond?cond.label:'—';
+  $('#cond-total').textContent=Number(room.totalCards||0);
+
+  /* Icono de la condición: escudo, logo de liga, bandera o emoji */
+  const iconEl=$('#cond-icon');
+  const icon=cond?MDeck.condIcon(cond):null;
+  const iconKey=icon?icon.type+':'+icon.value:'';
+  if(iconEl.dataset.key!==iconKey){
+    iconEl.dataset.key=iconKey;
+    if(!icon)iconEl.innerHTML='<span class="cond-emoji">🎭</span>';
+    else if(icon.type==='img')iconEl.innerHTML=`<img src="${escapeHtml(icon.value)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'cond-emoji',textContent:'🎭'}))">`;
+    else iconEl.innerHTML=`<span class="cond-emoji">${escapeHtml(icon.value)}</span>`;
+  }
+
+  const bet=Number(room.bet||0);
+  const turnId=room.turn;
+
+  /* Vidas y estado de cada asiento de la mesa (el mío incluido). */
+  $$('#table-area .seat').forEach(box=>{
+    const pid=box.dataset.pid,p=room.players?.[pid];
+    if(!p)return;
+    const lives=Number(p.lives||0);
+    const isTurn=room.status==='playing'&&turnId===pid;
+    box.classList.toggle('out',lives<=0);
+    box.classList.toggle('off',p.connected===false);
+    box.classList.toggle('turn',isTurn);
+    box.querySelector('.seat-lives').innerHTML=_hearts(lives);
+    const tag=box.querySelector('.seat-tag');
+    if(lives<=0)tag.textContent='ELIMINADO';
+    else if(room.betOwner===pid&&bet>0)tag.textContent=`SUBIO A ${bet}`;
+    else if(isTurn)tag.textContent=pid===_playerId?'TE TOCA':'PENSANDO…';
+    else if(p.connected===false)tag.textContent='SIN CONEXION';
+    else tag.textContent='';
+  });
+
+  _renderActions(room);
+  _renderClock(room);   // el último: manda sobre lo que haya pintado _renderActions
+}
+
+function _renderActions(room){
+  const panel=$('#action-panel'),waiting=$('#action-waiting');
+  const bet=Number(room.bet||0);
+  const total=Number(room.totalCards||0);
+  const isMyTurn=room.status==='playing'&&room.turn===_playerId&&_studyLeft(room)<=0;
+
+  if(!isMyTurn){
+    panel.classList.add('hidden');
+    waiting.classList.remove('hidden');
+    const wl=$('#action-wait-label');
+    if(room.status!=='playing')wl.textContent='Ronda terminada';
+    else if(_lives(room,_playerId)<=0)wl.textContent='Estas eliminado · sigues como espectador';
+    else if(room.turn)wl.textContent=`Turno de ${room.players?.[room.turn]?.name||'—'}`;
+    else wl.textContent='Esperando…';
+    return;
+  }
+
+  panel.classList.remove('hidden');
+  waiting.classList.add('hidden');
+
+  /* Cada turno nuevo arranca el selector en la subida minima. Sin
+     esto se arrastraba el numero del turno anterior (o de la partida
+     anterior) y al abrir una ronda aparecia una apuesta alta ya
+     puesta sin que nadie la hubiera elegido. */
+  const min=Math.min(total,bet+1);
+  const key=`${room.round}:${room.turnSeq}`;
+  if(_raiseKey!==key){_raiseKey=key;_raiseDraft=min;}
+  _raiseDraft=clamp(_raiseDraft,min,Math.max(min,total));
+  $('#raise-value').textContent=String(_raiseDraft);
+
+  const canRaise=bet<total;
+  $('#btn-raise').disabled=!canRaise;
+  $('#raise-minus').disabled=!canRaise||_raiseDraft<=min;
+  $('#raise-plus').disabled=!canRaise||_raiseDraft>=total;
+
+  /* Primer turno de la ronda: solo se puede abrir subiendo. */
+  const opening=bet<=0;
+  $('#act-row').classList.toggle('hidden',opening);
+  $('#stand-hint').textContent=opening?'':`en ${bet}`;
+  const ownerName=room.betOwner?(room.players?.[room.betOwner]?.name||'—'):'—';
+  $('#chal-hint').textContent=opening?'':`a ${ownerName}`;
+
+  const help=$('#bet-help');
+  if(opening)help.textContent=`Abres la ronda: di cuantas de las ${total} cartas crees que cumplen.`;
+  else if(!canRaise)help.textContent=`La apuesta ya esta en el maximo (${total}). Solo puedes plantarte o desafiar.`;
+  else help.textContent=`Apuesta actual ${bet} de ${total}. Sube, plantate o llama mentiroso.`;
 }
 
 function _renderGame(room){
   showScreen('#screen-game');
-  if(room.status==='playing'){$('#overlay-reveal').classList.add('hidden');$('#overlay-gameover').classList.add('hidden');_revealTriggered=false;}
-  const cond=_getCondition(room);
-  $('#game-round').textContent=String(room.round);
-  $('#game-round-stat').textContent=(cond.label||'').toUpperCase();
-  $('#game-code').textContent=_local?'PRÁCTICA':_roomCode;
+  _renderTable(room);
+  _renderState(room);
+  _fitTable();
+}
 
-  /* Botón de abandonar en topbar (solo añadir si no existe) */
-  const topbar=$('.game-topbar');
-  if(topbar&&!topbar.querySelector('.leave-game-btn')){
-    const leaveBtn=document.createElement('button');
-    leaveBtn.className='leave-game-btn';leaveBtn.textContent='Abandonar';
-    leaveBtn.addEventListener('click',()=>{if(confirm('¿Seguro que quieres abandonar la partida?'))_leaveRoom();});
-    topbar.appendChild(leaveBtn);
-  }
-
-  /* Progreso de puntos: pips por jugador */
-  const gtRight=$('.gt-right');
-  if(gtRight){
-    let prog=gtRight.querySelector('.gt-progress');
-    if(!prog){prog=document.createElement('div');prog.className='gt-progress';gtRight.appendChild(prog);}
-    prog.innerHTML='';
-    const target=room.pointsToWin||3;
-    const sortedIds=Object.keys(room.players).sort();
-    sortedIds.forEach(pid=>{
-      const p=room.players[pid];if(!p)return;
-      const score=p.score||0;
-      const wrap=document.createElement('div');
-      wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:3px;';
-      const nameEl=document.createElement('div');
-      nameEl.style.cssText='font-size:0.58rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase;white-space:nowrap;max-width:52px;overflow:hidden;text-overflow:ellipsis;';
-      nameEl.textContent=pid===_playerId?'TÚ':(p.name||'').slice(0,5).toUpperCase();
-      const pipsRow=document.createElement('div');pipsRow.style.cssText='display:flex;gap:3px;';
-      for(let i=0;i<target;i++){
-        const pip=document.createElement('div');
-        pip.className=`gt-progress-pip${i<score?' won':''}`;
-        pipsRow.appendChild(pip);
-      }
-      wrap.appendChild(nameEl);wrap.appendChild(pipsRow);
-      prog.appendChild(wrap);
-    });
-  }
-
-  const sortedIds=Object.keys(room.players).sort();
-  const deal=dealRound(room.seed,sortedIds);
-  const myHand=deal.hands[_playerId]||[];
-  const centerCards=deal.centerCards;
-  const order=getPlayerOrder(room);
-  const guesses=room.guesses||{};
-  const turnId=getCurrentTurnId(room);
-  const easyShow=room.mode==='easy';
-
-  /* Asientos de los DEMÁS (arriba) */
-  const seatsTop=$('#seats-top');seatsTop.innerHTML='';
-  order.filter(pid=>pid!==_playerId).forEach(pid=>{
-    const p=room.players[pid];if(!p)return;
-    seatsTop.appendChild(_seatChip(pid,p,{
-      isMe:false,isTurn:pid===turnId&&room.status==='playing',
-      guess:guesses[pid],canKick:_isHost&&!_local&&pid!==_playerId
-    }));
+/* ── "Estoy listo": saltarse la espera de estudio ──────────
+   Los 30 s de estudio son largos cuando ya has contado la mesa (y
+   contra bots son 30 s mirando la pared). El boton los corta en
+   cuanto lo pulsan TODOS los vivos y conectados; contra bots basta
+   con el jugador. */
+function _renderReady(room,study){
+  const btn=$('#btn-ready');
+  if(!btn)return;
+  const vivos=Object.keys(room.players||{}).filter(id=>{
+    const p=room.players[id];
+    return p&&p.connected!==false&&Number(p.lives||0)>0;
   });
+  const puedo=study>0&&vivos.indexOf(_playerId)>=0;
+  btn.classList.toggle('hidden',!puedo);
+  if(!puedo)return;
+  if(_local){btn.disabled=false;btn.textContent='EMPEZAR YA';return;}
+  const listos=room.ready||{};
+  const n=vivos.filter(id=>listos[id]).length;
+  btn.disabled=!!listos[_playerId];
+  btn.textContent=`${listos[_playerId]?'LISTO':'ESTOY LISTO'} · ${n}/${vivos.length}`;
+}
 
-  /* Cartas del centro (foto + nombre, como la mano) */
-  const ce=$('#center-cards');ce.innerHTML='';
-  if(!centerCards.length)ce.innerHTML='<div class="empty-inline">Sin cartas en el centro</div>';
-  else centerCards.forEach(c=>ce.appendChild(renderCard(c,{reveal:false,showMatch:easyShow,cond})));
+function _markReady(){
+  const room=_local?_localRoom:_lastRoom;
+  if(!room||room.status!=='playing'||_studyLeft(room)<=0)return;
+  if(_local){
+    _localRoom.studyUntil=Date.now();
+    _localRoom.turnAt=Date.now();
+    _onRoomUpdate(_localRoom);
+    _scheduleBot();          // el bot tenia la espera atada a los 30 s
+    return;
+  }
+  Sync.markReady(_roomCode,_playerId).catch(e=>console.warn('ready',e));
+}
 
-  /* Mi asiento (abajo) */
-  const ms=$('#my-seat');ms.innerHTML='';
-  const me=room.players[_playerId];
-  if(me)ms.appendChild(_seatChip(_playerId,me,{isMe:true,isTurn:turnId===_playerId&&room.status==='playing',guess:guesses[_playerId],canKick:false}));
+/* ═══ 10. RELOJ DE TURNO ═══════════════════════════════════ */
+function _elapsed(from){
+  const t=Number(from||0);
+  if(!t)return 0;
+  return clamp(Date.now()-t,0,10*60*1000);
+}
 
-  /* Mi mano (foto + nombre) */
-  const he=$('#my-hand');he.innerHTML='';
-  myHand.forEach(c=>he.appendChild(renderCard(c,{reveal:false,showMatch:easyShow,cond})));
+/** Milisegundos que quedan de fase de estudio (0 si ya se puja). */
+function _studyLeft(room){
+  if(!room||room.status!=='playing')return 0;
+  return Math.max(0,Number(room.studyUntil||0)-Date.now());
+}
 
-  /* Barra de acción */
-  const iAmDone=guesses[_playerId]!==undefined&&guesses[_playerId]!==null;
-  const isMyTurn=turnId===_playerId;
-  const totalCards=myHand.length*sortedIds.length+centerCards.length;
-  if(room.status==='playing'&&isMyTurn&&!iAmDone){
-    $('#action-panel').classList.remove('hidden');
-    $('#action-waiting').classList.add('hidden');
-    _guessDraft=Math.min(_guessDraft,totalCards);
-    $('#step-guess').textContent=_guessDraft;
-    $('#guess-max').textContent=totalCards;
-    clearTimeout(_skipTimer);
-  }else{
-    $('#action-panel').classList.add('hidden');
-    $('#action-waiting').classList.remove('hidden');
+/**
+ * Pinta la cabecera de apuesta y el reloj. Lo llaman _tick (cada 180 ms)
+ * y _renderState (en cada cambio de sala), así que tiene que dejar los
+ * mismos textos en los dos caminos: es el único sitio que escribe
+ * #bid-value / #bid-owner / #turn-name.
+ */
+function _renderClock(room){
+  const panel=$('.bid-panel');
+  const fill=$('#timer-fill'), num=$('#timer-num');
+  const kBid=$('#bid-kicker'), kTurn=$('#turn-kicker');
+  const study=_studyLeft(room);
+  const playing=room.status==='playing';
+
+  /* Al pasar de estudio a puja hay que repintar los botones aunque no
+     llegue ninguna novedad de la sala: el primero en hablar tiene que
+     ver aparecer su panel solo. */
+  const nowStudy=study>0;
+  /* Al acabar el estudio desaparece el boton de "listo" y aparece el
+     panel de apuesta: cambia el alto de la barra de accion, asi que
+     hay que volver a medir el encaje de la mesa. */
+  if(_studyOn!==nowStudy){_studyOn=nowStudy;_renderActions(room);_fitTable();}
+
+  if(playing&&study>0){
+    panel?.classList.add('study');
+    if(kBid)kBid.textContent='LA PUJA EMPIEZA EN';
+    if(kTurn)kTurn.textContent='ABRE LA RONDA';
+    const secs=Math.ceil(study/1000);
+    $('#bid-value').textContent=String(secs);
+    $('#bid-owner').textContent='Mira las cartas y calcula cuantas cumplen';
+    const opener=room.turn?room.players?.[room.turn]:null;
+    $('#turn-name').textContent=room.turn===_playerId?'TU':(opener?opener.name:'—');
+    if(fill){fill.style.width=(clamp(study/STUDY_MS,0,1)*100).toFixed(1)+'%';fill.classList.remove('warn');}
+    if(num)num.textContent=secs+'s';
     const wl=$('#action-wait-label');
-    if(wl){
-      if(room.status!=='playing')wl.textContent='Ronda terminada';
-      else if(iAmDone)wl.textContent='Has apostado · esperando a los demás';
-      else if(turnId)wl.textContent=`Turno de ${escapeHtml(room.players[turnId]?.name||'')}`;
-      else wl.textContent='Esperando…';
-    }
-    if(!_local&&_isHost&&room.status==='playing'&&turnId&&turnId!==_playerId)_armSkip(turnId);
+    if(wl)wl.textContent=`Estudia la mesa · la puja empieza en ${secs} s`;
+    _renderReady(room,study);
+    return;
   }
 
-  if(!_local&&_isHost&&room.status==='playing'&&!_revealTriggered&&allGuessed(room)){
-    _revealTriggered=true;_doRevealOnline(room);
+  _renderReady(room,0);
+
+  panel?.classList.remove('study');
+  if(kBid)kBid.textContent='APUESTA ACTUAL';
+  if(kTurn)kTurn.textContent='TURNO DE';
+
+  const bet=Number(room.bet||0);
+  const owner=room.betOwner?room.players?.[room.betOwner]:null;
+  $('#bid-value').textContent=bet>0?String(bet):'—';
+  $('#bid-owner').textContent=bet>0
+    ? `Subida por ${owner?owner.name:'—'}${room.betOwner===_playerId?' (tu)':''}`
+    : 'Nadie ha abierto todavia';
+  const turnP=room.turn?room.players?.[room.turn]:null;
+  $('#turn-name').textContent=playing
+    ? (room.turn===_playerId?'TI':(turnP?turnP.name:'—'))
+    : '—';
+
+  if(!playing){
+    /* Entre rondas la barra se deja llena y sin cuenta atrás, para que
+       no se quede congelada a media carrera. */
+    if(fill){fill.style.width='100%';fill.classList.remove('warn');}
+    if(num)num.textContent='—';
+    return;
   }
+
+  const left=Math.max(0,TURN_MS-_elapsed(room.turnAt));
+  const pct=clamp(left/TURN_MS,0,1);
+  if(fill){
+    fill.style.width=(pct*100).toFixed(1)+'%';
+    fill.classList.toggle('warn',pct<0.34);
+  }
+  if(num)num.textContent=Math.ceil(left/1000)+'s';
 }
 
-function _armSkip(pid){
-  clearTimeout(_skipTimer);
-  _skipTimer=setTimeout(()=>{
-    // El asiento activo usa la clase "seat active" (ver _seatChip), no
-    // "turn-chip active" (esa clase no existe en ningún elemento — el botón
-    // de saltar nunca aparecía porque este selector no encontraba nada).
-    $$('.seat.active').forEach(ch=>{
-      ch.classList.add('overdue');
-      if(!ch.querySelector('.tc-skip')){
-        const b=document.createElement('button');b.className='tc-skip';b.textContent='Saltar';
-        b.addEventListener('click',e=>{e.stopPropagation();Sync.submitGuess(_roomCode,pid,0).catch(()=>{});});
-        ch.appendChild(b);
+function _tick(){
+  const room=_local?_localRoom:_lastRoom;
+  if(!room)return;
+
+  _renderClock(room);
+
+  if(room.status==='playing'&&_studyLeft(room)<=0){
+    const left=Math.max(0,TURN_MS-_elapsed(room.turnAt));
+
+    /* Vigilancia en tres niveles. Los navegadores congelan los
+       temporizadores de las pestañas en segundo plano, así que no
+       basta con que decida el propio jugador (a los 15 s) ni con que
+       el anfitrión resuelva por él (a los 19 s): si el anfitrión
+       también tiene la pestaña de fondo, la partida se quedaba
+       parada para todos. Por eso pasados 25 s cualquier jugador
+       conectado puede desatascarla. Aplicar la acción de más es
+       imposible: runTransaction valida turnSeq y solo entra la
+       primera. */
+    const key=`${room.round}:${room.turnSeq}`;
+    if(left<=0&&_autoKey!==key){
+      const over=_elapsed(room.turnAt);
+      const iAmTurn=room.turn===_playerId;
+      const botTurn=_local&&room.turn&&room.turn!==_playerId;
+      const hostTurn=!botTurn&&_isHost&&over>=TURN_MS+HOST_GRACE_MS;
+      const anyTurn=!botTurn&&!_local&&over>=TURN_MS+ANY_GRACE_MS&&!!room.players?.[_playerId];
+      if(iAmTurn||hostTurn||anyTurn){
+        _autoKey=key;
+        _submit(_timeoutAction(room),room.turn);
       }
-    });
-  },45000);
+    }
+  }
+
+  if(room.status==='reveal'){
+    const left=Math.max(0,REVEAL_MS-_elapsed(room.resolvedAt));
+    const hint=$('#continue-hint');
+    if(hint){
+      hint.textContent=_isHost
+        ? `Continua sola en ${Math.ceil(left/1000)} s`
+        : `La siguiente ronda empieza en ${Math.ceil(left/1000)} s`;
+    }
+    const key=`${room.round}:${room.turnSeq}`;
+    if(_continueKey!==key){
+      const over=_elapsed(room.resolvedAt);
+      /* Mismo reparto que arriba: primero el anfitrión, y si no
+         aparece, cualquiera saca la ronda siguiente. */
+      const mine=_isHost&&left<=0;
+      const rescue=!_local&&!_isHost&&over>=REVEAL_MS+ANY_GRACE_MS;
+      if(mine||rescue){
+        _continueKey=key;
+        _continueRound(true);
+      }
+    }
+  }
 }
 
-function _computeReveal(room){
-  const sortedIds=Object.keys(room.players).sort();
-  const deal=dealRound(room.seed,sortedIds);
-  const cond=_getCondition(room);
-  let total=0;deal.deck.forEach(c=>{if(cardMatchesCond(c,cond))total++;});
-  const guesses=room.guesses||{};
-  const winners=[],scores={};
-  Object.entries(room.players).forEach(([pid,p])=>{
-    let sc=p.score||0;
-    if(guesses[pid]===total){winners.push(p.name);sc++;}
-    scores[pid]=sc;
-  });
-  return {total,winners,scores};
-}
-async function _doRevealOnline(room){
-  const{total,winners,scores}=_computeReveal(room);
-  const max=Math.max(...Object.values(scores));
-  const leaders=Object.entries(scores).filter(([,s])=>s>=room.pointsToWin&&s===max);
-  try{
-    if(leaders.length===1)await Sync.setFinished(_roomCode,room.players[leaders[0][0]].name,scores);
-    else await Sync.triggerReveal(_roomCode,total,winners.length?winners:['Nadie acertó'],scores);
-  }catch(e){console.warn('reveal',e);}
+/* Al volver de segundo plano el navegador ha tenido el reloj parado:
+   recalcular en cuanto la pestaña se ve, sin esperar al siguiente
+   intervalo. */
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)_tick();});
+
+/* ═══ 11. RESOLUCIÓN (overlay) ═════════════════════════════ */
+function _resolutionCopy(room,res){
+  const P=pid=>escapeHtml(room.players?.[pid]?.name||'—');
+  const auto=res.type==='timeout';
+  switch(res.outcome){
+    case'stand-hit':return{
+      tag:auto?'SE ACABO EL TIEMPO · PLANTADA CLAVADA':'PLANTADA CLAVADA',
+      head:`${P(res.actor)} se planto en ${res.bet}`,
+      sub:'Y era exactamente el numero real',
+      verdict:`${P(res.actor)} recupera 1 vida`,good:true};
+    case'stand-miss':return{
+      tag:auto?'SE ACABO EL TIEMPO · PLANTADA FALLIDA':'PLANTADA FALLIDA',
+      head:`${P(res.actor)} se planto en ${res.bet}`,
+      sub:`Pero el total real era ${res.actual}`,
+      verdict:`${P(res.actor)} pierde 1 vida`,good:false};
+    case'challenge-win':return{
+      tag:'MENTIROSO CAZADO',
+      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      sub:`La apuesta era ${res.bet} y solo cumplen ${res.actual}`,
+      verdict:`${P(res.target)} pierde 1 vida`,good:true};
+    case'challenge-exact':return{
+      tag:'ERA VERDAD',
+      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      sub:`${P(res.target)} habia clavado el numero: ${res.actual}`,
+      verdict:`${P(res.target)} se lleva 1 vida de regalo`,good:false};
+    case'challenge-short':return{
+      tag:'SE QUEDO CORTO',
+      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      sub:`La apuesta era ${res.bet} y cumplen ${res.actual}: no era mentira`,
+      verdict:`${P(res.actor)} pierde 1 vida`,good:false};
+    default:return{tag:'RONDA TERMINADA',head:'—',sub:'',verdict:'',good:true};
+  }
 }
 
-/* ═══ REVEAL ═══════════════════════════════════════════════ */
 function _renderReveal(room){
+  const res=room.resolution;
+  if(!res)return;
   const ov=$('#overlay-reveal');ov.classList.remove('hidden');
-  const cond=_getCondition(room);
-  const guesses=room.guesses||{};
-  const actual=room.actualTotal;
-  const winners=room.winners||[];
-  const easyMode=room.mode==='easy';
+  const cond=_condOf(room);
+  const copy=_resolutionCopy(room,res);
 
-  if(winners.length&&winners[0]!=='Nadie acertó'){
-    $('#reveal-tag').textContent='ACIERTO EXACTO';
-    $('#reveal-headline').textContent=winners.join(', ');
-    $('#reveal-sub').textContent=`${winners.length===1?'Ha':'Han'} clavado el total`;
-  }else{
-    $('#reveal-tag').textContent='NADIE ACERTO';
-    $('#reveal-headline').textContent='—';
-    $('#reveal-sub').textContent='Ningun jugador acerto el total exacto';
-  }
-  $('#reveal-count').textContent=actual;
+  $('#reveal-tag').textContent=copy.tag;
+  $('#reveal-headline').innerHTML=copy.head;
+  $('#reveal-sub').innerHTML=copy.sub;
+  $('#reveal-bet').textContent=res.bet;
+  $('#reveal-actual').textContent=res.actual;
+  $('#reveal-vs').textContent=res.bet===res.actual?'=':(res.bet>res.actual?'>':'<');
+  const verdict=$('#reveal-verdict');
+  verdict.innerHTML=copy.verdict;
+  verdict.className='reveal-verdict '+(copy.good?'win':'lose');
 
-  /* Aviso si dos o más jugadores están empatados en cabeza al llegar/superar
-     el objetivo de puntos — antes la partida simplemente seguía a la
-     siguiente ronda sin explicar por qué nadie ganaba todavía. */
-  const _scores=Object.values(room.players||{}).map(p=>p.score||0);
-  const _maxScore=_scores.length?Math.max(..._scores):0;
-  const _leadersCount=_scores.filter(s=>s>=(room.pointsToWin||3)&&s===_maxScore).length;
-  if(_leadersCount>=2){
-    const subEl=$('#reveal-sub');
-    if(subEl)subEl.textContent+=' · 🔥 Empate en cabeza — la partida continúa';
-  }
-
-  /* Apuestas de cada jugador */
-  const ge=$('#reveal-guesses');ge.innerHTML='';
-  Object.entries(room.players).forEach(([pid,p])=>{
-    const g=guesses[pid]??'—';
-    const hit=Number(g)===actual;
-    ge.innerHTML+=`<div class="guess-row${hit?' hit':''}"><span>${escapeHtml(p.name)}</span><span>${g}${hit?' ✓':''}</span></div>`;
+  /* Vidas antes → después, y quién queda fuera */
+  const lv=$('#reveal-lives');lv.innerHTML='';
+  Object.entries(room.players||{}).forEach(([pid,p])=>{
+    const now=Number(p.lives||0);
+    const before=res.before&&res.before[pid]!==undefined?res.before[pid]:now;
+    const delta=now-before;
+    const row=document.createElement('div');
+    row.className='life-row'+(delta>0?' up':delta<0?' down':'')+(now<=0?' out':'');
+    row.innerHTML=`<span class="life-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>`+
+      `<span class="life-hearts">${_hearts(now)}</span>`+
+      `<span class="life-delta">${delta>0?'+1':delta<0?'−1':'—'}${now<=0?' · ELIMINADO':''}</span>`;
+    lv.appendChild(row);
   });
 
-  /* Cartas en filas: primero la mesa, luego cada jugador */
-  const sortedIds=Object.keys(room.players).sort();
-  const deal=dealRound(room.seed,sortedIds);
+  $('#reveal-cond').textContent=cond?cond.label.toUpperCase():'';
+
+  /* Todas las cartas con ✓/✗ */
   const cardsEl=$('#reveal-cards');cardsEl.innerHTML='';
-
-  /* Fila: Mesa central */
-  if(deal.centerCards.length){
+  const center=_centerIds(room);
+  if(center.length){
     const sec=document.createElement('div');sec.className='reveal-section';
-    sec.innerHTML=`<div class="reveal-section-label">Mesa central</div>`;
-    const row=document.createElement('div');row.className='reveal-row';
-    const cards=document.createElement('div');cards.className='reveal-row-cards';
-    deal.centerCards.forEach(c=>cards.appendChild(renderCard(c,{reveal:true,showMatch:easyMode,cond,alwaysShowMatch:true})));
-    row.appendChild(cards);
-    sec.appendChild(row);
-    cardsEl.appendChild(sec);
+    sec.innerHTML='<div class="reveal-section-label">Mesa central</div>';
+    const row=document.createElement('div');row.className='reveal-row-cards';
+    center.forEach(id=>row.appendChild(renderCard(MDeck.card(id),{cond,reveal:true})));
+    sec.appendChild(row);cardsEl.appendChild(sec);
   }
-
-  /* Filas: cada jugador */
-  const sec2=document.createElement('div');sec2.className='reveal-section';
-  sec2.innerHTML=`<div class="reveal-section-label">Cartas de cada jugador</div>`;
-  sortedIds.forEach(pid=>{
-    const p=room.players[pid];if(!p)return;
-    const hand=deal.hands[pid]||[];if(!hand.length)return;
-    const row=document.createElement('div');row.className='reveal-row';
-    const isMe=pid===_playerId;
-    row.innerHTML=`<div class="reveal-row-name${isMe?' is-me':''}">${escapeHtml(p.name)}${isMe?' (tú)':''}</div>`;
-    const cards=document.createElement('div');cards.className='reveal-row-cards';
-    hand.forEach(c=>cards.appendChild(renderCard(c,{reveal:true,showMatch:easyMode,cond,alwaysShowMatch:true})));
-    row.appendChild(cards);
-    sec2.appendChild(row);
+  _seatsOf(room).forEach(pid=>{
+    const p=room.players?.[pid];if(!p)return;
+    const hand=_handIds(room,pid);if(!hand.length)return;
+    const sec=document.createElement('div');sec.className='reveal-section';
+    sec.innerHTML=`<div class="reveal-section-label${pid===_playerId?' is-me':''}">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</div>`;
+    const row=document.createElement('div');row.className='reveal-row-cards';
+    hand.forEach(id=>row.appendChild(renderCard(MDeck.card(id),{cond,reveal:true})));
+    sec.appendChild(row);cardsEl.appendChild(sec);
   });
-  cardsEl.appendChild(sec2);
 
-  $('#reveal-verdict').textContent=cond.label;
-  $('#btn-continue').classList.toggle('hidden',!_isHost);
+  const btn=$('#btn-continue');
+  btn.classList.toggle('hidden',!_isHost);
+  btn.textContent=room.finished?'VER GANADOR':'SIGUIENTE RONDA';
 }
 
-/* ═══ FINISHED ═════════════════════════════════════════════ */
 function _renderFinished(room){
-  const ov=$('#overlay-gameover');ov.classList.remove('hidden');
+  $('#overlay-gameover').classList.remove('hidden');
   $('#winner-name').textContent=room.winnerName||'—';
   const sb=$('#winner-scoreboard');sb.innerHTML='';
-  Object.entries(room.players||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0)).forEach(([,p])=>{sb.innerHTML+=`<div class="guess-row"><span>${escapeHtml(p.name)}</span><span>${p.score||0} pt</span></div>`;});
+  Object.entries(room.players||{})
+    .sort((a,b)=>(Number(b[1].lives||0))-(Number(a[1].lives||0)))
+    .forEach(([pid,p])=>{
+      const lives=Number(p.lives||0);
+      sb.innerHTML+=`<div class="life-row${lives<=0?' out':''}">`+
+        `<span class="life-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>`+
+        `<span class="life-hearts">${_hearts(lives)}</span>`+
+        `<span class="life-delta">${lives<=0?'ELIMINADO':'EN PIE'}</span></div>`;
+    });
 }
 
-/* ═══ RENDER CARD — solo foto + nombre ═════════════════════ */
-function renderCard(card,opts){
-  const{reveal,showMatch,cond,alwaysShowMatch}=opts;
-  const el=document.createElement('div');el.className='tcard';
-  const photo=`https://tmssl.akamaized.net/images/foto/small/${encodeURIComponent(card.playerId)}.jpg`;
-  const ini=(card.playerName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+/* ═══ 12. ENVÍO DE ACCIONES ════════════════════════════════ */
+/** Envía una acción del turno actual. pid por defecto = el turno. */
+function _submit(action,pid){
+  const room=_local?_localRoom:_lastRoom;
+  if(!room||room.status!=='playing')return;
+  if(_studyLeft(room)>0)return;
+  const actor=pid||room.turn;
+  if(!actor||room.turn!==actor)return;
 
-  let matches=null;
-  if(reveal||showMatch||alwaysShowMatch) matches=cardMatchesCond(card,cond);
-  if(reveal||alwaysShowMatch) el.classList.add(matches?'r-match':'r-no');
-  else if(showMatch&&matches) el.classList.add('is-match');
+  const act={...action,pid:actor,turnSeq:Number(room.turnSeq||0)};
 
-  el.innerHTML=`
-    <div class="tcard-photo">
-      <img src="${photo}" loading="lazy" alt="" onerror="this.closest('.tcard-photo').classList.add('no-photo')">
-      <div class="tcard-fallback">${escapeHtml(ini)}</div>
-      ${(reveal||alwaysShowMatch)&&matches?'<div class="tcard-tick">✓</div>':''}
-    </div>
-    <div class="tcard-name">${escapeHtml(card.playerName)}</div>`;
-  return el;
+  if(act.type==='stand'||act.type==='challenge'){
+    const actual=_actualTotal(room);
+    if(actual===null){
+      toast('Faltan datos de alguna carta. Recarga la pagina.','error');
+      return;
+    }
+    act.actual=actual;
+  }
+
+  if(_local){
+    if(_applyAction(_localRoom,act)){
+      _onRoomUpdate(_localRoom);
+      _scheduleBot();
+    }
+    return;
+  }
+  Sync.act(_roomCode,act).catch(e=>console.warn('act',e));
 }
 
-/* ═══ 7. MODO PRÁCTICA (vs bots) ═══════════════════════════ */
-const BOT_NAMES=['Bot Pirlo','Bot Xavi','Bot Kanté','Bot Pogba','Bot Vidal','Bot Alonso','Bot Busquets'];
-/* 4 rondas PREDETERMINADAS (siempre las mismas) para verificar el juego:
-   club → companero → numero → combo. Tras la 4a se repiten en bucle. */
-const PRACTICE_SEEDS=[2,3,1,4];
+/* ═══ 13. APERTURA DE RONDA ════════════════════════════════ */
+function _buildRoundPayload(room,roundNum){
+  const alive=_aliveIds(room);
+  if(alive.length<2)return null;
+  const shift=(roundNum-1)%alive.length;
+  const seats=[...alive.slice(shift),...alive.slice(0,shift)];
+
+  /* Prueba varias semillas hasta dar con una condición que parta
+     la mesa en dos (ni 0 ni todas cumplen). */
+  let seed=0,deal=null,cond=null;
+  const prevSig=room.condKey?MDeck.condSignature(_condOf(room)):'';
+  for(let i=0;i<8&&!cond;i++){
+    seed=(Date.now()+roundNum*7919+i*104729)>>>0;
+    deal=MDeck.deal(seed,seats);
+    cond=MDeck.chooseCondition(deal.cards,MDeck.mulberry32(seed^0x9E3779B9),prevSig);
+  }
+  if(!cond)return null;
+
+  return {
+    status:'playing',
+    round:roundNum,
+    seed,
+    seats,
+    dealHands:deal.hands,
+    dealCenter:deal.center,
+    totalCards:deal.cards.length,
+    condKey:cond.key,condArg:cond.arg,condNum:cond.num,
+    condLabel:cond.label,
+    bet:0,betOwner:null,
+    /* Abre el primero de la rotacion que este conectado: si abre un
+       ausente, la ronda se queda parada hasta que salte el rescate. */
+    turn:seats.find(pid=>room.players?.[pid]?.connected!==false)||seats[0],
+    turnSeq:Number(room.turnSeq||0)+1,
+    /* turnAt en el futuro: hasta que no acaba el estudio, _elapsed da 0
+       y el reloj del primer turno se queda parado y lleno. */
+    studyUntil:Date.now()+STUDY_MS,
+    turnAt:Date.now()+STUDY_MS,
+    lastAction:null,
+    ready:null,
+    resolution:null,
+    resolvedAt:null,
+  };
+}
+
+async function _startRound(roundNum){
+  const room=_local?_localRoom:_lastRoom;
+  if(!room)return;
+  if(!MDeck.ready()){toast('Todavia se estan cargando las plantillas','error');return;}
+  const payload=_buildRoundPayload(room,roundNum);
+  if(!payload){
+    toast('No se pudo preparar la ronda','error');
+    return;
+  }
+  _autoKey='';_continueKey='';_dealKey='';_raiseKey='';_studyOn=null;
+  if(_local){
+    _applyRoundPayload(_localRoom,payload);
+    _onRoomUpdate(_localRoom);
+    _scheduleBot();
+    return;
+  }
+  try{await Sync.startRound(_roomCode,payload);}
+  catch(e){console.warn('startRound',e);toast('Error al iniciar la ronda','error');}
+}
+
+/** @param {boolean} rescue permite continuar sin ser anfitrión (ver _tick) */
+async function _continueRound(rescue){
+  const room=_local?_localRoom:_lastRoom;
+  if(!room)return;
+  if(!_isHost&&!rescue)return;
+  if(room.finished){
+    if(_local){_localRoom.status='finished';_onRoomUpdate(_localRoom);}
+    else Sync.setFinished(_roomCode).catch(()=>{});
+    return;
+  }
+  await _startRound(Number(room.round||0)+1);
+}
+
+/* ═══ 14. PRÁCTICA (bots) ══════════════════════════════════ */
+const BOT_NAMES=['Bot Pirlo','Bot Xavi','Bot Kante','Bot Pogba','Bot Vidal','Bot Alonso','Bot Busquets'];
+
 function _startLocal(){
-  const name=_accName('practice-name')||'Tú';
+  if(!MDeck.ready()){toast('Todavia se estan cargando las plantillas','error');return;}
+  const name=_accName('practice-name')||'Tu';
+  _reset();
   _local=true;_isHost=true;_playerId='me';_roomCode=null;
-  const players={me:{name,avatar:_accAvatar(),score:0,connected:true,isHost:true}};
-  for(let i=0;i<_botsDraft;i++)players['bot'+i]={name:BOT_NAMES[i%BOT_NAMES.length],score:0,connected:true,isHost:false};
-  _localRoom={game:'mentiroso',status:'waiting',mode:_modeDraft,pointsToWin:_pointsDraft,round:0,seed:0,players,guesses:{}};
-  _localStartRound(1);
-}
-function _localStartRound(roundNum){
-  const room=_localRoom;if(!room)return;
-  const sortedIds=Object.keys(room.players).sort();
-  const seed=PRACTICE_SEEDS[(roundNum-1)%PRACTICE_SEEDS.length];
-  const deal=dealRound(seed,sortedIds);
-  const c=deal.condition;
-  room.round=roundNum;room.seed=seed;
-  room.condKey=c.key;room.condType=c.type;room.condLabel=c.label;room.condUnit=c.unit;room.condThreshold=c.threshold;
-  room.guesses={};room.actualTotal=null;room.winners=null;room.status='playing';
-  _revealTriggered=false;
-  _onRoomUpdate(room);
-  _localBotTurn();
-}
-function _botGuess(room,botId){
-  const sortedIds=Object.keys(room.players).sort();
-  const deal=dealRound(room.seed,sortedIds);
-  const cond=_getCondition(room);
-  const visible=[...(deal.hands[botId]||[]),...deal.centerCards];
-  const vm=visible.filter(c=>cardMatchesCond(c,cond)).length;
-  const total=deal.deck.length;
-  const est=Math.round(vm/Math.max(1,visible.length)*total);
-  const noise=Math.floor(Math.random()*3)-1;
-  return Math.max(0,Math.min(total,est+noise));
-}
-function _localBotTurn(){
-  const room=_localRoom;if(!room||room.status!=='playing')return;
-  const turnId=getCurrentTurnId(room);
-  if(!turnId||turnId==='me')return;
-  setTimeout(()=>{
-    if(_localRoom!==room||room.status!=='playing')return;
-    if(getCurrentTurnId(room)!==turnId)return;
-    room.guesses[turnId]=_botGuess(room,turnId);
-    _onRoomUpdate(room);
-    if(allGuessed(room))_localReveal();
-    else _localBotTurn();
-  },650);
-}
-function _localReveal(){
-  const room=_localRoom;
-  const{total,winners,scores}=_computeReveal(room);
-  Object.entries(scores).forEach(([pid,sc])=>{room.players[pid].score=sc;});
-  room.actualTotal=total;room.winners=winners.length?winners:['Nadie acertó'];
-  const max=Math.max(...Object.values(room.players).map(p=>p.score||0));
-  const leaders=Object.entries(room.players).filter(([,p])=>(p.score||0)>=room.pointsToWin&&(p.score||0)===max);
-  if(leaders.length===1){room.status='finished';room.winnerName=leaders[0][1].name;}
-  else room.status='reveal';
-  _onRoomUpdate(room);
+  const players={me:{name,avatar:_accAvatar(),lives:_livesDraft,connected:true,isHost:true}};
+  for(let i=0;i<_botsDraft;i++){
+    players['bot'+i]={name:BOT_NAMES[i%BOT_NAMES.length],avatar:null,lives:_livesDraft,connected:true,isHost:false};
+  }
+  _localRoom={
+    game:'mentiroso',status:'waiting',mode:_modeDraft,startLives:_livesDraft,
+    round:0,turnSeq:0,bet:0,betOwner:null,turn:null,studyUntil:0,totalCards:0,players,
+  };
+  _startRound(1);
 }
 
-/* ═══ 8. ACCIONES ══════════════════════════════════════════ */
+/** Estimación del bot: conoce el total real, pero con ruido. */
+function _botEstimate(room){
+  const actual=_actualTotal(room);
+  const total=Number(room.totalCards||0);
+  if(actual===null)return Math.round(total/3);
+  const spread=Math.max(1,Math.round(total*0.14));
+  const noise=Math.round((Math.random()*2-1)*spread);
+  return clamp(actual+noise,0,total);
+}
+
+function _botAction(room){
+  const total=Number(room.totalCards||0);
+  const bet=Number(room.bet||0);
+  const est=_botEstimate(room);
+
+  if(bet<=0)return {type:'raise',value:clamp(Math.round(est*0.6)||1,1,total)};
+  if(bet>=total)return (bet===est)?{type:'stand'}:{type:'challenge'};
+  if(bet>est+1)return {type:'challenge'};
+  if(bet===est)return Math.random()<0.55?{type:'stand'}:{type:'raise',value:bet+1};
+  if(bet>est)return Math.random()<0.5?{type:'challenge'}:{type:'raise',value:bet+1};
+  const step=1+Math.floor(Math.random()*2);
+  return {type:'raise',value:clamp(Math.max(bet+1,Math.min(est,bet+step)),bet+1,total)};
+}
+
+/** Cuánto "piensa" el bot antes de responder, según lo que va a hacer. */
+function _botDelay(action){
+  let ms=BOT_MIN_MS+Math.random()*(BOT_MAX_MS-BOT_MIN_MS);
+  /* Plantarse o desafiar cierra la ronda y se juega una vida: ahí
+     cualquiera se lo piensa un poco más que para subir de 4 a 5. */
+  if(action.type!=='raise')ms+=1500+Math.random()*2500;
+  /* Alguna vez la jugada es evidente y sale sola. */
+  if(Math.random()<0.15)ms*=0.45;
+  return clamp(ms,1200,BOT_CAP_MS);
+}
+
+function _scheduleBot(){
+  clearTimeout(_botTimer);_botTimer=null;
+  const room=_localRoom;
+  if(!room||room.status!=='playing')return;
+  const turn=room.turn;
+  if(!turn||turn===_playerId)return;
+  const seq=room.turnSeq;
+  /* La decisión se toma ya para poder ajustar la espera a lo que va a
+     hacer; al disparar se revalida que el turno siga siendo el mismo. */
+  const accion=_botAction(room);
+  const espera=_studyLeft(room)+_botDelay(accion);
+  _botTimer=setTimeout(()=>{
+    if(_localRoom!==room||room.status!=='playing')return;
+    if(room.turn!==turn||room.turnSeq!==seq)return;
+    _submit(accion,turn);
+  },espera);
+}
+
+/* ── La sala vive en la URL (js/ruta.js, mismo convenio que el resto
+      de juegos con sala): asi el enlace se puede compartir y recargar
+      la pagina te devuelve a la sala en vez de al menu. ── */
+function _marcarSalaEnRuta(code,name){
+  if(!window.FHRuta)return;
+  FHRuta.set({sala:code});
+  FHRuta.recordarSala('mentiroso',code,name);
+}
+function _olvidarSalaEnRuta(){
+  if(!window.FHRuta)return;
+  FHRuta.borrar('sala');
+  FHRuta.olvidarSala('mentiroso');
+}
+/** Enlace de invitacion a la sala actual. */
+function _enlaceSala(){
+  const u=new URL(window.location.href);
+  u.search='?sala='+encodeURIComponent(_roomCode||'');
+  u.hash='';
+  return u.toString();
+}
+
+/* ═══ 15. ACCIONES DE MENÚ ═════════════════════════════════ */
 async function _createRoom(){
   if(!window._FB?.configured){toast('Firebase no cargado','error');return;}
+  if(!_deckReady){toast('Espera a que carguen las plantillas','error');return;}
   const name=_accName('create-name');
   if(!name){toast('Escribe tu nombre','error');return;}
   try{
-    const{code,playerId}=await Sync.createRoom(name,_modeDraft,_pointsDraft,_accAvatar());
+    const{code,playerId}=await Sync.createRoom(name,_modeDraft,_livesDraft,_accAvatar());
     _local=false;_roomCode=code;_playerId=playerId;_isHost=true;
-    _saveSession(name);_unsub=Sync.listenRoom(code,_onRoomUpdate);
+    _marcarSalaEnRuta(code,name);
+    _saveSession();_unsub=Sync.listenRoom(code,_onRoomUpdate);
   }catch(e){toast(e.message,'error');}
 }
 async function _joinRoom(){
   if(!window._FB?.configured){toast('Firebase no cargado','error');return;}
+  if(!_deckReady){toast('Espera a que carguen las plantillas','error');return;}
   const name=_accName('join-name');
   const code=($('#join-code').value||'').trim().toUpperCase();
   if(!name){toast('Escribe tu nombre','error');return;}
-  if(code.length<4){toast('Código inválido','error');return;}
+  if(code.length<4){toast('Codigo invalido','error');return;}
   try{
     const r=await Sync.joinRoom(code,name,_accAvatar());
     _local=false;_roomCode=r.code;_playerId=r.playerId;_isHost=false;
-    _saveSession(name);_unsub=Sync.listenRoom(code,_onRoomUpdate);
+    _marcarSalaEnRuta(r.code,name);
+    _saveSession();_unsub=Sync.listenRoom(code,_onRoomUpdate);
   }catch(e){$('#join-error').textContent=e.message;$('#join-error').classList.remove('hidden');}
 }
 async function _startGame(){
   if(_local||!_isHost||!_roomCode||!_lastRoom)return;
-  const sortedIds=Object.keys(_lastRoom.players).sort();
-  const seed=Date.now()+Math.floor(Math.random()*100000);
-  const deal=dealRound(seed,sortedIds);
-  try{await Sync.startRound(_roomCode,1,seed,deal.condition,_lastRoom.pointsToWin);}
-  catch(e){toast('Error al iniciar','error');}
-}
-async function _submitGuess(){
-  const room=_lastRoom;if(!room)return;
-  if(getCurrentTurnId(room)!==_playerId){toast('No es tu turno','error');return;}
-  if(_local){
-    room.guesses[_playerId]=_guessDraft;_onRoomUpdate(room);
-    if(allGuessed(room))_localReveal();else _localBotTurn();
-    return;
-  }
-  try{await Sync.submitGuess(_roomCode,_playerId,_guessDraft);}
-  catch(e){toast(e.message,'error');}
-}
-async function _continueRound(){
-  if(!_isHost)return;
-  if(_local){_localStartRound((_localRoom.round||0)+1);return;}
-  if(!_roomCode||!_lastRoom)return;
-  const next=(_lastRoom.round||0)+1;
-  const sortedIds=Object.keys(_lastRoom.players).sort();
-  const seed=Date.now()+next*7919;
-  const deal=dealRound(seed,sortedIds);
-  try{await Sync.startRound(_roomCode,next,seed,deal.condition,_lastRoom.pointsToWin);}
-  catch(e){toast('Error','error');}
+  if(_aliveIds(_lastRoom).length<2){toast('Se necesitan al menos 2 jugadores','error');return;}
+  await _startRound(1);
 }
 async function _leaveRoom(){
-  if(!_local&&_roomCode&&_playerId){try{await Sync.disconnect(_roomCode,_playerId);}catch{}}
-  _reset();showScreen('#screen-menu');
+  /* Primero se limpia el estado local y se vuelve al menú, y sólo
+     después se avisa a Firebase. Al revés, el _reset() quedaba detrás
+     del await y podía llegar tarde: si mientras tanto ya se había
+     empezado otra partida (p. ej. una práctica), la borraba. */
+  const code=_roomCode,pid=_playerId,wasOnline=!_local;
+  _reset();
+  _olvidarSalaEnRuta();
+  showScreen('#screen-menu');
+  if(wasOnline&&code&&pid){try{await Sync.disconnect(code,pid);}catch{}}
 }
 async function _kick(pid,name){
   if(!confirm(`¿Quitar a ${name}?`))return;
   try{await Sync.kick(_roomCode,pid);toast(`${name} eliminado`,'info');}catch{toast('Error','error');}
 }
 
-/* ═══ 9. BOOT ══════════════════════════════════════════════ */
+/* ═══ 16. CARGA DE LA BARAJA ═══════════════════════════════ */
+function _setDbStatus(text,pct,state){
+  const box=$('#db-status'),label=$('#db-status-label'),fill=$('#db-bar-fill');
+  if(!box)return;
+  box.classList.toggle('done',state==='done');
+  box.classList.toggle('error',state==='error');
+  if(label)label.textContent=text;
+  if(fill)fill.style.width=clamp(pct*100,0,100)+'%';
+  if(state==='done')setTimeout(()=>box.classList.add('hidden'),900);
+}
+function _lockMenu(locked){
+  ['#btn-create','#btn-join','#btn-practice'].forEach(sel=>{
+    const b=$(sel);if(b)b.disabled=locked;
+  });
+}
+function _loadDeck(){
+  _lockMenu(true);
+  _setDbStatus('Cargando plantillas…',0.05,'loading');
+  MDeck.load(p=>_setDbStatus(`Cargando plantillas… ${Math.round(p*100)}%`,Math.max(0.05,p),'loading'))
+    .then(pool=>{
+      _deckReady=true;_deckError=null;
+      _setDbStatus(`${pool.length} futbolistas listos`,1,'done');
+      _lockMenu(false);
+      if(_lastRoom)_onRoomUpdate(_lastRoom);
+    })
+    .catch(err=>{
+      console.error('[Mentiroso] no se pudo cargar la baraja',err);
+      _deckReady=false;_deckError=err;
+      _setDbStatus('No se pudo cargar la base de jugadores. Recarga la pagina.',1,'error');
+      _lockMenu(true);
+    });
+}
+
+/* ═══ 17. BOOT ═════════════════════════════════════════════ */
 function boot(){
-  if(!window.PLAYERS||!window.PLAYERS.length){toast('Faltan datos de jugadores','error');return;}
+  if(!window.MDeck){toast('Faltan datos del juego','error');return;}
 
   /* Tabs */
   $$('.menu-tab').forEach(tab=>tab.addEventListener('click',()=>{
@@ -778,73 +1410,114 @@ function boot(){
     $$('.menu-panel').forEach(p=>p.classList.remove('active'));
     $(`.menu-panel[data-panel="${tab.dataset.tab}"]`)?.classList.add('active');
   }));
-  /* Mode */
-  $$('.mode-opt').forEach(b=>b.addEventListener('click',()=>{$$('.mode-opt').forEach(x=>x.classList.remove('active'));b.classList.add('active');_modeDraft=b.dataset.mode;}));
-  /* Points steppers */
-  $('#btn-points-minus')?.addEventListener('click',()=>{_pointsDraft=Math.max(1,_pointsDraft-1);$('#create-points-value').textContent=_pointsDraft;});
-  $('#btn-points-plus')?.addEventListener('click',()=>{_pointsDraft=Math.min(10,_pointsDraft+1);$('#create-points-value').textContent=_pointsDraft;});
-  $('#btn-lobby-points-minus')?.addEventListener('click',()=>{if(_isHost&&_roomCode)Sync.updateSettings(_roomCode,{pointsToWin:Math.max(1,(_lastRoom?.pointsToWin||3)-1)}).catch(()=>{});});
-  $('#btn-lobby-points-plus')?.addEventListener('click',()=>{if(_isHost&&_roomCode)Sync.updateSettings(_roomCode,{pointsToWin:Math.min(10,(_lastRoom?.pointsToWin||3)+1)}).catch(()=>{});});
-  /* Bots stepper (practica) */
-  $('#btn-bots-minus')?.addEventListener('click',()=>{_botsDraft=Math.max(1,_botsDraft-1);if($('#practice-bots-value'))$('#practice-bots-value').textContent=_botsDraft;});
-  $('#btn-bots-plus')?.addEventListener('click',()=>{_botsDraft=Math.min(5,_botsDraft+1);if($('#practice-bots-value'))$('#practice-bots-value').textContent=_botsDraft;});
-  /* Buttons */
+
+  /* Modo */
+  $$('.mode-opt').forEach(b=>b.addEventListener('click',()=>{
+    $$('.mode-opt').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    _modeDraft=b.dataset.mode;
+  }));
+
+  /* Vidas iniciales (menú) */
+  $$('#lives-toggle .lives-opt').forEach(b=>b.addEventListener('click',()=>{
+    $$('#lives-toggle .lives-opt').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');_livesDraft=Number(b.dataset.lives)||3;
+  }));
+  /* Vidas iniciales (lobby, solo anfitrión) */
+  $$('#lobby-lives-toggle .lives-opt').forEach(b=>b.addEventListener('click',()=>{
+    if(!_isHost||!_roomCode||!_lastRoom)return;
+    /* Además del ajuste, se reparten las vidas nuevas a quien ya
+       estuviera en la sala: si no, el lobby prometía 5 vidas y la
+       partida arrancaba con las 3 que tenía cada uno al entrar. */
+    const n=Number(b.dataset.lives)||3;
+    const patch={startLives:n};
+    Object.keys(_lastRoom.players||{}).forEach(pid=>{patch[`players/${pid}/lives`]=n;});
+    Sync.updateSettings(_roomCode,patch).catch(()=>{});
+  }));
+
+  /* Bots (práctica) */
+  $('#btn-bots-minus')?.addEventListener('click',()=>{_botsDraft=Math.max(1,_botsDraft-1);$('#practice-bots-value').textContent=_botsDraft;});
+  $('#btn-bots-plus')?.addEventListener('click',()=>{_botsDraft=Math.min(5,_botsDraft+1);$('#practice-bots-value').textContent=_botsDraft;});
+
+  /* Botones */
   _setupAccountName();
   $('#btn-create')?.addEventListener('click',_createRoom);
   $('#btn-join')?.addEventListener('click',_joinRoom);
   $('#btn-practice')?.addEventListener('click',_startLocal);
   $('#btn-start')?.addEventListener('click',_startGame);
-  $('#btn-guess')?.addEventListener('click',_submitGuess);
-  $('#btn-continue')?.addEventListener('click',_continueRound);
   $('#btn-menu')?.addEventListener('click',_leaveRoom);
   $('[data-action="leave-lobby"]')?.addEventListener('click',_leaveRoom);
-  /* Copia el ENLACE de invitación, como el resto de salas: El Mentiroso ya
-     lee ?sala= de la URL al arrancar (más abajo en esta misma función), así
-     que quien lo reciba entra directo con el código puesto. */
-  $('#btn-copy-link')?.addEventListener('click',()=>{
-    if(!_roomCode){toast('Todavía no hay sala','error');return;}
-    const url=window.location.origin+window.location.pathname+'?sala='+_roomCode;
-    navigator.clipboard?.writeText(url).then(()=>toast('¡Enlace copiado!','success')).catch(()=>toast(url,'info'));
+  $('#btn-leave-game')?.addEventListener('click',()=>{
+    if(confirm('¿Seguro que quieres abandonar la partida?'))_leaveRoom();
   });
-  /* Guess stepper */
-  $('#guess-minus')?.addEventListener('click',()=>{_guessDraft=Math.max(0,_guessDraft-1);$('#step-guess').textContent=_guessDraft;});
-  $('#guess-plus')?.addEventListener('click',()=>{const m=Number($('#guess-max').textContent)||0;_guessDraft=Math.min(m,_guessDraft+1);$('#step-guess').textContent=_guessDraft;});
+  $('#btn-copy-code')?.addEventListener('click',()=>{
+    /* Se copia el ENLACE, no el codigo suelto: quien lo recibe entra de
+       un toque en vez de tener que abrir el juego y teclear seis letras. */
+    navigator.clipboard?.writeText(_enlaceSala())
+      .then(()=>toast('Enlace de invitacion copiado','success'))
+      .catch(()=>{
+        navigator.clipboard?.writeText(_roomCode||'').then(()=>toast('Codigo copiado','success')).catch(()=>{});
+      });
+  });
+  $('#btn-continue')?.addEventListener('click',()=>{
+    const room=_local?_localRoom:_lastRoom;
+    if(room)_continueKey=`${room.round}:${room.turnSeq}`;
+    _continueRound();
+  });
+
+  /* Acciones de turno */
+  $('#raise-minus')?.addEventListener('click',()=>{
+    const room=_local?_localRoom:_lastRoom;if(!room)return;
+    _raiseDraft=Math.max(Number(room.bet||0)+1,_raiseDraft-1);
+    _renderActions(room);
+  });
+  $('#raise-plus')?.addEventListener('click',()=>{
+    const room=_local?_localRoom:_lastRoom;if(!room)return;
+    _raiseDraft=Math.min(Number(room.totalCards||0),_raiseDraft+1);
+    _renderActions(room);
+  });
+  $('#btn-raise')?.addEventListener('click',()=>{
+    const room=_local?_localRoom:_lastRoom;if(!room)return;
+    _submit({type:'raise',value:_raiseDraft});
+  });
+  $('#btn-ready')?.addEventListener('click',_markReady);
+  $('#btn-stand')?.addEventListener('click',()=>_submit({type:'stand'}));
+  $('#btn-challenge')?.addEventListener('click',()=>_submit({type:'challenge'}));
+
+  /* Reloj */
+  setInterval(_tick,180);
+
   /* beforeunload — solo lobby online */
-  window.addEventListener('beforeunload',()=>{if(!_local&&_roomCode&&_playerId&&_lastRoom?.status==='waiting')Sync.disconnect(_roomCode,_playerId).catch(()=>{});});
-  /* ?sala= */
-  const sala=window.FHRuta?FHRuta.sala():new URLSearchParams(window.location.search).get('sala');
-  if(sala){$('#join-code').value=sala;$$('.menu-tab').forEach(t=>t.classList.remove('active'));$('.menu-tab[data-tab="join"]')?.classList.add('active');$$('.menu-panel').forEach(p=>p.classList.remove('active'));$('.menu-panel[data-panel="join"]')?.classList.add('active');}
-  /* Restaurar sesión online. Primero la de la pestaña, que es la buena: trae
-     el playerId exacto, así que vuelves siendo TÚ y no un jugador nuevo. */
+  window.addEventListener('beforeunload',()=>{
+    if(!_local&&_roomCode&&_playerId&&_lastRoom?.status==='waiting')Sync.disconnect(_roomCode,_playerId).catch(()=>{});
+  });
+
+  /* ?sala= — validado (lo escribe cualquiera en la barra) y, si venimos
+     de recargar, con el nombre con el que ya estabas dentro. */
+  const sala=window.FHRuta?FHRuta.sala()
+    :(new URLSearchParams(window.location.search).get('sala')||'').toUpperCase();
+  if(sala){
+    $('#join-code').value=sala;
+    const rec=window.FHRuta&&FHRuta.salaRecordada('mentiroso',sala);
+    if(rec&&rec.nombre)$('#join-name').value=rec.nombre;
+    $$('.menu-tab').forEach(t=>t.classList.remove('active'));
+    $('.menu-tab[data-tab="join"]')?.classList.add('active');
+    $$('.menu-panel').forEach(p=>p.classList.remove('active'));
+    $('.menu-panel[data-panel="join"]')?.classList.add('active');
+  }
+
+  _loadDeck();
+
+  /* Restaurar sesión online */
   try{
     const s=JSON.parse(sessionStorage.getItem('mentiroso_s')||'null');
     if(s&&s.code&&s.pid&&window._FB?.configured){
       _roomCode=s.code;_playerId=s.pid;
-      const rec=window.FHRuta&&FHRuta.salaRecordada('mentiroso',s.code);
-      if(rec){
-        Sync.rejoin(s.code,s.pid,rec.nombre,_accAvatar())
-          .then(r=>{_isHost=!!r.isHost;})
-          .catch(e=>{_clearSession();toast(e.message||'No se ha podido volver a la sala','error');});
-      }else{
-        Sync.markConnected(s.code,s.pid);
-      }
+      Sync.markConnected(s.code,s.pid);
       _unsub=Sync.listenRoom(s.code,_onRoomUpdate);
       return;
     }
   }catch{}
-  /* Y si no la hay (cerraste la pestaña, o abriste el enlace en otra) pero la
-     URL trae la sala y se recuerda con qué nombre entraste, se vuelve solo.
-     Aquí sí se entra como jugador nuevo: es lo máximo que se puede hacer sin
-     el playerId. Si la sala ya no existe o arrancó, _joinRoom lo dice. */
-  if(sala&&window.FHRuta&&window._FB?.configured){
-    const rec=FHRuta.salaRecordada('mentiroso',sala);
-    if(rec){
-      const inp=$('#join-name');if(inp)inp.value=rec.nombre;
-      $('#join-code').value=sala;
-      _joinRoom();
-    }
-  }
-  if($('#create-points-value'))$('#create-points-value').textContent=_pointsDraft;
+
   showScreen('#screen-menu');
 }
 boot();

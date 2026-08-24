@@ -416,14 +416,30 @@ a      { text-decoration: none; }
   position: relative;
 }
 
-.cruc-cell--selected .cruc-cell-letter,
-.cruc-cell--word-active .cruc-cell-letter {
-  color: var(--np-white);
-}
+/* La casilla en la que estas escribiendo va sobre fondo ROJO (o verde
+   oscuro si ya esta bien), asi que su letra tiene que ir en blanco. El
+   resto de la palabra activa va sobre un rojo al 16% y lleva tinta.
 
+   OJO CON EL ORDEN: las dos reglas pesan lo mismo (0,2,0) y la casilla
+   seleccionada TAMBIEN lleva .cruc-cell--word-active, asi que gana la
+   que este escrita despues. Estaban al reves: la letra que acababas de
+   teclear salia en tinta negra sobre el rojo y no se leia — en el movil,
+   con casillas de 27 px, no se veia nada de nada. */
 .cruc-cell--word-active .cruc-cell-letter {
   color: var(--np-ink);
 }
+
+.cruc-cell--selected .cruc-cell-letter,
+.cruc-cell--selected .cruc-cell-number {
+  /* --cruc-on-sel = el color que se lee ENCIMA de la casilla activa.
+     En clasico esa casilla es rojo oscuro, asi que va blanco; el tema
+     Moderno la pinta turquesa claro y redefine el token a tinta oscura
+     (ver css/theme-v2-app.css). NO vale usar --np-white: en Moderno ese
+     token es #141d21, o sea casi negro, y volveriamos al mismo problema
+     con otro fondo. */
+  color: var(--cruc-on-sel, #fff);
+}
+.cruc-cell--selected .cruc-cell-number { opacity: 0.85; }
 
 /* ── PISTA ACTIVA ── */
 .cruc-clue-bar {

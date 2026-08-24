@@ -31,6 +31,11 @@ window._AppReal = (function () {
   let G = null;   /* estado de partida (grid, board, turn, players, ...) */
   let pickIdx = -1;
   let acItems = [], acIndex = -1;
+  /* Id del futbolista ELEGIDO en la lista. Sin esto la respuesta se
+     resolvia por nombre y elegir entre dos homonimos no servia de nada:
+     FR.resolvePlayer devuelve siempre el mismo de los dos. Se borra en
+     cuanto se vuelve a escribir. */
+  let acChosenId = null;
   let _finishTimer = null;   /* fin online: retardo cancelable para ver la línea */
   let _roundTimer = null;    /* pausa entre rondas de la serie */
   let localTarget = 3;       /* victorias para ganar (modo local) */
@@ -343,7 +348,13 @@ window._AppReal = (function () {
     const btn = $('submit-btn');
     btn.disabled = true;
     try {
-      const player = await FR.resolvePlayer(name);
+      /* Si viene de la lista se resuelve por ID (es el unico modo de
+         distinguir dos futbolistas con el mismo nombre); si lo ha escrito
+         a mano, por nombre como siempre. */
+      const elegido = acChosenId;
+      acChosenId = null;
+      let player = elegido ? await FR.resolvePlayerById(elegido) : null;
+      if (!player) player = await FR.resolvePlayer(name);
       /* Nombre que no existe = fallo, y el fallo cuesta el turno. Lo único que
          NO penaliza es repetir un futbolista ya usado (eso es un despiste,
          no un intento). */
@@ -512,24 +523,73 @@ window._AppReal = (function () {
   }
 
   /* ═══════════════ AUTOCOMPLETADO ═══════════════ */
+  const POS_LABEL = { GK:'Portero', DEF:'Defensa', MID:'Centrocampista', FWD:'Delantero' };
+  const acNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+  /**
+   * Etiqueta de la derecha de cada sugerencia (misma regla que Coche y La
+   * Cadena). Siempre sale la posicion, y SOLO cuando hay dos jugadores con
+   * el mismo nombre se va anadiendo lo siguiente que los separa:
+   * nacionalidad y, si tambien coincide, ano de nacimiento. Sin esto, dos
+   * "Danilo" o dos "Rodrigo" salian identicos y elegias a ciegas.
+   */
+  function acEtiquetar(lista) {
+    return lista.map((it, _, arr) => {
+      const iguales = arr.filter(o => acNorm(o.name) === acNorm(it.name));
+      const tags = [];
+      const pos = POS_LABEL[it.position] || it.position || '';
+      if (pos) tags.push(pos);
+      if (iguales.length > 1) {
+        const mismaPos = iguales.filter(o => o.position === it.position);
+        if (mismaPos.length > 1 && it.nationalTeam) {
+          tags.push(it.nationalTeam);
+          const mismaNat = mismaPos.filter(o => o.nationalTeam === it.nationalTeam);
+          if (mismaNat.length > 1 && it.birthYear) tags.push('n. ' + it.birthYear);
+        }
+      }
+      return { ...it, disambig: tags.join(' · ') };
+    });
+  }
+
+  /* El mismo jugador puede estar indexado dos veces con IDs distintos. Se
+     quedan fuera los que repiten huella (nombre + ano + seleccion + club):
+     si algun dato difiere es que son personas distintas y pasan los dos. */
+  function acDeduplicar(lista, limite) {
+    const vistas = new Set();
+    const out = [];
+    for (const it of lista) {
+      const huella = `${acNorm(it.name)}|${it.birthYear || ''}|${it.nationalTeam || ''}|${it.club || ''}`;
+      if (vistas.has(huella)) continue;
+      vistas.add(huella);
+      out.push(it);
+      if (out.length >= limite) break;
+    }
+    return out;
+  }
+
   function onInput() {
     const input = $('player-input');
     const q = input.value.trim();
     const list = $('autocomplete-list');
+    acChosenId = null;
     if (q.length < 2) { list.classList.add('hidden'); acItems = []; return; }
-    acItems = FR.suggest(q, 8);
+    /* Se piden mas de las 8 que se ensenan: al deduplicar homonimos falsos
+       se cae alguna por el camino y si no la lista se queda corta. */
+    acItems = acEtiquetar(acDeduplicar(FR.suggest(q, 24), 8));
     if (!acItems.length) { list.classList.add('hidden'); return; }
     /* El primero viene marcado, como en Coche: escribes y con Enter directo
        envías la sugerencia de arriba sin tener que bajar con la flecha. */
     acIndex = 0;
-    list.innerHTML = acItems.map((it, idx) =>
-      `<div class="autocomplete-item" data-idx="${idx}" onmousedown="event.preventDefault();App.selectAndSubmit(${idx})">${esc(it.name)}</div>`
-    ).join('');
+    list.innerHTML = acItems.map((it, idx) => {
+      const meta = it.disambig ? `<span class="autocomplete-nat">${esc(it.disambig)}</span>` : '';
+      return `<div class="autocomplete-item" data-idx="${idx}" onmousedown="event.preventDefault();App.selectAndSubmit(${idx})"><span>${esc(it.name)}</span>${meta}</div>`;
+    }).join('');
     list.classList.remove('hidden');
     paintAc();
   }
   function selectAndSubmit(idx) {
     const it = acItems[idx]; if (!it) return;
+    acChosenId = it.id;
     $('player-input').value = it.name;
     $('autocomplete-list').classList.add('hidden');
     submitAnswer();

@@ -7,12 +7,21 @@ const HOL_CONFIG = {
   modes: [
     {
       key:       'top-players',
-      folder:    'top-players/',
-      files:     ['laliga.json', 'premier-league.json', 'serie-a.json', 'bundesliga.json', 'ligue-1.json'],
+      /* Sin carpeta propia: se leen los MISMOS archivos que los modos de
+         liga. La carpeta top-players/ guardaba cinco copias idénticas byte a
+         byte (1,1 MB duplicados en Storage) y era una trampa: si al curar
+         solo se guardaba una de las dos, este modo se quedaba con datos
+         viejos sin dar ninguna pista. El filtro por valor ya se hace aquí. */
+      folder:    '',
+      /* mundo.json es el resto del mundo (Portugal, Países Bajos, Turquía,
+         Arabia, Brasil, la MLS...): Top Players ya no es solo europeo. Si el
+         archivo no está, loadModeData se lo salta y el modo sigue yendo. */
+      files:     ['laliga.json', 'premier-league.json', 'serie-a.json', 'bundesliga.json',
+                  'ligue-1.json', 'mundo.json'],
       mvMin:     15000000,
       name:      'Top Players',
       logo:      '⭐',          // emoji fallback; sustituye por ruta a imagen si tienes
-      desc:      'Las 5 grandes ligas · +15M',
+      desc:      'Los mejores del mundo · +15M',
       multiFile: true,
     },
     {

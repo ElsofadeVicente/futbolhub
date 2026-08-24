@@ -659,6 +659,11 @@
 
 /* Crucigrama: la casilla acertada era verde CLARO con letra oscura; con la
    letra ya clara hay que invertir el relleno, no solo el texto. */
+/* La casilla activa del crucigrama: aqui es turquesa claro, asi que lo
+   que va encima tiene que ser tinta oscura (en clasico es rojo oscuro y
+   va blanco). El token lo lee crucigrama.css. */
+:root[data-theme="v2"] { --cruc-on-sel: var(--on-ac); }
+
 :root[data-theme="v2"] .cruc-cell--correct { background: rgba(53, 214, 127, 0.20) !important; }
 :root[data-theme="v2"] .cruc-cell--correct.cruc-cell--word-active { background: rgba(53, 214, 127, 0.32) !important; }
 /* La correcta Y seleccionada lleva la letra oscura (regla del juego):
