@@ -9,11 +9,29 @@
   --np-paper3:   #e4d3aa;
   --np-ink:      #0f120e;
   --np-red:      #b5221e;
+  /* Casilla de la palabra activa (no la exacta que se teclea). SÓLIDO, no
+     rgba(): esta celda REEMPLAZA (no superpone) el fondo de
+     .cruc-cell--white, así que un color con alpha deja ver lo que hay
+     DETRÁS de la celda — el fondo negro de .cruc-grid, no el papel de la
+     celda — y sale rojo casi invisible sobre negro (visto jugando: en el
+     tema Clásico igual que en el Moderno, no es cosa del tema). Es el
+     rojo al 16% ya premezclado a mano sobre el papel de cada tema: aquí
+     sobre #f4ead2; en Moderno, más abajo, sobre su propio papel oscuro.
+     Nombre propio (no --np-red-soft, que usan también En el Top y La
+     Carrera con su propia mezcla) para no arrastrarles este cambio. */
+  --cruc-active-bg: #eacab5;
   --np-ink-mid:  rgba(var(--np-ink-rgb, 15,18,14), 0.68);
   --np-ink-soft: rgba(var(--np-ink-rgb, 15,18,14), 0.16);
   --np-white:    #ffffff;
   --shadow:      var(--sh-x,5px) var(--sh-y,5px) var(--sh-b,0) var(--sh-c,var(--np-ink));
   --shadow-soft: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  /* Sin esto, el "tema oscuro para webs" de Android/Chrome puede reoscurecer
+     una página que ya es clara por su cuenta: reinventa el rojo de --np-red
+     como un tono apagado sobre un fondo que también reoscurece a negro, y el
+     contraste que sí funciona en escritorio (blanco sobre rojo) sale mal.
+     :root[data-theme="v2"] ya declara color-scheme:dark; esto es su pareja
+     para el tema por defecto. */
+  color-scheme: light;
 
   /* Alias de variables antiguas -> sistema newspaper */
   --bg-dark:     var(--np-paper);
@@ -199,14 +217,25 @@ a      { text-decoration: none; }
 /* Casilla marcada por "Comprobar". El rojo va a pelo, NO con var(--np-red):
    en el diseño Estadio esa variable es el acento turquesa, y aquí el color
    significa error. Con la variable salía letra turquesa sobre fondo rojo.
-   Mismo criterio que .menu-error y .toast.error. */
+   Mismo criterio que .menu-error y .toast.error.
+   SÓLIDO, no rgba(): esta celda reemplaza (no superpone) el fondo de
+   .cruc-cell--white, así que el alpha dejaba ver el negro de .cruc-grid
+   por detrás en vez del papel de la celda — mismo fallo que
+   --cruc-active-bg, aquí con el rojo casi tan oscuro como el propio texto
+   encima. Solid = el mismo tono premezclado a mano sobre el papel. */
 .cruc-cell--wrong {
-  background: rgba(181, 34, 30, 0.22) !important;
+  background: #e6beaa !important;
   color: #b5221e !important;
+}
+:root[data-theme="v2"] {
+  /* Pareja de --cruc-active-bg (arriba del todo) para el tema Moderno: el
+     mismo turquesa al 16% premezclado sobre SU papel oscuro (#080b0d), no
+     sobre el negro de la rejilla. */
+  --cruc-active-bg: #0e2e2b;
 }
 :root[data-theme="v2"] .cruc-cell--wrong {
   /* Sobre fondo oscuro el rojo puro se apaga: se sube el tono. */
-  background: rgba(255, 92, 87, 0.20) !important;
+  background: #391b1c !important;
   color: #ff6b66 !important;
 }
 
@@ -367,9 +396,9 @@ a      { text-decoration: none; }
   background: var(--np-paper3);
 }
 
-/* Celda seleccionada (palabra activa) */
+/* Celda seleccionada (palabra activa): ver --cruc-active-bg más arriba. */
 .cruc-cell--word-active {
-  background: rgba(181,34,30,0.16) !important;
+  background: var(--cruc-active-bg) !important;
 }
 
 /* Celda seleccionada (la celda exacta clickada) */

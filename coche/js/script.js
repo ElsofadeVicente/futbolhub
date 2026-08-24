@@ -1513,21 +1513,35 @@ const Sync = (() => {
   /* ── Reconexión: reusar el hueco de una sesión anterior ──
      Evita el bug de "salgo dos veces en la sala": al recargar la pestaña,
      el jugador guardado en sessionStorage se reutiliza en vez de crear un
-     segundo nodo con el mismo nombre. Devuelve true si reconectó. */
+     segundo nodo con el mismo nombre. Devuelve true si reconectó.
+
+     Antes exigía status==='waiting', así que volver a la app A MITAD DE
+     RONDA (el móvil mata la pestaña de verdad, no solo la oculta — típico
+     tras una llamada) nunca reconectaba: caía al respaldo de _volverALaSala
+     (Sync.joinRoom), que TAMBIÉN exige 'waiting' y lanza "La partida ya ha
+     comenzado". El jugador se quedaba fuera de su propia partida —contra
+     bots, sin nadie más que pueda cerrar la ronda— hasta que la sala
+     expirase. Ahora solo se bloquea 'expired' (sala ya cerrada de verdad);
+     el nodo del jugador sigue existiendo en 'playing'/'reveal' porque ahí
+     el onDisconnect solo pone connected:false, no lo borra (rearmOnDisconnect). */
   async function tryReconnect(code, playerId, name, avatar) {
     const {get,update}=FB();
     try {
       const roomSnap = await get(_ref(`${ROOMS_PATH}/${code}`));
       if (!roomSnap.exists()) return false;
-      if (roomSnap.val().status !== 'waiting') return false;
+      if (roomSnap.val().status === 'expired') return false;
       const playerSnap = await get(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`));
       if (!playerSnap.exists()) return false;
       await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
         connected:true, name, avatar:avatar||null,
       });
-      /* Rearmar: la reconexión es un navegador nuevo, el hook anterior murió */
-      _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${playerId}`);
-      return true;
+      /* Rearmar según el estado real de la sala (en partida, solo marcar
+         connected:false al próximo corte; en waiting, sí se puede borrar). */
+      rearmOnDisconnect(code, playerId, roomSnap.val().status);
+      /* Se devuelve el status (verdadero igualmente) para que quien llama
+         sepa si está reconectando a un lobby o a una partida ya en marcha
+         y no fuerce la pantalla de espera encima de una ronda en curso. */
+      return roomSnap.val().status || true;
     } catch(e) { return false; }
   }
 
@@ -2435,12 +2449,21 @@ const App = (() => {
     if (!ses || !ses.playerId || !ses.name) return;
     if (String(ses.code || '').toUpperCase() !== String(code).toUpperCase()) return;
     try {
-      if (await Sync.tryReconnect(ses.code, ses.playerId, ses.name, _accountAvatar())) {
+      const status = await Sync.tryReconnect(ses.code, ses.playerId, ses.name, _accountAvatar());
+      if (status) {
         _newSession();
         _roomCode = ses.code; _playerId = ses.playerId;
         _isHost = !!ses.isHost; _isPublic = !!ses.isPublic;
         _isLocal = false; _localName = ses.name;
-        _saveSession(); _listenRoom(); _showLobby();
+        _saveSession(); _listenRoom();
+        /* Si la partida ya está en marcha, NO forzar la pantalla de espera:
+           el primer snapshot del listener (_onRoomUpdate) ya sabe pintar
+           screen-round/resultados/final según toque. _showLobby() aquí solo
+           hace falta para el caso 'waiting', que _onRoomUpdate solo repinta
+           si YA estábamos en el lobby (si no, nos dejaría colgados en el
+           menú). En partida no hace falta ese empujón: el switch de
+           _onRoomUpdate no tiene esa condición para 'playing'/'reveal'. */
+        if (typeof status !== 'string' || status === 'waiting' || status === 'resetting') _showLobby();
         return;
       }
       /* tryReconnect pide que tu registro siga en la sala, y al recargar
@@ -2525,12 +2548,16 @@ const App = (() => {
          propia sala (bug de "salgo dos veces"). */
       const session = _loadSession();
       if (session?.isPublic && session.code && session.playerId) {
-        const ok = await Sync.tryReconnect(session.code, session.playerId, name, _accountAvatar());
-        if (ok) {
+        const status = await Sync.tryReconnect(session.code, session.playerId, name, _accountAvatar());
+        if (status) {
           _newSession();
           _roomCode=session.code; _playerId=session.playerId; _isHost=session.isHost===true;
           _isPublic=true; _isLocal=false; _localName=name;
-          _saveSession(); _listenRoom(); _showLobby();
+          _saveSession(); _listenRoom();
+          /* No forzar el lobby si la partida ya está en marcha (ver el mismo
+             comentario en _volverALaSala): _onRoomUpdate ya sabe pintar la
+             ronda o los resultados en cuanto llegue el primer snapshot. */
+          if (typeof status !== 'string' || status === 'waiting' || status === 'resetting') _showLobby();
           _btnReset(btn,'BUSCAR PARTIDA ▶');
           return;
         }
@@ -3177,8 +3204,25 @@ const App = (() => {
         if (pi) pi.disabled = false;
         if (sb) sb.disabled = false;
       }
+      /* Normalmente "ahora" SÍ es el inicio real: todos los clientes llegan
+         aquí unos segundos después de room.roundStartAt (lo que tarda la
+         animación de restricciones) y ese margen es igual para todos.
+         Pero si el móvil mató la pestaña de verdad a mitad de ronda (una
+         llamada) y Sync.tryReconnect nos devuelve YA en 'playing', este
+         mismo camino se ejecuta desde cero con room.round ya avanzado: sin
+         esto, "ahora" nos regalaría un cronómetro de secs completos (y a
+         los bots con él) aunque al reloj real ya casi no le quedara nada.
+         Con eso el reveal solo podía llegar por el rescate de 12s del
+         vigilante en vez de por el propio cronómetro — o nunca, si el
+         vigilante también arrancaba tarde. Usar roundStartAt cuando el
+         hueco es mayor de lo que la animación explica arranca el timer ya
+         con el tiempo real que queda (o en 0, disparando el reveal de
+         inmediato por el camino normal). */
       const startedAt = Date.now();
-      _startTimer(startedAt, secs);
+      const roomStart = Number(room.roundStartAt) || 0;
+      const isResume  = roomStart > 0 && (startedAt - roomStart) > 8000;
+      const effectiveStart = isResume ? roomStart : startedAt;
+      _startTimer(effectiveStart, secs);
 
       /* Los bots arrancan su reloj en el mismo instante que el resto:
          cuando terminan de salir las restricciones. Se les pasa ese
@@ -3191,7 +3235,7 @@ const App = (() => {
           room,
           restrictions: _restrictions,
           roundSecs: secs,
-          startAt: startedAt,
+          startAt: effectiveStart,
           isSuddenDeath: _isSuddenDeath,
           suddenDeathPlayers: _suddenDeathPlayers,
         });
