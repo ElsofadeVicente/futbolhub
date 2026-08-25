@@ -5,8 +5,13 @@
    y solo puntúa el exacto"):
 
      · Cada ronda hay UNA apuesta común que solo puede subir.
-     · En tu turno: SUBIR, PLANTARTE o DESAFIAR.
-     · La ronda acaba en cuanto alguien se planta o desafía.
+     · En tu turno: SUBIR, DESAFIAR o llamar MENTIROSO.
+     · La ronda acaba en cuanto alguien desafía o llama
+       mentiroso; subir solo pasa el turno.
+     · DESAFIAR es un duelo con el dueño de la apuesta: tú
+       apuestas por (apuesta − 1) y él por la apuesta. Uno de
+       los dos acierta siempre; el ganador suma una vida y el
+       perdedor la pierde.
      · El resultado mueve VIDAS, no puntos. Gana el último con
        vidas > 0.
 
@@ -148,7 +153,7 @@ function _resolve(room,res){
 
 /**
  * Aplica una acción de turno. Devuelve true si se aplicó.
- * act = {pid, turnSeq, type:'raise'|'stand'|'challenge', value?, actual?, auto?}
+ * act = {pid, turnSeq, type:'raise'|'duel'|'challenge', value?, actual?, auto?}
  */
 function _applyAction(room,act){
   if(!room||room.status!=='playing')return false;
@@ -174,16 +179,31 @@ function _applyAction(room,act){
     return true;
   }
 
-  if(act.type==='stand'){
+  /* DUELO: retas al dueno de la apuesta. Tu apuestas por bet-1 y el
+     por bet, asi que uno de los dos acierta siempre y no hay empate
+     posible: si el total real llega a la apuesta gana el, y si se
+     queda por debajo ganas tu. El ganador suma una vida y el perdedor
+     la pierde. Como ya no existe PLANTARSE, el dueno de la apuesta es
+     siempre el jugador anterior en el orden de turno. */
+  if(act.type==='duel'){
     if(bet<=0)return false;
+    const owner=room.betOwner;
+    if(!owner||!room.players?.[owner])return false;
     const actual=Number(act.actual);
     if(!Number.isFinite(actual))return false;
-    const hit=(bet===actual);
+    const win=(actual<=bet-1);
+    /* Se acumula en vez de asignar por si owner y actor fueran el
+       mismo (mesa degenerada con un solo jugador vivo): asi las dos
+       claves no se pisan y el saldo queda en cero en vez de restar
+       una vida de la nada. */
+    const deltas={};
+    deltas[act.pid]=(deltas[act.pid]||0)+(win?1:-1);
+    deltas[owner]=(deltas[owner]||0)+(win?-1:1);
     return _resolve(room,{
-      type:act.auto?'timeout':'stand',
-      actor:act.pid, target:null, bet, actual,
-      outcome:hit?'stand-hit':'stand-miss',
-      deltas:{[act.pid]:hit?1:-1},
+      type:act.auto?'timeout':'duel',
+      actor:act.pid, target:owner, bet, actual,
+      outcome:win?'duel-win':'duel-loss',
+      deltas,
     });
   }
 
@@ -225,8 +245,15 @@ function _applyRoundPayload(room,payload){
 /** ¿Qué hace el reloj cuando se agotan los 15 s? (spec 4.4) */
 function _timeoutAction(room){
   const bet=Number(room.bet||0);
+  const total=Number(room.totalCards||0);
   if(bet<=0)return {type:'raise',value:1,auto:true};
-  return {type:'stand',auto:true};
+  /* Con las reglas nuevas las dos acciones que cierran la ronda se
+     juegan una vida a cara o cruz, y forzar esa apuesta a quien se ha
+     quedado sin cobertura seria matarlo por la conexion. Asi que el
+     reloj sube la apuesta al minimo y pasa el turno; solo cuando ya no
+     se puede subir mas se cierra la ronda con un duelo. */
+  if(bet<total)return {type:'raise',value:bet+1,auto:true};
+  return {type:'duel',auto:true};
 }
 
 /* ═══ 4. CARTAS DE LA RONDA ════════════════════════════════ */
@@ -509,34 +536,10 @@ function _hearts(n){
   return Array.from({length:n},()=>'<span class="hp">♥</span>').join('');
 }
 
-/* Iniciales del club para el escudo de reserva. Se descartan las
-   coletillas del nombre oficial (FC, CF, AC, SC...) para que
-   "Al-Nassr FC" de "AN" y no "AF", y "FC Barcelona" de "BA". */
-const _BADGE_SKIP=new Set(['FC','CF','AC','SC','CD','SD','UD','US','AS','SS','RC','CA','SL','GD','CS','AFC',
-  'BC','SV','VFL','VFB','TSG','SPVGG','FK','JK','SK','HNK','GNK','NK','MKE','CSD','RCD','ACF','SSC','LOSC',
-  'OGC','AJ','AZ','PEC','RKC','NEC','ADO','CFR','AE','AEK','UC','SSD','ASD','CLUB','DE','DEL','LA','EL']);
-function _clubInitials(club){
-  const words=String(club||'').replace(/[().,]/g,' ').split(/[\s-]+/).filter(Boolean);
-  const useful=words.filter(w=>!_BADGE_SKIP.has(w.toUpperCase())&&!/^[\d.]+$/.test(w));
-  const src=useful.length?useful:words;
-  if(!src.length)return '?';
-  if(src.length===1)return src[0].slice(0,2).toUpperCase();
-  return (src[0][0]+src[1][0]).toUpperCase();
-}
-/* El onerror de la etiqueta <img> no puede construir el monograma
-   solo, asi que llama aqui: cambia la imagen rota por la chapa de
-   texto sin dejar hueco. */
-window.MBadge={
-  fail(img){
-    const s=document.createElement('span');
-    s.className='tcard-badge tcard-badge--mono';
-    s.textContent=img.dataset.ini||'?';
-    if(img.dataset.club)s.title=img.dataset.club;
-    img.replaceWith(s);
-  },
-};
-
-/** Tarjeta de jugador (foto + nombre + escudo del club). */
+/** Tarjeta de jugador: foto y nombre completo.
+ *  La carta NO lleva escudo del club: lo unico que hay que leer para
+ *  contar es el nombre, y la chapa de la esquina superior derecha le
+ *  competia por el sitio. El club sigue en el titulo emergente. */
 function renderCard(card,opts){
   opts=opts||{};
   const el=document.createElement('div');
@@ -550,17 +553,6 @@ function renderCard(card,opts){
   if(opts.reveal)el.classList.add(matches?'r-match':'r-no');
   else if(opts.showMatch&&matches)el.classList.add('is-match');
 
-  /* Escudo del ultimo club. El bucket team-logos solo tiene los clubes
-     grandes (~190 de los 517 que salen en la baraja), asi que antes un
-     tercio largo de las cartas se quedaba sin escudo y parecia un fallo.
-     Ahora TODAS llevan la misma chapa: si hay PNG se pinta, y si no
-     (o si da 404) se pinta el monograma del club. */
-  const clubIni=_clubInitials(card.club);
-  const badge=card.badge
-    /* Sin loading="lazy": el escudo pesa poco, sale siempre en pantalla
-       y asi la carta se ve entera desde el primer momento. */
-    ? `<img class="tcard-badge" src="${escapeHtml(card.badge)}" alt="" data-ini="${escapeHtml(clubIni)}" data-club="${escapeHtml(card.club||'')}" onerror="MBadge.fail(this)">`
-    : `<span class="tcard-badge tcard-badge--mono" title="${escapeHtml(card.club||'')}">${escapeHtml(clubIni)}</span>`;
   const mark=opts.reveal
     ? `<div class="tcard-mark ${matches?'ok':'ko'}">${matches?'✓':'✕'}</div>`
     : (opts.showMatch&&matches?'<div class="tcard-mark ok">✓</div>':'');
@@ -574,7 +566,6 @@ function renderCard(card,opts){
     <div class="tcard-photo">
       <img src="${escapeHtml(card.img)}" loading="lazy" alt="" onerror="this.closest('.tcard-photo').classList.add('no-photo')">
       <div class="tcard-fallback">${escapeHtml(ini)}</div>
-      ${badge}
     </div>
     ${mark}
     <div class="tcard-name">${escapeHtml(card.name)}</div>`;
@@ -814,14 +805,16 @@ function _renderActions(room){
   /* Primer turno de la ronda: solo se puede abrir subiendo. */
   const opening=bet<=0;
   $('#act-row').classList.toggle('hidden',opening);
-  $('#stand-hint').textContent=opening?'':`en ${bet}`;
   const ownerName=room.betOwner?(room.players?.[room.betOwner]?.name||'—'):'—';
+  /* En el duelo cada uno defiende un numero, asi que la pista dice
+     cual te toca a ti; en el mentiroso, a quien se lo llamas. */
+  $('#duel-hint').textContent=opening?'':`tu ${bet-1} · ${ownerName} ${bet}`;
   $('#chal-hint').textContent=opening?'':`a ${ownerName}`;
 
   const help=$('#bet-help');
   if(opening)help.textContent=`Abres la ronda: di cuantas de las ${total} cartas crees que cumplen.`;
-  else if(!canRaise)help.textContent=`La apuesta ya esta en el maximo (${total}). Solo puedes plantarte o desafiar.`;
-  else help.textContent=`Apuesta actual ${bet} de ${total}. Sube, plantate o llama mentiroso.`;
+  else if(!canRaise)help.textContent=`La apuesta ya esta en el maximo (${total}). Solo puedes desafiar o llamar mentiroso.`;
+  else help.textContent=`Apuesta actual ${bet} de ${total}. Sube, desafia (apuestas ${bet-1}) o llama mentiroso.`;
 }
 
 function _renderGame(room){
@@ -1017,29 +1010,29 @@ function _resolutionCopy(room,res){
   const P=pid=>escapeHtml(room.players?.[pid]?.name||'—');
   const auto=res.type==='timeout';
   switch(res.outcome){
-    case'stand-hit':return{
-      tag:auto?'SE ACABO EL TIEMPO · PLANTADA CLAVADA':'PLANTADA CLAVADA',
-      head:`${P(res.actor)} se planto en ${res.bet}`,
-      sub:'Y era exactamente el numero real',
-      verdict:`${P(res.actor)} recupera 1 vida`,good:true};
-    case'stand-miss':return{
-      tag:auto?'SE ACABO EL TIEMPO · PLANTADA FALLIDA':'PLANTADA FALLIDA',
-      head:`${P(res.actor)} se planto en ${res.bet}`,
-      sub:`Pero el total real era ${res.actual}`,
-      verdict:`${P(res.actor)} pierde 1 vida`,good:false};
+    case'duel-win':return{
+      tag:auto?'SE ACABO EL TIEMPO · DUELO':'DUELO GANADO',
+      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      sub:`${P(res.actor)} apostaba ${res.bet-1} y ${P(res.target)} ${res.bet}: cumplen ${res.actual}`,
+      verdict:`${P(res.actor)} gana 1 vida · ${P(res.target)} pierde 1`,good:true};
+    case'duel-loss':return{
+      tag:auto?'SE ACABO EL TIEMPO · DUELO':'DUELO PERDIDO',
+      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      sub:`${P(res.actor)} apostaba ${res.bet-1} y ${P(res.target)} ${res.bet}: cumplen ${res.actual}`,
+      verdict:`${P(res.target)} gana 1 vida · ${P(res.actor)} pierde 1`,good:false};
     case'challenge-win':return{
       tag:'MENTIROSO CAZADO',
-      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      head:`${P(res.actor)} llamo mentiroso a ${P(res.target)}`,
       sub:`La apuesta era ${res.bet} y solo cumplen ${res.actual}`,
       verdict:`${P(res.target)} pierde 1 vida`,good:true};
     case'challenge-exact':return{
       tag:'ERA VERDAD',
-      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      head:`${P(res.actor)} llamo mentiroso a ${P(res.target)}`,
       sub:`${P(res.target)} habia clavado el numero: ${res.actual}`,
       verdict:`${P(res.target)} se lleva 1 vida de regalo`,good:false};
     case'challenge-short':return{
       tag:'SE QUEDO CORTO',
-      head:`${P(res.actor)} desafio a ${P(res.target)}`,
+      head:`${P(res.actor)} llamo mentiroso a ${P(res.target)}`,
       sub:`La apuesta era ${res.bet} y cumplen ${res.actual}: no era mentira`,
       verdict:`${P(res.actor)} pierde 1 vida`,good:false};
     default:return{tag:'RONDA TERMINADA',head:'—',sub:'',verdict:'',good:true};
@@ -1130,7 +1123,7 @@ function _submit(action,pid){
 
   const act={...action,pid:actor,turnSeq:Number(room.turnSeq||0)};
 
-  if(act.type==='stand'||act.type==='challenge'){
+  if(act.type==='duel'||act.type==='challenge'){
     const actual=_actualTotal(room);
     if(actual===null){
       toast('Faltan datos de alguna carta. Recarga la pagina.','error');
@@ -1261,10 +1254,20 @@ function _botAction(room){
   const est=_botEstimate(room);
 
   if(bet<=0)return {type:'raise',value:clamp(Math.round(est*0.6)||1,1,total)};
-  if(bet>=total)return (bet===est)?{type:'stand'}:{type:'challenge'};
-  if(bet>est+1)return {type:'challenge'};
-  if(bet===est)return Math.random()<0.55?{type:'stand'}:{type:'raise',value:bet+1};
-  if(bet>est)return Math.random()<0.5?{type:'challenge'}:{type:'raise',value:bet+1};
+
+  /* Cuanto cree el bot que la apuesta se ha pasado. Las dos formas de
+     cerrar la ronda dicen lo mismo ("ahi no llegas") y se diferencian
+     en lo que arriesgan: el DUELO gana una vida si acierta pero la
+     pierde en cuanto el total llegue a la apuesta, y MENTIROSO no da
+     vida pero solo la quita si la apuesta se queda corta. Asi que el
+     bot desafia cuando esta convencido y llama mentiroso cuando solo
+     lo sospecha. */
+  const exceso=bet-est;
+
+  if(bet>=total)return exceso>0?{type:'duel'}:{type:'challenge'};
+  if(exceso>=2)return Math.random()<0.6?{type:'duel'}:{type:'challenge'};
+  if(exceso===1)return Math.random()<0.5?{type:'duel'}:{type:'raise',value:bet+1};
+  if(exceso===0)return Math.random()<0.45?{type:'challenge'}:{type:'raise',value:bet+1};
   const step=1+Math.floor(Math.random()*2);
   return {type:'raise',value:clamp(Math.max(bet+1,Math.min(est,bet+step)),bet+1,total)};
 }
@@ -1272,8 +1275,8 @@ function _botAction(room){
 /** Cuánto "piensa" el bot antes de responder, según lo que va a hacer. */
 function _botDelay(action){
   let ms=BOT_MIN_MS+Math.random()*(BOT_MAX_MS-BOT_MIN_MS);
-  /* Plantarse o desafiar cierra la ronda y se juega una vida: ahí
-     cualquiera se lo piensa un poco más que para subir de 4 a 5. */
+  /* Desafiar o llamar mentiroso cierra la ronda y se juega una vida:
+     ahí cualquiera se lo piensa un poco más que para subir de 4 a 5. */
   if(action.type!=='raise')ms+=1500+Math.random()*2500;
   /* Alguna vez la jugada es evidente y sale sola. */
   if(Math.random()<0.15)ms*=0.45;
@@ -1480,7 +1483,7 @@ function boot(){
     _submit({type:'raise',value:_raiseDraft});
   });
   $('#btn-ready')?.addEventListener('click',_markReady);
-  $('#btn-stand')?.addEventListener('click',()=>_submit({type:'stand'}));
+  $('#btn-duel')?.addEventListener('click',()=>_submit({type:'duel'}));
   $('#btn-challenge')?.addEventListener('click',()=>_submit({type:'challenge'}));
 
   /* Reloj */

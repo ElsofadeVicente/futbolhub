@@ -553,6 +553,875 @@
           "v": 21
         }
       ]
+    },
+    "2026-09-08": {
+      "id": "jugadores-con-mas-asistencias-en-la-historia-del-liverpool-1a0356c6b7d",
+      "q": "Jugadores con mas asistencias en la historia del Liverpool",
+      "unit": "asistencias",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Kenny Dalglish",
+          "nat": "GB-SCT",
+          "id": "135269",
+          "v": 186
+        },
+        {
+          "r": 2,
+          "n": "Steven Gerrard",
+          "nat": "GB-ENG",
+          "id": "3109",
+          "v": 156
+        },
+        {
+          "r": 3,
+          "n": "Mohamed Salah",
+          "nat": "EG",
+          "id": "148455",
+          "v": 123
+        },
+        {
+          "r": 4,
+          "n": "Ian Rush",
+          "nat": "GB-WLS",
+          "id": "145743",
+          "v": 110
+        },
+        {
+          "r": 5,
+          "n": "Ian Callaghan",
+          "nat": "GB-ENG",
+          "id": "176036",
+          "v": 94
+        },
+        {
+          "r": 6,
+          "n": "John Barnes",
+          "nat": "GB-ENG",
+          "id": "87436",
+          "v": 92
+        },
+        {
+          "r": 7,
+          "n": "Trent Alexander-Arnold",
+          "nat": "GB-ENG",
+          "id": "314353",
+          "v": 92
+        },
+        {
+          "r": 8,
+          "n": "Billy Liddell",
+          "nat": "GB-SCT",
+          "id": "295527",
+          "v": 89
+        },
+        {
+          "r": 9,
+          "n": "Kevin Keegan",
+          "nat": "GB-ENG",
+          "id": "85458",
+          "v": 88
+        },
+        {
+          "r": 10,
+          "n": "Steve McManaman",
+          "nat": "GB-ENG",
+          "id": "3980",
+          "v": 86
+        }
+      ]
+    },
+    "2026-09-09": {
+      "id": "ultimos-10-maximos-goleadores-distintos-por-temporada-del-ba-1a0356c755f",
+      "q": "Ultimos 10 maximos goleadores distintos por temporada del Bayern Munchen",
+      "unit": "goles (mejor temp)",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Harry Kane",
+          "nat": "GB-ENG",
+          "id": "132098",
+          "v": 61
+        },
+        {
+          "r": 2,
+          "n": "Serge Gnabry",
+          "nat": "DE",
+          "id": "159471",
+          "v": 17
+        },
+        {
+          "r": 3,
+          "n": "Eric-Maxim Choupo-Moting",
+          "nat": "CM",
+          "id": "45660",
+          "v": 17
+        },
+        {
+          "r": 4,
+          "n": "Robert Lewandowski",
+          "nat": "PL",
+          "id": "38253",
+          "v": 50
+        },
+        {
+          "r": 5,
+          "n": "Thomas Müller",
+          "nat": "DE",
+          "id": "58358",
+          "v": 26
+        },
+        {
+          "r": 6,
+          "n": "Mario Mandžukić",
+          "nat": "HR",
+          "id": "34572",
+          "v": 26
+        },
+        {
+          "r": 7,
+          "n": "Mario Gómez",
+          "nat": "DE",
+          "id": "6288",
+          "v": 41
+        },
+        {
+          "r": 8,
+          "n": "Arjen Robben",
+          "nat": "NL",
+          "id": "4360",
+          "v": 23
+        },
+        {
+          "r": 9,
+          "n": "Miroslav Klose",
+          "nat": "DE",
+          "id": "10",
+          "v": 20
+        },
+        {
+          "r": 10,
+          "n": "Luca Toni",
+          "nat": "IT",
+          "id": "5980",
+          "v": 39
+        }
+      ]
+    },
+    "2026-09-10": {
+      "id": "jugadores-mas-jovenes-alineados-por-el-arsenal-1a0356c8544",
+      "q": "Jugadores mas jovenes alineados por el Arsenal",
+      "unit": "edad debut",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Ethan Nwaneri",
+          "nat": "GB-ENG",
+          "id": "890719",
+          "v": "15a 5m"
+        },
+        {
+          "r": 2,
+          "n": "Max Dowman",
+          "nat": "GB-ENG",
+          "id": "1187629",
+          "v": "15a 7m"
+        },
+        {
+          "r": 3,
+          "n": "Jack Porter",
+          "nat": "GB-ENG",
+          "id": "1131973",
+          "v": "16a 2m"
+        },
+        {
+          "r": 4,
+          "n": "Marli Salmon",
+          "nat": "GB-ENG",
+          "id": "1294399",
+          "v": "16a 3m"
+        },
+        {
+          "r": 5,
+          "n": "Cesc Fàbregas",
+          "nat": "ES",
+          "id": "8806",
+          "v": "16a 5m"
+        },
+        {
+          "r": 6,
+          "n": "Jack Wilshere",
+          "nat": "GB-ENG",
+          "id": "74223",
+          "v": "16a 8m"
+        },
+        {
+          "r": 7,
+          "n": "Jermaine Pennant",
+          "nat": "GB-ENG",
+          "id": "3195",
+          "v": "16a 10m"
+        },
+        {
+          "r": 8,
+          "n": "Ryan Smith",
+          "nat": "GB-ENG",
+          "id": "14552",
+          "v": "16a 11m"
+        },
+        {
+          "r": 9,
+          "n": "Gedion Zelalem",
+          "nat": "US",
+          "id": "228370",
+          "v": "16a 11m"
+        },
+        {
+          "r": 10,
+          "n": "Armand Traoré",
+          "nat": "SN",
+          "id": "33783",
+          "v": "17a 0m"
+        }
+      ]
+    },
+    "2026-09-11": {
+      "id": "jugadores-con-mas-partidos-entrenados-por-carlo-ancelotti-1a0356c90eb",
+      "q": "Jugadores con mas partidos entrenados por Carlo Ancelotti",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Filippo Inzaghi",
+          "nat": "IT",
+          "id": "5821",
+          "v": 332
+        },
+        {
+          "r": 2,
+          "n": "Andrea Pirlo",
+          "nat": "IT",
+          "id": "5817",
+          "v": 327
+        },
+        {
+          "r": 3,
+          "n": "Clarence Seedorf",
+          "nat": "NL",
+          "id": "4168",
+          "v": 325
+        },
+        {
+          "r": 4,
+          "n": "Gennaro Gattuso",
+          "nat": "IT",
+          "id": "5813",
+          "v": 323
+        },
+        {
+          "r": 5,
+          "n": "Luka Modrić",
+          "nat": "HR",
+          "id": "27992",
+          "v": 276
+        },
+        {
+          "r": 6,
+          "n": "Kaká",
+          "nat": "BR",
+          "id": "3366",
+          "v": 270
+        },
+        {
+          "r": 7,
+          "n": "Dida",
+          "nat": "BR",
+          "id": "5800",
+          "v": 267
+        },
+        {
+          "r": 8,
+          "n": "Paolo Maldini",
+          "nat": "IT",
+          "id": "5803",
+          "v": 252
+        },
+        {
+          "r": 9,
+          "n": "Massimo Ambrosini",
+          "nat": "IT",
+          "id": "5818",
+          "v": 247
+        },
+        {
+          "r": 10,
+          "n": "Kakhaber Kaladze",
+          "nat": "GE",
+          "id": "3430",
+          "v": 244
+        }
+      ]
+    },
+    "2026-09-12": {
+      "id": "jugadores-mas-utilizados-por-pep-guardiola-en-barcelona-1a0356c9742",
+      "q": "Jugadores mas utilizados por Pep Guardiola en Barcelona",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Lionel Messi",
+          "nat": "AR",
+          "id": "28003",
+          "v": 219
+        },
+        {
+          "r": 2,
+          "n": "Dani Alves",
+          "nat": "BR",
+          "id": "15951",
+          "v": 208
+        },
+        {
+          "r": 3,
+          "n": "Xavi",
+          "nat": "ES",
+          "id": "7607",
+          "v": 208
+        },
+        {
+          "r": 4,
+          "n": "Víctor Valdés",
+          "nat": "ES",
+          "id": "7589",
+          "v": 200
+        },
+        {
+          "r": 5,
+          "n": "Sergio Busquets",
+          "nat": "ES",
+          "id": "65230",
+          "v": 191
+        },
+        {
+          "r": 6,
+          "n": "Seydou Keita",
+          "nat": "ML",
+          "id": "5486",
+          "v": 188
+        },
+        {
+          "r": 7,
+          "n": "Gerard Piqué",
+          "nat": "ES",
+          "id": "18944",
+          "v": 183
+        },
+        {
+          "r": 8,
+          "n": "Andrés Iniesta",
+          "nat": "ES",
+          "id": "7600",
+          "v": 181
+        },
+        {
+          "r": 9,
+          "n": "Pedro",
+          "nat": "ES",
+          "id": "65278",
+          "v": 167
+        },
+        {
+          "r": 10,
+          "n": "Carles Puyol",
+          "nat": "ES",
+          "id": "7594",
+          "v": 164
+        }
+      ]
+    },
+    "2026-09-13": {
+      "id": "maximos-goleadores-de-ligue-1-2024-25-1a0356ca09a",
+      "q": "Maximos goleadores de Ligue 1 2024/25",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Mason Greenwood",
+          "nat": "GB-ENG",
+          "id": "532826",
+          "v": 21
+        },
+        {
+          "r": 2,
+          "n": "Ousmane Dembélé",
+          "nat": "FR",
+          "id": "288230",
+          "v": 21
+        },
+        {
+          "r": 3,
+          "n": "Arnaud Kalimuendo",
+          "nat": "FR",
+          "id": "585959",
+          "v": 17
+        },
+        {
+          "r": 4,
+          "n": "Jonathan David",
+          "nat": "CA",
+          "id": "533738",
+          "v": 16
+        },
+        {
+          "r": 5,
+          "n": "Alexandre Lacazette",
+          "nat": "FR",
+          "id": "93720",
+          "v": 15
+        },
+        {
+          "r": 6,
+          "n": "Emmanuel Emegha",
+          "nat": "NL",
+          "id": "559328",
+          "v": 14
+        },
+        {
+          "r": 7,
+          "n": "Bradley Barcola",
+          "nat": "FR",
+          "id": "708265",
+          "v": 14
+        },
+        {
+          "r": 8,
+          "n": "Mika Biereth",
+          "nat": "DK",
+          "id": "565821",
+          "v": 13
+        },
+        {
+          "r": 9,
+          "n": "Ludovic Ajorque",
+          "nat": "FR",
+          "id": "283994",
+          "v": 13
+        },
+        {
+          "r": 10,
+          "n": "Amine Gouiri",
+          "nat": "DZ",
+          "id": "418659",
+          "v": 13
+        }
+      ]
+    },
+    "2026-09-14": {
+      "id": "maximos-goleadores-de-primeira-liga-2023-24-1a0356cab1e",
+      "q": "Maximos goleadores de Primeira Liga 2023/24",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Viktor Gyökeres",
+          "nat": "SE",
+          "id": "325443",
+          "v": 29
+        },
+        {
+          "r": 2,
+          "n": "Simon Banza",
+          "nat": "CD",
+          "id": "344869",
+          "v": 21
+        },
+        {
+          "r": 3,
+          "n": "Rafa Mujica",
+          "nat": "ES",
+          "id": "361504",
+          "v": 20
+        },
+        {
+          "r": 4,
+          "n": "Jhonder Cádiz",
+          "nat": "VE",
+          "id": "271256",
+          "v": 15
+        },
+        {
+          "r": 5,
+          "n": "Samuel Essende",
+          "nat": "CD",
+          "id": "395522",
+          "v": 15
+        },
+        {
+          "r": 6,
+          "n": "Paulinho",
+          "nat": "PT",
+          "id": "211072",
+          "v": 15
+        },
+        {
+          "r": 7,
+          "n": "Cristo",
+          "nat": "ES",
+          "id": "339707",
+          "v": 15
+        },
+        {
+          "r": 8,
+          "n": "Héctor Hernández",
+          "nat": "ES",
+          "id": "273738",
+          "v": 14
+        },
+        {
+          "r": 9,
+          "n": "Rafa Silva",
+          "nat": "PT",
+          "id": "238055",
+          "v": 14
+        },
+        {
+          "r": 10,
+          "n": "Bruno Duarte",
+          "nat": "BR",
+          "id": "598629",
+          "v": 13
+        }
+      ]
+    },
+    "2026-09-15": {
+      "id": "maximos-goleadores-de-europa-league-2023-24-1a0356cb5bc",
+      "q": "Maximos goleadores de Europa League 2023/24",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Pierre-Emerick Aubameyang",
+          "nat": "GA",
+          "id": "58864",
+          "v": 10
+        },
+        {
+          "r": 2,
+          "n": "Romelu Lukaku",
+          "nat": "BE",
+          "id": "96341",
+          "v": 7
+        },
+        {
+          "r": 3,
+          "n": "João Pedro",
+          "nat": "BR",
+          "id": "626724",
+          "v": 6
+        },
+        {
+          "r": 4,
+          "n": "Gianluca Scamacca",
+          "nat": "IT",
+          "id": "315867",
+          "v": 6
+        },
+        {
+          "r": 5,
+          "n": "Patrik Schick",
+          "nat": "CZ",
+          "id": "242086",
+          "v": 5
+        },
+        {
+          "r": 6,
+          "n": "Fotis Ioannidis",
+          "nat": "GR",
+          "id": "532444",
+          "v": 5
+        },
+        {
+          "r": 7,
+          "n": "Mohammed Kudus",
+          "nat": "GH",
+          "id": "543499",
+          "v": 5
+        },
+        {
+          "r": 8,
+          "n": "Michael Gregoritsch",
+          "nat": "AT",
+          "id": "120205",
+          "v": 5
+        },
+        {
+          "r": 9,
+          "n": "Ademola Lookman",
+          "nat": "NG",
+          "id": "406040",
+          "v": 5
+        },
+        {
+          "r": 10,
+          "n": "Darwin Núñez",
+          "nat": "UY",
+          "id": "546543",
+          "v": 5
+        }
+      ]
+    },
+    "2026-09-16": {
+      "id": "maximos-goleadores-de-la-historia-del-manchester-united-1a0356cbde4",
+      "q": "Maximos goleadores de la historia del Manchester United",
+      "unit": "goles",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Wayne Rooney",
+          "nat": "GB-ENG",
+          "id": "3332",
+          "v": 253
+        },
+        {
+          "r": 2,
+          "n": "Sir Bobby Charlton",
+          "nat": "GB-ENG",
+          "id": "174874",
+          "v": 245
+        },
+        {
+          "r": 3,
+          "n": "Denis Law",
+          "nat": "GB-SCT",
+          "id": "174867",
+          "v": 237
+        },
+        {
+          "r": 4,
+          "n": "Jack Rowley",
+          "nat": "GB-ENG",
+          "id": "101917",
+          "v": 190
+        },
+        {
+          "r": 5,
+          "n": "George Best",
+          "nat": "GB-NIR",
+          "id": "174986",
+          "v": 179
+        },
+        {
+          "r": 6,
+          "n": "Dennis Viollet",
+          "nat": "GB-ENG",
+          "id": "289653",
+          "v": 173
+        },
+        {
+          "r": 7,
+          "n": "Ryan Giggs",
+          "nat": "GB-WLS",
+          "id": "3406",
+          "v": 168
+        },
+        {
+          "r": 8,
+          "n": "Mark Hughes",
+          "nat": "GB-WLS",
+          "id": "8022",
+          "v": 161
+        },
+        {
+          "r": 9,
+          "n": "Paul Scholes",
+          "nat": "GB-ENG",
+          "id": "3397",
+          "v": 155
+        },
+        {
+          "r": 10,
+          "n": "Ruud van Nistelrooy",
+          "nat": "NL",
+          "id": "3407",
+          "v": 150
+        }
+      ]
+    },
+    "2026-09-17": {
+      "id": "jugadores-con-mas-partidos-en-la-historia-del-bayern-munchen-1a0356ccbf4",
+      "q": "Jugadores con mas partidos en la historia del Bayern Munchen",
+      "unit": "partidos",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Thomas Müller",
+          "nat": "DE",
+          "id": "58358",
+          "v": 756
+        },
+        {
+          "r": 2,
+          "n": "Sepp Maier",
+          "nat": "DE",
+          "id": "89550",
+          "v": 709
+        },
+        {
+          "r": 3,
+          "n": "Oliver Kahn",
+          "nat": "DE",
+          "id": "206",
+          "v": 632
+        },
+        {
+          "r": 4,
+          "n": "Gerd Müller",
+          "nat": "DE",
+          "id": "35604",
+          "v": 613
+        },
+        {
+          "r": 5,
+          "n": "Manuel Neuer",
+          "nat": "DE",
+          "id": "17259",
+          "v": 599
+        },
+        {
+          "r": 6,
+          "n": "Franz Beckenbauer",
+          "nat": "DE",
+          "id": "72347",
+          "v": 584
+        },
+        {
+          "r": 7,
+          "n": "Georg Schwarzenbeck",
+          "nat": "DE",
+          "id": "72270",
+          "v": 554
+        },
+        {
+          "r": 8,
+          "n": "Klaus Augenthaler",
+          "nat": "DE",
+          "id": "85968",
+          "v": 551
+        },
+        {
+          "r": 9,
+          "n": "Philipp Lahm",
+          "nat": "DE",
+          "id": "2219",
+          "v": 517
+        },
+        {
+          "r": 10,
+          "n": "Bernd Dürnberger",
+          "nat": "DE",
+          "id": "95400",
+          "v": 511
+        }
+      ]
+    },
+    "2026-09-18": {
+      "id": "maximos-asistentes-de-bundesliga-2024-25-1a0356e10f7",
+      "q": "Maximos asistentes de Bundesliga 2024/25",
+      "unit": "asistencias",
+      "hint": "nat",
+      "type": "player",
+      "top10": [
+        {
+          "r": 1,
+          "n": "Michael Olise",
+          "nat": "FR",
+          "id": "566723",
+          "v": 18
+        },
+        {
+          "r": 2,
+          "n": "Florian Wirtz",
+          "nat": "DE",
+          "id": "598577",
+          "v": 13
+        },
+        {
+          "r": 3,
+          "n": "Mohamed Amoura",
+          "nat": "DZ",
+          "id": "746910",
+          "v": 12
+        },
+        {
+          "r": 4,
+          "n": "Vincenzo Grifo",
+          "nat": "IT",
+          "id": "185077",
+          "v": 11
+        },
+        {
+          "r": 5,
+          "n": "Pascal Groß",
+          "nat": "DE",
+          "id": "82873",
+          "v": 10
+        },
+        {
+          "r": 6,
+          "n": "Julian Brandt",
+          "nat": "DE",
+          "id": "187492",
+          "v": 10
+        },
+        {
+          "r": 7,
+          "n": "Omar Marmoush",
+          "nat": "EG",
+          "id": "445939",
+          "v": 10
+        },
+        {
+          "r": 8,
+          "n": "Harry Kane",
+          "nat": "GB-ENG",
+          "id": "132098",
+          "v": 10
+        },
+        {
+          "r": 9,
+          "n": "Franck Honorat",
+          "nat": "FR",
+          "id": "229006",
+          "v": 9
+        },
+        {
+          "r": 10,
+          "n": "Mitchell Weiser",
+          "nat": "DE",
+          "id": "119211",
+          "v": 9
+        }
+      ]
     }
   }
 }

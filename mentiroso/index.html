@@ -28,7 +28,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-  <link rel="stylesheet" href="./css/styles.css?v=20260824a" />
+  <link rel="stylesheet" href="./css/styles.css?v=20260824b" />
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
@@ -179,11 +179,11 @@
       <ol>
         <li>Cada ronda sale una <em>condicion</em>: por ejemplo <em>han jugado en el Milan</em> o <em>han marcado mas de 120 goles</em>.</li>
         <li>Se reparten cartas a cada jugador y unas cuantas al centro. <em>Todos los nombres son visibles</em>: lo que no sabes es cuantas cumplen de verdad.</li>
-        <li>Por turnos hay una <em>unica apuesta comun</em> que solo puede subir. En tu turno eliges: <em>subir</em>, <em>plantarte</em> o <em>desafiar</em>.</li>
-        <li><em>Plantarse</em> = afirmas que la apuesta es el numero exacto. Si aciertas ganas una vida; si fallas la pierdes.</li>
-        <li><em>Desafiar</em> = llamas mentiroso al ultimo que subio. Si se paso, pierde una vida. Si se quedo corto, la pierdes tu. Si habia clavado el numero, se lleva una vida de regalo.</li>
+        <li>Por turnos hay una <em>unica apuesta comun</em> que solo puede subir. En tu turno eliges: <em>subir</em>, <em>desafiar</em> o <em>llamar mentiroso</em>.</li>
+        <li><em>Desafiar</em> = duelo con el que puso la apuesta: tu apuestas por <em>un numero menos</em> y el por la apuesta que hay. Uno de los dos acierta siempre, asi que no hay empate: el ganador suma una vida y el perdedor la pierde.</li>
+        <li><em>Llamar mentiroso</em> = dices que el ultimo que subio se ha pasado, sin poner numero propio. Si se paso, pierde una vida y tu no arriesgas nada. Si se quedo corto, la pierdes tu. Si habia clavado el numero, se lleva una vida de regalo.</li>
         <li>Al abrirse cada ronda hay <em>30 segundos</em> para estudiar la mesa sin que nadie pueda apostar todavia. Con el boton <em>ESTOY LISTO</em> se corta esa espera en cuanto lo pulsan todos.</li>
-        <li>Cuando empieza la puja tienes <em>15 segundos</em> por turno. Si se agotan: si nadie habia abierto, subes al minimo; si ya habia apuesta, te plantas con ella.</li>
+        <li>Cuando empieza la puja tienes <em>15 segundos</em> por turno. Si se agotan, subes la apuesta al minimo y pasa el turno; solo cuando ya no se puede subir mas el reloj cierra la ronda con un duelo.</li>
         <li>Quien llega a <em>0 vidas</em> queda eliminado. Gana el ultimo jugador con vidas.</li>
       </ol>
     </details>
@@ -302,7 +302,7 @@
         <button class="btn-act btn-raise" id="btn-raise">SUBIR APUESTA</button>
       </div>
       <div class="act-row" id="act-row">
-        <button class="btn-act btn-stand" id="btn-stand">PLANTARME<small id="stand-hint"></small></button>
+        <button class="btn-act btn-duel" id="btn-duel">DESAFIAR<small id="duel-hint"></small></button>
         <button class="btn-act btn-challenge" id="btn-challenge">¡MENTIROSO!<small id="chal-hint"></small></button>
       </div>
       <div class="bet-help" id="bet-help"></div>
@@ -354,7 +354,7 @@
 <script src="../js/vendor/supabase-js.min.js"></script>
 <script src="../js/auth.js?v=20260821a"></script>
 <script src="../js/progress-sync.js?v=20260821a"></script>
-<script src="../js/hub-streaks.js?v=20260808a"></script>
+<script src="../js/hub-streaks.js?v=20260825a"></script>
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260809a"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
@@ -382,7 +382,7 @@
   };
   window._FBOnDisconnect = onDisconnect;
 
-  const V = '?v=20260824a';
+  const V = '?v=20260824b';
   // deck.js construye la baraja con la base de datos real de la web
   // (chunks de player-db + lista de fama de Coche) y define las
   // condiciones de cada ronda. game.js depende de window.MDeck.
