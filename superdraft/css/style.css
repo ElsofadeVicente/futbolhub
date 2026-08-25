@@ -68,30 +68,45 @@
 }
 .sd-intro-wrap .btn-primary { min-width: 200px; }
 
-/* Navegación de días */
+/* Navegación de días — barra FIJA abajo (mismo patrón que La Carrera).
+   Antes vivía dentro de .sd-intro-wrap, así que en cuanto salías del
+   objetivo desaparecía y no había forma de saltar a otra edición sin
+   volver atrás. Fijada aquí se ve tanto en el objetivo como con el once
+   delante. Se aparta de las columnas de anuncio con --ad-col-w, igual que
+   .fh-volver, para no quedar nunca debajo de un rascacielos. */
 .sd-daynav {
-  margin-top: 34px;
-  display: flex; align-items: center; gap: 6px;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 55;
+  background: var(--np-ink); color: var(--np-paper);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 7px 12px; height: 46px;
+}
+.sd-daynav.hidden { display: none; }
+@media (min-width: 760px) {
+  .sd-daynav { left: var(--ad-col-w, 0px); right: var(--ad-col-w, 0px); }
 }
 .sd-daynav button {
   font-family: 'DM Mono', monospace;
-  width: 34px; height: 34px;
-  border: 2px solid var(--bd-c, var(--np-ink));
-  background: var(--np-paper);
-  color: var(--np-ink);
-  border-radius: 6px;
+  min-width: 34px; height: 32px;
+  border: 1px solid rgba(var(--np-paper-rgb, 244,234,210), .3);
+  background: transparent;
+  color: var(--np-paper);
+  border-radius: var(--r-md, 6px);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1rem; line-height: 1;
+  padding: 4px 11px;
   transition: background .15s, color .15s;
 }
-.sd-daynav button:hover:not(:disabled) { background: var(--np-ink); color: var(--np-paper); }
-.sd-daynav button:disabled { opacity: 0.3; cursor: default; }
+.sd-daynav button:hover:not(:disabled) { background: rgba(var(--np-paper-rgb, 244,234,210), .16); }
+.sd-daynav button:disabled { opacity: 0.28; cursor: default; }
 #nav-label {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.2rem; letter-spacing: 1px;
-  min-width: 54px; text-align: center;
-  color: var(--np-ink);
+  font-size: 1.1rem; letter-spacing: 1px;
+  min-width: 62px; text-align: center;
+  color: var(--np-paper);
 }
+/* Hueco para que la barra fija no tape el final del contenido. */
+.sd-intro-wrap { padding-bottom: 76px; }
+.sd-game-wrap  { padding-bottom: 72px; }
 
 /* ═══════════════ PARTIDA ═══════════════ */
 .sd-game-wrap {
@@ -351,25 +366,99 @@
 }
 .sd-modal-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 
-/* ═══════════════ FIN ═══════════════ */
-.sd-end-wrap {
-  max-width: 460px; margin: 0 auto; padding: 72px 22px 40px;
-  display: flex; flex-direction: column; align-items: center; text-align: center;
+/* ═══════════════ RESULTADO (panel cerrable) ═══════════════ */
+/* Reutiliza .sd-modal / .sd-modal-card del modal de búsqueda: mismo cromo,
+   más ancho y con scroll propio, porque aquí caben dos bloques de números
+   y en un móvil apaisado no entra de una. */
+.sd-result-card {
+  width: min(520px, 94vw);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  text-align: center;
+  padding: 26px 22px 20px;
 }
-.sd-end-emoji { font-size: 3rem; margin-bottom: 6px; }
+.sd-result-eyebrow { justify-content: center; margin-bottom: 14px; }
+/* La ✕ del modal de busqueda va colgando por encima de la tarjeta
+   (top:-20px), y aqui la tarjeta tiene overflow-y:auto: ahi fuera se
+   recortaria. Sticky + float la deja arriba a la derecha DENTRO del panel y
+   ademas la mantiene a la vista si hay que hacer scroll. */
+.sd-result-card .sd-modal-x {
+  position: sticky;
+  top: 0; left: auto; right: auto;
+  float: right;
+  transform: none;
+  width: 38px; height: 38px;
+  margin: -10px -6px 0 8px;
+  border-width: 2px;
+  font-size: 1rem;
+  z-index: 2;
+}
+
+/* Bloques de estadísticas */
+.sd-stats-block { margin-top: 18px; }
+.sd-stats-kicker {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.64rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--np-ink-mid);
+  border-bottom: 1px solid var(--np-ink-soft);
+  padding-bottom: 5px; margin-bottom: 10px;
+}
+/* Rejilla y no flex: con 4 celdas en un movil de 375px el wrap dejaba 3
+   arriba y una estirada abajo. auto-fit reparte las que quepan a partes
+   iguales y solo baja de fila cuando de verdad no caben. */
+.sd-stats-nums {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+  gap: 6px;
+}
+.sd-stat-cell {
+  min-width: 0;
+  padding: 6px 4px;
+  border: 1px solid var(--np-ink-soft);
+  border-radius: var(--r-md, 0);
+  background: var(--np-paper2);
+}
+/* La marca a batir de la categoría (la más alta si el objetivo suma hacia
+   arriba, la más baja si es de minimizar): es el número que da sentido al
+   bloque, así que va marcado en vez de perderse entre los otros tres. */
+.sd-stat-cell.sd-stat-goal { border-color: var(--np-red); background: var(--np-paper); }
+.sd-stat-cell.sd-stat-goal .sd-stat-val { color: var(--np-red); }
+.sd-stat-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem; line-height: 1.05; color: var(--np-ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.sd-stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--np-ink-mid); margin-top: 3px; white-space: pre-line;
+}
+.sd-stats-note {
+  font-size: 0.72rem; color: var(--np-ink-mid); margin: 8px 0 0; line-height: 1.35;
+}
+.sd-countdown {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--np-ink-mid); margin-top: 18px;
+}
+.sd-countdown strong { color: var(--np-red); font-weight: 500; }
+
 .sd-end-title {
   font-family: 'Anton', sans-serif;
-  font-size: clamp(1.5rem, 6vw, 2.2rem);
-  text-transform: uppercase; color: var(--np-ink); margin: 0 0 10px;
+  font-size: clamp(1.2rem, 5vw, 1.7rem);
+  text-transform: uppercase; color: var(--np-ink); margin: 0 0 6px;
 }
 .sd-end-total {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(3rem, 14vw, 5rem);
+  font-size: clamp(2.4rem, 11vw, 3.6rem);
   line-height: 1; color: var(--np-red);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
-.sd-end-best { font-size: 0.95rem; color: var(--np-ink-mid); margin: 0 0 28px; }
-.sd-end-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.sd-end-best { font-size: 0.9rem; color: var(--np-ink-mid); margin: 0; }
+.sd-end-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
+.sd-end-actions .btn-primary,
+.sd-end-actions .btn-secondary { font-size: 0.8rem; padding: 9px 14px; }
 
 /* ═══════════════ RESPONSIVE ═══════════════ */
 @media (max-width: 520px) {

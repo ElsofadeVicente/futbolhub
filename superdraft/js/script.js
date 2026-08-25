@@ -666,11 +666,11 @@
     if (D.day === todayNumber()) {
       $('sd-end-best').textContent = 'Partida de hoy completada. Vuelve mañana.';
     }
-    /* El once se queda montado en pantalla 2: "Ver el once" desde el
-       resultado y "Ver resultado" desde el campo (ver setResultBtnVisible)
-       alternan entre las dos sin perder ninguna, así que siempre hay vuelta. */
+    /* El once se queda DEBAJO: el resultado es un panel, no una pantalla, así
+       que cerrarlo con la ✕ (o con "Ver el once") descubre el campo ya montado,
+       y "Ver resultado" del panel de la ronda lo vuelve a abrir. */
     setResultBtnVisible(true);
-    setTimeout(() => showScreen('screen-end'), 650);
+    setTimeout(openResult, 650);
   }
 
   /* El botón "Ver resultado" solo tiene sentido con la partida terminada:
@@ -796,13 +796,16 @@
      algo real que enseñar, en vez de un campo vacío. */
   async function showSavedResult(r) {
     await applySavedPicks(r);
-    renderField();          // deja el once ya montado en pantalla 2, listo para "Ver el once"
+    renderField();
     setResultBtnVisible(true);
     $('sd-end-title').textContent = D.objective.title;
     $('sd-end-total').textContent = fmtTotal(r.total, D.objective);
     $('sd-end-best').textContent = 'Ya has jugado la partida de hoy. Vuelve mañana.';
     setReplayVisible(false);
-    showScreen('screen-end');
+    /* El campo va DEBAJO del panel: cerrarlo enseña el once, no una pantalla
+       vacía. Por eso se activa screen-game ANTES de abrir el resultado. */
+    showScreen('screen-game');
+    openResult();
   }
 
   /* El boton de reintentar solo tiene sentido en el archivo. */
@@ -813,13 +816,177 @@
 
   /* ═══════════════════ PANTALLAS / NAV ═══════════════════ */
   function showScreen(id) {
-    ['screen-intro','screen-game','screen-end'].forEach(s => {
+    ['screen-intro','screen-game'].forEach(s => {
       const el = $(s); if (el) el.classList.toggle('active', s === id);
     });
   }
 
+  /* ═══════════════ RESULTADO: panel cerrable ═══════════════
+     Antes el resultado era una PANTALLA entera (#screen-end): tapaba el once,
+     escondía la barra de días y para jugar otra edición había que pasar por
+     "Objetivo". Ahora es un panel encima del campo, como las estadísticas de
+     La Carrera y En el Top: la ✕ lo cierra y deja el once a la vista. */
+  function openResult() {
+    const ov = $('sd-result-overlay');
+    if (!ov) return;
+    $('sd-result-day').textContent = '#' + curDay + (curDay < maxDay ? ' \u00b7 Archivo' : '');
+    renderStats();
+    ov.classList.remove('hidden');
+    startCountdown();
+  }
+
+  /* Cerrar NO es abandonar: el once sigue montado detrás y el botón
+     "Ver resultado" del panel de la ronda lo devuelve. */
+  function closeResult() {
+    hideResult();
+    showScreen('screen-game');
+  }
+
+  /* Esconder sin decidir qué pantalla queda debajo: lo usa loadDay(), que va
+     a pintar la intro de otra edición y no quiere volver al campo. */
+  function hideResult() {
+    const ov = $('sd-result-overlay');
+    if (ov) ov.classList.add('hidden');
+    stopCountdown();
+  }
+
+  /* ── Cuenta atrás hasta la edición de mañana (hora de Madrid) ── */
+  let _cdT = null;
+  function msHastaMedianocheMadrid() {
+    const p = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Madrid', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+    }).formatToParts(new Date());
+    const g = t => parseInt(p.find(x => x.type === t).value, 10);
+    let h = g('hour'); if (h === 24) h = 0;
+    return ((23 - h) * 3600 + (59 - g('minute')) * 60 + (60 - g('second'))) * 1000;
+  }
+  function fmtCuenta(ms) {
+    const t  = Math.max(0, Math.floor(ms / 1000));
+    const dd = n => String(n).padStart(2, '0');
+    return dd(Math.floor(t / 3600)) + ':' + dd(Math.floor(t / 60) % 60) + ':' + dd(t % 60);
+  }
+  function startCountdown() {
+    stopCountdown();
+    const el = $('sd-countdown');
+    if (!el) return;
+    /* Solo tiene sentido en la edición de hoy: en el archivo no hay nada que
+       esperar a medianoche. */
+    if (curDay !== maxDay) { el.textContent = ''; return; }
+    const tick = () => {
+      el.innerHTML = 'Nuevo Superdraft en <strong>' + fmtCuenta(msHastaMedianocheMadrid()) + '</strong>';
+    };
+    tick();
+    _cdT = setInterval(tick, 1000);
+  }
+  function stopCountdown() { clearInterval(_cdT); _cdT = null; }
+
+  /* ═══════════════ ESTADÍSTICAS ═══════════════
+     Superdraft no se gana ni se pierde: se saca una PUNTUACIÓN contra un
+     objetivo que cambia cada día. El histograma de La Carrera / En el Top no
+     sirve aquí, porque un total de "412 años" y otro de "38 goles" no caben
+     en la misma escala. Lo que sí es comparable es tu historial DENTRO de una
+     categoría, y de ahí el segundo bloque: tu marca más baja, la más alta y
+     la de hoy, o sea el número a batir la próxima vez que salga ese objetivo. */
+
+  /* El objetivo de un día sale del mismo seed que generateDay(), pero sin
+     montar la partida entera (que resuelve badges contra toda la base).
+     OJO: generateDay NO puede llamar a esto — allí el rng es un flujo
+     compartido y sacar el objetivo de otro rng movería la formación de todos
+     los días ya publicados. */
+  function objectiveOfDay(day) {
+    const seed = ((day * 2654435761) ^ 0x9e3779b9) >>> 0;
+    const rng  = FR.rng.mulberry32(seed);
+    return OBJECTIVES[Math.floor(rng() * OBJECTIVES.length)];
+  }
+
+  /* Marca guardada de cada edición jugada: Map(nº de día -> puntuación).
+     Sale de superdraft-best-<día>, que progress-sync sincroniza entre
+     dispositivos, así que el historial no es solo de este navegador. */
+  function marcasPorDia() {
+    const out = new Map();
+    const P = 'superdraft-best-';
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || k.indexOf(P) !== 0) continue;
+        const n = parseInt(k.slice(P.length), 10);
+        const v = parseFloat(localStorage.getItem(k));
+        if (n >= 1 && isFinite(v)) out.set(n, v);
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  /* Racha: la MISMA que pinta el hub, para que los dos números no se
+     contradigan. Va por intento (js/hub-streaks.js): saltarse un día no la
+     rompe, solo fallar. Si el módulo no está, 0 en vez de romper. */
+  function rachaActual() {
+    try {
+      const g = window.FHStreaks && FHStreaks.list().find(x => x.href === 'superdraft');
+      return g ? g.streak : 0;
+    } catch (e) { return 0; }
+  }
+
+  function celda(val, label, esMeta) {
+    return '<div class="sd-stat-cell' + (esMeta ? ' sd-stat-goal' : '') + '">'
+         + '<div class="sd-stat-val">' + esc(val) + '</div>'
+         + '<div class="sd-stat-label">' + esc(label) + '</div></div>';
+  }
+
+  function renderStats() {
+    const marcas = marcasPorDia();
+    const obj    = D.objective;
+
+    /* ── Bloque 1: historial general ── */
+    const cats = new Set();
+    for (const n of marcas.keys()) { const o = objectiveOfDay(n); if (o) cats.add(o.key); }
+    $('sd-stats-nums').innerHTML =
+        celda(marcas.size, 'Ediciones\njugadas')
+      + celda(rachaActual() + ' \ud83d\udd25', 'Racha')
+      + celda(cats.size + '/' + OBJECTIVES.length, 'Categorías\nprobadas');
+
+    /* ── Bloque 2: solo esta categoría ── */
+    $('sd-cat-name').textContent = obj.short;
+    const propias = [];
+    for (const [n, v] of marcas) {
+      const o = objectiveOfDay(n);
+      if (o && o.key === obj.key) propias.push(v);
+    }
+
+    /* La marca de la edición que se está mirando. Puede no estar todavía en
+       marcasPorDia() si el panel se abre en el mismo instante en que termina
+       la partida, así que se añade a mano para que no falte de la cuenta. */
+    const actual = (S && S.over) ? S.total : null;
+    if (actual != null && !marcas.has(curDay)) propias.push(actual);
+
+    const min   = propias.length ? Math.min.apply(null, propias) : null;
+    const max   = propias.length ? Math.max.apply(null, propias) : null;
+    const esMin = obj.dir === 'min';
+
+    $('sd-cat-nums').innerHTML =
+        celda(min != null ? fmtTotal(min, obj) : '\u2014', 'Más baja', esMin)
+      + celda(max != null ? fmtTotal(max, obj) : '\u2014', 'Más alta', !esMin)
+      + celda(actual != null ? fmtTotal(actual, obj) : '\u2014', curDay === maxDay ? 'Hoy' : 'Esta\nedición')
+      + celda(propias.length, 'Partidas\naquí');
+
+    const record = esMin ? min : max;
+    const nota   = $('sd-cat-note');
+    if (!nota) return;
+    if (propias.length <= 1) {
+      nota.textContent = 'Primera vez que juegas esta categoría: esta marca es la que habrá que batir.';
+    } else if (record != null && actual != null && actual === record) {
+      nota.innerHTML = '¡Tu mejor marca en <strong>' + esc(obj.short) + '</strong>!';
+    } else if (record != null) {
+      nota.innerHTML = 'Tu récord en <strong>' + esc(obj.short) + '</strong> es <strong>'
+                     + esc(fmtTotal(record, obj)) + '</strong>: hay que ' + (esMin ? 'bajarlo' : 'subirlo') + '.';
+    } else {
+      nota.textContent = '';
+    }
+  }
+
   function loadDay(day, sinTocarUrl) {
     setResultBtnVisible(false);
+    hideResult();
     curDay = Math.max(1, Math.min(day, maxDay));
     /* push: cambiar de edicion SI es moverse a otro sitio y el Atras debe
        deshacerlo. Cuando el dia no cambia (Reintentar, volver al menu) set()
@@ -859,6 +1026,7 @@
 
   function startGame() {
     setResultBtnVisible(false);
+    hideResult();
     S = freshState(D);
     renderField();
     showScreen('screen-game');
@@ -877,6 +1045,9 @@
       return;
     }
     $('loading-overlay').classList.add('hidden');
+    /* La barra de dias no aparece hasta que hay datos: sus botones llaman a
+       loadDay(), que sin FR cargado no puede generar nada. */
+    $('day-nav').classList.remove('hidden');
 
     /* La URL manda al entrar. Se valida contra el rango real (dia 1 .. hoy):
        una fecha de antes del lanzamiento o del futuro se ignora. */
@@ -904,17 +1075,23 @@
       startGame();
     });
     $('sd-share-btn').addEventListener('click', doShare);
-    $('sd-replay-btn').addEventListener('click', () => { loadDay(curDay); startGame(); });
+    $('sd-replay-btn').addEventListener('click', () => { closeResult(); loadDay(curDay); startGame(); });
     /* "Objetivo": ir a la pantalla de intro (donde vive el día-nav para jugar
        otro día) directamente, sin pasar por loadDay(): si hoy ya está jugada,
        loadDay volvería a abrir este mismo resultado y el botón no llevaría a
        ningún sitio. Los datos de la intro ya están puestos desde la última
        loadDay(), así que no hace falta recalcular. */
-    $('sd-menu-btn').addEventListener('click', () => showScreen('screen-intro'));
-    /* Ver el once ↔ Ver resultado: dos pantallas ya montadas (el campo sigue
-       completo detrás), así que ninguna de las dos se pierde al alternar. */
-    $('sd-view-pitch-btn').addEventListener('click', () => showScreen('screen-game'));
-    $('sd-view-result-btn').addEventListener('click', () => showScreen('screen-end'));
+    $('sd-menu-btn').addEventListener('click', () => { hideResult(); showScreen('screen-intro'); });
+    /* Ver el once ↔ Ver resultado: el panel se cierra y se reabre sobre el
+       mismo campo, así que ninguno de los dos se pierde al alternar. */
+    $('sd-view-pitch-btn').addEventListener('click', closeResult);
+    $('sd-view-result-btn').addEventListener('click', openResult);
+    /* Escape cierra el panel, como cualquier modal de la web. */
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const ov = $('sd-result-overlay');
+      if (ov && !ov.classList.contains('hidden')) closeResult();
+    });
     $('nav-prev').addEventListener('click',  () => loadDay(curDay - 1));
     $('nav-next').addEventListener('click',  () => loadDay(curDay + 1));
     $('nav-first').addEventListener('click', () => loadDay(1));
@@ -923,6 +1100,7 @@
 
   /* API minima para el HTML inline (autocompletado) + funciones de depuracion. */
   window.SD = { pick, openPick, closePick, submit, onInput, onKey, generateDay, matchesBadge, posBucket, posBucketsFor,
+    openResult, closeResult,
     dbg: () => ({ D, S }) };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

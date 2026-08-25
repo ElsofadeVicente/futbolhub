@@ -17,7 +17,7 @@ function _escHtml(s) {
 /* ── Normalización de texto compartida entre _loadData y App ── */
 function _acNorm(s) {
   return String(s || '').toLowerCase()
-    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
+    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     /* Los ap\u00f3strofes desaparecen en vez de convertirse en espacio: as\u00ed
        "Eto'o" se lee "etoo" y se encuentra escribi\u00e9ndolo sin ap\u00f3strofe,
@@ -409,7 +409,7 @@ async function _loadData() {
        B) El jugador escrito NO es clave pero figura en el array del famoso → reverseMap lo cubre. */
   const reverseMap = {};
   const _norm = s => String(s||'').toLowerCase()
-    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
+    .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'')
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/\s+/g,' ').trim();
   for (const [id, names] of Object.entries(teammateMap)) {
@@ -587,7 +587,7 @@ const Restrictions = (() => {
     const cached = _normCache.get(key);
     if (cached !== undefined) return cached;
     const out = key.toLowerCase()
-      .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d')
+      .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, ' ').trim();
     _normCache.set(key, out);
@@ -2023,7 +2023,7 @@ const App = (() => {
            sala generan rejillas distintas con la misma semilla. Sin ?v= el
            navegador se quedaba con el worker viejo indefinidamente mientras
            script.js si se actualizaba: justo la divergencia que hay que evitar. */
-        worker = new Worker('js/restrictions-worker.js?v=20260820c');
+        worker = new Worker('js/restrictions-worker.js?v=20260825a');
       } catch(e) {
         finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(err); } });
         return;

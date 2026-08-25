@@ -4,9 +4,12 @@
 
    Lee el progreso diario de cada juego en localStorage
    (que js/progress-sync.js mantiene igual en todos tus
-   dispositivos) y pinta un círculo con la racha —días
-   seguidos ganados— en la esquina superior izquierda de
+   dispositivos) y pinta un círculo con la racha —partidas
+   seguidas ganadas— en la esquina superior izquierda de
    su tarjeta del hub.
+
+   La racha va POR INTENTO: se rompe al perder o al dejar
+   la partida a medias, NO por saltarse un día sin jugar.
 
    Claves que lee (escritas por cada juego):
      La Carrera   → carrera_day_YYYY-MM-DD  {won}
@@ -148,9 +151,14 @@
     },
   ];
 
-  /* Racha: días consecutivos ganados terminando hoy.
-     Si HOY aún no se ha jugado, la racha de ayer sigue "viva" y se muestra.
-     Si HOY se jugó y se perdió, la racha es 0 (sin badge). */
+  /* Racha POR INTENTO, no por días de calendario (decisión del usuario,
+     2026-08-25). La racha cuenta las partidas seguidas ganadas: un día que
+     NO se juega no la rompe —te vas de fin de semana y sigue viva—, y solo
+     la corta perder o dejar la partida sin completar.
+
+     O sea que al retroceder por el calendario los días sin jugar se SALTAN
+     (state === null) en vez de cortar el bucle, que es lo que hacía antes.
+     Se miran 400 días hacia atrás, que es lo que conserva progress-sync. */
   function computeStreak(game) {
     const today = game.today();
     const t = game.stateFor(today);
@@ -159,8 +167,10 @@
     let streak = (t === 'win') ? 1 : 0;
     let day = shiftDays(today, -1);
     for (let i = 0; i < 400; i++) {
-      if (game.stateFor(day) === 'win') { streak++; day = shiftDays(day, -1); }
-      else break;
+      const st = game.stateFor(day);
+      if (st === 'loss') break;      // fallar SÍ rompe la racha
+      if (st === 'win') streak++;    // ganar la alarga
+      day = shiftDays(day, -1);      // no jugar no cuenta ni para bien ni para mal
     }
     return streak;
   }
@@ -211,7 +221,8 @@
         badge.className = 'hub-streak-badge';
         card.appendChild(badge);
       }
-      badge.title = `Racha: ${streak} día${streak !== 1 ? 's' : ''} seguido${streak !== 1 ? 's' : ''}`;
+      badge.title = `Racha: ${streak} partida${streak !== 1 ? 's' : ''} seguida${streak !== 1 ? 's' : ''} sin fallar `
+                  + `(no jugar un día no la rompe)`;
       badge.innerHTML = `<span>${streak}</span><span class="hs-fire">🔥</span>`;
     }
   }

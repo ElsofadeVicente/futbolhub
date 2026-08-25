@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Tres en Raya) -->
   <link rel="stylesheet" href="../coche/css/style.css?v=20260824a">
-  <link rel="stylesheet" href="css/style.css?v=20260824c">
+  <link rel="stylesheet" href="css/style.css?v=20260825a">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
@@ -121,16 +121,8 @@
 
     <button id="sd-start-btn" class="btn-primary">JUGAR ▶</button>
 
-    <!-- Navegación de días (archivo) -->
-    <div id="day-nav" class="sd-daynav">
-      <button id="nav-first" title="Primera edición" aria-label="Primera edición">«</button>
-      <button id="nav-prev"  title="Anterior" aria-label="Anterior">‹</button>
-      <span id="nav-label">#1</span>
-      <button id="nav-next"  title="Siguiente" aria-label="Siguiente">›</button>
-      <button id="nav-last"  title="Hoy" aria-label="Hoy">»</button>
-      <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-      <p class="guia-link"><a href="/como-jugar/superdraft/">Cómo se juega &rarr;</a></p>
-    </div>
+    <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
+    <p class="guia-link"><a href="/como-jugar/superdraft/">Cómo se juega &rarr;</a></p>
   </div>
 </div>
 
@@ -161,18 +153,41 @@
   </div>
 </div>
 
-<!-- ═══════════ PANTALLA 3: RESULTADO ═══════════ -->
-<div id="screen-end" class="screen">
-  <a href="../index.html" class="fh-volver">← Volver</a>
-  <div class="sd-end-wrap">
-    <div class="sd-intro-eyebrow">
+<!-- ═══════════ RESULTADO: panel cerrable sobre el once ═══════════
+     Antes era una PANTALLA entera (#screen-end) que tapaba el campo y desde
+     la que no se llegaba al día-nav: para jugar otra edición había que pasar
+     por "Objetivo" primero. Ahora es un panel que se cierra con la ✕ y deja
+     el once a la vista, igual que las estadísticas de La Carrera / En el Top,
+     y la barra de días vive fuera (fija abajo), así que se puede saltar a
+     otra edición desde donde sea. -->
+<div id="sd-result-overlay" class="sd-modal hidden">
+  <div class="sd-modal-backdrop" onclick="SD.closeResult()"></div>
+  <div class="sd-modal-card sd-result-card">
+    <button class="sd-modal-x" onclick="SD.closeResult()" aria-label="Cerrar y ver el once">✕</button>
+
+    <div class="sd-intro-eyebrow sd-result-eyebrow">
       <span class="sd-num">№ 12</span><span class="sd-sep">·</span>
-      <span class="sd-cat">Resultado</span>
+      <span class="sd-cat">Resultado</span><span class="sd-sep">·</span>
+      <span id="sd-result-day" class="sd-day">#1</span>
     </div>
-    <div class="sd-end-emoji">🧮</div>
+
     <h2 id="sd-end-title" class="sd-end-title">EL ONCE MÁS VIEJO</h2>
     <div id="sd-end-total" class="sd-end-total">0</div>
     <p id="sd-end-best" class="sd-end-best"></p>
+
+    <div class="sd-stats-block">
+      <div class="sd-stats-kicker">Tu historial</div>
+      <div id="sd-stats-nums" class="sd-stats-nums"></div>
+    </div>
+
+    <div class="sd-stats-block">
+      <div class="sd-stats-kicker">En esta categoría · <span id="sd-cat-name"></span></div>
+      <div id="sd-cat-nums" class="sd-stats-nums"></div>
+      <p id="sd-cat-note" class="sd-stats-note"></p>
+    </div>
+
+    <div id="sd-countdown" class="sd-countdown"></div>
+
     <div class="sd-end-actions">
       <button id="sd-share-btn" class="btn-primary">📤 Compartir</button>
       <button id="sd-replay-btn" class="btn-primary">🔄 Reintentar</button>
@@ -181,6 +196,17 @@
       <a href="../index.html" class="btn-secondary">🏠 Hub</a>
     </div>
   </div>
+</div>
+
+<!-- Navegación de ediciones: barra fija, visible tanto en el objetivo como
+     con el once en pantalla (antes vivía dentro de la intro y desde la
+     partida no había forma de cambiar de día). -->
+<div id="day-nav" class="sd-daynav hidden">
+  <button id="nav-first" title="Primera edición" aria-label="Primera edición">«</button>
+  <button id="nav-prev"  title="Anterior" aria-label="Anterior">‹</button>
+  <span id="nav-label">#1</span>
+  <button id="nav-next"  title="Siguiente" aria-label="Siguiente">›</button>
+  <button id="nav-last"  title="Hoy" aria-label="Hoy">»</button>
 </div>
 
 <!-- Carga -->
@@ -223,16 +249,16 @@
 <script src="../js/vendor/supabase-js.min.js"></script>
 <script src="../js/auth.js?v=20260821a"></script>
 <script src="../js/progress-sync.js?v=20260821a"></script>
-<script src="../js/hub-streaks.js?v=20260808a"></script>
+<script src="../js/hub-streaks.js?v=20260825a"></script>
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260809a"></script>
-<script src="../js/futbol-restrictions.js?v=20260824a"></script>
+<script src="../js/futbol-restrictions.js?v=20260825a"></script>
 <script>
   // Arranca la carga de datos en cuanto FR esté disponible.
   if (window.FR && FR.init) FR.init();
 </script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="js/script.js?v=20260824c"></script>
+<script src="js/script.js?v=20260825a"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).
   // Ruta a la RAIZ para que el scope cubra el hub y todos los juegos.

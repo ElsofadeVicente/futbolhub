@@ -171,7 +171,7 @@ const PlayerDB = {
             await this.init();
         }
 
-        const term = searchTerm.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const term = searchTerm.toLowerCase().replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'').normalize('NFD').replace(/[̀-ͯ]/g, '');
         const results = [];
 
         // Cargar chunks uno por uno hasta encontrar suficientes resultados
@@ -183,7 +183,7 @@ const PlayerDB = {
             for (const [id, player] of Object.entries(chunk)) {
                 if (results.length >= maxResults) break;
 
-                const playerName = player.n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                const playerName = player.n.toLowerCase().replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'').normalize('NFD').replace(/[̀-ͯ]/g, '');
                 if (playerName.includes(term)) {
                     results.push({ id, ...player });
                 }

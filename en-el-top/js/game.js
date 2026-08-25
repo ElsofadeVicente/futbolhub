@@ -24,7 +24,7 @@ function norm(s) {
   // (o-con-barra, ae-danesa, etc.) para que se acepte "Hojbjerg" al
   // teclear el nombre de jugadores como Hojbjerg, igual que hace Coche.
   return String(s || '').toLowerCase()
-    .replace(/\u00f8/g,'o').replace(/\u00e6/g,'ae').replace(/\u00f0/g,'d').replace(/\u00fe/g,'th').replace(/\u0142/g,'l').replace(/\u0111/g,'d')
+    .replace(/\u00f8/g,'o').replace(/\u00e6/g,'ae').replace(/\u00f0/g,'d').replace(/\u00fe/g,'th').replace(/\u0142/g,'l').replace(/\u0111/g,'d').replace(/\u0131/g,'i').replace(/\u0130/g,'i').replace(/\u00df/g,'b').replace(/\u0153/g,'oe').replace(/[\u200b-\u200f]/g,'')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9 ]/g, ' ')
     .replace(/\s+/g, ' ').trim();

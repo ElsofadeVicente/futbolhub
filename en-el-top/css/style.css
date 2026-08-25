@@ -544,14 +544,31 @@ body::before {
   opacity: 1;
 }
 
-/* Pop al encontrar */
+/* Pop al encontrar.
+   Antes era scale(1.018) en .3s: tan sutil que en un movil no se veia si
+   habias acertado esa fila o si ya estaba. Ahora la fila crece de verdad un
+   momento y se le enciende un halo verde, con rebote al volver (la curva
+   pasa de 1 a la vuelta). Se sube a position:relative + z-index para que al
+   crecer pase por encima de las filas de al lado y no la recorten. */
 .row.pop {
-  animation: row-pop .3s cubic-bezier(.36,.07,.19,.97);
+  position: relative;
+  z-index: 2;
+  animation: row-pop .48s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes row-pop {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.018); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(1);     box-shadow: 1px 1px 0 var(--np-green); }
+  35%  { transform: scale(1.055); box-shadow: 0 8px 20px rgba(45,106,53,.42); }
+  65%  { transform: scale(.992);  box-shadow: 0 3px 10px rgba(45,106,53,.28); }
+  100% { transform: scale(1);     box-shadow: 1px 1px 0 var(--np-green); }
+}
+/* Quien pide menos movimiento se queda con el destello, sin el zoom. */
+@media (prefers-reduced-motion: reduce) {
+  .row.pop { animation-name: row-pop-soft; animation-duration: .35s; }
+  @keyframes row-pop-soft {
+    0%   { box-shadow: 1px 1px 0 var(--np-green); }
+    45%  { box-shadow: 0 0 0 4px rgba(45,106,53,.25); }
+    100% { box-shadow: 1px 1px 0 var(--np-green); }
+  }
 }
 
 /* Revelado (no adivinado) */
