@@ -9,10 +9,11 @@
    ============================================= */
 'use strict';
 
-/* v11: imagenes del hub y logos de liga reoptimizados (pesaban hasta 20x lo
-   que debian). Como van por cache-first, sin subir la version los que ya
-   entraron seguirian viendo las viejas para siempre. */
-const CACHE = 'futbolhub-v11';
+/* v12: hay que TIRAR las cachés anteriores enteras, no solo invalidar: las
+   entradas guardadas hasta ahora llevan dentro la cabecera 'Content-Encoding:
+   br' de Vercel con el cuerpo YA descomprimido (ver guardar() más abajo), y
+   servir una de esas es justo lo que descargaba el archivo de 0 KB. */
+const CACHE = 'futbolhub-v12';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
@@ -68,6 +69,71 @@ function isStaticAsset(url) {
   return false;
 }
 
+/* ── GUARDAR EN CACHÉ SIN ENVENENARLA ──────────────────────────────────
+   Vercel sirve el HTML (y el JS, y el CSS) comprimido:
+
+     Content-Encoding: br
+     Content-Disposition: inline; filename="el-estadio"
+     X-Content-Type-Options: nosniff
+
+   fetch() te entrega el cuerpo YA descomprimido, pero la Response conserva
+   esa cabecera 'Content-Encoding: br'. Al meterla tal cual en la Cache API
+   se guarda la pareja imposible: cuerpo en claro + cabecera que dice que
+   viene en brotli. La próxima vez que se sirva desde caché (o sea, cuando
+   falle la red: justo lo que pasa a cada rato en un móvil), el navegador
+   intenta descomprimir algo que ya está descomprimido, se queda sin cuerpo,
+   y con 'nosniff' no puede rescatarlo adivinando el tipo → lo trata como
+   descarga y usa el filename de Content-Disposition.
+
+   De ahí el archivo de 0 KB llamado 'el-estadio' al entrar en el juego, o
+   'www.futbolhub.es' (la raíz no lleva filename, así que el navegador cae
+   al nombre del host) al pulsar "← Volver".
+
+   Por eso se guarda una copia con las cabeceras de transporte fuera. Se va
+   también Content-Disposition: no aporta nada aquí y es la que convierte
+   cualquier tropiezo futuro en una descarga en vez de en una página fea. */
+function limpiar(res) {
+  const h = new Headers(res.headers);
+  h.delete('content-encoding');
+  h.delete('content-length');
+  h.delete('content-disposition');
+  return h;
+}
+
+async function guardar(cache, key, res) {
+  try {
+    if (!res || !res.ok || res.type === 'opaqueredirect' || res.redirected) return;
+    const h = limpiar(res);
+    /* Sin tipo declarado, 'nosniff' no deja al navegador adivinar y acabaría
+       en descarga otra vez. Mejor no guardarlo. */
+    if (!h.get('content-type')) return;
+    const cuerpo = await res.blob();
+    if (!cuerpo.size) return;   // respuesta cortada a medias: no vale de nada
+    await cache.put(key, new Response(cuerpo, {
+      status: res.status, statusText: res.statusText, headers: h,
+    }));
+  } catch (err) {
+    /* Cuota llena, almacenamiento capado en incógnito, respuesta rara: que no
+       se guarde no es motivo para tumbar la petición, que ya está servida. */
+  }
+}
+
+/* waitUntil lanza si el evento ya se cerró (respuesta servida y SW a punto
+   de dormirse). Guardar es opcional; fallar aquí no lo es. */
+function enSegundoPlano(e, promesa) {
+  try { e.waitUntil(promesa); } catch (err) { /* evento cerrado: se pierde la copia */ }
+}
+
+/* Red de seguridad para lo que ya estuviera guardado mal (otra versión del
+   SW, una caché que sobreviva a la limpieza): si la entrada trae cabecera de
+   compresión, se reconstruye antes de devolverla. */
+function servir(hit) {
+  if (!hit || !hit.headers.get('content-encoding')) return hit;
+  return new Response(hit.body, {
+    status: hit.status, statusText: hit.statusText, headers: limpiar(hit),
+  });
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -109,13 +175,13 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE);
       const hit = await cache.match(cacheKey);
-      if (hit) return hit;
+      if (hit) return servir(hit);
       try {
         const res = await fetch(req);
-        if (res && res.ok) cache.put(cacheKey, res.clone());
+        enSegundoPlano(e, guardar(cache, cacheKey, res.clone()));
         return res;
       } catch (err) {
-        return hit || Response.error();
+        return Response.error();
       }
     })());
   } else {
@@ -124,11 +190,11 @@ self.addEventListener('fetch', (e) => {
       const cache = await caches.open(CACHE);
       try {
         const res = await fetch(req);
-        if (res && res.ok) cache.put(cacheKey, res.clone());
+        enSegundoPlano(e, guardar(cache, cacheKey, res.clone()));
         return res;
       } catch (err) {
         const hit = await cache.match(cacheKey);
-        if (hit) return hit;
+        if (hit) return servir(hit);
         throw err;
       }
     })());
