@@ -63,6 +63,36 @@ function sbStorageUrl(bucket, name) {
     return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${key}`;
 }
 
+/* Hosts de Transfermarkt cuyas imágenes NO se sirven en directo: se ve el
+ * dominio de origen al inspeccionar o arrastrar la imagen, y son fotos y
+ * escudos que no nos pertenecen. fhImgUrl() las reescribe para que pasen por
+ * api/img.js, que las cachea en el bucket 'img-cache' de Supabase Storage la
+ * primera vez que se piden y las sirve desde ahí (mismo dominio, futbolhub.es)
+ * el resto de veces. Si se añade un host aquí, hay que añadirlo también al
+ * allowlist de api/img.js (HOSTS_PERMITIDOS) o el proxy los rechaza con 400. */
+const FH_IMG_HOSTS_PROXY = ["tmssl.akamaized.net", "img.a.transfermarkt.technology"];
+
+/**
+ * Reescribe una URL de imagen externa de Transfermarkt para que pase por
+ * nuestro proxy/caché propio. Las URLs que ya son nuestras (Supabase Storage,
+ * mismo origen, data:/blob:) o vacías se devuelven tal cual — es un no-op
+ * seguro para llamarlo siempre, aunque el campo no sea de Transfermarkt.
+ */
+function fhImgUrl(url) {
+    if (!url) return url;
+    let u;
+    try {
+        u = new URL(url, typeof location !== "undefined" ? location.href : undefined);
+    } catch {
+        return url;
+    }
+    if (!FH_IMG_HOSTS_PROXY.includes(u.hostname)) return url;
+    return `/api/img?u=${encodeURIComponent(u.href)}`;
+}
+
 if (typeof module !== "undefined" && module.exports) {
-    module.exports = { SUPABASE_URL, SUPABASE_KEY, SB_HEADERS, sbFetch, sbFetchAll, sbStorageUrl, sbStorageSafeKey };
+    module.exports = {
+        SUPABASE_URL, SUPABASE_KEY, SB_HEADERS, sbFetch, sbFetchAll,
+        sbStorageUrl, sbStorageSafeKey, fhImgUrl, FH_IMG_HOSTS_PROXY,
+    };
 }

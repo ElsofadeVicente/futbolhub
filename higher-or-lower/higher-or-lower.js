@@ -421,7 +421,7 @@ function renderRight() {
 
 function setPlayerBg(bgEl, player) {
   bgEl.style.backgroundImage = player.img
-    ? `url(${player.img})`
+    ? `url(${fhImgUrl(player.img)})`
     : 'linear-gradient(135deg, #1a2a3a 0%, #0f1a28 100%)';
 }
 

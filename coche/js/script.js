@@ -3425,7 +3425,7 @@ const App = (() => {
     grid.innerHTML = restrictions.map(r => {
       /* Contenido visual: imagen con fallback a emoji */
       const iconHtml = r.imgUrl
-        ? `<img class="restriction-img" src="${_escHtml(r.imgUrl)}"
+        ? `<img class="restriction-img" src="${_escHtml(fhImgUrl(r.imgUrl))}"
                onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'"
                alt="">
            <span class="restriction-icon-fallback" style="display:none">${_escHtml(r.icon||'❓')}</span>`
@@ -4371,7 +4371,7 @@ const App = (() => {
         const noSubmit=!r.playerName;
 
         const photoHtml = (r.valid && r.footballerImg)
-          ? `<img class="result-footballer-photo" src="${_escHtml(r.footballerImg)}" alt="" loading="lazy"
+          ? `<img class="result-footballer-photo" src="${_escHtml(fhImgUrl(r.footballerImg))}" alt="" loading="lazy"
                  onerror="this.style.display='none'">`
           : '';
 
@@ -4379,7 +4379,7 @@ const App = (() => {
           ? restrictions.map((rs,i) => {
               if (!r.matches?.[i]) return '';
               const iconHtml = rs.imgUrl
-                ? `<img class="rr-badge-img" src="${_escHtml(rs.imgUrl)}"
+                ? `<img class="rr-badge-img" src="${_escHtml(fhImgUrl(rs.imgUrl))}"
                        onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" alt="">
                    <span style="display:none">${_escHtml(rs.icon||'❓')}</span>`
                 : `<span class="rr-badge-icon">${_escHtml(rs.icon||'❓')}</span>`;
@@ -4434,7 +4434,7 @@ const App = (() => {
           ${restrictions.map(r=>`
             <div style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--np-ink);font-weight:600;margin-bottom:5px;">
               ${r.imgUrl
-                ? `<img src="${_escHtml(r.imgUrl)}" style="width:18px;height:18px;object-fit:contain;flex:0 0 auto;"
+                ? `<img src="${_escHtml(fhImgUrl(r.imgUrl))}" style="width:18px;height:18px;object-fit:contain;flex:0 0 auto;"
                       onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" alt="">
                    <span style="flex:0 0 auto;display:none;">${_escHtml(r.icon||'❓')}</span>`
                 : `<span style="flex:0 0 auto;">${_escHtml(r.icon||'❓')}</span>`}
@@ -4839,7 +4839,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Precargar imágenes de restricciones (entrenadores, logos, trofeos, banderas)
      en background con baja prioridad para que estén en caché del navegador
      cuando la ronda empiece y las tarjetas se revelen */
-  const _preloadImg = (src) => { const img = new Image(); img.src = src; };
+  const _preloadImg = (src) => { const img = new Image(); img.src = fhImgUrl(src); };
   /* Entrenadores (12 fotos) */
   ['67','118','280','523','781','1522','2868','3517','5075','5672','6499','21284']
     .forEach(id => _preloadImg(sbStorageUrl('coach-photos', `${id}.png`)));

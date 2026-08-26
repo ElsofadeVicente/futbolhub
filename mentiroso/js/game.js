@@ -579,7 +579,7 @@ function renderCard(card,opts){
      que seguir viendose. */
   el.innerHTML=`
     <div class="tcard-photo">
-      <img src="${escapeHtml(card.img)}" loading="lazy" alt="" onerror="this.closest('.tcard-photo').classList.add('no-photo')">
+      <img src="${escapeHtml(fhImgUrl(card.img))}" loading="lazy" alt="" onerror="this.closest('.tcard-photo').classList.add('no-photo')">
       <div class="tcard-fallback">${escapeHtml(ini)}</div>
     </div>
     ${mark}

@@ -78,7 +78,7 @@ function setTeamBadge(badgeElId, badgeVal, teamName) {
 
     // Escudo: primero el guardado en el propio partido (URL exacta); si no, el
     // del mapa central escudos.json por nombre de equipo (cubre datos antiguos).
-    const crestUrl = isCrestUrl(badgeVal) ? badgeVal.trim() : getCrest(teamName);
+    const crestUrl = fhImgUrl(isCrestUrl(badgeVal) ? badgeVal.trim() : getCrest(teamName));
 
     if (crestUrl) {
         if (info) info.classList.add('has-crest');
@@ -1815,7 +1815,7 @@ async function onceShareWithImage(text) {
 }
 
 function _crestFor(team, badge) {
-    return isCrestUrl(badge) ? badge.trim() : getCrest(team);
+    return fhImgUrl(isCrestUrl(badge) ? badge.trim() : getCrest(team));
 }
 
 function _loadCrossImg(src) {

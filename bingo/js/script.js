@@ -149,7 +149,7 @@
       /* Sin loading="lazy": las 16 casillas se ven de golpe y el carton tiene
          que estar legible desde el primer segundo. */
       return `<span class="cat-media${avatar ? ' cat-media--avatar' : ''}">
-                <img src="${esc(r.imgUrl)}" alt="" decoding="async"
+                <img src="${esc(fhImgUrl(r.imgUrl))}" alt="" decoding="async"
                      onerror="this.parentElement.classList.add('broken')">
               </span>`;
     }
@@ -363,14 +363,14 @@
     $('caller-first').textContent = first;
     $('caller-last').textContent  = last || '';
     $('caller-photo').innerHTML = p?.img
-      ? `<img src="${esc(p.img)}" alt="" onerror="this.remove()">`
+      ? `<img src="${esc(fhImgUrl(p.img))}" alt="" onerror="this.remove()">`
       : '<span class="caller-noimg">⚽</span>';
     $('caller-left').textContent = `${Math.max(0, G.seq.length - G.idx - 1)} POR CAER`;
 
     /* La foto del siguiente se va cargando durante estos 10 segundos: si no,
        entra tarde y el nombre aparece antes que la cara. */
     const next = G.seq[G.idx + 1];
-    if (next && next.img) { const im = new Image(); im.src = next.img; }
+    if (next && next.img) { const im = new Image(); im.src = fhImgUrl(next.img); }
   }
 
   /* El relevo va en DOS TIEMPOS y ese orden importa: primero se va el anterior

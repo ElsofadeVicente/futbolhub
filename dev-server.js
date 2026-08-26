@@ -73,6 +73,9 @@ async function servirApi(req, res, nombre) {
     res.statusCode = 404;
     return res.end(JSON.stringify({ error: `api/${nombre}.js no existe` }));
   }
+  // Vercel rellena req.query solo; aquí hay que hacerlo a mano para que un
+  // handler que lea req.query.algo (como api/img.js) funcione igual en local.
+  req.query = Object.fromEntries(new URL(req.url, `http://${HOST}:${PORT}`).searchParams);
   try {
     // delete require.cache → recarga en caliente al editar la función
     delete require.cache[require.resolve(archivo)];

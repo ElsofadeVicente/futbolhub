@@ -731,7 +731,7 @@ function updateBadge() { elAttempt.textContent = `Intento ${_attempt} / ${_total
 // ══════════════════════════════════════════════
 function crestImg(clubId) {
   if (!clubId) return '<span class="crest-spacer"></span>';
-  return `<img src="${CREST_BASE}${clubId}.png" alt="" loading="lazy" data-fallback="hide-on-error">`;
+  return `<img src="${fhImgUrl(`${CREST_BASE}${clubId}.png`)}" alt="" loading="lazy" data-fallback="hide-on-error">`;
 }
 
 function renderTable(container, revealAll) {
@@ -972,7 +972,7 @@ function showEnd() {
     elEndTitle.textContent = 'No esta vez…';
     elEndSub.textContent   = `Se agotaron los ${_total} intentos`;
   }
-  if (_target.img) { elRevealImg.src = _target.img; elRevealImg.alt = _target.name; }
+  if (_target.img) { elRevealImg.src = fhImgUrl(_target.img); elRevealImg.alt = _target.name; }
   else elRevealImg.parentElement.style.display = 'none';
   elRevealName.textContent = _target.name;
 

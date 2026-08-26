@@ -563,7 +563,7 @@ const BlackjackGame = (() => {
 
     const imgHtml = card.img
       ? `<div class="card-face-img">
-           <img src="${escapeHtml(card.img)}" alt="${safeName}" loading="lazy"
+           <img src="${escapeHtml(fhImgUrl(card.img))}" alt="${safeName}" loading="lazy"
                 onerror="this.parentElement.classList.add('img-error')">
          </div>`
       : `<div class="card-face-img card-face-img--empty">
@@ -659,7 +659,7 @@ const BlackjackGame = (() => {
     // Foto
     const safeName = escapeHtml(player.name);
     const imgHtml = player.img
-      ? `<img class="reveal-card-img" src="${escapeHtml(player.img)}" alt="${safeName}" loading="lazy" onerror="this.style.display='none'">`
+      ? `<img class="reveal-card-img" src="${escapeHtml(fhImgUrl(player.img))}" alt="${safeName}" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="reveal-card-img reveal-card-img--empty">${escapeHtml(player.name.charAt(0))}</div>`;
 
     // Escudo mini (misma ruta local que usa la carta principal, sin JSON/fetch)

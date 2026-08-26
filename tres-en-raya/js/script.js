@@ -122,7 +122,7 @@ window._AppReal = (function () {
   function hdrMediaHtml(r) {
     const isAvatar = r.type === 'coach' || r.type === 'teammate';
     if (r.imgUrl) {
-      return `<span class="hdr-media${isAvatar ? ' hdr-media--avatar' : ''}"><img src="${esc(r.imgUrl)}" alt="" loading="lazy" onerror="this.closest('.hdr-media').classList.add('hdr-media--broken')"></span>`;
+      return `<span class="hdr-media${isAvatar ? ' hdr-media--avatar' : ''}"><img src="${esc(fhImgUrl(r.imgUrl))}" alt="" loading="lazy" onerror="this.closest('.hdr-media').classList.add('hdr-media--broken')"></span>`;
     }
     return `<span class="hdr-emoji">${r.icon || '⚽'}</span>`;
   }
@@ -213,7 +213,7 @@ window._AppReal = (function () {
           const cls = cell.owner === 0 ? 'p1' : 'p2';
           const mk  = cell.owner === 0 ? '✕' : '◯';
           const photo = cell.img
-            ? `<span class="cell-photo"><img src="${esc(cell.img)}" alt="" onerror="this.closest('.cell-photo').style.display='none'"></span>`
+            ? `<span class="cell-photo"><img src="${esc(fhImgUrl(cell.img))}" alt="" onerror="this.closest('.cell-photo').style.display='none'"></span>`
             : '';
           html += `<div class="cell filled ${cls}" data-i="${i}"><span class="cell-mark">${mk}</span>${photo}<span class="cell-pname">${esc(cell.name)}</span></div>`;
         } else {
@@ -329,7 +329,7 @@ window._AppReal = (function () {
   }
   function chipHtml(r) {
     const media = r.imgUrl
-      ? `<img src="${esc(r.imgUrl)}" alt="" onerror="this.style.display='none'">`
+      ? `<img src="${esc(fhImgUrl(r.imgUrl))}" alt="" onerror="this.style.display='none'">`
       : `<span class="pick-emoji">${r.icon || '⚽'}</span>`;
     const q = qualifier(r);
     return `<span class="pick-chip">${media}<span>${q ? esc(q) + ' ' : ''}${esc(shortLabel(r))}</span></span>`;
