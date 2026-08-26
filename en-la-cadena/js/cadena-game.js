@@ -986,8 +986,13 @@ const App = (() => {
       needsBeginTurn = true;
     }
 
-    // Actualizar cadena si cambió
-    if (remote.chain) {
+    // Actualizar cadena si cambió. OJO: Firebase RTDB no guarda arrays vacíos
+    // ([] se lee como undefined), así que un reset a cadena vacía llega aquí
+    // como remote.chain === undefined — NO se puede usar la verdad de
+    // remote.chain como guarda, o el reset nunca se aplicaría en los clientes
+    // que no fueron quien falló/expiró (listenRoom siempre entrega la sala
+    // COMPLETA, así que "ausente" aquí sí significa "vacía", no "sin cambios").
+    {
       const remoteLen = Array.isArray(remote.chain) ? remote.chain.length : 0;
       if (remoteLen !== s.chain.length) {
         s.chain = Array.isArray(remote.chain) ? remote.chain : [];

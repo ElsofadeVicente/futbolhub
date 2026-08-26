@@ -438,6 +438,7 @@ async function loadMatchData(mode, offsetDays = 0) {
                 dailyPool  = data;
                 allMatches = data;
                 dailyLoadedFile = fileName;
+                dailyLoadedForOffset = 0;
                 dailyAvailability[0] = true;
                 updateLoadingProgress(1, 1);
                 return true;
@@ -450,6 +451,7 @@ async function loadMatchData(mode, offsetDays = 0) {
                     dailyPool  = data;
                     allMatches = data;
                     dailyLoadedFile = fallbackFile;
+                    dailyLoadedForOffset = 0;
                     dailyAvailability[0] = true;
                     updateLoadingProgress(1, 1);
                     return true;
@@ -571,6 +573,9 @@ const dailyAvailability = {};
 const dailyPoolCache = {};
 // Archivo mensual actualmente cargado en dailyPool (para saber si hay que recargar)
 let dailyLoadedFile = null;
+// offsetDays que ese archivo satisface de verdad (puede ser un mes de respaldo
+// distinto del "archivo esperado" si el mes real todavía no está publicado).
+let dailyLoadedForOffset = null;
 
 /**
  * Comprueba si existe un partido para el offset dado.
@@ -617,27 +622,53 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
     }
 
     // Cargar el pool correcto si cambia de mes o está vacío.
-    // FIX: comparar con el archivo REALMENTE cargado (dailyLoadedFile), no con el
-    // archivo de hoy. Antes, al navegar a un mes anterior y volver a "Hoy", el
-    // pool seguía siendo el del mes anterior y se mostraba una alineación errónea.
+    // FIX (anterior): comparar con el archivo REALMENTE cargado (dailyLoadedFile),
+    // no con el archivo de hoy. Antes, al navegar a un mes anterior y volver a
+    // "Hoy", el pool seguía siendo el del mes anterior y se mostraba una
+    // alineación errónea.
+    // FIX (2026-08-26): comparar por OFFSET satisfecho (dailyLoadedForOffset), no
+    // por nombre de archivo. Si el mes real de este offset aún no está publicado,
+    // loadMatchData ya cayó a un mes de respaldo para el offset 0 — comparar por
+    // archivo hacía que esto reintentara el archivo inexistente en cada llamada,
+    // y al fallar machacaba dailyAvailability[offsetDays] a "false" aunque la
+    // pantalla siguiera mostrando (correctamente) el partido de respaldo.
     const neededFile  = getDailyFileName(offsetDays);
-    const needsReload = neededFile !== dailyLoadedFile || dailyPool.length === 0;
+    const needsReload = dailyLoadedForOffset !== offsetDays || dailyPool.length === 0;
 
     if (needsReload) {
         // Primero mirar si ya lo tenemos en caché (prefetcheado por checkDayAvailable)
         if (dailyPoolCache[neededFile]) {
             dailyPool = dailyPoolCache[neededFile];
             dailyLoadedFile = neededFile;
+            dailyLoadedForOffset = offsetDays;
         } else {
             document.getElementById('loading').style.display = 'block';
             try {
                 const data = await fetchDailyFile(neededFile);
                 dailyPool = data;
                 dailyLoadedFile = neededFile;
+                dailyLoadedForOffset = offsetDays;
                 dailyPoolCache[neededFile] = data;
                 dailyAvailability[offsetDays] = true;
             } catch(e) {
-                dailyAvailability[offsetDays] = false;
+                // El mes de este offset todavía no está publicado: caer al mes
+                // disponible más reciente, igual que hace loadMatchData al
+                // arrancar. Sin esto, offsetDays se marcaba "no disponible" con
+                // un valor falso mientras dailyPool seguía teniendo datos válidos
+                // de un intento anterior — y currentMatch se guardaba más abajo
+                // bajo la fecha de HOY aunque fuera en realidad de otro mes.
+                try {
+                    const fallbackFile = await findLatestDailyFile(neededFile);
+                    if (!fallbackFile) throw new Error('Sin archivos disponibles');
+                    const data = dailyPoolCache[fallbackFile] || await fetchDailyFile(fallbackFile);
+                    dailyPool = data;
+                    dailyLoadedFile = fallbackFile;
+                    dailyLoadedForOffset = offsetDays;
+                    dailyPoolCache[fallbackFile] = data;
+                    dailyAvailability[offsetDays] = true;
+                } catch (e2) {
+                    dailyAvailability[offsetDays] = false;
+                }
             }
             document.getElementById('loading').style.display = 'none';
         }

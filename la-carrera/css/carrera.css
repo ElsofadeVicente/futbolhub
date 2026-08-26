@@ -66,6 +66,7 @@ body::before {
 
 /* ── Eyebrow ─────────────────────────────────── */
 .eyebrow { display: flex; align-items: center; gap: 6px; }
+.eyebrow--gap { margin-bottom: 6px; }
 .eyebrow-num { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.28em; color: var(--np-ink-mid); text-transform: uppercase; }
 .eyebrow-sep { font-family: var(--font-mono); font-size: 9px; color: var(--np-ink-mid); }
 .eyebrow-cat { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--np-red); text-transform: uppercase; }
@@ -80,6 +81,8 @@ body::before {
 #loading-screen p { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; text-align: center; padding: 0 20px; }
 .spin { width: 32px; height: 32px; border: 2px solid var(--np-ink-soft); border-top-color: var(--np-red); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.carrera-fail { color: var(--np-red); font-family: var(--font-mono); font-size: 12px; letter-spacing: .15em; text-align: center; padding: 0 20px; }
+.crest-spacer { width: 20px; height: 20px; flex-shrink: 0; }
 
 /* ── Pantalla de inicio ──────────────────────── */
 #intro-screen {

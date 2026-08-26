@@ -75,7 +75,7 @@
       if (!window.frames['googlefcPresent']) {
         if (document.body) {
           const iframe = document.createElement('iframe');
-          iframe.style = 'width:0;height:0;border:0;display:none';
+          iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';iframe.style.display='none';
           iframe.name = 'googlefcPresent';
           document.body.appendChild(iframe);
         } else {
@@ -117,7 +117,7 @@
 
       <div id="mode-art">
         <img src="../img/hub/carrera.jpg" alt="La Carrera"
-             onerror="this.parentElement.classList.add('mode-art--fallback')">
+             data-fallback="mode-art-fallback">
         <div id="mode-art-overlay">
           <span class="eyebrow">
             <span class="eyebrow-num">№ 04</span>
@@ -220,7 +220,7 @@
   <div id="stats-overlay" class="overlay hidden">
     <div class="np-modal np-modal--wide">
       <button id="stats-close-btn" class="close-btn" aria-label="Cerrar">✕</button>
-      <div class="eyebrow" style="margin-bottom:6px;">
+      <div class="eyebrow eyebrow--gap">
         <span class="eyebrow-num">LA CARRERA</span>
         <span class="eyebrow-sep">·</span>
         <span class="eyebrow-cat">Historial</span>

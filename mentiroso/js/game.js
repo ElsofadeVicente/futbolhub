@@ -304,6 +304,20 @@ const Sync=(()=>{
     }catch(e){}
   }
 
+  /* Cancela el onDisconnect armado por _registerPresence. Sin esto, al salir
+     de una sala (o que te expulsen) la pestaña sigue conectada a Firebase y
+     el aviso queda pendiente para esa ruta vieja; si luego entras a OTRA sala
+     (playerId nuevo, ruta distinta) y esa sí se corta de verdad, Firebase
+     dispara el aviso viejo y resucita `players/{playerId}:{connected:false}`
+     bajo la sala anterior, aunque ya se hubiera borrado entera. */
+  function _cancelPresence(code,playerId){
+    try{
+      if(!window._FBOnDisconnect)return;
+      const{db,ref}=FB();
+      window._FBOnDisconnect(ref(db,`${PATH}/${code}/players/${playerId}/connected`)).cancel().catch(()=>{});
+    }catch(e){}
+  }
+
   async function createRoom(hostName,mode,startLives,avatar){
     const{set}=FB();
     const code=genCode(),hostId=genId();
@@ -393,6 +407,7 @@ const Sync=(()=>{
   }
 
   async function disconnect(code,playerId){
+    _cancelPresence(code,playerId);
     const{get,update,remove:rm}=FB();
     try{
       const snap=await get(_ref(`${PATH}/${code}`));if(!snap.exists())return;

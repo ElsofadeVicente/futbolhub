@@ -218,6 +218,11 @@ function hideModeMenu() {
 }
 
 async function selectMode(modeKey) {
+  // Igual que showModeMenu(): un setTimeout huérfano de chainTransition()/
+  // triggerGameOver() de la partida anterior no debe poder dispararse sobre
+  // esta partida nueva (terminarla de golpe, o anotar el récord en el modo
+  // equivocado si llegó por un cambio directo de modo).
+  cancelPendingTimers();
   hideModeMenu();
   HOL.currentMode = modeKey;
 

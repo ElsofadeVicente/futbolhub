@@ -556,20 +556,25 @@ const BlackjackGame = (() => {
     const cardsLeft = CARDS_PER_ROUND - state.currentCardIdx;
 
     // ── Foto del jugador ──
+    const safeName = escapeHtml(card.name);
+    const safeClub = escapeHtml(card.club);
+    const safeNat  = escapeHtml(card.nat || '');
+    const safePos  = escapeHtml(_posLabel(card.pos));
+
     const imgHtml = card.img
       ? `<div class="card-face-img">
-           <img src="${card.img}" alt="${card.name}" loading="lazy"
+           <img src="${escapeHtml(card.img)}" alt="${safeName}" loading="lazy"
                 onerror="this.parentElement.classList.add('img-error')">
          </div>`
       : `<div class="card-face-img card-face-img--empty">
-           <span class="card-face-initials">${card.name.charAt(0)}</span>
+           <span class="card-face-initials">${escapeHtml(card.name.charAt(0))}</span>
          </div>`;
 
     // ── Escudo del equipo (izquierda) — ruta local derivada del nombre del club ──
     const badgeUrl = _getLogoUrl(card.club);
     const badgeHtml = badgeUrl
       ? `<div class="card-badge-wrap">
-           <img src="${badgeUrl}" alt="${card.club}" loading="lazy"
+           <img src="${escapeHtml(badgeUrl)}" alt="${safeClub}" loading="lazy"
                 onerror="this.style.visibility='hidden'">
          </div>`
       : `<div class="card-badge-wrap"></div>`;
@@ -578,12 +583,12 @@ const BlackjackGame = (() => {
     const flagUrl = _getFlagUrl(card.nat);
     const flagHtml = flagUrl
       ? `<div class="card-header-flag">
-           <img src="${flagUrl}" alt="${card.nat}" loading="lazy" class="card-header-flag-img"
+           <img src="${escapeHtml(flagUrl)}" alt="${safeNat}" loading="lazy" class="card-header-flag-img"
                 onerror="this.nextElementSibling && (this.nextElementSibling.style.display='inline'); this.style.display='none'">
-           <span class="card-header-flag-nat" style="display:none">${card.nat || ''}</span>
+           <span class="card-header-flag-nat" style="display:none">${safeNat}</span>
          </div>`
       : `<div class="card-header-flag">
-           <span class="card-header-flag-nat">${card.nat || ''}</span>
+           <span class="card-header-flag-nat">${safeNat}</span>
          </div>`;
 
     el.innerHTML = `
@@ -596,7 +601,7 @@ const BlackjackGame = (() => {
           <div class="card-face-header">
             ${badgeHtml}
             ${flagHtml}
-            <span class="card-pos">${_posLabel(card.pos)}</span>
+            <span class="card-pos">${safePos}</span>
           </div>
 
           <!-- Foto enmarcada -->
@@ -604,7 +609,7 @@ const BlackjackGame = (() => {
 
           <!-- Barra dorada con nombre -->
           <div class="card-namebar">
-            <div class="card-face-name">${card.name}</div>
+            <div class="card-face-name">${safeName}</div>
           </div>
 
           <!-- Footer: cartas restantes -->
@@ -652,14 +657,15 @@ const BlackjackGame = (() => {
     if (!list) return;
 
     // Foto
+    const safeName = escapeHtml(player.name);
     const imgHtml = player.img
-      ? `<img class="reveal-card-img" src="${player.img}" alt="${player.name}" loading="lazy" onerror="this.style.display='none'">`
-      : `<div class="reveal-card-img reveal-card-img--empty">${player.name.charAt(0)}</div>`;
+      ? `<img class="reveal-card-img" src="${escapeHtml(player.img)}" alt="${safeName}" loading="lazy" onerror="this.style.display='none'">`
+      : `<div class="reveal-card-img reveal-card-img--empty">${escapeHtml(player.name.charAt(0))}</div>`;
 
     // Escudo mini (misma ruta local que usa la carta principal, sin JSON/fetch)
     const badgeUrl = _getLogoUrl(player.club);
     const badgeHtml = badgeUrl
-      ? `<img class="reveal-card-badge" src="${badgeUrl}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+      ? `<img class="reveal-card-badge" src="${escapeHtml(badgeUrl)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
       : '<span style="width:13px"></span>';
 
     const card = document.createElement('div');
@@ -667,10 +673,10 @@ const BlackjackGame = (() => {
     card.innerHTML = `
       <div class="reveal-card-header">
         ${badgeHtml}
-        <span class="reveal-card-pos">${_posLabel(player.pos)}</span>
+        <span class="reveal-card-pos">${escapeHtml(_posLabel(player.pos))}</span>
       </div>
       ${imgHtml}
-      <div class="reveal-card-name">${player.name}</div>
+      <div class="reveal-card-name">${safeName}</div>
       <div class="reveal-card-value">${BlackjackSets.formatValue(player._value, state.mode)}</div>
     `;
     list.appendChild(card);

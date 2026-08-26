@@ -915,7 +915,7 @@
         <div class="rival${id === myUid() ? ' me' : ''}">
           <span class="rival-name">${esc(p.name || '?')}</span>
           <span class="rival-bar"><i style="width:${(Math.min(16, p.filled || 0) / 16) * 100}%"></i></span>
-          <span class="rival-num">${p.done ? (p.bingo ? 'BINGO' : (p.hits ?? 0) + '/16') : (p.filled || 0) + '/16'}</span>
+          <span class="rival-num">${p.done ? (p.bingo ? 'BINGO' : (Number(p.hits) || 0) + '/16') : (Number(p.filled) || 0) + '/16'}</span>
         </div>`).join('');
     }
 
@@ -933,8 +933,8 @@
           <div class="rank-row${p.id === myUid() ? ' me' : ''}">
             <span class="rank-pos">${i + 1}</span>
             <span class="rank-name">${esc(p.name || '?')}</span>
-            <span class="rank-detail">${p.bingo ? 'cartón cerrado' : (CELLS - p.hits) + ' falladas'}</span>
-            <span class="rank-points">${p.bingo ? 'BINGO' : p.hits + '/16'}</span>
+            <span class="rank-detail">${p.bingo ? 'cartón cerrado' : (CELLS - (Number(p.hits) || 0)) + ' falladas'}</span>
+            <span class="rank-points">${p.bingo ? 'BINGO' : (Number(p.hits) || 0) + '/16'}</span>
           </div>`).join('')}
         ${done.length < players.length ? '<p class="lobby-hint">Esperando a los demás…</p>' : ''}`;
     }

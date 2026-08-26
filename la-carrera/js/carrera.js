@@ -15,6 +15,16 @@ const CREST_BASE  = 'https://tmssl.akamaized.net/images/wappen/head/';
 const STATS_KEY   = 'carrera_stats';
 const TODAY_KEY   = 'carrera_today';
 
+// 'error' no burbujea, así que hace falta capture:true para pillarlo aquí en
+// vez de un onerror="" por <img> (evita depender de 'unsafe-hashes' en la CSP,
+// que Safari no soporta). data-fallback marca qué hacer en cada caso.
+document.addEventListener('error', (e) => {
+  const el = e.target;
+  if (!(el instanceof HTMLImageElement)) return;
+  if (el.dataset.fallback === 'hide-on-error') el.style.visibility = 'hidden';
+  else if (el.dataset.fallback === 'mode-art-fallback') el.parentElement.classList.add('mode-art--fallback');
+}, true);
+
 // ── Normalización (igual que En el Top / Coche) ──
 function norm(s) {
   return String(s || '').toLowerCase()
@@ -614,7 +624,7 @@ async function loadAllMonths(today) {
 }
 
 function fail(html) {
-  elLoading.innerHTML = `<p style="color:#b5221e;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.15em;text-align:center;padding:0 20px">${html}</p>`;
+  elLoading.innerHTML = `<p class="carrera-fail">${html}</p>`;
 }
 
 function playCurrent() {
@@ -720,8 +730,8 @@ function updateBadge() { elAttempt.textContent = `Intento ${_attempt} / ${_total
 //  RENDER TABLA
 // ══════════════════════════════════════════════
 function crestImg(clubId) {
-  if (!clubId) return '<span style="width:20px;height:20px;flex-shrink:0;"></span>';
-  return `<img src="${CREST_BASE}${clubId}.png" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
+  if (!clubId) return '<span class="crest-spacer"></span>';
+  return `<img src="${CREST_BASE}${clubId}.png" alt="" loading="lazy" data-fallback="hide-on-error">`;
 }
 
 function renderTable(container, revealAll) {
@@ -750,7 +760,7 @@ function renderTable(container, revealAll) {
     } else {
       div.innerHTML =
         `<div class="c-years">— — —</div>` +
-        `<div class="c-team"><span style="width:20px;height:20px;flex-shrink:0"></span><span class="c-dash"></span></div>` +
+        `<div class="c-team"><span class="crest-spacer"></span><span class="c-dash"></span></div>` +
         `<div class="c-apps">--</div>` +
         `<div class="c-goals">(--)</div>`;
     }
