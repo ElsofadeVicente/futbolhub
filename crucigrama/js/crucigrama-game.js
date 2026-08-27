@@ -185,7 +185,6 @@ function crucStatsHTML() {
     const media = conTiempo ? Math.round((s.tiempoTotal || 0) / conTiempo) : 0;
     const filas = [
         ['Resueltos', s.completados || 0],
-        ['Sin ayudas', s.limpios || 0],
         ['Mejor tiempo', s.mejorTiempo ? crucFormatoTiempo(s.mejorTiempo) : '—'],
         ['Tiempo medio', media ? crucFormatoTiempo(media) : '—'],
     ];
@@ -853,18 +852,24 @@ function crucClickCell(r, c) {
     const words = crucGetWordsAtCell(r, c);
     if (words.length === 0) return;
 
+    // Una casilla con número es el INICIO de una o dos palabras (esa
+    // numeración concreta). Pulsarla debe llevar a la pista de ESE número, no
+    // a la palabra que solo pasa por ahí en la dirección en la que ya estabas.
+    const inicianAqui = words.filter(w => w.row === r && w.col === c);
+    const candidatos  = inicianAqui.length ? inicianAqui : words;
+
     // If already selected and clicking same cell: toggle direction
     if (crucSelectedCell && crucSelectedCell.row === r && crucSelectedCell.col === c
-        && crucSelectedWord && words.length > 1) {
+        && crucSelectedWord && candidatos.length > 1) {
         const otherDir = crucSelectedWord.direction === 'across' ? 'down' : 'across';
-        const altWord  = words.find(w => w.direction === otherDir);
+        const altWord  = candidatos.find(w => w.direction === otherDir);
         if (altWord) {
             crucSelectedWord = altWord;
         }
     } else {
         // Prefer same direction if possible, else first available
-        let word = words.find(w => w.direction === (crucSelectedWord?.direction || 'across'));
-        if (!word) word = words[0];
+        let word = candidatos.find(w => w.direction === (crucSelectedWord?.direction || 'across'));
+        if (!word) word = candidatos[0];
         crucSelectedWord = word;
     }
 
@@ -918,22 +923,28 @@ function crucHandleKey(key) {
 
     if (key === 'Delete' || key === 'Backspace') {
         const cellKey = `${row},${col}`;
+        // Una palabra ya acertada no se puede borrar: se ha comprobado que es
+        // correcta, y deshacerla sería perder un acierto por error de tecleo.
         if (crucUserGrid[cellKey]) {
-            delete crucUserGrid[cellKey];
-            // Re-comprobar TODAS las palabras que pasan por la celda: si alguna
-            // estaba marcada como resuelta, al borrar la letra deja de estarlo
-            // (antes quedaba "resuelta" para siempre y podía dar falso completado).
-            crucGetWordsAtCell(row, col).forEach(wd => crucCheckWordSolved(wd));
-            updateCellVisual(row, col);
+            if (!crucIsCellCorrect(row, col)) {
+                delete crucUserGrid[cellKey];
+                // Re-comprobar TODAS las palabras que pasan por la celda: si alguna
+                // estaba marcada como resuelta, al borrar la letra deja de estarlo
+                // (antes quedaba "resuelta" para siempre y podía dar falso completado).
+                crucGetWordsAtCell(row, col).forEach(wd => crucCheckWordSolved(wd));
+                updateCellVisual(row, col);
+            }
         } else {
             // Move backwards
             const prev = crucGetPrevCell(w, row, col);
             if (prev) {
                 crucSelectedCell = prev;
-                const prevKey = `${prev.row},${prev.col}`;
-                delete crucUserGrid[prevKey];
-                crucGetWordsAtCell(prev.row, prev.col).forEach(wd => crucCheckWordSolved(wd));
-                updateCellVisual(prev.row, prev.col);
+                if (!crucIsCellCorrect(prev.row, prev.col)) {
+                    const prevKey = `${prev.row},${prev.col}`;
+                    delete crucUserGrid[prevKey];
+                    crucGetWordsAtCell(prev.row, prev.col).forEach(wd => crucCheckWordSolved(wd));
+                    updateCellVisual(prev.row, prev.col);
+                }
                 refreshAllCells();
             }
         }
@@ -955,6 +966,17 @@ function crucHandleKey(key) {
     }
 
     if (!/^[A-ZÁÉÍÓÚÜÑ]$/i.test(key)) return;
+
+    // Casilla de una palabra ya acertada: no se pisa, solo se avanza el
+    // cursor como si se hubiera escrito, para no romper el flujo de tecleo.
+    if (crucIsCellCorrect(row, col)) {
+        const next = crucGetNextCell(w, row, col);
+        if (next) {
+            crucSelectedCell = next;
+            refreshAllCells();
+        }
+        return;
+    }
 
     const letter = crucNormalize(key);
     const cellKey = `${row},${col}`;

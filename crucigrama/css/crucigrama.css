@@ -818,7 +818,6 @@ body.cruc-sheet-abierto { overflow: hidden; }
 }
 
 .cruc-comp-stat:nth-child(1) .cruc-comp-stat-value { color: #4f7d3a; }
-.cruc-comp-stat:nth-child(2) .cruc-comp-stat-value { color: var(--np-red); }
 
 .cruc-comp-stat-label {
   font-family: 'DM Mono', monospace;
