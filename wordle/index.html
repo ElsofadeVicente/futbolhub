@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260827a">
+  <link rel="stylesheet" href="css/style.css?v=20260827c">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
@@ -269,6 +269,8 @@
     <h2>Estadísticas</h2>
     <div class="wd-stats-kicker">Tu historial</div>
     <div id="wd-stats-nums" class="wd-stats-nums"></div>
+    <div class="wd-stats-kicker">Distribución de intentos</div>
+    <div id="wd-stats-dist" class="wd-dist"></div>
   </div>
 </div>
 
@@ -285,6 +287,9 @@
     <h2 id="wd-result-title" class="wd-result-title">¡Acertaste!</h2>
     <p id="wd-result-answer"></p>
     <div id="wd-result-grid"></div>
+
+    <div class="wd-stats-kicker">Distribución de intentos</div>
+    <div id="wd-result-dist" class="wd-dist"></div>
 
     <div class="wd-stats-kicker">Tu historial</div>
     <div id="wd-result-stats" class="wd-stats-nums"></div>
@@ -319,13 +324,13 @@
 
 <script src="../js/supabase-config.js"></script>
 <script src="../js/vendor/supabase-js.min.js"></script>
-<script src="../js/auth.js?v=20260821a"></script>
+<script src="../js/auth.js?v=20260827a"></script>
 <script src="../js/progress-sync.js?v=20260827a"></script>
 <script src="../js/hub-streaks.js?v=20260827b"></script>
 <script src="../js/img-heal.js?v=20260727a"></script>
-<script src="../js/profile-widget.js?v=20260809a"></script>
+<script src="../js/profile-widget.js?v=20260827a"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="js/game.js?v=20260827b"></script>
+<script src="js/game.js?v=20260827c"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).
   if ('serviceWorker' in navigator) {

@@ -75,12 +75,12 @@
         if (!session) { cachedProfile = null; cachedProfileFor = null; return null; }
         if (!force && cachedProfile && cachedProfileFor === session.user.id) return cachedProfile;
         let { data, error } = await client
-            .from('profiles').select('id, username, avatar_url, username_changed').eq('id', session.user.id).maybeSingle();
+            .from('profiles').select('id, username, avatar_url, username_changed, created_at').eq('id', session.user.id).maybeSingle();
         if (error && /username_changed/i.test(error.message || '')) {
             // La columna aún no existe (falta ejecutar setup_perfiles_v2.sql):
             // degradamos con elegancia para no romper la carga del perfil.
             ({ data, error } = await client
-                .from('profiles').select('id, username, avatar_url').eq('id', session.user.id).maybeSingle());
+                .from('profiles').select('id, username, avatar_url, created_at').eq('id', session.user.id).maybeSingle());
             if (data) data.username_changed = false;
         }
         if (error) { console.error('[FHAuth] Error leyendo perfil:', error); return null; }

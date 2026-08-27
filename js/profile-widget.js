@@ -254,6 +254,88 @@
         `);
     }
 
+    /* ── Perfil: identidad de la cuenta + resumen + tu división en Liga ──
+       Estadísticas (siguiente vista) ya enseña lo jugado hoy y la racha de
+       cada juego, así que aquí no se repite esa lista: solo identidad,
+       un resumen agregado y la Liga, con un botón que lleva a Estadísticas.
+
+       La Liga (ver CLAUDE.md, "Liga competitiva") hoy solo existe en El
+       Estadio, y js/liga.js solo se carga en esa página — el perfil se abre
+       desde cualquiera de las 14, así que se pide con la MISMA RPC
+       (`liga_panel`) directamente contra FHAuth.client en vez de depender
+       de que liga.js esté cargado. Los nombres de tramo se duplican aquí
+       (8 líneas, liga.js los tiene con logo e info completa) porque
+       liga.js no siempre está disponible; si cambian allí, cambiar aquí. */
+    const LIGA_TRAMOS = [
+        'Tercera División', 'Segunda B', 'Segunda División', 'Primera División',
+        'Conference League', 'Europa League', 'Champions League', 'Mundial',
+    ];
+
+    function perfilView() {
+        const games = (window.FHStreaks && FHStreaks.list()) || [];
+        const conRacha = games.filter(g => g.streak > 0);
+        const mejor = games.reduce((m, g) => Math.max(m, g.streak), 0);
+
+        const desde = profile && profile.created_at
+            ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(profile.created_at))
+            : null;
+
+        openModal(`
+          <div class="pw-brand">Fútbol<span>HUB</span></div>
+
+          <div class="pw-settings-row">
+            <span class="pw-drop-avatar pw-avatar-lg">${avatarHTML()}</span>
+            <div class="pw-drop-id">
+              <div class="pw-drop-name">${esc(displayName())}</div>
+              ${desde ? `<div class="pw-drop-mail">Jugando desde el ${esc(desde)}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="pw-field-label">Resumen</div>
+          ${games.length === 0 ? `<p class="pw-text">No se han podido leer las partidas.</p>` : `
+          <ul class="pw-stats-list">
+            <li class="pw-stats-row"><span class="pw-stats-name">Juegos con racha viva</span><span class="pw-stats-val">${esc(conRacha.length)} de ${esc(games.length)}</span></li>
+            <li class="pw-stats-row"><span class="pw-stats-name">Mejor racha</span><span class="pw-stats-val">${esc(mejor)} 🔥</span></li>
+          </ul>`}
+
+          <div class="pw-field-label">Liga competitiva</div>
+          <div data-slot="liga"><p class="pw-text">Cargando…</p></div>
+
+          <button class="pw-secondary" type="button" data-action="estadisticas">Ver estadísticas completas</button>
+        `);
+
+        const slot = modal.querySelector('[data-slot="liga"]');
+        /* Token para descartar la respuesta si el modal ya cambió de vista
+           (o se cerró) antes de que vuelva la RPC — mismo problema que
+           evita `_isToday` en los diarios, aquí con una petición en vuelo. */
+        const token = {};
+        perfilView._token = token;
+        if (!session) {
+            slot.innerHTML = `<p class="pw-text">Inicia sesión para tener una división en la Liga.</p>`;
+            return;
+        }
+        FHAuth.client.rpc('liga_panel', { p_juego: 'el-estadio' }).then(({ data, error }) => {
+            if (perfilView._token !== token || !slot.isConnected) return;
+            if (error || !data || data.auth === false || !Array.isArray(data.clasificacion)) {
+                slot.innerHTML = `<p class="pw-text">No se ha podido cargar tu división.</p>`;
+                return;
+            }
+            const fila = data.clasificacion.find(r => r.user_id === data.yo);
+            if (!fila) {
+                slot.innerHTML = `<p class="pw-text">Aún no tienes división esta semana: juega hoy en El Estadio para entrar.</p>`;
+                return;
+            }
+            const nombre = LIGA_TRAMOS[Math.max(0, Math.min(LIGA_TRAMOS.length - 1, Number(data.tramo) || 0))];
+            slot.innerHTML = `
+              <ul class="pw-stats-list">
+                <li class="pw-stats-row"><span class="pw-stats-name">${esc(nombre)}</span><span class="pw-stats-val">Puesto ${esc(fila.pos)} de ${esc(data.cap || data.clasificacion.length)}</span></li>
+              </ul>`;
+        }).catch(() => {
+            if (perfilView._token !== token || !slot.isConnected) return;
+            slot.innerHTML = `<p class="pw-text">No se ha podido cargar tu división.</p>`;
+        });
+    }
+
     /* ── Estadísticas: lo jugado hoy y la racha de cada juego diario ──
        Los datos salen de FHStreaks (js/hub-streaks.js), que lee el mismo
        progreso que js/progress-sync.js mantiene igual en todos tus
@@ -295,14 +377,6 @@
           ${rachaHTML}
 
           <p class="pw-hint">Se guardan en tu cuenta: entra desde otro dispositivo y siguen aquí.</p>
-        `);
-    }
-
-    function placeholderView(title) {
-        openModal(`
-          <div class="pw-brand">Fútbol<span>HUB</span></div>
-          <h3 class="pw-title">${esc(title)}</h3>
-          <p class="pw-text">Próximamente: aquí verás tu ${title.toLowerCase()} de todos los juegos.</p>
         `);
     }
 
@@ -491,7 +565,7 @@
                 if (!r.ok) setMsg('error', r.error);
                 break;
             }
-            case 'perfil':       toggleDropdown(false); placeholderView('Perfil'); break;
+            case 'perfil':       toggleDropdown(false); perfilView(); break;
             case 'estadisticas': toggleDropdown(false); estadisticasView(); break;
             case 'ajustes':      toggleDropdown(false); ajustesView(); break;
             case 'diseno':       toggleDropdown(false); disenoView(); break;

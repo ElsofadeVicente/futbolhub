@@ -45,8 +45,15 @@
 
   function loadStats() {
     const s = readJSON(STATS_KEY);
-    if (s && typeof s === 'object' && typeof s.played === 'number') return s;
-    return { played: 0, wins: 0, currentStreak: 0, maxStreak: 0 };
+    if (s && typeof s === 'object' && typeof s.played === 'number') {
+      /* Partidas guardadas antes de la distribución de intentos no traen
+         `dist`: se le añade en sitio en vez de perder el historial ya
+         acumulado (played/wins/racha siguen contando desde el principio,
+         solo la columna de intentos empieza a sumar desde ahora). */
+      if (!Array.isArray(s.dist) || s.dist.length !== MAX_GUESSES) s.dist = new Array(MAX_GUESSES).fill(0);
+      return s;
+    }
+    return { played: 0, wins: 0, currentStreak: 0, maxStreak: 0, dist: new Array(MAX_GUESSES).fill(0) };
   }
   function saveStats(s) { writeJSON(STATS_KEY, s); }
 
@@ -352,6 +359,8 @@
       s.wins += 1;
       s.currentStreak += 1;
       s.maxStreak = Math.max(s.maxStreak, s.currentStreak);
+      const idx = state.guesses.length - 1;
+      if (idx >= 0 && idx < s.dist.length) s.dist[idx] += 1;
     } else {
       s.currentStreak = 0;
     }
@@ -424,6 +433,31 @@
     return s;
   }
 
+  /* ── Distribución de intentos (columnas: en qué intento lo conseguiste) ──
+     `today` marca la fila de la partida que se está mostrando en ESE
+     momento: un número de intento (1..MAX_GUESSES) si se ganó, 'fail' si se
+     perdió, o null si no aplica (p.ej. abriendo Estadísticas desde el menú
+     sin haber jugado hoy). Solo resalta la fila si la partida es de HOY: el
+     archivo no cuenta para el historial y no debe fingir que sí. */
+  function todayDistHighlight() {
+    if (!_isToday || !state.completed) return null;
+    return state.won ? state.guesses.length : 'fail';
+  }
+
+  function renderDistInto(container, s, today) {
+    const rows = s.dist.map((count, i) => ({ label: String(i + 1), count, isToday: today === i + 1 }));
+    const fails = Math.max(0, s.played - s.wins);
+    rows.push({ label: '✕', count: fails, isToday: today === 'fail' });
+    const maxCount = Math.max(1, ...rows.map((r) => r.count));
+    container.innerHTML = rows.map((r) => {
+      const pct = Math.max(8, Math.round((r.count / maxCount) * 100));
+      return `<div class="wd-dist-row">
+        <span class="wd-dist-n">${r.label}</span>
+        <span class="wd-dist-track"><span class="wd-dist-fill${r.isToday ? ' wd-dist-fill--today' : ''}" style="width:${pct}%"><span class="wd-dist-count${r.count === 0 ? ' wd-dist-count--out' : ''}">${r.count}</span></span></span>
+      </div>`;
+    }).join('');
+  }
+
   function nextPuzzleCountdown(el) {
     function tick() {
       const now = new Date();
@@ -469,7 +503,8 @@
       grid.appendChild(row);
     });
 
-    renderStatsInto(statsBox);
+    const s = renderStatsInto(statsBox);
+    renderDistInto($('wd-result-dist'), s, state.won ? state.guesses.length : 'fail');
     nextPuzzleCountdown(countdownEl);
 
     overlay.classList.remove('hidden');
@@ -481,7 +516,8 @@
 
   function openStats() {
     const overlay = $('wd-stats-overlay');
-    renderStatsInto($('wd-stats-nums'));
+    const s = renderStatsInto($('wd-stats-nums'));
+    renderDistInto($('wd-stats-dist'), s, todayDistHighlight());
     overlay.classList.remove('hidden');
   }
   function closeStats() { $('wd-stats-overlay').classList.add('hidden'); }

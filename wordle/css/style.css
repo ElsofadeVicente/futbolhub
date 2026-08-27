@@ -328,6 +328,21 @@ a.btn-secondary { display: inline-flex; align-items: center; justify-content: ce
 .wd-stat-num { font-family: var(--font-display); font-size: 1.4rem; color: var(--np-ink); }
 .wd-stat-lbl { font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.04em; color: var(--np-ink-mid); text-align: center; text-transform: uppercase; }
 
+/* ── Distribución de intentos ──
+   Relleno en un tono cálido intermedio (ni papel ni tinta pura) para que el
+   número quede legible en tinta oscura tanto en una barra corta como larga;
+   la fila de HOY se pinta del mismo verde que una ficha acertada, con el
+   número en blanco, igual que las fichas del tablero. */
+.wd-dist { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+.wd-dist-row { display: flex; align-items: center; gap: 8px; }
+.wd-dist-n { font-family: var(--font-mono); font-size: 10px; color: var(--np-ink-mid); width: 11px; text-align: center; flex-shrink: 0; }
+.wd-dist-track { flex: 1; height: 17px; background: var(--np-paper2); }
+.wd-dist-fill { height: 100%; background: #cabb8c; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; min-width: 22px; transition: width 0.4s ease; }
+.wd-dist-fill--today { background: var(--wd-correct); }
+.wd-dist-count { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; color: var(--np-ink); }
+.wd-dist-fill--today .wd-dist-count { color: #ffffff; }
+.wd-dist-count--out { color: var(--np-ink-mid); font-weight: 500; }
+
 .wd-countdown { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; color: var(--np-ink-mid); }
 
 .wd-result-actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; justify-content: center; }
