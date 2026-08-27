@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adivina la palabra de fútbol del día | FutbolHUB</title>
+<link rel="canonical" href="https://www.futbolhub.es/wordle/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="description" content="Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
+<!-- Open Graph / redes sociales -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FutbolHUB">
+<meta property="og:title" content="Adivina la palabra de fútbol del día | FutbolHUB">
+<meta property="og:description" content="Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
+<meta property="og:url" content="https://www.futbolhub.es/wordle/">
+<meta property="og:image" content="https://www.futbolhub.es/img/og/wordle.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Wordle: portada del juego en FutbolHUB">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Adivina la palabra de fútbol del día | FutbolHUB">
+<meta name="twitter:description" content="Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
+<meta name="twitter:image" content="https://www.futbolhub.es/img/og/wordle.jpg">
+<!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../img/iconoapp.png">
+<meta name="theme-color" content="#16181d">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20260827a">
+  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
+  <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
+  <link rel="stylesheet" href="../css/volver.css?v=20260819a">
+  <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
+  <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/noscript.css?v=20260827a">
+<link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
+<!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
+     Sin defer y en el <head> para que no se vea un fogonazo. -->
+<script src="../js/theme.js?v=20260809a"></script>
+<!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
+     :root[data-theme="v2"]: sin ese atributo no pinta nada.
+     Va la ultima para poder ganar a igual especificidad. -->
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260824a">
+<!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+    wait_for_update: 500
+  });
+</script>
+<!-- Google Analytics 4 (respeta el Consent Mode de arriba) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VEY3P2Q41K"></script>
+<script>
+  gtag('js', new Date());
+  gtag('config', 'G-VEY3P2Q41K');
+</script>
+<!-- Vercel Web Analytics (cookieless, no requiere consentimiento) -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<!-- Google Funding Choices — el aviso de cookies -->
+<script async src="https://fundingchoicesmessages.google.com/i/pub-1248309481500017?ers=1"></script>
+<script>
+  (function () {
+    function signalGooglefcPresent() {
+      if (!window.frames['googlefcPresent']) {
+        if (document.body) {
+          const iframe = document.createElement('iframe');
+          iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';iframe.style.display='none';
+          iframe.name = 'googlefcPresent';
+          document.body.appendChild(iframe);
+        } else {
+          setTimeout(signalGooglefcPresent, 0);
+        }
+      }
+    }
+    signalGooglefcPresent();
+  })();
+</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "VideoGame",
+      "@id": "https://www.futbolhub.es/wordle/#game",
+      "name": "Wordle de FutbolHUB",
+      "description": "Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.",
+      "url": "https://www.futbolhub.es/wordle/",
+      "image": "https://www.futbolhub.es/img/og/wordle.jpg",
+      "inLanguage": "es-ES",
+      "genre": "Sports",
+      "playMode": "SinglePlayer",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock"
+      },
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://www.futbolhub.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Wordle",
+          "item": "https://www.futbolhub.es/wordle/"
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<noscript>
+  <div class="fh-noscript">
+    <p><strong>Wordle</strong> necesita JavaScript para funcionar: el tablero y el teclado se montan en el navegador. <a href="/como-jugar/wordle/">Cómo se juega</a> · <a href="/">Volver al hub</a></p>
+  </div>
+</noscript>
+
+<!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px. -->
+<aside class="ad-col ad-col--left">
+  <div class="ad-slot" data-ad="rail-left"></div>
+</aside>
+<aside class="ad-col ad-col--right">
+  <div class="ad-slot" data-ad="rail-right"></div>
+</aside>
+
+<!-- ═══════════ PANTALLA 1: INTRO ═══════════ -->
+<div id="screen-intro" class="screen active">
+  <a href="../" class="fh-volver">← Volver</a>
+
+  <div id="wd-box">
+    <div id="wd-art">
+      <picture>
+        <source srcset="../img/hub/wordle.webp" type="image/webp">
+        <img src="../img/hub/wordle.jpg" alt="Wordle" width="800" height="300"
+             onerror="this.parentElement.classList.add('wd-art--fallback')">
+      </picture>
+      <div id="wd-art-overlay">
+        <span class="eyebrow">
+          <span class="eyebrow-num">№ 14</span>
+          <span class="eyebrow-sep">·</span>
+          <span class="eyebrow-cat">Diario</span>
+        </span>
+      </div>
+    </div>
+
+    <div id="wd-body">
+      <h1 id="wd-title">Wordle</h1>
+      <p id="wd-desc">Adivina la palabra de fútbol del día en 5 intentos. Cada color te dice cuánto te acercas.</p>
+
+      <div class="wd-rule"></div>
+
+      <button id="wd-start-btn" class="btn-primary">JUGAR ▶</button>
+
+      <button id="wd-stats-open-btn" class="stats-link-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
+        </svg>
+        Ver mis estadísticas
+      </button>
+
+      <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
+      <p class="fh-intro-texto">Wordle es el juego 14 de FutbolHUB: cada día hay una única palabra de fútbol por adivinar —puede ser un término del juego, el nombre de un club o el apellido de un futbolista—, elegida a mano y sin longitud fija. Tienes 5 intentos para dar con ella y puedes escribir cualquier combinación de letras para tantear: al enviarla, cada letra se colorea de verde si está en el sitio correcto, de amarillo si está en la palabra pero en otra posición, y de gris si no aparece. El teclado en pantalla recuerda lo que ya has probado. Es la misma palabra para todo el mundo y solo cuenta el primer intento del día; las ediciones anteriores quedan en el archivo, navegable con las flechas de abajo, para practicar cuando quieras.</p>
+<p class="guia-link"><a href="/como-jugar/wordle/">Cómo se juega &rarr;</a></p>
+<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+  <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
+  <ul class="fh-otros-lista">
+    <li><a href="../crucigrama/">Crucigrama de fútbol diario</a></li>
+    <li><a href="../la-carrera/">Adivina al futbolista por su trayectoria</a></li>
+    <li><a href="../en-el-once/">Adivina la alineación de un partido de fútbol</a></li>
+    <li><a href="../higher-or-lower/">Higher or Lower de futbolistas por valor</a></li>
+  </ul>
+</nav>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PANTALLA 2: PARTIDA ═══════════ -->
+<div id="screen-game" class="screen">
+  <a href="../" class="fh-volver">← Volver</a>
+
+  <div id="wd-topbar">
+    <span class="wd-topbar-left">
+      <span class="wd-day eyebrow-num">Wordle <span class="wd-day-label">#1</span></span>
+      <span id="wd-archive-tag" class="wd-archive-tag hidden">Archivo</span>
+    </span>
+    <button id="wd-rules-btn" aria-label="Cómo se juega" title="Cómo se juega">?</button>
+  </div>
+
+  <div id="wd-board"></div>
+  <div id="wd-keyboard"></div>
+</div>
+
+<!-- ═══════════ Modal: Reglas ═══════════ -->
+<div id="wd-rules-overlay" class="overlay hidden">
+  <div id="wd-rules-backdrop" class="wd-overlay-backdrop"></div>
+  <div class="np-modal">
+    <button id="wd-rules-close" class="close-btn" aria-label="Cerrar">✕</button>
+    <h2>Cómo se juega</h2>
+    <div class="wd-rules-list">
+      <p>Adivina la palabra de fútbol del día, letra a letra, en 5 intentos. Puedes escribir cualquier combinación de letras (de la misma longitud que la palabra de hoy): no hace falta que signifique nada, solo sirve para tantear qué letras están.</p>
+      <p>Tras cada intento, las letras cambian de color:</p>
+      <div class="wd-rules-example">
+        <span class="wd-mini wd-mini--correct"></span>
+        <span class="wd-mini"></span><span class="wd-mini"></span><span class="wd-mini"></span><span class="wd-mini"></span>
+      </div>
+      <p><strong>Verde</strong>: la letra está en el sitio correcto.</p>
+      <div class="wd-rules-example">
+        <span class="wd-mini"></span>
+        <span class="wd-mini wd-mini--present"></span>
+        <span class="wd-mini"></span><span class="wd-mini"></span><span class="wd-mini"></span>
+      </div>
+      <p><strong>Amarillo</strong>: la letra está en la palabra, pero en otra posición.</p>
+      <div class="wd-rules-example">
+        <span class="wd-mini"></span><span class="wd-mini"></span>
+        <span class="wd-mini wd-mini--absent"></span>
+        <span class="wd-mini"></span><span class="wd-mini"></span>
+      </div>
+      <p><strong>Gris</strong>: la letra no está en la palabra.</p>
+      <p class="wd-rules-note">La respuesta es la misma para todo el mundo y cambia cada día a medianoche (hora de España). Solo cuenta el primer intento del día: si recargas la página, la partida sigue donde la dejaste.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ Modal: Estadísticas ═══════════ -->
+<div id="wd-stats-overlay" class="overlay hidden">
+  <div id="wd-stats-backdrop" class="wd-overlay-backdrop"></div>
+  <div class="np-modal">
+    <button id="wd-stats-close" class="close-btn" aria-label="Cerrar">✕</button>
+    <h2>Estadísticas</h2>
+    <div class="wd-stats-kicker">Tu historial</div>
+    <div id="wd-stats-nums" class="wd-stats-nums"></div>
+  </div>
+</div>
+
+<!-- ═══════════ Resultado ═══════════ -->
+<div id="wd-result-overlay" class="overlay hidden">
+  <div id="wd-result-backdrop" class="wd-overlay-backdrop"></div>
+  <div class="np-modal">
+    <button id="wd-result-close" class="close-btn" aria-label="Cerrar">✕</button>
+    <div class="eyebrow">
+      <span class="eyebrow-num wd-day-label">#1</span>
+      <span class="eyebrow-sep">·</span>
+      <span class="eyebrow-cat">Resultado</span>
+    </div>
+    <h2 id="wd-result-title" class="wd-result-title">¡Acertaste!</h2>
+    <p id="wd-result-answer"></p>
+    <div id="wd-result-grid"></div>
+
+    <div class="wd-stats-kicker">Tu historial</div>
+    <div id="wd-result-stats" class="wd-stats-nums"></div>
+
+    <div id="wd-result-countdown" class="wd-countdown"></div>
+
+    <div class="wd-result-actions">
+      <button id="wd-result-share-btn" class="btn-primary">📤 Compartir</button>
+      <button id="wd-menu-btn" class="btn-secondary">Menú</button>
+      <a href="../" class="btn-secondary">🏠 Hub</a>
+    </div>
+  </div>
+</div>
+
+<!-- Navegación de ediciones: barra fija, visible tanto desde el menú como
+     durante la partida (mismo patrón que La Carrera/En el Top/Crucigrama). -->
+<div id="day-nav" class="hidden">
+  <button id="nav-first" title="Primera edición" aria-label="Primera edición">«</button>
+  <button id="nav-prev"  title="Anterior" aria-label="Anterior">‹</button>
+  <span id="nav-label">#1</span>
+  <button id="nav-next"  title="Siguiente" aria-label="Siguiente">›</button>
+  <button id="nav-last"  title="Hoy" aria-label="Hoy">»</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+  window.addEventListener('error', function(e){ console.error('[Global error]', e.message, e.filename, e.lineno); });
+  window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
+</script>
+
+<script src="../js/supabase-config.js"></script>
+<script src="../js/vendor/supabase-js.min.js"></script>
+<script src="../js/auth.js?v=20260821a"></script>
+<script src="../js/progress-sync.js?v=20260827a"></script>
+<script src="../js/hub-streaks.js?v=20260827b"></script>
+<script src="../js/img-heal.js?v=20260727a"></script>
+<script src="../js/profile-widget.js?v=20260809a"></script>
+<script src="../js/ruta.js?v=20260820a"></script>
+<script src="js/game.js?v=20260827b"></script>
+<script>
+  // PWA: registrar el service worker (cache de datos pesados + instalable).
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+<script defer src="../js/ads.js?v=20260808c"></script>
+</body>
+</html>

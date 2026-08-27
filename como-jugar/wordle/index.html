@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cómo se juega a Wordle — FutbolHUB</title>
+<meta name="description" content="Guía de Wordle de FutbolHUB: adivina letra a letra la palabra de fútbol del día, elegida a mano y sin longitud fija, con pistas de color. Reglas y estrategia.">
+<link rel="canonical" href="https://www.futbolhub.es/como-jugar/wordle/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#16181d">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FutbolHUB">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="Cómo se juega a Wordle — FutbolHUB">
+<meta property="og:description" content="Guía de Wordle de FutbolHUB: adivina letra a letra la palabra de fútbol del día, elegida a mano y sin longitud fija, con pistas de color. Reglas y estrategia.">
+<meta property="og:url" content="https://www.futbolhub.es/como-jugar/wordle/">
+<meta property="og:image" content="https://www.futbolhub.es/img/og/wordle.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Wordle: guía de FutbolHUB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cómo se juega a Wordle — FutbolHUB">
+<meta name="twitter:description" content="Guía de Wordle de FutbolHUB: adivina letra a letra la palabra de fútbol del día, elegida a mano y sin longitud fija, con pistas de color. Reglas y estrategia.">
+<meta name="twitter:image" content="https://www.futbolhub.es/img/og/wordle.jpg">
+<link rel="stylesheet" href="/css/pagina.css?v=1">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "Article",
+      "@id": "https://www.futbolhub.es/como-jugar/wordle/#article",
+      "headline": "Cómo se juega a Wordle",
+      "description": "Guía de Wordle de FutbolHUB: adivina letra a letra la palabra de fútbol del día, elegida a mano y sin longitud fija, con pistas de color. Reglas y estrategia.",
+      "image": "https://www.futbolhub.es/img/og/wordle.jpg",
+      "inLanguage": "es-ES",
+      "datePublished": "2026-08-27T12:00:00+02:00",
+      "dateModified": "2026-08-27T12:00:00+02:00",
+      "author": {
+        "@id": "https://www.futbolhub.es/#organization"
+      },
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      },
+      "mainEntityOfPage": "https://www.futbolhub.es/como-jugar/wordle/"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://www.futbolhub.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Cómo se juega",
+          "item": "https://www.futbolhub.es/como-jugar/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Wordle",
+          "item": "https://www.futbolhub.es/como-jugar/wordle/"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Puedo escribir cualquier palabra?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, siempre que tenga la misma longitud que la palabra del día. No hace falta que signifique nada: sirve para tantear qué letras están en la respuesta. La RESPUESTA del día sí la elige a mano quien mantiene la web, sin restricción de longitud."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué significa cada color?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Verde: la letra está en el sitio correcto. Amarillo: la letra está en la palabra pero en otra posición. Gris: la letra no aparece en la palabra."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Hay una palabra nueva cada día?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, una al día, la misma para todo el mundo, y cambia a medianoche hora de España. Las ediciones anteriores quedan en el archivo, navegable con las flechas de abajo, para practicar cuando quieras."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Necesito conexión para jugar?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Hace falta para saber qué palabra toca hoy (se elige a mano y se descarga al entrar), pero no para nada más: escribir intentos y ver los colores no hace ninguna petición de red."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+  <header class="pg-top">
+    <a class="pg-brand" href="/">Fútbol<span>HUB</span></a>
+    <nav class="pg-nav">
+      <a href="/como-jugar/">Cómo se juega</a>
+      <a href="/sobre-futbolhub/">Sobre</a>
+      <a href="/contacto/">Contacto</a>
+      <a href="/">Jugar</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <nav class="crumbs"><a href="/">Portada</a> › <a href="/como-jugar/">Cómo se juega</a> › Wordle</nav>
+    <div class="kicker">Guía · Juego № 14 · Diario</div>
+    <h1>Cómo se juega a Wordle</h1>
+    <p class="lead">Wordle es el clásico de las seis filas y las fichas de colores, con una vuelta de tuerca: la RESPUESTA que hay que adivinar sale siempre de vocabulario futbolístico, elegida a mano día a día.</p>
+    <div class="ficha">
+      <dl>
+        <dt>Tipo</dt><dd>Diario</dd>
+        <dt>Jugadores</dt><dd>1</dd>
+        <dt>Duración</dt><dd>2-5 minutos</dd>
+        <dt>Archivo</dt><dd>Sí, navegable</dd>
+        <dt>Dificultad</dt><dd>Media</dd>
+      </dl>
+    </div>
+<h2>La idea</h2>
+<p>Cada día hay una única palabra esperando, elegida a mano por quien
+mantiene la web: puede ser un término del juego (SAQUE, DERBI), el nombre de
+un club (BETIS, CELTA) o el apellido de un futbolista (MESSI, RAMOS). No tiene
+una longitud fija —unos días son cortas, otros días más largas—, pero siempre
+tienes 5 intentos para encontrarla. Para intentarlo puedes escribir cualquier
+combinación de letras de esa misma longitud —no hace falta que sea una
+palabra real, solo sirve para tantear qué letras están—, aunque afinar con
+vocabulario futbolístico suele ayudar más que probar al azar. Es la misma
+palabra para todo el que juegue ese día, así que comparar cuántos intentos te
+ha costado tiene sentido.</p>
+
+<h2>Cómo se juega, paso a paso</h2>
+<ol class="pasos">
+  <li>Mira cuántas casillas tiene la primera fila: esa es la longitud de la
+  palabra de hoy.</li>
+  <li>Escribe cualquier combinación de letras de esa longitud y pulsa Intro:
+  no hace falta que signifique nada, es solo para tantear.</li>
+  <li>Cada letra se colorea al enviar el intento: <strong>verde</strong> si está
+  en el sitio correcto, <strong>amarillo</strong> si está en la palabra pero en
+  otra posición, y <strong>gris</strong> si no aparece.</li>
+  <li>El teclado en pantalla se va coloreando igual, para que no repitas una
+  letra que ya sabes que no está.</li>
+  <li>Repite con lo que hayas aprendido hasta acertar o hasta agotar los
+  intentos, momento en el que se revela la palabra.</li>
+  <li>Al terminar puedes compartir tu resultado como una cuadrícula de colores,
+  sin desvelar la palabra a quien todavía no ha jugado.</li>
+</ol>
+
+<h2>Las reglas</h2>
+<ul>
+  <li>Cualquier combinación de letras vale como intento, siempre que tenga la
+  misma longitud que la palabra del día: el juego no exige que signifique
+  nada.</li>
+  <li>Tienes 5 intentos, sea cual sea la longitud de la palabra. Si aciertas
+  antes, mejor: la puntuación que se guarda es cuántos intentos has
+  necesitado.</li>
+  <li>Solo la edición de HOY cuenta para tus estadísticas y tu racha. Si
+  recargas la página a mitad de partida, sigues justo donde la dejaste.</li>
+  <li>Las ediciones anteriores quedan en el archivo, navegable con las flechas
+  «‹ #N › » de abajo: se pueden repetir todas las veces que quieras para
+  practicar, sin que afecten a tu historial.</li>
+</ul>
+
+<h2>Consejos para no gastar los intentos</h2>
+<ul>
+  <li><strong>Empieza con vocales.</strong> Un primer intento con varias
+  vocales distintas reparte mucha información desde el principio, aunque no
+  sea una palabra real.</li>
+  <li><strong>No repitas letras ya descartadas en gris.</strong> Parece obvio,
+  pero es el error más común: usa el teclado en pantalla como chuleta antes de
+  escribir.</li>
+  <li><strong>Una amarilla no es un sitio libre.</strong> Si una letra sale en
+  amarillo en una posición, esa letra NO puede ir ahí en el siguiente intento:
+  solo sabes que está en la palabra, en otro sitio.</li>
+  <li><strong>Piensa en fútbol para los últimos intentos.</strong> Al principio
+  tantear letras al azar ayuda a descartar; cuando ya tengas varias letras
+  claras, un término, club o apellido futbolístico de esa longitud suele
+  encajar mejor que una palabra cualquiera.</li>
+  <li><strong>Usa el archivo para practicar.</strong> Las ediciones pasadas no
+  cuentan para la racha, así que son el sitio ideal para coger soltura sin
+  presión.</li>
+</ul>
+
+<h2>Preguntas frecuentes</h2>
+<div class="faq">
+  <h3>¿Puedo escribir cualquier palabra?</h3>
+  <p>Sí, siempre que tenga la misma longitud que la palabra del día. No hace
+  falta que signifique nada: sirve para tantear qué letras están en la
+  respuesta. La RESPUESTA del día sí la elige a mano quien mantiene la web,
+  sin restricción de longitud.</p>
+
+  <h3>¿Qué significa cada color?</h3>
+  <p>Verde: la letra está en el sitio correcto. Amarillo: la letra está en la
+  palabra pero en otra posición. Gris: la letra no aparece en la palabra.</p>
+
+  <h3>¿Hay una palabra nueva cada día?</h3>
+  <p>Sí, una al día, la misma para todo el mundo, y cambia a medianoche hora de
+  España. Las ediciones anteriores quedan en el archivo, navegable con las
+  flechas de abajo, para practicar cuando quieras.</p>
+
+  <h3>¿Necesito conexión para jugar?</h3>
+  <p>Hace falta para saber qué palabra toca hoy (se elige a mano y se descarga
+  al entrar), pero no para nada más: escribir intentos y ver los colores no
+  hace ninguna petición de red.</p>
+</div>
+    <a class="btn" href="/wordle/">Jugar a Wordle →</a>
+    <p class="muted" style="margin-top:26px"><a href="/como-jugar/">← Ver las guías de los otros 13 juegos</a></p>
+  </main>
+
+  <footer class="pg-foot">
+    <span>FutbolHUB · 2026</span>
+    <a href="/">Portada</a>
+    <a href="/como-jugar/">Cómo se juega</a>
+    <a href="/sobre-futbolhub/">Sobre FutbolHUB</a>
+    <a href="/contacto/">Contacto</a>
+    <a href="/privacidad/">Privacidad y cookies</a>
+    <a href="/aviso-legal/">Aviso legal</a>
+  </footer>
+</body>
+</html>

@@ -52,6 +52,7 @@
         { prefix: 'oncediario_',   merge: 'newest', daily: true },
         { prefix: 'estadio_daily_',merge: 'newest', daily: true },
         { prefix: 'superdraft_day_', merge: 'newest', daily: true },
+        { prefix: 'wordle_day_',   merge: 'newest', daily: true },
         /* Partida de hoy a medias (para seguirla en otro dispositivo) */
         { exact: 'carrera_today',  merge: 'newest' },
         { exact: 'enteltop_today', merge: 'newest' },
@@ -60,6 +61,7 @@
         { exact: 'enteltop_stats', merge: 'stats' },
         { exact: 'estadio-stats',  merge: 'stats' },
         { exact: 'footballStats',  merge: 'stats' },
+        { exact: 'wordle-stats',   merge: 'stats' },
         /* Récords de Higher or Lower (un número por modo) */
         { prefix: 'hol_record_',   merge: 'max' },
         /* Mejor marca de cada edición de Superdraft (superdraft-best-<nº>).

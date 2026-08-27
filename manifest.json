@@ -2,7 +2,7 @@
   "id": "/",
   "name": "FutbolHUB",
   "short_name": "FutbolHUB",
-  "description": "13 juegos diarios de fútbol: crucigrama, alineaciones, higher or lower y más.",
+  "description": "14 juegos diarios de fútbol: crucigrama, alineaciones, higher or lower, wordle y más.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

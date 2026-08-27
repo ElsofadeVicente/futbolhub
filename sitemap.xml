@@ -1,41 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.futbolhub.es/</loc><lastmod>2026-08-26</lastmod></url>
+  <url><loc>https://www.futbolhub.es/</loc><lastmod>2026-08-27</lastmod></url>
 
   <!-- Juegos -->
-  <url><loc>https://www.futbolhub.es/en-el-once/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/en-el-top/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/la-carrera/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/el-estadio/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/crucigrama/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/higher-or-lower/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/en-la-cadena/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/mentiroso/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/coche/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/tres-en-raya/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/superdraft/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/blackjack/</loc><lastmod>2026-08-26</lastmod></url>
-  <url><loc>https://www.futbolhub.es/bingo/</loc><lastmod>2026-08-26</lastmod></url>
+  <url><loc>https://www.futbolhub.es/en-el-once/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/en-el-top/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/la-carrera/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/el-estadio/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/crucigrama/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/higher-or-lower/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/en-la-cadena/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/mentiroso/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/coche/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/tres-en-raya/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/superdraft/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/blackjack/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/bingo/</loc><lastmod>2026-08-27</lastmod></url>
 
   <!-- Guías: cómo se juega a cada juego -->
-  <url><loc>https://www.futbolhub.es/como-jugar/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/en-el-once/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/en-el-top/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/crucigrama/</loc><lastmod>2026-08-17</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/la-carrera/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/en-la-cadena/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/higher-or-lower/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/blackjack/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/coche/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/mentiroso/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/el-estadio/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/tres-en-raya/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/superdraft/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/como-jugar/bingo/</loc><lastmod>2026-08-15</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/en-el-once/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/en-el-top/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/crucigrama/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/la-carrera/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/en-la-cadena/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/higher-or-lower/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/blackjack/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/coche/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/mentiroso/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/el-estadio/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/tres-en-raya/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/superdraft/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/bingo/</loc><lastmod>2026-08-27</lastmod></url>
 
   <!-- Institucionales y legales -->
-  <url><loc>https://www.futbolhub.es/sobre-futbolhub/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/contacto/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/privacidad/</loc><lastmod>2026-08-15</lastmod></url>
-  <url><loc>https://www.futbolhub.es/aviso-legal/</loc><lastmod>2026-08-15</lastmod></url>
+  <url><loc>https://www.futbolhub.es/sobre-futbolhub/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/contacto/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/privacidad/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/aviso-legal/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/como-jugar/wordle/</loc><lastmod>2026-08-27</lastmod></url>
+  <url><loc>https://www.futbolhub.es/wordle/</loc><lastmod>2026-08-27</lastmod></url>
 </urlset>

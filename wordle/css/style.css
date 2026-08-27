@@ -1,0 +1,379 @@
+/* ══════════════════════════════════════════════
+   WORDLE — style.css
+   Newspaper edition — matches FutbolHUB aesthetic
+   ══════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Variables (mismos nombres que el resto de la web: theme-v2-app.css
+   los redefine globalmente bajo :root[data-theme="v2"], así que este juego
+   se retiñe solo al cambiar de diseño, sin tocar nada aquí). ── */
+:root {
+  --np-paper:     #f4ead2;
+  --np-paper2:    #ede0c0;
+  --np-white:     #ffffff;
+  --np-ink:       #0f120e;
+  --np-ink-mid:   rgba(var(--np-ink-rgb, 15,18,14), 0.62);
+  --np-ink-soft:  rgba(var(--np-ink-rgb, 15,18,14), 0.15);
+  --np-red:       #b5221e;
+  --np-green:     #2d6a35;
+
+  --font-serif:   'Playfair Display', Georgia, serif;
+  --font-mono:    'DM Mono', monospace;
+  --font-display: 'Anton', sans-serif;
+  --font-body:    'Rajdhani', system-ui, sans-serif;
+
+  /* Colores de las fichas: son la identidad visual del propio juego (igual
+     que el verde/amarillo/gris del Wordle original), así que se quedan
+     fijos y NO se retiñen con el diseño de la web — cambiar de tema no
+     debe cambiar el significado de un color en pleno tablero. */
+  --wd-correct: #538d4e;
+  --wd-present: #b59f3b;
+  --wd-absent:  #3a3a3c;
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--np-paper);
+  color: var(--np-ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.65;
+}
+
+.hidden { display: none !important; }
+button { cursor: pointer; }
+
+/* ══════════════════════════════════════════════
+   COLUMNAS LATERALES DE ANUNCIOS
+   ══════════════════════════════════════════════ */
+.ad-col {
+  position: fixed;
+  top: 0; bottom: 0; width: var(--ad-col-w, 72px);
+  display: flex; flex-direction: column;
+  z-index: 3;
+  background: var(--np-paper);
+}
+.ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
+.ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
+
+@media (max-width: 759px) {
+  .ad-col { display: none; }
+}
+
+/* ══════════════════════════════════════════════
+   PANTALLAS
+   ══════════════════════════════════════════════ */
+.screen { display: none; position: relative; z-index: 1; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+/* ── Shared: eyebrow label ───────────────────── */
+.eyebrow { display: flex; align-items: center; gap: 6px; }
+.eyebrow-num { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.28em; color: var(--np-ink-mid); text-transform: uppercase; }
+.eyebrow-sep { font-family: var(--font-mono); font-size: 9px; color: var(--np-ink-mid); }
+.eyebrow-cat { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--np-red); text-transform: uppercase; }
+
+/* ══════════════════════════════════════════════
+   INTRO
+   ══════════════════════════════════════════════ */
+#screen-intro {
+  align-items: center; justify-content: center;
+  padding: 28px 16px;
+}
+
+#wd-box {
+  width: 100%; max-width: 400px;
+  background: var(--np-white);
+  border: 1px solid var(--np-ink-soft);
+  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  border-radius: var(--r-md, 0);
+  display: flex; flex-direction: column;
+  animation: wdSlideUp 0.35s ease both;
+}
+@keyframes wdSlideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+#wd-art {
+  width: 100%; aspect-ratio: 8 / 3; overflow: hidden;
+  background: var(--np-paper2);
+  border-bottom: 1px solid var(--np-ink-soft);
+  position: relative;
+}
+#wd-art img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(0.15) contrast(1.05); }
+#wd-art.wd-art--fallback { display: flex; align-items: center; justify-content: center; }
+#wd-art.wd-art--fallback::after {
+  content: "WORDLE";
+  font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.1em; color: var(--np-ink-mid);
+}
+#wd-art-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px;
+  background: linear-gradient(to top, rgba(var(--np-ink-rgb, 15,18,14), 0.55) 0%, transparent 100%);
+  display: flex; align-items: flex-end;
+}
+#wd-art-overlay .eyebrow-num, #wd-art-overlay .eyebrow-sep, #wd-art-overlay .eyebrow-cat { color: rgba(var(--np-paper-rgb, 244,234,210), 0.85); }
+#wd-art-overlay .eyebrow-cat { color: #f4b89a; }
+
+#wd-body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 12px; border-top: 2px solid var(--bd-c, var(--np-ink)); }
+#wd-title { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1; color: var(--np-ink); letter-spacing: -0.01em; }
+#wd-desc { font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: var(--np-ink-mid); }
+.wd-rule { height: 1px; background: var(--np-ink-soft); }
+
+/* ══════════════════════════════════════════════
+   BOTONES / ENLACES COMPARTIDOS
+   ══════════════════════════════════════════════ */
+.btn-primary {
+  background: var(--np-ink); color: var(--np-paper);
+  border: none; border-radius: var(--r-md, 0);
+  padding: 13px 24px;
+  font-family: var(--font-mono); font-size: 0.85rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+  width: 100%; transition: opacity 0.15s, transform 0.1s;
+  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c-red,var(--np-red));
+}
+.btn-primary:hover { opacity: 0.86; }
+.btn-primary:active { transform: scale(0.99); }
+
+.btn-secondary {
+  background: transparent; color: var(--np-ink);
+  border: 1.5px solid var(--bd-c, var(--np-ink)); border-radius: var(--r-md, 0);
+  padding: 11px 20px;
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-secondary:hover { background: var(--np-ink); color: var(--np-paper); }
+
+a.btn-secondary { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
+.stats-link-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: none; border: none;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--np-ink-mid); cursor: pointer; padding: 0;
+  transition: color 0.18s;
+}
+.stats-link-btn:hover { color: var(--np-red); }
+.stats-link-btn svg { flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════
+   PANTALLA DE JUEGO
+   ══════════════════════════════════════════════ */
+#screen-game { align-items: center; padding: 8px 12px 200px; }
+
+#wd-topbar {
+  width: 100%; max-width: 420px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 4px 10px;
+  margin-top: 44px;
+}
+@media (min-width: 900px) { #wd-topbar { margin-top: 0; } }
+
+.wd-topbar-left { display: flex; align-items: center; gap: 8px; }
+.wd-day { font-family: var(--font-display); font-size: 0.95rem; letter-spacing: 0.05em; color: var(--np-ink); }
+
+.wd-archive-tag {
+  font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--np-ink-mid); border: 1px solid var(--np-ink-soft); border-radius: var(--r-sm, 0);
+  padding: 3px 6px;
+}
+
+#wd-rules-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1.5px solid var(--bd-c, var(--np-ink)); background: transparent; color: var(--np-ink);
+  font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: 0.95rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+#wd-rules-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+
+/* ── Tablero ──
+   max-width + overflow-x: red de seguridad para palabras muy largas. El
+   ancho de ficha calculado en JS (applyCellSize) tiene un suelo de 26px
+   para que la letra siga siendo legible, así que una palabra curada larga
+   (nada impide ahora su longitud) puede acabar con una fila más ancha que
+   la pantalla; mejor que se pueda deslizar horizontalmente esa fila que
+   desbordar toda la página. */
+#wd-board {
+  --wd-cell: clamp(42px, 13.5vw, 60px);
+  display: flex; flex-direction: column; gap: 6px;
+  margin: 10px 0 22px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.wd-row { display: flex; gap: 6px; width: max-content; margin: 0 auto; }
+.wd-row--shake { animation: wdShake 0.42s ease; }
+@keyframes wdShake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+.wd-cell {
+  width: var(--wd-cell); height: var(--wd-cell);
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bd-c, var(--np-ink-soft));
+  border-radius: var(--r-sm, 0);
+  font-family: var(--font-display);
+  font-size: calc(var(--wd-cell) * 0.42);
+  color: var(--np-ink);
+  background: var(--np-paper);
+  transition: border-color 0.1s;
+}
+.wd-cell--filled { border-color: var(--np-ink-mid); }
+.wd-cell--correct, .wd-cell--present, .wd-cell--absent { color: #ffffff; border-color: transparent; }
+.wd-cell--correct { background: var(--wd-correct); }
+.wd-cell--present { background: var(--wd-present); }
+.wd-cell--absent  { background: var(--wd-absent); }
+
+.wd-cell--flip { animation: wdFlip 0.5s ease; }
+@keyframes wdFlip {
+  0%   { transform: rotateX(0); }
+  50%  { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wd-cell--flip { animation: none; }
+  .wd-row--shake { animation: none; }
+}
+
+/* ── Teclado ── */
+#wd-keyboard { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 7px; }
+.wd-krow { display: flex; justify-content: center; gap: 5px; }
+
+.wd-key {
+  flex: 1; max-width: 42px; height: 50px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: var(--r-sm, 4px);
+  background: var(--np-paper2); color: var(--np-ink);
+  font-family: var(--font-body); font-weight: 600; font-size: 0.95rem; text-transform: uppercase;
+  transition: background 0.12s, color 0.12s, transform 0.08s;
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.wd-key:active { transform: scale(0.94); }
+.wd-key--wide { max-width: 58px; font-size: 0.65rem; letter-spacing: 0.04em; }
+.wd-key--correct { background: var(--wd-correct); color: #fff; }
+.wd-key--present  { background: var(--wd-present); color: #fff; }
+.wd-key--absent   { background: var(--wd-absent); color: #fff; opacity: 0.75; }
+
+@media (max-width: 380px) {
+  .wd-key { height: 44px; font-size: 0.82rem; }
+  .wd-key--wide { font-size: 0.58rem; }
+}
+
+/* ══════════════════════════════════════════════
+   MODALES / OVERLAYS
+   ══════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.wd-overlay-backdrop { position: absolute; inset: 0; background: rgba(var(--np-ink-rgb, 15,18,14), 0.55); }
+
+.np-modal {
+  position: relative;
+  width: 100%; max-width: 420px;
+  max-height: 88vh; overflow-y: auto;
+  background: var(--np-white);
+  border: 1px solid var(--np-ink-soft);
+  border-radius: var(--r-md, 0);
+  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
+  padding: 22px 22px 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.close-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--np-ink-soft); background: var(--np-paper); color: var(--np-ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; transition: border-color 0.15s, color 0.15s;
+}
+.close-btn:hover { border-color: var(--np-red); color: var(--np-red); }
+
+.np-modal h2 { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: 1.5rem; color: var(--np-ink); }
+
+/* ── Reglas ── */
+.wd-rules-list { display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; line-height: 1.55; color: var(--np-ink); }
+.wd-rules-example { display: flex; gap: 5px; margin: 4px 0; }
+.wd-rules-example .wd-mini { width: 28px; height: 28px; }
+.wd-rules-note { font-size: 0.78rem; color: var(--np-ink-mid); line-height: 1.5; }
+
+/* ── Miniaturas de fichas (resumen del intento) ── */
+.wd-mini-row { display: flex; gap: 4px; max-width: 100%; overflow-x: auto; }
+.wd-mini {
+  width: 20px; height: 20px; border-radius: 3px;
+  display: inline-block;
+}
+.wd-mini--correct { background: var(--wd-correct); }
+.wd-mini--present  { background: var(--wd-present); }
+.wd-mini--absent   { background: var(--wd-absent); }
+
+/* ── Resultado ── */
+#wd-result-overlay .np-modal { max-width: 380px; text-align: center; align-items: center; }
+.wd-result-title { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: 1.6rem; }
+.wd-result-title--win { color: var(--np-green); }
+.wd-result-title--lose { color: var(--np-red); }
+#wd-result-answer { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; color: var(--np-ink-mid); }
+#wd-result-grid { display: flex; flex-direction: column; gap: 4px; align-items: center; margin: 4px 0; }
+
+.wd-stats-kicker { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--np-ink-mid); align-self: flex-start; }
+.wd-stats-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+.wd-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.wd-stat-num { font-family: var(--font-display); font-size: 1.4rem; color: var(--np-ink); }
+.wd-stat-lbl { font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.04em; color: var(--np-ink-mid); text-align: center; text-transform: uppercase; }
+
+.wd-countdown { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; color: var(--np-ink-mid); }
+
+.wd-result-actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; justify-content: center; }
+.wd-result-actions > * { flex: 1; min-width: 120px; }
+
+/* ══════════════════════════════════════════════
+   TOAST
+   ══════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(16px);
+  background: var(--np-ink); padding: 8px 18px;
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em;
+  color: var(--np-paper); text-transform: uppercase;
+  border-radius: var(--r-sm, 0);
+  z-index: 200; opacity: 0; transition: all 0.22s ease;
+  pointer-events: none; white-space: nowrap;
+  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c-red,var(--np-red));
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--np-red); }
+.toast.ok { background: var(--np-green); }
+
+/* ══════════════════════════════════════════════
+   NAVEGACIÓN DE EDICIONES (calendario/archivo)
+   Barra fija abajo, visible desde el menú y durante la partida —
+   mismo patrón que La Carrera/En el Top/Superdraft.
+   ══════════════════════════════════════════════ */
+#day-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 55;
+  background: var(--np-ink); color: var(--np-paper);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 7px 12px; height: 46px;
+}
+#day-nav.hidden { display: none; }
+@media (min-width: 760px) {
+  #day-nav { left: var(--ad-col-w, 0px); right: var(--ad-col-w, 0px); }
+}
+#day-nav button {
+  font-family: var(--font-mono);
+  min-width: 34px; height: 32px;
+  border: 1px solid rgba(var(--np-paper-rgb, 244,234,210), .3);
+  background: transparent; color: var(--np-paper);
+  border-radius: var(--r-md, 6px);
+  font-size: 1rem; line-height: 1; padding: 4px 11px;
+  transition: background .15s, color .15s;
+}
+#day-nav button:hover:not(:disabled) { background: rgba(var(--np-paper-rgb, 244,234,210), .16); }
+#day-nav button:disabled { opacity: 0.28; cursor: default; }
+#nav-label { font-family: var(--font-display); font-size: 0.95rem; letter-spacing: 0.05em; min-width: 60px; text-align: center; }

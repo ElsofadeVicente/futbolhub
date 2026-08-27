@@ -17,6 +17,7 @@
      En el Top    → enteltop_day_YYYY-MM-DD {score}
      En el Once   → oncediario_YYYYMMDD     {matchStats:{guessed}, completed}
      El Estadio   → estadio_daily_YYYY-MM-DD {total}   (racha de días jugados)
+     Wordle       → wordle_day_YYYY-MM-DD   {completed, won}
 
    Fuera del hub no hay tarjetas que pintar, pero el archivo
    se carga igual porque expone window.FHStreaks, que usa el
@@ -147,6 +148,21 @@
         if (!s) return null;
         if (typeof s.total !== 'number') return 'Jugado';
         return `${s.total.toLocaleString('es-ES')} ${s.unit || ''}`.trim();
+      },
+    },
+    {
+      href: 'wordle',
+      label: 'Wordle',
+      today: madridToday,
+      stateFor(day) {
+        const s = readJSON(`wordle_day_${day}`);
+        if (!s || !s.completed) return null;
+        return s.won ? 'win' : 'loss';
+      },
+      detailFor(day) {
+        const s = readJSON(`wordle_day_${day}`);
+        if (!s || !s.completed) return null;
+        return s.won ? `Acertado en ${s.guesses.length}/5` : 'Fallado';
       },
     },
   ];
