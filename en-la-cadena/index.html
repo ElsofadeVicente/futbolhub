@@ -3,20 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>En la Cadena — FutbolHUB</title>
+  <title>Encadena jugadores y equipos de fútbol | FutbolHUB</title>
 <link rel="canonical" href="https://www.futbolhub.es/en-la-cadena/">
-<meta name="description" content="Jugador → Equipo → Jugador… ¿Quién romperá la cadena? Online y modo local.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="description" content="Jugador, equipo, jugador, equipo… encadena sin repetir y sin quedarte sin tiempo. Juega online con amigos por código de sala o por turnos en un móvil.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="En la Cadena — FutbolHUB">
-<meta property="og:description" content="Jugador → Equipo → Jugador… ¿Quién romperá la cadena? Online y modo local.">
+<meta property="og:title" content="Encadena jugadores y equipos de fútbol | FutbolHUB">
+<meta property="og:description" content="Jugador, equipo, jugador, equipo… encadena sin repetir y sin quedarte sin tiempo. Juega online con amigos por código de sala o por turnos en un móvil.">
 <meta property="og:url" content="https://www.futbolhub.es/en-la-cadena/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/en-la-cadena.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="En la Cadena: portada del juego en FutbolHUB">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="En la Cadena — FutbolHUB">
-<meta name="twitter:description" content="Jugador → Equipo → Jugador… ¿Quién romperá la cadena? Online y modo local.">
+<meta name="twitter:title" content="Encadena jugadores y equipos de fútbol | FutbolHUB">
+<meta name="twitter:description" content="Jugador, equipo, jugador, equipo… encadena sin repetir y sin quedarte sin tiempo. Juega online con amigos por código de sala o por turnos en un móvil.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/en-la-cadena.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
 <link rel="manifest" href="../manifest.json">
@@ -31,6 +35,9 @@
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/sala.css?v=20260819a">
+<link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -88,8 +95,76 @@
 </script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "VideoGame",
+      "@id": "https://www.futbolhub.es/en-la-cadena/#game",
+      "name": "En la Cadena",
+      "description": "Jugador, equipo, jugador, equipo… encadena sin repetir y sin quedarte sin tiempo. Juega online con amigos por código de sala o por turnos en un móvil.",
+      "url": "https://www.futbolhub.es/en-la-cadena/",
+      "image": "https://www.futbolhub.es/img/og/en-la-cadena.jpg",
+      "inLanguage": "es-ES",
+      "genre": "Sports",
+      "playMode": [
+        "SinglePlayer",
+        "MultiPlayer"
+      ],
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock"
+      },
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://www.futbolhub.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "En la Cadena",
+          "item": "https://www.futbolhub.es/en-la-cadena/"
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<noscript>
+  <div class="fh-noscript">
+    <p><strong>En la Cadena</strong> necesita JavaScript para funcionar: carga los datos del juego y monta la partida en el navegador. <a href="/como-jugar/en-la-cadena/">Cómo se juega</a> · <a href="/">Volver al hub</a></p>
+  </div>
+</noscript>
 
 <!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px:
      por debajo no cabe ninguna unidad de AdSense y el juego se queda
@@ -177,7 +252,17 @@
       <button class="btn-primary" style="margin-top:16px;width:100%" onclick="App.menuStartLocal()">EMPEZAR ▶</button>
     </div>
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-    <p class="guia-link"><a href="/como-jugar/en-la-cadena/">Cómo se juega &rarr;</a></p>
+    <p class="fh-intro-texto">En la Cadena se juega por turnos y con una sola regla: cada nombre tiene que encajar con el anterior. Empiezas por un jugador, el siguiente tiene que nombrar un equipo por el que pasó, el de después otro jugador de ese equipo, y así sucesivamente sin repetir nunca un nombre ya dicho en la partida. Fallar, repetirte o quedarte sin tiempo te cuesta una vida, y puedes elegir jugar con una, dos o tres según lo larga que quieras la partida. Se juega online con amigos por un código de sala, buscando partida pública con desconocidos, o pasando el mismo móvil por turnos en modo local. Gana quien queda en pie cuando a todos los demás se les acaban las vidas.</p>
+<p class="guia-link"><a href="/como-jugar/en-la-cadena/">Cómo se juega &rarr;</a></p>
+<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+  <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
+  <ul class="fh-otros-lista">
+    <li><a href="../higher-or-lower/">Higher or Lower de futbolistas por valor</a></li>
+    <li><a href="../blackjack/">Blackjack de futbolistas online</a></li>
+    <li><a href="../coche/">El juego de restricciones de fútbol</a></li>
+    <li><a href="../mentiroso/">Farol con futbolistas: El Mentiroso</a></li>
+  </ul>
+</nav>
   </div>
 
 </div>

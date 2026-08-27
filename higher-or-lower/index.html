@@ -3,20 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Higher or Lower — FutbolHUB</title>
+<title>Higher or Lower de futbolistas por valor | FutbolHUB</title>
 <link rel="canonical" href="https://www.futbolhub.es/higher-or-lower/">
-<meta name="description" content="¿Quién vale más? Adivina el valor de mercado de futbolistas de las Top 5 Ligas.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="description" content="¿Vale más este futbolista o el siguiente? Compara valores de mercado de las Top 5 Ligas sin fallar: la partida es infinita hasta tu primer error.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="Higher or Lower — FutbolHUB">
-<meta property="og:description" content="¿Quién vale más? Adivina el valor de mercado de futbolistas de las Top 5 Ligas.">
+<meta property="og:title" content="Higher or Lower de futbolistas por valor | FutbolHUB">
+<meta property="og:description" content="¿Vale más este futbolista o el siguiente? Compara valores de mercado de las Top 5 Ligas sin fallar: la partida es infinita hasta tu primer error.">
 <meta property="og:url" content="https://www.futbolhub.es/higher-or-lower/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/higher-or-lower.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Higher or Lower: portada del juego en FutbolHUB">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Higher or Lower — FutbolHUB">
-<meta name="twitter:description" content="¿Quién vale más? Adivina el valor de mercado de futbolistas de las Top 5 Ligas.">
+<meta name="twitter:title" content="Higher or Lower de futbolistas por valor | FutbolHUB">
+<meta name="twitter:description" content="¿Vale más este futbolista o el siguiente? Compara valores de mercado de las Top 5 Ligas sin fallar: la partida es infinita hasta tu primer error.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/higher-or-lower.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
 <link rel="manifest" href="../manifest.json">
@@ -30,6 +34,9 @@
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
+<link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -87,8 +94,73 @@
 </script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "VideoGame",
+      "@id": "https://www.futbolhub.es/higher-or-lower/#game",
+      "name": "Higher or Lower",
+      "description": "¿Vale más este futbolista o el siguiente? Compara valores de mercado de las Top 5 Ligas sin fallar: la partida es infinita hasta tu primer error.",
+      "url": "https://www.futbolhub.es/higher-or-lower/",
+      "image": "https://www.futbolhub.es/img/og/higher-or-lower.jpg",
+      "inLanguage": "es-ES",
+      "genre": "Sports",
+      "playMode": "SinglePlayer",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock"
+      },
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://www.futbolhub.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Higher or Lower",
+          "item": "https://www.futbolhub.es/higher-or-lower/"
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<noscript>
+  <div class="fh-noscript">
+    <p><strong>Higher or Lower</strong> necesita JavaScript para funcionar: carga los datos del juego y monta la partida en el navegador. <a href="/como-jugar/higher-or-lower/">Cómo se juega</a> · <a href="/">Volver al hub</a></p>
+  </div>
+</noscript>
 
 <!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px:
      por debajo no cabe ninguna unidad de AdSense y el juego se queda
@@ -111,7 +183,17 @@
     <div class="hol-mode-grid" id="hol-mode-grid"></div>
 
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-    <p class="guia-link"><a href="/como-jugar/higher-or-lower/">Cómo se juega &rarr;</a></p>
+    <p class="fh-intro-texto">Higher or Lower te enfrenta a dos futbolistas de las Top 5 Ligas y una sola pregunta: ¿quién vale más en el mercado, el de la izquierda o el de la derecha? Aciertas y sigues, con un futbolista nuevo sustituyendo al que ya conocías; fallas una sola vez y la partida termina ahí, así que no hay red de seguridad ni segundas oportunidades. Es una partida infinita en el sentido literal: no hay final previsto más que tu propio error, y tu marca es cuántas comparaciones seguidas fuiste capaz de acertar. También hay un modo Top Players con futbolistas de ligas fuera de las cinco grandes, para quien quiera un reto con nombres menos previsibles.</p>
+<p class="guia-link"><a href="/como-jugar/higher-or-lower/">Cómo se juega &rarr;</a></p>
+<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+  <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
+  <ul class="fh-otros-lista">
+    <li><a href="../blackjack/">Blackjack de futbolistas online</a></li>
+    <li><a href="../coche/">El juego de restricciones de fútbol</a></li>
+    <li><a href="../mentiroso/">Farol con futbolistas: El Mentiroso</a></li>
+    <li><a href="../el-estadio/">Adivina el estadio real por Street View</a></li>
+  </ul>
+</nav>
   </div>
 </div>
 

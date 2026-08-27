@@ -1,0 +1,63 @@
+/* ==========================================================================
+   otros-juegos.css — el bloque "Otros juegos de FutbolHUB" del menú de
+   cada uno de los 13 juegos.
+
+   Igual que ads.css, guia-link.css y volver.css: NO es el design system de
+   los juegos, es UNA pieza compartida para no repetir 13 veces la misma
+   regla. Enlaza a otros 4 juegos hermanos con texto descriptivo (nunca
+   "aquí" ni el nombre pelado a secas), en una rotación fija por posición
+   (juego i → i+1..i+4 módulo 13) para que los 13 reciban exactamente 4
+   enlaces entrantes. Ver CLAUDE.md, sección "SEO".
+
+   Colores con respaldo (mismo patrón que guia-link.css: el último respaldo
+   es currentColor), así que sale bien en Clásico y en Moderno sin tocar
+   nada más — ver CLAUDE.md, "Diseños de la web".
+   ========================================================================== */
+
+.fh-otros {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--bd-c, rgba(var(--np-ink-rgb, 15, 18, 14), .15));
+  text-align: center;
+}
+
+.fh-otros-titulo {
+  margin: 0 0 8px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--np-ink-mid, currentColor);
+}
+
+.fh-otros-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+}
+
+.fh-otros-lista li { margin: 0; }
+
+/* inline-flex + min-height 24px: objetivo táctil mínimo (WCAG 2.5.8),
+   mismo criterio que guia-link.css y el pie del hub. */
+.fh-otros-lista a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: var(--np-ink-mid, currentColor);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fh-otros-lista a:hover,
+.fh-otros-lista a:focus-visible {
+  color: var(--ac, var(--np-red, currentColor));
+}

@@ -3,20 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bingo — FutbolHUB</title>
+  <title>Bingo de futbolistas por categorías | FutbolHUB</title>
 <link rel="canonical" href="https://www.futbolhub.es/bingo/">
-<meta name="description" content="Un cartón de 16 categorías y un futbolista cada 10 segundos. Colócalo donde creas que encaja: los fallos no se ven hasta el final.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="description" content="Un cartón de 16 categorías y un futbolista nuevo cada 10 segundos: colócalo donde creas que encaja. Los aciertos y los fallos se ven solo al final.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="Bingo — FutbolHUB">
-<meta property="og:description" content="Un cartón de 16 categorías y un futbolista cada 10 segundos. Colócalo donde creas que encaja: los fallos no se ven hasta el final.">
+<meta property="og:title" content="Bingo de futbolistas por categorías | FutbolHUB">
+<meta property="og:description" content="Un cartón de 16 categorías y un futbolista nuevo cada 10 segundos: colócalo donde creas que encaja. Los aciertos y los fallos se ven solo al final.">
 <meta property="og:url" content="https://www.futbolhub.es/bingo/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/bingo.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Bingo: portada del juego en FutbolHUB">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Bingo — FutbolHUB">
-<meta name="twitter:description" content="Un cartón de 16 categorías y un futbolista cada 10 segundos. Colócalo donde creas que encaja: los fallos no se ven hasta el final.">
+<meta name="twitter:title" content="Bingo de futbolistas por categorías | FutbolHUB">
+<meta name="twitter:description" content="Un cartón de 16 categorías y un futbolista nuevo cada 10 segundos: colócalo donde creas que encaja. Los aciertos y los fallos se ven solo al final.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/bingo.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
 <link rel="manifest" href="../manifest.json">
@@ -25,7 +29,7 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Tres en Raya) -->
   <link rel="stylesheet" href="../coche/css/style.css?v=20260819a">
   <link rel="stylesheet" href="css/style.css?v=20260821b">
@@ -33,7 +37,10 @@
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/sala.css?v=20260819a">
-  <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
+  <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/noscript.css?v=20260827a">
+<link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
   <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
        Sin defer y en el <head> para que no se vea un fogonazo. -->
   <script src="../js/theme.js?v=20260809a"></script>
@@ -89,8 +96,76 @@
     })();
   </script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "VideoGame",
+      "@id": "https://www.futbolhub.es/bingo/#game",
+      "name": "Bingo",
+      "description": "Un cartón de 16 categorías y un futbolista nuevo cada 10 segundos: colócalo donde creas que encaja. Los aciertos y los fallos se ven solo al final.",
+      "url": "https://www.futbolhub.es/bingo/",
+      "image": "https://www.futbolhub.es/img/og/bingo.jpg",
+      "inLanguage": "es-ES",
+      "genre": "Sports",
+      "playMode": [
+        "SinglePlayer",
+        "MultiPlayer"
+      ],
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock"
+      },
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://www.futbolhub.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Bingo",
+          "item": "https://www.futbolhub.es/bingo/"
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<noscript>
+  <div class="fh-noscript">
+    <p><strong>Bingo</strong> necesita JavaScript para funcionar: carga los datos del juego y monta la partida en el navegador. <a href="/como-jugar/bingo/">Cómo se juega</a> · <a href="/">Volver al hub</a></p>
+  </div>
+</noscript>
 
 <!-- Columnas de anuncio (rascacielos reales). Solo a partir de 1240px:
      por debajo no cabe ninguna unidad de AdSense y el juego se queda
@@ -174,7 +249,17 @@
       <p class="menu-error hidden" id="error-public"></p>
     </div>
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-    <p class="guia-link"><a href="/como-jugar/bingo/">Cómo se juega &rarr;</a></p>
+    <p class="fh-intro-texto">Bingo reparte un cartón con dieciséis categorías —un club, una nacionalidad, un trofeo, un rango de edad— y cada diez segundos aparece un futbolista real que tienes que colocar en la casilla que creas que le corresponde, antes de que llegue el siguiente. La gracia está en que no hay validación en el momento: puedes colocar mal a propósito o por error y no lo sabrás hasta que el cartón se completa entero, así que hasta el final no sabes si has hecho bingo de verdad. Se juega en salas online con más gente, todos con el mismo cartón pero a su propio ritmo, y se ve el progreso y el resultado final de cada jugador al término de la partida.</p>
+<p class="guia-link"><a href="/como-jugar/bingo/">Cómo se juega &rarr;</a></p>
+<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+  <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
+  <ul class="fh-otros-lista">
+    <li><a href="../en-el-once/">Adivina la alineación de un partido de fútbol</a></li>
+    <li><a href="../en-el-top/">Completa el top 10 de fútbol contra el reloj</a></li>
+    <li><a href="../crucigrama/">Crucigrama de fútbol diario</a></li>
+    <li><a href="../la-carrera/">Adivina al futbolista por su trayectoria</a></li>
+  </ul>
+</nav>
   </div>
 </div>
 

@@ -6,25 +6,30 @@
 <title>FutbolHUB — 13 juegos diarios de fútbol</title>
 <meta name="description" content="13 juegos diarios de fútbol en un solo sitio: crucigrama, alineaciones (En el Once), Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
 <link rel="canonical" href="https://www.futbolhub.es/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
 <meta property="og:title" content="FutbolHUB — 13 juegos diarios de fútbol">
 <meta property="og:description" content="13 juegos diarios de fútbol en un solo sitio: crucigrama, En el Once, Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
 <meta property="og:url" content="https://www.futbolhub.es/">
-<meta property="og:image" content="https://www.futbolhub.es/img/iconoapp.png">
+<meta property="og:image" content="https://www.futbolhub.es/img/og/hub.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FutbolHUB: mosaico de En el Once, En el Top, La Carrera y El Estadio">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FutbolHUB — 13 juegos diarios de fútbol">
 <meta name="twitter:description" content="13 juegos diarios de fútbol en un solo sitio. Gratis y sin instalar.">
-<meta name="twitter:image" content="https://www.futbolhub.es/img/iconoapp.png">
+<meta name="twitter:image" content="https://www.futbolhub.es/img/og/hub.jpg">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./img/iconoapp.png">
 <meta name="theme-color" content="#16181d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="./img/hub/once.webp" type="image/webp" fetchpriority="high">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./css/hub.css?v=20260819a">
 <link rel="stylesheet" href="./css/profile-widget.css?v=20260809a">
 <!-- Diseño alternativo "Estadio". Se carga siempre, pero TODO cuelga de
@@ -85,6 +90,119 @@
 </script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.futbolhub.es/#website",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "inLanguage": "es-ES",
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      }
+    },
+    {
+      "@type": "ItemList",
+      "name": "Los 13 juegos de FutbolHUB",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "En el Once",
+          "url": "https://www.futbolhub.es/en-el-once/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "En el Top",
+          "url": "https://www.futbolhub.es/en-el-top/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "El Crucigrama",
+          "url": "https://www.futbolhub.es/crucigrama/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "La Carrera",
+          "url": "https://www.futbolhub.es/la-carrera/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "En la Cadena",
+          "url": "https://www.futbolhub.es/en-la-cadena/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "name": "Higher or Lower",
+          "url": "https://www.futbolhub.es/higher-or-lower/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 7,
+          "name": "Blackjack",
+          "url": "https://www.futbolhub.es/blackjack/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 8,
+          "name": "Coche",
+          "url": "https://www.futbolhub.es/coche/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 9,
+          "name": "El Mentiroso",
+          "url": "https://www.futbolhub.es/mentiroso/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 10,
+          "name": "El Estadio",
+          "url": "https://www.futbolhub.es/el-estadio/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 11,
+          "name": "Tres en Raya",
+          "url": "https://www.futbolhub.es/tres-en-raya/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 12,
+          "name": "Superdraft",
+          "url": "https://www.futbolhub.es/superdraft/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 13,
+          "name": "Bingo",
+          "url": "https://www.futbolhub.es/bingo/"
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body class="np-body">
 
@@ -146,7 +264,10 @@
         <!-- EN EL ONCE -->
         <a href="./en-el-once/" class="np-card" style="--i:1">
           <div class="np-card-art">
-            <img src="./img/hub/once.jpg" alt="En el Once">
+            <picture>
+          <source srcset="./img/hub/once.webp" type="image/webp">
+          <img src="./img/hub/once.jpg" alt="En el Once" width="800" height="300" fetchpriority="high" decoding="async">
+        </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -170,7 +291,10 @@
         <!-- EN EL TOP -->
         <a href="./en-el-top/" class="np-card" style="--i:2">
           <div class="np-card-art">
-            <img src="./img/hub/top.jpg" alt="En el Top" loading="lazy" decoding="async">
+            <picture>
+          <source srcset="./img/hub/top.webp" type="image/webp">
+          <img src="./img/hub/top.jpg" alt="En el Top" width="800" height="300" loading="lazy" decoding="async">
+        </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -193,7 +317,10 @@
         <!-- EL CRUCIGRAMA -->
         <a href="./crucigrama/" class="np-card" style="--i:3">
           <div class="np-card-art">
-            <img src="./img/hub/crucigrama.jpg" alt="El Crucigrama" loading="lazy" decoding="async">
+            <picture>
+          <source srcset="./img/hub/crucigrama.webp" type="image/webp">
+          <img src="./img/hub/crucigrama.jpg" alt="El Crucigrama" width="800" height="300" loading="lazy" decoding="async">
+        </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -216,7 +343,7 @@
         <!-- LA CARRERA -->
         <a href="./la-carrera/" class="np-card" style="--i:4">
           <div class="np-card-art">
-            <img src="./img/hub/carrera.jpg" alt="La Carrera" loading="lazy" decoding="async">
+            <img src="./img/hub/carrera.jpg" alt="La Carrera" width="800" height="300" loading="lazy" decoding="async">
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -239,7 +366,10 @@
         <!-- EN LA CADENA -->
         <a href="./en-la-cadena/" class="np-card" style="--i:5">
           <div class="np-card-art">
-            <img src="./img/hub/cadena.jpg" alt="En la Cadena" loading="lazy" decoding="async">
+            <picture>
+          <source srcset="./img/hub/cadena.webp" type="image/webp">
+          <img src="./img/hub/cadena.jpg" alt="En la Cadena" width="800" height="300" loading="lazy" decoding="async">
+        </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -262,7 +392,10 @@
         <!-- HIGHER OR LOWER -->
         <a href="./higher-or-lower/" class="np-card" style="--i:6">
           <div class="np-card-art">
-            <img src="./img/hub/higher.jpg" alt="Higher or Lower" loading="lazy" decoding="async">
+            <picture>
+          <source srcset="./img/hub/higher.webp" type="image/webp">
+          <img src="./img/hub/higher.jpg" alt="Higher or Lower" width="800" height="300" loading="lazy" decoding="async">
+        </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -285,7 +418,10 @@
         <!-- BLACKJACK -->
         <a href="./blackjack/" class="np-card" style="--i:7">
           <div class="np-card-art">
-            <img src="./img/hub/blackjack.jpg" alt="Blackjack" loading="lazy" decoding="async">
+            <picture>
+          <source srcset="./img/hub/blackjack.webp" type="image/webp">
+          <img src="./img/hub/blackjack.jpg" alt="Blackjack" width="800" height="300" loading="lazy" decoding="async">
+        </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -308,7 +444,7 @@
         <!-- COCHE -->
         <a href="./coche/" class="np-card" style="--i:8">
           <div class="np-card-art">
-            <img src="./img/hub/coche.jpg" alt="Coche" loading="lazy" decoding="async">
+            <img src="./img/hub/coche.jpg" alt="Coche" width="800" height="300" loading="lazy" decoding="async">
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -331,7 +467,7 @@
         <!-- EL MENTIROSO -->
         <a href="./mentiroso/" class="np-card" style="--i:9">
           <div class="np-card-art">
-            <img src="./img/hub/mentiroso.webp" alt="El Mentiroso" loading="lazy" decoding="async">
+            <img src="./img/hub/mentiroso.webp" alt="El Mentiroso" width="800" height="300" loading="lazy" decoding="async">
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -354,7 +490,7 @@
         <!-- EL ESTADIO -->
         <a href="./el-estadio/" class="np-card" style="--i:10">
           <div class="np-card-art">
-            <img src="./img/hub/estadio.jpg" alt="El Estadio" loading="lazy" decoding="async">
+            <img src="./img/hub/estadio.jpg" alt="El Estadio" width="800" height="300" loading="lazy" decoding="async">
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -377,7 +513,7 @@
         <!-- TRES EN RAYA -->
         <a href="./tres-en-raya/" class="np-card" style="--i:11">
           <div class="np-card-art">
-            <img src="./img/hub/tres-en-raya.jpg" alt="Tres en Raya" loading="lazy" decoding="async">
+            <img src="./img/hub/tres-en-raya.jpg" alt="Tres en Raya" width="800" height="300" loading="lazy" decoding="async">
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -400,7 +536,7 @@
         <!-- SUPERDRAFT -->
         <a href="./superdraft/" class="np-card" style="--i:12">
           <div class="np-card-art">
-            <img src="./img/hub/superdraft.jpg" alt="Superdraft" loading="lazy" decoding="async">
+            <img src="./img/hub/superdraft.jpg" alt="Superdraft" width="800" height="300" loading="lazy" decoding="async">
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -423,7 +559,10 @@
         <!-- BINGO -->
         <a href="./bingo/" class="np-card" style="--i:13">
           <div class="np-card-art">
-            <img src="./img/hub/bingo.jpg" alt="Bingo" loading="lazy" decoding="async">
+            <picture>
+          <source srcset="./img/hub/bingo.webp" type="image/webp">
+          <img src="./img/hub/bingo.jpg" alt="Bingo" width="800" height="300" loading="lazy" decoding="async">
+        </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">

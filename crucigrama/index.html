@@ -3,20 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>El Crucigrama — FutbolHUB</title>
+<title>Crucigrama de fútbol diario | FutbolHUB</title>
 <link rel="canonical" href="https://www.futbolhub.es/crucigrama/">
-<meta name="description" content="Crucigrama de fútbol. Un nuevo reto cada día con partidos históricos como protagonistas.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="description" content="Un crucigrama de fútbol nuevo cada día, con definiciones sobre partidos y futbolistas reales. Revela una letra o una palabra si te atascas. Sin cuenta.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="El Crucigrama — FutbolHUB">
-<meta property="og:description" content="Crucigrama de fútbol. Un nuevo reto cada día con partidos históricos como protagonistas.">
+<meta property="og:title" content="Crucigrama de fútbol diario | FutbolHUB">
+<meta property="og:description" content="Un crucigrama de fútbol nuevo cada día, con definiciones sobre partidos y futbolistas reales. Revela una letra o una palabra si te atascas. Sin cuenta.">
 <meta property="og:url" content="https://www.futbolhub.es/crucigrama/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/crucigrama.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="El Crucigrama: portada del juego en FutbolHUB">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="El Crucigrama — FutbolHUB">
-<meta name="twitter:description" content="Crucigrama de fútbol. Un nuevo reto cada día con partidos históricos como protagonistas.">
+<meta name="twitter:title" content="Crucigrama de fútbol diario | FutbolHUB">
+<meta name="twitter:description" content="Un crucigrama de fútbol nuevo cada día, con definiciones sobre partidos y futbolistas reales. Revela una letra o una palabra si te atascas. Sin cuenta.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/crucigrama.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
 <link rel="manifest" href="../manifest.json">
@@ -34,6 +38,9 @@
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
+<link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -91,8 +98,73 @@
 </script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "VideoGame",
+      "@id": "https://www.futbolhub.es/crucigrama/#game",
+      "name": "El Crucigrama",
+      "description": "Un crucigrama de fútbol nuevo cada día, con definiciones sobre partidos y futbolistas reales. Revela una letra o una palabra si te atascas. Sin cuenta.",
+      "url": "https://www.futbolhub.es/crucigrama/",
+      "image": "https://www.futbolhub.es/img/og/crucigrama.jpg",
+      "inLanguage": "es-ES",
+      "genre": "Sports",
+      "playMode": "SinglePlayer",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock"
+      },
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://www.futbolhub.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "El Crucigrama",
+          "item": "https://www.futbolhub.es/crucigrama/"
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<noscript>
+  <div class="fh-noscript">
+    <p><strong>El Crucigrama</strong> necesita JavaScript para funcionar: carga los datos del juego y monta la partida en el navegador. <a href="/como-jugar/crucigrama/">Cómo se juega</a> · <a href="/">Volver al hub</a></p>
+  </div>
+</noscript>
 
 <!-- ========================================== -->
 <!-- PANTALLA: CRUCIGRAMA                       -->
@@ -107,13 +179,20 @@
   <section class="cruc-intro">
     <p class="cruc-intro-kicker">FutbolHUB · Nº 03 · Diario</p>
     <h1 class="cruc-intro-title">El Crucigrama de fútbol</h1>
-    <p class="cruc-intro-sub">Un crucigrama nuevo cada día en el que todas las
-    definiciones son de fútbol: estadios, apodos, Balones de Oro y partidos que
-    todos hemos visto.</p>
+    <p class="cruc-intro-sub">El Crucigrama de FutbolHUB es un crucigrama de toda la vida —horizontales, verticales, casillas que se cruzan— en el que todas las definiciones son de fútbol: el nombre de un estadio, el primer nombre de pila de alguien al que todos conocemos por el apodo, quién ganó un Balón de Oro concreto, a qué premio se le llama de una forma determinada. Hay una rejilla nueva cada día, pensada para resolverse en un par de minutos y no en una tarde entera, con definiciones que se sacan de memoria y otras que se adivinan por los cruces, como en cualquier crucigrama que se precie. Si te atascas, puedes revelar una letra o una palabra suelta sin perder la partida entera.</p>
     <p class="cruc-intro-load">Cargando la edición de hoy…</p>
     <p class="cruc-intro-links">
       <a href="/como-jugar/crucigrama/">Cómo se juega</a>
     </p>
+<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+  <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
+  <ul class="fh-otros-lista">
+    <li><a href="/la-carrera/">Adivina al futbolista por su trayectoria</a></li>
+    <li><a href="/en-la-cadena/">Encadena jugadores y equipos de fútbol</a></li>
+    <li><a href="/higher-or-lower/">Higher or Lower de futbolistas por valor</a></li>
+    <li><a href="/blackjack/">Blackjack de futbolistas online</a></li>
+  </ul>
+</nav>
   </section>
 </div>
 

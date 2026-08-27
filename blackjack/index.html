@@ -3,20 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blackjack de Fútbol — FutbolHUB</title>
+  <title>Blackjack de futbolistas online | FutbolHUB</title>
 <link rel="canonical" href="https://www.futbolhub.es/blackjack/">
-<meta name="description" content="Acércate al objetivo sin pasarte. Elige jugadores sin ver su valor. Hasta 6 jugadores.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="description" content="Suma futbolistas hasta acercarte al objetivo sin pasarte, sin ver su valor real hasta plantarte. Salas online de hasta 6 jugadores o modo en solitario.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="Blackjack — FutbolHUB">
-<meta property="og:description" content="Acércate al objetivo sin pasarte. Elige jugadores sin ver su valor. Hasta 6 jugadores.">
+<meta property="og:title" content="Blackjack de futbolistas online | FutbolHUB">
+<meta property="og:description" content="Suma futbolistas hasta acercarte al objetivo sin pasarte, sin ver su valor real hasta plantarte. Salas online de hasta 6 jugadores o modo en solitario.">
 <meta property="og:url" content="https://www.futbolhub.es/blackjack/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/blackjack.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Blackjack: portada del juego en FutbolHUB">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Blackjack — FutbolHUB">
-<meta name="twitter:description" content="Acércate al objetivo sin pasarte. Elige jugadores sin ver su valor. Hasta 6 jugadores.">
+<meta name="twitter:title" content="Blackjack de futbolistas online | FutbolHUB">
+<meta name="twitter:description" content="Suma futbolistas hasta acercarte al objetivo sin pasarte, sin ver su valor real hasta plantarte. Salas online de hasta 6 jugadores o modo en solitario.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/blackjack.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
 <link rel="manifest" href="../manifest.json">
@@ -25,12 +29,15 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/blackjack.css?v=20260819a" />
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/sala.css?v=20260819a">
+<link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260809a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
@@ -88,8 +95,76 @@
 </script>
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.futbolhub.es/#organization",
+      "name": "FutbolHUB",
+      "url": "https://www.futbolhub.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.futbolhub.es/img/iconoapp.png",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "VideoGame",
+      "@id": "https://www.futbolhub.es/blackjack/#game",
+      "name": "Blackjack",
+      "description": "Suma futbolistas hasta acercarte al objetivo sin pasarte, sin ver su valor real hasta plantarte. Salas online de hasta 6 jugadores o modo en solitario.",
+      "url": "https://www.futbolhub.es/blackjack/",
+      "image": "https://www.futbolhub.es/img/og/blackjack.jpg",
+      "inLanguage": "es-ES",
+      "genre": "Sports",
+      "playMode": [
+        "SinglePlayer",
+        "MultiPlayer"
+      ],
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock"
+      },
+      "publisher": {
+        "@id": "https://www.futbolhub.es/#organization"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://www.futbolhub.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blackjack",
+          "item": "https://www.futbolhub.es/blackjack/"
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<noscript>
+  <div class="fh-noscript">
+    <p><strong>Blackjack</strong> necesita JavaScript para funcionar: carga los datos del juego y monta la partida en el navegador. <a href="/como-jugar/blackjack/">Cómo se juega</a> · <a href="/">Volver al hub</a></p>
+  </div>
+</noscript>
 
 <!-- ═══════════════════════════════════════════════
      PANTALLA 1: MENÚ PRINCIPAL
@@ -163,7 +238,17 @@
     </div>
 
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-    <p class="guia-link"><a href="/como-jugar/blackjack/">Cómo se juega &rarr;</a></p>
+    <p class="fh-intro-texto">Blackjack de FutbolHUB coge la mecánica del veintiuno y la cambia por futbolistas: cada carta que sacas suma un valor que no ves hasta que decides plantarte, así que pedir una más siempre es una apuesta a ciegas. El objetivo es acercarte todo lo posible a la cifra objetivo de la ronda sin pasarte, y quien se pasa queda eliminado de esa mano. Se juega en salas online de hasta seis jugadores, por código privado o buscando partida pública, y también existe un modo en solitario para practicar el pulso sin depender de que se conecte nadie más. Cada ronda reparte jugadores distintos, así que memorizar valores de partidas anteriores no ayuda: hay que decidir con lo que tienes delante.</p>
+<p class="guia-link"><a href="/como-jugar/blackjack/">Cómo se juega &rarr;</a></p>
+<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+  <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
+  <ul class="fh-otros-lista">
+    <li><a href="../coche/">El juego de restricciones de fútbol</a></li>
+    <li><a href="../mentiroso/">Farol con futbolistas: El Mentiroso</a></li>
+    <li><a href="../el-estadio/">Adivina el estadio real por Street View</a></li>
+    <li><a href="../tres-en-raya/">Tres en raya de fútbol online</a></li>
+  </ul>
+</nav>
   </div>
 </div>
 

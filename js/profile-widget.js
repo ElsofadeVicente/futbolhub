@@ -67,9 +67,25 @@
             const seed = (profile && profile.username) ||
                          (session.user && session.user.email) || '?';
             const av = FHAuth.defaultAvatar(seed);
-            return `<span class="pw-avatar-letter" style="background:${av.color}">${esc(av.letter)}</span>`;
+            /* Nada de style="background:..." aquí: /la-carrera/ tiene una CSP
+               enforced sin 'unsafe-inline' en style-src (ver CLAUDE.md, "SEO"),
+               y un atributo style="" en el HTML la viola. El color va como
+               data-attribute y se aplica luego por propiedad JS
+               (applyAvatarColors), que la CSP no cubre. */
+            return `<span class="pw-avatar-letter" data-avatar-color="${esc(av.color)}">${esc(av.letter)}</span>`;
         }
         return USER_ICON;
+    }
+
+    /* El color del avatar-letra llega como data-attribute (ver avatarHTML) y
+       se pinta aquí por asignación de propiedad (`el.style.background = …`),
+       no por atributo style="" ni por cssText: la CSP de style-src solo
+       restringe esas dos formas, no la API de CSSOM. Llamar tras CADA
+       innerHTML que pueda contener un .pw-avatar-letter. */
+    function applyAvatarColors(root) {
+        root.querySelectorAll('[data-avatar-color]').forEach(el => {
+            el.style.background = el.dataset.avatarColor;
+        });
     }
 
     function displayName() {
@@ -82,6 +98,7 @@
 
     function renderCircle() {
         circleInner.innerHTML = avatarHTML();
+        applyAvatarColors(circleInner);
         circleBtn.classList.toggle('pw-logged', !!session);
     }
 
@@ -107,6 +124,7 @@
               <button class="pw-item" type="button" data-action="estadisticas">Estadísticas</button>
               <button class="pw-item" type="button" data-action="ajustes">Ajustes</button>`;
         }
+        applyAvatarColors(dropdown);
     }
 
     function toggleDropdown(force) {
@@ -120,6 +138,7 @@
 
     function openModal(html) {
         modal.innerHTML = `<button class="pw-close" type="button" aria-label="Cerrar">×</button>` + html;
+        applyAvatarColors(modal);
         overlay.hidden = false;
         document.body.classList.add('pw-no-scroll');
         const first = modal.querySelector('input');

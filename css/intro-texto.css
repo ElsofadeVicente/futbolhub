@@ -1,0 +1,27 @@
+/* ==========================================================================
+   intro-texto.css — el párrafo de presentación (80-150 palabras) que cada
+   uno de los juegos enseña en su pantalla de menú, ANTES de darle a Jugar.
+
+   Por qué existe: hasta ahora el HTML servido de los 13 juegos apenas tenía
+   texto propio (mediana de ~110 palabras, y El Crucigrama solo 3 antes de su
+   propio arreglo — ver CLAUDE.md, "Páginas de contenido"). Este párrafo es
+   contenido real y explicativo, visible en el HTML antes de cargar el juego
+   y para quien navega sin JavaScript; el propio juego lo sustituye u oculta
+   al arrancar la partida, que no es cloaking sino la misma técnica que ya
+   usaba El Crucigrama con `.cruc-intro`.
+
+   `font-family: inherit` a propósito: no impone una tipografía nueva sobre
+   los 12 diseños distintos de los juegos, hereda la que ya esté en uso en
+   ese punto de la página. Colores con respaldo en currentColor, mismo
+   patrón que guia-link.css y otros-juegos.css.
+   ========================================================================== */
+
+.fh-intro-texto {
+  margin: 14px auto 0;
+  max-width: 58ch;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--np-ink-mid, currentColor);
+}

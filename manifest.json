@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "FutbolHUB",
   "short_name": "FutbolHUB",
   "description": "13 juegos diarios de fútbol: crucigrama, alineaciones, higher or lower y más.",
@@ -6,10 +7,22 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#f4efe3",
   "theme_color": "#16181d",
+  "categories": ["games", "sports", "entertainment"],
   "icons": [
+    {
+      "src": "./img/iconoapp-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./img/iconoapp-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "./img/iconoapp.png",
       "sizes": "512x512",

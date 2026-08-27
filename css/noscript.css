@@ -1,0 +1,25 @@
+/* ==========================================================================
+   noscript.css — el aviso de "hace falta JavaScript" de los 13 juegos.
+
+   Sin JavaScript ninguno de los 13 juegos puede arrancar (cargan datos de
+   Supabase Storage y montan la pantalla en runtime), así que hasta ahora
+   quien navegaba sin JS veía una página en blanco. Estilos deliberadamente
+   autocontenidos y sin depender de los tokens de cada juego (--np-ink,
+   --ac...): si el navegador no ejecuta JS, tampoco corre js/theme.js, así
+   que solo se puede confiar en CSS estático y colores de sistema.
+   ========================================================================== */
+
+.fh-noscript {
+  max-width: 640px;
+  margin: 32px auto;
+  padding: 16px 20px;
+  text-align: center;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #f4efe3;
+  border: 2px solid #1a1a1a;
+}
+
+.fh-noscript a { color: #1a1a1a; }
