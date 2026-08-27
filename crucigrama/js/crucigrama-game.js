@@ -484,9 +484,6 @@ function buildCrucigramaScreen() {
                         onclick="crucGoEdition(${crucIdx - 1})">‹ Anterior</button>
                 <div class="cruc-edition-center">
                     <div class="cruc-edition-num">#${crucEdition}</div>
-                    ${crucOffset > 0
-                        ? `<div class="cruc-past-badge">${crucFechaLarga(crucData.date)}</div>`
-                        : '<div class="cruc-edition-date">Hoy</div>'}
                 </div>
                 <button class="cruc-nav-btn" id="cruc-next-btn" ${alFinal ? 'disabled' : ''}
                         onclick="crucGoEdition(${crucIdx + 1})">Siguiente ›</button>

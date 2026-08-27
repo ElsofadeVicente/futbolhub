@@ -404,6 +404,75 @@ async function findLatestDailyFile(requestedFileName) {
     return pool[0].file;
 }
 
+/* Lista de fechas (YYYY-MM-DD) con edición REAL en once-diario, ascendente y
+   filtrada a <= hoy. Se usa solo para el "#N" de la barra de navegación —
+   independiente del array posicional que usa el juego para servir el
+   partido, que en un mes a medio curar recicla la última entrada disponible
+   para los días que aún no tienen la suya (getDailyMatchForOffset). Sin esto,
+   ese reciclado se veía como si cada día tuviera su propio número, cuando en
+   realidad es la misma edición repetida. Se calcula una vez agregando TODOS
+   los meses del manifest, igual que hace La Carrera con sus JSON por mes. */
+let _dailyEditionsList    = null;
+let _dailyEditionsPromise = null;
+
+async function buildDailyEditionsList() {
+    if (_dailyEditionsList) return _dailyEditionsList;
+    if (_dailyEditionsPromise) return _dailyEditionsPromise;
+    _dailyEditionsPromise = (async () => {
+        let files = [];
+        try {
+            const res = await fetch(sbStorageUrl('game-data', 'en-el-once/once-diario/manifest.json'), { cache: 'no-cache' });
+            if (res.ok) {
+                const manifest = await res.json();
+                if (Array.isArray(manifest.files)) files = manifest.files;
+            }
+        } catch { /* sin manifest: se usará solo el mes en curso, más abajo */ }
+        files = [...new Set([...files, getDailyFileName(0)])];
+
+        const parsed = files
+            .map(f => ({ file: f, info: parseDailyFileName(f) }))
+            .filter(x => x.info);
+
+        const results = await Promise.allSettled(parsed.map(x =>
+            (dailyPoolCache[x.file] ? Promise.resolve(dailyPoolCache[x.file]) : fetchDailyFile(x.file))
+                .then(data => ({ info: x.info, data }))
+        ));
+
+        const hoy = fechaDiaria(0);
+        const dates = new Set();
+        results.forEach(r => {
+            if (r.status !== 'fulfilled') return;
+            const { info, data } = r.value;
+            data.forEach((entry, i) => {
+                if (!entry) return;
+                const day = Number(entry._day) || (i + 1);
+                const iso = `${info.year}-${String(info.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (iso <= hoy) dates.add(iso);
+            });
+        });
+        _dailyEditionsList = [...dates].sort();
+        return _dailyEditionsList;
+    })();
+    return _dailyEditionsPromise;
+}
+
+/* Nº de edición ("#N") del offset dado, contando solo ediciones reales, nunca
+   por calendario: si ese día concreto no tiene entrada propia se le asigna el
+   número de la última edición real anterior, que es la que de verdad se está
+   enseñando (ver comentario de arriba). */
+async function dailyEditionNumberFor(offsetDays) {
+    const list = await buildDailyEditionsList();
+    if (!list.length) return null;
+    const target = fechaDiaria(offsetDays);
+    let idx = list.indexOf(target);
+    if (idx === -1) {
+        for (let i = list.length - 1; i >= 0; i--) {
+            if (list[i] <= target) { idx = i; break; }
+        }
+    }
+    return idx === -1 ? null : idx + 1;
+}
+
 /* Lista de archivos conocidos por carpeta (igual que antes de pasar por
    Supabase). El manifest.json de cada carpeta se suma por si hay archivos
    nuevos que todavía no estén en esta lista. */
@@ -652,6 +721,7 @@ async function hasEarlierAvailable(fromOffset, maxOffset = 60) {
 
 async function loadDailyMatch(offsetDays, sinTocarUrl) {
     dailyOffset = offsetDays;
+    buildDailyEditionsList();   // arranca en paralelo, cacheado tras la 1ª vez
 
     /* push: cambiar de edicion SI es moverse a otro sitio, y el Atras debe
        deshacerlo. Hoy va sin parametro, que la URL corta es la de hoy. */
@@ -748,7 +818,7 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
     // el chequeo solo mirara el día de ayer, ese hueco bastaba para desactivar
     // «‹»/« por completo y dejar inalcanzables los días 1..N que sí existen.
     const prevAvailable = offsetDays < 60 ? await hasEarlierAvailable(offsetDays) : false;
-    updateDailyHeader(offsetDays, prevAvailable);
+    await updateDailyHeader(offsetDays, prevAvailable);
 
     document.getElementById('game').style.display = 'block';
 
@@ -768,7 +838,7 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
     }
 }
 
-function updateDailyHeader(offsetDays, prevAvailable = false) {
+async function updateDailyHeader(offsetDays, prevAvailable = false) {
     const navEl = document.getElementById('day-nav');
     if (!navEl) return;
 
@@ -778,9 +848,8 @@ function updateDailyHeader(offsetDays, prevAvailable = false) {
     const canGoBack    = prevAvailable;      // hay archivo para el día anterior
     const canGoForward = offsetDays > 0;     // no estamos ya en hoy
 
-    const dateLabel = getDailyDateLabel(offsetDays);
-
-    document.getElementById('nav-label').textContent = dateLabel;
+    const num = await dailyEditionNumberFor(offsetDays);
+    document.getElementById('nav-label').textContent = num ? `#${num}` : '';
     const firstBtn = document.getElementById('nav-first');
     const prevBtn  = document.getElementById('nav-prev');
     const nextBtn  = document.getElementById('nav-next');

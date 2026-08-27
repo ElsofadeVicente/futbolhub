@@ -257,29 +257,6 @@ a      { text-decoration: none; }
   line-height: 1;
 }
 
-.cruc-edition-date {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--np-ink-soft2, var(--np-ink));
-  opacity: 0.65;
-}
-
-.cruc-past-badge {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  background: rgba(181,34,30,0.12);
-  border: 1px solid rgba(181,34,30,0.4);
-  border-radius: var(--r-md, 0);
-  padding: 1px 6px;
-  color: var(--np-red);
-  text-transform: uppercase;
-}
-
 /* ── BODY: GRID + PISTAS ── */
 .cruc-body {
   display: flex;

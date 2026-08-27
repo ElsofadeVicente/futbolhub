@@ -358,9 +358,7 @@ function renderNav() {
   elNavPrev.disabled  = atStart;
   elNavNext.disabled  = atEnd;
   elNavLast.disabled  = atEnd;
-  const date = _editions[_idx];
-  const [, mo, da] = date.split('-');
-  elNavLabel.textContent = `#${_idx + 1}` + (_isToday ? ' · Hoy' : ` · ${da}/${mo}`);
+  elNavLabel.textContent = `#${_idx + 1}`;
 }
 
 function questionType() {

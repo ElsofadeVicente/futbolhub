@@ -654,10 +654,7 @@ function renderNav() {
   elNavPrev.disabled  = atStart;
   elNavNext.disabled  = atEnd;
   elNavLast.disabled  = atEnd;
-  const date = _editions[_idx];
-  const [, mo, da] = date.split('-');
-  const hoy = date === getTodayMadrid();
-  elNavLabel.textContent = `#${_idx + 1}` + (hoy ? ' · Hoy' : ` · ${da}/${mo}`);
+  elNavLabel.textContent = `#${_idx + 1}`;
 }
 
 // ══════════════════════════════════════════════
