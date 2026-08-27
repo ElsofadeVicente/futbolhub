@@ -109,6 +109,33 @@ function setTeamBadge(badgeElId, badgeVal, teamName) {
     }
 }
 
+// Marcador: "1-1" a secas se pinta tal cual. Un partido resuelto en la tanda
+// llega guardado como "1-1 (6-5 pen)" (resultado de los 90/120 minutos +
+// penaltis entre parentesis, ver CLAUDE.md); aqui se separan en dos lineas —
+// el resultado normal con el tamaño de siempre y la tanda debajo, en pequeño—
+// para que no se lea como si el partido hubiera acabado 1-1 o como un
+// marcador disparatado. Otros paréntesis (p.ej. "4-1 (AET)", solo prórroga,
+// sin penaltis) se quedan en una sola línea, que es como ya se leían bien.
+function renderScore(elId, scoreStr) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = '';
+    const s = scoreStr || '';
+    const m = s.match(/^(.*?)\s*\(([^)]*\bpen\b[^)]*)\)\s*$/i);
+    if (!m) {
+        el.textContent = s;
+        return;
+    }
+    const main = document.createElement('div');
+    main.className = 'score-main';
+    main.textContent = m[1];
+    const pen = document.createElement('div');
+    pen.className = 'score-pen';
+    pen.textContent = `(${m[2]})`;
+    el.appendChild(main);
+    el.appendChild(pen);
+}
+
 // ── ONCE DIARIO ─────────────────────────────
 
 // Nombres de meses en español, usados para construir el nombre del archivo JSON
@@ -703,7 +730,7 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
     document.getElementById('competition').textContent  = currentMatch.competition;
     setTeamName('home-team', currentMatch.homeTeam);
     setTeamName('away-team', currentMatch.awayTeam);
-    document.getElementById('score').textContent        = currentMatch.score;
+    renderScore('score', currentMatch.score);
     document.getElementById('date').textContent         = currentMatch.date;
     document.getElementById('playing-team').textContent = `ALINEACIÓN: ${currentMatch.playingTeam}`;
 
@@ -868,7 +895,7 @@ function loadMatch() {
     document.getElementById('competition').textContent  = currentMatch.competition;
     setTeamName('home-team', currentMatch.homeTeam);
     setTeamName('away-team', currentMatch.awayTeam);
-    document.getElementById('score').textContent        = currentMatch.score;
+    renderScore('score', currentMatch.score);
     document.getElementById('date').textContent         = currentMatch.date;
     document.getElementById('playing-team').textContent = `ALINEACIÓN: ${currentMatch.playingTeam}`;
 

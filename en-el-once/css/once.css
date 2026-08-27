@@ -410,6 +410,19 @@ body {
     line-height: 1;
 }
 
+/* Partido decidido en la tanda: el resultado normal manda (mismo tamaño de
+   siempre) y la tanda de penaltis va debajo, en pequeño. Sin esto el marcador
+   sumado ("1-1 (6-5 pen)") salía todo del mismo tamaño y se leía como si el
+   partido hubiera acabado 1-1 a secas o como un resultado disparatado. */
+.score-display .score-pen {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(0.7rem, 1.4vw, 0.95rem);
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
 .match-date {
     font-family: 'DM Mono', monospace;
     font-size: 0.7rem;
