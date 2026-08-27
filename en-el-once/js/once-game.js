@@ -609,6 +609,20 @@ async function checkDayAvailable(offsetDays) {
     }
 }
 
+/* Busca si hay ALGÚN día jugable más atrás de fromOffset, sin detenerse en el
+   primer hueco. Dentro de un mes a medio curar hay una franja de días sin
+   partido seguida de otra que sí lo tiene (los días ya curados, más atrás en
+   el tiempo), y puede haber más de un mes de por medio: pararse en el primer
+   "no" (como hacía antes) dejaba esos días, perfectamente jugables, fuera de
+   alcance. Tope de 60 para no perseguir huecos indefinidamente; los meses ya
+   comprobados quedan en caché, así que repetir esto al navegar no re-pide red. */
+async function hasEarlierAvailable(fromOffset, maxOffset = 60) {
+    for (let offset = fromOffset + 1; offset <= maxOffset; offset++) {
+        if (await checkDayAvailable(offset)) return true;
+    }
+    return false;
+}
+
 async function loadDailyMatch(offsetDays, sinTocarUrl) {
     dailyOffset = offsetDays;
 
@@ -699,8 +713,14 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
 
     document.getElementById('next-match-btn').style.display = 'none';
 
-    // Comprobar si el día anterior existe (async, no bloquea la carga)
-    const prevAvailable = offsetDays < 30 ? await checkDayAvailable(offsetDays + 1) : false;
+    // Comprobar si hay algún día anterior jugable (async, no bloquea la carga).
+    // OJO: no basta con mirar el día inmediatamente anterior. El array del mes
+    // en curso puede llevar solo los primeros N días curados (el resto del mes
+    // todavía no se ha subido) y el juego, mientras tanto, muestra el ÚLTIMO
+    // día curado como "hoy" (getDailyMatchForOffset cae a él por posición). Si
+    // el chequeo solo mirara el día de ayer, ese hueco bastaba para desactivar
+    // «‹»/« por completo y dejar inalcanzables los días 1..N que sí existen.
+    const prevAvailable = offsetDays < 60 ? await hasEarlierAvailable(offsetDays) : false;
     updateDailyHeader(offsetDays, prevAvailable);
 
     document.getElementById('game').style.display = 'block';
@@ -751,7 +771,7 @@ function hideDailyNav() {
 }
 
 async function navigateDaily(newOffset) {
-    if (newOffset < 0 || newOffset > 30) return;
+    if (newOffset < 0 || newOffset > 60) return;
     await loadDailyMatch(newOffset);
 }
 
@@ -760,14 +780,16 @@ async function navigateDailyStep(delta) {
 }
 
 // Salta a la edición más antigua disponible, comprobando hacia atrás desde
-// el límite de 30 días (los resultados se cachean en dailyAvailability, así
+// el límite de 60 días (los resultados se cachean en dailyAvailability, así
 // que repetir esta comprobación al navegar no supone refetchear nada).
+// No se para en el primer hueco: un mes a medio curar tiene una franja sin
+// partido seguida de días que sí lo tienen más atrás, y pararse ahí dejaba
+// la "primera edición" mucho más cerca de hoy de lo que en realidad hay.
 async function navigateDailyFirst() {
     let target = dailyOffset;
-    for (let offset = dailyOffset + 1; offset <= 30; offset++) {
+    for (let offset = dailyOffset + 1; offset <= 60; offset++) {
         const available = await checkDayAvailable(offset);
         if (available) target = offset;
-        else break;
     }
     if (target !== dailyOffset) await loadDailyMatch(target);
 }
