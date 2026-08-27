@@ -9,11 +9,11 @@
    ============================================= */
 'use strict';
 
-/* v12: hay que TIRAR las cachés anteriores enteras, no solo invalidar: las
-   entradas guardadas hasta ahora llevan dentro la cabecera 'Content-Encoding:
-   br' de Vercel con el cuerpo YA descomprimido (ver guardar() más abajo), y
-   servir una de esas es justo lo que descargaba el archivo de 0 KB. */
-const CACHE = 'futbolhub-v12';
+/* v13: se sube otra vez para purgar lo que quede de v11/v12. v12 limpió las
+   cabeceras de la COPIA en caché, pero seguía clonando el HTML que va a la
+   pestaña (ver la rama de navegaciones más abajo), que es el otro camino por
+   el que salía el archivo de 0 KB — y el que se daba con red buena. */
+const CACHE = 'futbolhub-v13';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
@@ -58,6 +58,26 @@ self.addEventListener('activate', (e) => {
     await self.clients.claim();
   })());
 });
+
+/* ¿Es la navegación a una página (el HTML), y no un recurso de dentro?
+   'navigate' cubre pestaña, iframe y volver atrás; destination es el
+   respaldo para motores que no rellenen mode. */
+function esNavegacion(req) {
+  return req.mode === 'navigate' || req.destination === 'document';
+}
+
+/* Copia para el modo sin conexión pedida APARTE, con su propia petición.
+   No comparte cuerpo con la respuesta que ya se le ha dado a la pestaña, que
+   es justo lo que hay que evitar en una navegación. Sale barata: el HTML va
+   con 'max-age=0, must-revalidate', así que esto es una revalidación y casi
+   siempre responde 304 sin cuerpo. */
+async function copiaAparte(cacheKey) {
+  try {
+    const res = await fetch(cacheKey, { credentials: 'same-origin' });
+    const cache = await caches.open(CACHE);
+    await guardar(cache, cacheKey, res);
+  } catch (err) { /* sin red o respuesta rara: la copia puede esperar */ }
+}
 
 /* ¿Recurso "estático" que apenas cambia? → cache-first */
 function isStaticAsset(url) {
@@ -169,6 +189,47 @@ self.addEventListener('fetch', (e) => {
   // Clave de caché SIN query: varios juegos usan cache-busting (?v=timestamp)
   // y sin esto cada visita añadiría una copia nueva a la caché para siempre.
   const cacheKey = url.origin + url.pathname;
+
+  /* ── NAVEGACIONES: la respuesta va INTACTA, sin clonar ────────────────
+     Este es el segundo camino al archivo de 0 KB, y el que v12 no tocó.
+
+     v12 arregló la COPIA guardada (le quitaba 'Content-Encoding: br' antes de
+     meterla en la caché). Pero la respuesta que de verdad ve la pestaña casi
+     siempre viene de la RED, y esa seguía pasando por res.clone(): clonar
+     parte el cuerpo en dos lectores, el de la página y el que lo vuelca a la
+     caché, y obliga al navegador a sostener los dos a la vez. Si el service
+     worker se duerme a mitad —y se duerme: iOS los mata en cuanto la página
+     se va, y viniendo de una guía (que no registra SW) arranca en frío— lo
+     que le llega a la pestaña es un cuerpo VACÍO.
+
+     Ahí se encadena el resto: con 'X-Content-Type-Options: nosniff' el
+     navegador no puede rescatarlo adivinando el tipo, así que lo trata como
+     descarga y le pone el nombre del 'Content-Disposition: inline;
+     filename="en-el-top"' que manda Vercel. De ahí el documento de 0 KB
+     llamado 'en-el-top' — o 'www.futbolhub.es' en la raíz, que no lleva
+     filename y cae al nombre del host.
+
+     Por eso pasaba con 5G y batería llena: no hace falta quedarse sin red,
+     basta con que el SW se duerma en el momento justo. Y por eso el arreglo
+     de la caché no lo evitaba.
+
+     Ahora el cuerpo va de la red a la pestaña sin que el SW lo toque, y la
+     copia para offline se pide por separado en copiaAparte(). */
+  if (esNavegacion(req)) {
+    e.respondWith((async () => {
+      try {
+        const res = await fetch(req);
+        enSegundoPlano(e, copiaAparte(cacheKey));
+        return res;                 // ni clone() ni new Response(): intacta
+      } catch (err) {
+        const cache = await caches.open(CACHE);
+        const hit = await cache.match(cacheKey);
+        if (hit) return servir(hit);
+        throw err;
+      }
+    })());
+    return;
+  }
 
   if (isStaticAsset(url)) {
     // CACHE-FIRST
