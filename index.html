@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FutbolHUB — 14 juegos diarios de fútbol</title>
-<meta name="description" content="14 juegos diarios de fútbol en un solo sitio: crucigrama, alineaciones (En el Once), Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
+<title>FutbolHUB — 14 juegos de fútbol, diarios y online</title>
+<meta name="description" content="14 juegos de fútbol gratis: retos diarios como el crucigrama o La Carrera, y partidas multijugador como Coche, Bingo o El Mentiroso. Sin instalar nada.">
 <link rel="canonical" href="https://www.futbolhub.es/">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="FutbolHUB — 14 juegos diarios de fútbol">
-<meta property="og:description" content="14 juegos diarios de fútbol en un solo sitio: crucigrama, En el Once, Higher or Lower, La Carrera, El Estadio y más. Gratis y sin instalar.">
+<meta property="og:title" content="FutbolHUB — 14 juegos de fútbol, diarios y online">
+<meta property="og:description" content="14 juegos de fútbol gratis: retos diarios como el crucigrama o La Carrera, y partidas multijugador como Coche, Bingo o El Mentiroso. Sin instalar nada.">
 <meta property="og:url" content="https://www.futbolhub.es/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/hub.jpg">
 <meta property="og:image:width" content="1200">
@@ -19,8 +19,8 @@
 <meta property="og:image:alt" content="FutbolHUB: mosaico de En el Once, En el Top, La Carrera y El Estadio">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="FutbolHUB — 14 juegos diarios de fútbol">
-<meta name="twitter:description" content="14 juegos diarios de fútbol en un solo sitio. Gratis y sin instalar.">
+<meta name="twitter:title" content="FutbolHUB — 14 juegos de fútbol, diarios y online">
+<meta name="twitter:description" content="14 juegos de fútbol gratis: retos diarios y partidas multijugador. Gratis y sin instalar.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/hub.jpg">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="manifest" href="./manifest.json">
@@ -244,7 +244,7 @@
        lector de pantalla no puede seguir algo que se mueve en bucle. -->
   <div class="ticker" aria-hidden="true">
     <div class="ticker-strip">
-      <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 14 JUEGOS DIARIOS DE FÚTBOL </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-normal"> · BINGO </span><span class="tick-accent"> · WORDLE </span></span>
+      <span class="tick-seg"><span class="tick-label">FÚTBOL</span><span class="tick-accent"> 14 JUEGOS DE FÚTBOL, DIARIOS Y ONLINE </span><span class="tick-normal"> · EN EL ONCE </span><span class="tick-normal"> · EN EL TOP </span><span class="tick-normal"> · EL CRUCIGRAMA </span><span class="tick-normal"> · LA CARRERA </span><span class="tick-normal"> · EN LA CADENA </span><span class="tick-normal"> · HIGHER OR LOWER </span><span class="tick-normal"> · BLACKJACK </span><span class="tick-normal"> · COCHE </span><span class="tick-normal"> · EL MENTIROSO </span><span class="tick-normal"> · EL ESTADIO </span><span class="tick-normal"> · TRES EN RAYA </span><span class="tick-normal"> · SUPERDRAFT </span><span class="tick-normal"> · BINGO </span><span class="tick-accent"> · WORDLE </span></span>
     </div>
   </div>
 
@@ -629,7 +629,7 @@
       </div>
 
       <section class="np-about">
-        <p><strong>FutbolHUB reúne catorce juegos diarios de fútbol</strong> que se
+        <p><strong>FutbolHUB reúne catorce juegos de fútbol</strong> que se
         juegan directamente en el navegador, gratis, sin instalar nada y sin
         registrarse. Cada uno ataca la cultura futbolística por un lado distinto:
         unos van de memoria pura, como reconstruir la alineación de un partido real
@@ -728,14 +728,26 @@
   (function () {
     const dias  = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
     const meses = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-    const now   = new Date();
     const el    = document.getElementById('masthead-date-meta');
+    /* La fecha del reloj del visitante no vale: alguien viendo la portada
+       desde fuera de España puede tener otro día en su móvil que en Madrid,
+       y todos los juegos diarios (Wordle, La Carrera, El Crucigrama...)
+       cambian de edición a medianoche EN MADRID, no en la zona del lector.
+       Mismo patrón que madridToday() en wordle/js/game.js: se sacan año,
+       mes, día y día de la semana ya resueltos a Europe/Madrid con
+       Intl.DateTimeFormat, en vez de leerlos de un `new Date()` local. */
+    const partes = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Madrid', weekday: 'short',
+      year: 'numeric', month: 'numeric', day: 'numeric'
+    }).formatToParts(new Date()).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+    const y = +partes.year, m = +partes.month, d = +partes.day;
+    const weekdayIdx = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(partes.weekday);
     // Edición calculada en días (UTC) desde el lanzamiento, en vez de un "No. 89" fijo.
     const LAUNCH_DATE_UTC = Date.UTC(2026, 0, 1); // 1 ene 2026
-    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayUTC = Date.UTC(y, m - 1, d);
     const edition = Math.max(1, Math.floor((todayUTC - LAUNCH_DATE_UTC) / 86400000) + 1);
     if (el) el.innerHTML =
-      `No. ${edition} · ${dias[now.getDay()]} ${String(now.getDate()).padStart(2,'0')} ${meses[now.getMonth()]} · ${now.getFullYear()}<br>MADRID · PRIMERA EDICIÓN`;
+      `No. ${edition} · ${dias[weekdayIdx] || ''} ${String(d).padStart(2,'0')} ${meses[m - 1]} · ${y}<br>MADRID · PRIMERA EDICIÓN`;
   })();
 </script>
 <script src="./js/vendor/supabase-js.min.js"></script>

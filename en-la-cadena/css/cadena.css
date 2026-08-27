@@ -327,10 +327,21 @@ a      { text-decoration: none; }
 }
 .turn-indicator strong { color: var(--np-red); }
 
-/* Timer — CRITICAL: mantiene Bebas Neue, solo cambian colores */
+/* Timer — CRITICAL: mantiene Bebas Neue, solo cambian colores.
+   El contador vivía con position:absolute y top:-18px flotando ENCIMA de
+   la barra, pensado para asomar justo por encima de ella — pero esos -18px
+   son fijos y no saben nada de lo que hay justo arriba (el borde inferior
+   de .game-header): el número acababa atravesando esa línea divisoria
+   (medido: número en 116-135px, borde en 124-126px). Ahora el contador va
+   en el flujo normal, a la derecha de la barra, así que no puede pisar
+   nada de lo de arriba sea cual sea el contenido de la cabecera. */
+.timer-row {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; margin: 8px 0;
+}
 .timer-bar-wrap {
   position: relative; height: 5px; background: var(--np-ink-soft);
-  margin: 8px 0; border-radius: var(--r-md, 0); overflow: visible; width: 100%;
+  border-radius: var(--r-md, 0); overflow: hidden; flex: 1;
 }
 .timer-bar {
   height: 100%; border-radius: var(--r-md, 0); width: 100%;
@@ -339,9 +350,9 @@ a      { text-decoration: none; }
 }
 .timer-bar.warning { background: var(--np-ink); }
 .timer-text {
-  position: absolute; right: 0; top: -18px;
   font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem;
   color: var(--np-red); letter-spacing: 1px;
+  flex-shrink: 0; min-width: 1.4em; text-align: right;
 }
 
 /* Cadena */

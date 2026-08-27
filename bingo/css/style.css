@@ -237,6 +237,13 @@
 #screen-result { justify-content: flex-start; padding: 26px 16px 40px; }
 .result-wrap { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
 
+/* .finished-actions es una clase compartida de coche/css/style.css con
+   max-width:320px pero sin align-self propio: sin este centrado, el bloque
+   de botones (más estrecho que .result-wrap) se queda pegado al borde
+   izquierdo en vez de centrado bajo el cartón — es lo que se veía como
+   "Otra partida"/"Menú" descolocados en la pantalla de resultado. */
+.finished-actions { align-self: center; }
+
 .result-head { text-align: center; }
 .result-title {
   font-family: 'Anton', sans-serif; font-size: clamp(1.6rem, 7vw, 2.4rem);

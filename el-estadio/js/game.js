@@ -223,6 +223,14 @@ function startGame() {
     return;
   }
 
+  /* El mapa (Leaflet + teselas de OpenStreetMap) se creaba en el init() de la
+     página, nada más cargar el menú, aunque el jugador ni hubiera pulsado
+     "Jugar" — eso descarga las teselas del mapa de fondo (red real, no solo
+     JS) antes de que haga falta. initGameMap() es idempotente (early return
+     si ya existe), así que crearlo aquí, justo al empezar la partida, no
+     cambia nada para quien juega y ahorra esa descarga a quien solo entra a
+     mirar el menú. */
+  initGameMap();
   showScreen('screen-game');
   loadRonda(0);
   // El mapa se creó con la pantalla oculta (tamaño 0) — recalcular ahora
@@ -925,9 +933,6 @@ async function init() {
     }
     return;
   }
-
-  // Inicializar mapa de juego (en background, sin mostrar)
-  initGameMap();
 
   // Eventos
   document.getElementById('btn-jugar').addEventListener('click', startGame);

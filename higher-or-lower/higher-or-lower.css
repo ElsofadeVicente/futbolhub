@@ -639,8 +639,6 @@ a      { text-decoration: none; }
   inset: 0;
   z-index: 150;
   display: none;
-  align-items: center;
-  justify-content: center;
   overflow-y: auto;
   animation: fadeIn 0.25s ease;
   background-color: var(--np-paper);
@@ -669,6 +667,17 @@ a      { text-decoration: none; }
   padding: 56px 20px 48px;
   width: 100%;
   max-width: 560px;
+  /* margin:auto (no align-items/justify-content en el padre) centra en los
+     dos ejes SIN el bug clasico de flexbox: un elemento centrado con
+     align-items/justify-content que no cabe en el contenedor recorta el
+     lado de "inicio" (aqui arriba) y no se puede recuperar haciendo scroll,
+     asi que el titulo y la tarjeta de Top Players (los primeros del listado)
+     quedaban inalcanzables en pantallas donde el contenido no cabe entero
+     (tipico en un movil abierto desde el icono de la app, sin barra de
+     navegador). Los margenes auto no tienen ese problema: si no sobra
+     espacio se resuelven a 0 y el contenido queda pegado arriba, entero y
+     con scroll normal. */
+  margin: auto;
 }
 
 /* ── CABECERA ── */
