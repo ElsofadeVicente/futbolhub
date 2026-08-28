@@ -9,11 +9,13 @@
    ============================================= */
 'use strict';
 
-/* v13: se sube otra vez para purgar lo que quede de v11/v12. v12 limpió las
-   cabeceras de la COPIA en caché, pero seguía clonando el HTML que va a la
-   pestaña (ver la rama de navegaciones más abajo), que es el otro camino por
-   el que salía el archivo de 0 KB — y el que se daba con red buena. */
-const CACHE = 'futbolhub-v13';
+/* v14: se sube para forzar el refresco tras un archivo de 0 KB reportado
+   jugando desde la PWA instalada, un día después del despliegue de v13 —
+   ver el comentario de esNavegacion() para el detalle y por qué de paso se
+   añadió ahí un respaldo más. v13 arregló el camino de la navegación normal
+   (sin clonar el HTML de camino a la pestaña); v12 antes de eso limpió las
+   cabeceras de la COPIA en caché. */
+const CACHE = 'futbolhub-v14';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
@@ -61,9 +63,28 @@ self.addEventListener('activate', (e) => {
 
 /* ¿Es la navegación a una página (el HTML), y no un recurso de dentro?
    'navigate' cubre pestaña, iframe y volver atrás; destination es el
-   respaldo para motores que no rellenen mode. */
+   respaldo para motores que no rellenen mode.
+
+   Tercer respaldo por el Accept, añadido el 2026-08-28 tras un archivo de
+   0 KB reportado jugando desde la PWA instalada (no un WebView de otra
+   app): la causa más probable ahí es simple staleness — una app de
+   pantalla de inicio se abre poco y su service worker puede tardar más en
+   comprobar si hay versión nueva que una pestaña normal que se revisita a
+   diario, así que puede seguir ejecutando la lógica de v11/v12 mucho
+   después del despliegue de v13. Subir CACHE fuerza el refresco esta vez,
+   pero además de eso: 'mode'/'destination' del evento 'fetch' no están
+   garantizados en todo motor que implemente Service Workers (algunos
+   WebView embebidos de otras apps los dejan vacíos), así que si alguna vez
+   vuelve a fallar en un contexto así, esNavegacion() daría false y la
+   petición caería en la rama de abajo que sí clona. Toda navegación de
+   verdad manda 'Accept: text/html,...'; un CSS/JS/JSON nunca lo hace
+   (piden 'text/css', comodín genérico, etc.), así que es una señal de
+   respaldo fiable sin falsos positivos previsibles, aunque no se haya
+   podido confirmar como la causa de ESTE caso concreto. */
 function esNavegacion(req) {
-  return req.mode === 'navigate' || req.destination === 'document';
+  if (req.mode === 'navigate' || req.destination === 'document') return true;
+  const accept = req.headers.get('accept') || '';
+  return accept.includes('text/html');
 }
 
 /* Copia para el modo sin conexión pedida APARTE, con su propia petición.
