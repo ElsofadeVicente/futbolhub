@@ -3,19 +3,21 @@
    Estrategia:
    - Imágenes, fuentes y chunks de jugadores (pesados e inmutables):
      cache-first → la segunda visita carga al instante.
-   - HTML / JS / CSS / JSON diarios: network-first con fallback a caché
+   - JS / CSS / JSON diarios: network-first con fallback a caché
      → siempre fresco si hay conexión, y funciona offline si no la hay.
+   - Navegaciones (el HTML de cada página): NO se interceptan, ver el
+     comentario de esNavegacion() más abajo — es la parte que ha dado
+     problemas (el archivo de 0 KB) y ya no la toca el service worker.
    Sube la versión de CACHE para invalidar todo tras cambios grandes.
    ============================================= */
 'use strict';
 
-/* v14: se sube para forzar el refresco tras un archivo de 0 KB reportado
-   jugando desde la PWA instalada, un día después del despliegue de v13 —
-   ver el comentario de esNavegacion() para el detalle y por qué de paso se
-   añadió ahí un respaldo más. v13 arregló el camino de la navegación normal
-   (sin clonar el HTML de camino a la pestaña); v12 antes de eso limpió las
-   cabeceras de la COPIA en caché. */
-const CACHE = 'futbolhub-v14';
+/* v15: las navegaciones dejan de pasar por el service worker (ver el
+   comentario de más abajo, en la rama de 'esNavegacion'): v13 ya no clonaba
+   el cuerpo y aun así se seguía viendo el archivo de 0 KB, reportado el
+   2026-08-28 en iPhone/Safari. v14 solo forzó un refresco de versión; v12
+   antes de eso limpió las cabeceras de la COPIA en caché. */
+const CACHE = 'futbolhub-v15';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
@@ -63,41 +65,22 @@ self.addEventListener('activate', (e) => {
 
 /* ¿Es la navegación a una página (el HTML), y no un recurso de dentro?
    'navigate' cubre pestaña, iframe y volver atrás; destination es el
-   respaldo para motores que no rellenen mode.
+   respaldo para motores que no rellenen mode. Desde v15 lo que decide esta
+   función es si el service worker se aparta del todo de la petición (ver
+   la rama de abajo) — así que un falso negativo aquí no da un archivo de
+   0 KB, solo hace que ESA URL pase por network-first con caché como si
+   fuera un recurso cualquiera (peor, no roto).
 
-   Tercer respaldo por el Accept, añadido el 2026-08-28 tras un archivo de
-   0 KB reportado jugando desde la PWA instalada (no un WebView de otra
-   app): la causa más probable ahí es simple staleness — una app de
-   pantalla de inicio se abre poco y su service worker puede tardar más en
-   comprobar si hay versión nueva que una pestaña normal que se revisita a
-   diario, así que puede seguir ejecutando la lógica de v11/v12 mucho
-   después del despliegue de v13. Subir CACHE fuerza el refresco esta vez,
-   pero además de eso: 'mode'/'destination' del evento 'fetch' no están
-   garantizados en todo motor que implemente Service Workers (algunos
-   WebView embebidos de otras apps los dejan vacíos), así que si alguna vez
-   vuelve a fallar en un contexto así, esNavegacion() daría false y la
-   petición caería en la rama de abajo que sí clona. Toda navegación de
-   verdad manda 'Accept: text/html,...'; un CSS/JS/JSON nunca lo hace
-   (piden 'text/css', comodín genérico, etc.), así que es una señal de
-   respaldo fiable sin falsos positivos previsibles, aunque no se haya
-   podido confirmar como la causa de ESTE caso concreto. */
+   Respaldo por el Accept: 'mode'/'destination' del evento 'fetch' no están
+   garantizados en todo motor que implemente Service Workers — algunos
+   WebView embebidos de otras apps los dejan vacíos. Toda navegación de
+   verdad manda 'Accept: text/html,...'; un CSS/JS/JSON nunca lo hace (piden
+   'text/css', comodín genérico, etc.), así que es una señal fiable sin
+   falsos positivos previsibles. */
 function esNavegacion(req) {
   if (req.mode === 'navigate' || req.destination === 'document') return true;
   const accept = req.headers.get('accept') || '';
   return accept.includes('text/html');
-}
-
-/* Copia para el modo sin conexión pedida APARTE, con su propia petición.
-   No comparte cuerpo con la respuesta que ya se le ha dado a la pestaña, que
-   es justo lo que hay que evitar en una navegación. Sale barata: el HTML va
-   con 'max-age=0, must-revalidate', así que esto es una revalidación y casi
-   siempre responde 304 sin cuerpo. */
-async function copiaAparte(cacheKey) {
-  try {
-    const res = await fetch(cacheKey, { credentials: 'same-origin' });
-    const cache = await caches.open(CACHE);
-    await guardar(cache, cacheKey, res);
-  } catch (err) { /* sin red o respuesta rara: la copia puede esperar */ }
 }
 
 /* ¿Recurso "estático" que apenas cambia? → cache-first */
@@ -211,46 +194,35 @@ self.addEventListener('fetch', (e) => {
   // y sin esto cada visita añadiría una copia nueva a la caché para siempre.
   const cacheKey = url.origin + url.pathname;
 
-  /* ── NAVEGACIONES: la respuesta va INTACTA, sin clonar ────────────────
-     Este es el segundo camino al archivo de 0 KB, y el que v12 no tocó.
+  /* ── NAVEGACIONES: no se interceptan en absoluto ──────────────────────
+     Historial de esto (el archivo de 0 KB): v12 limpió la COPIA guardada en
+     caché (le quitaba 'Content-Encoding: br' antes de meterla). v13 dejó de
+     clonar el cuerpo que ve la pestaña, porque clonar parte el cuerpo en dos
+     lectores y, si el service worker se dormía a mitad, a la pestaña le
+     llegaba un cuerpo VACÍO — con 'nosniff' eso se trata como descarga y
+     Vercel le pone de nombre el 'Content-Disposition: inline;
+     filename="…"' (o el host en la raíz, que no lleva filename).
 
-     v12 arregló la COPIA guardada (le quitaba 'Content-Encoding: br' antes de
-     meterla en la caché). Pero la respuesta que de verdad ve la pestaña casi
-     siempre viene de la RED, y esa seguía pasando por res.clone(): clonar
-     parte el cuerpo en dos lectores, el de la página y el que lo vuelca a la
-     caché, y obliga al navegador a sostener los dos a la vez. Si el service
-     worker se duerme a mitad —y se duerme: iOS los mata en cuanto la página
-     se va, y viniendo de una guía (que no registra SW) arranca en frío— lo
-     que le llega a la pestaña es un cuerpo VACÍO.
+     v13 quitó el clone(), pero SIGUE pasando: reportado 2026-08-28, "a
+     veces", en iPhone/Safari, igual en el navegador normal que en la PWA
+     instalada. O sea que el cuerpo puede llegar vacío incluso pasando el
+     `fetch()` a `respondWith()` sin tocarlo — no es nuestro código, es un
+     límite de cómo WebKit entrega el cuerpo a través de un service worker
+     en una navegación (con memoria justa, tras suspender la pestaña, o
+     yendo y viniendo de background). No hay forma de escribir esto "bien":
+     la única forma de no volver a verlo es que el service worker no
+     intervenga en absoluto en la navegación.
 
-     Ahí se encadena el resto: con 'X-Content-Type-Options: nosniff' el
-     navegador no puede rescatarlo adivinando el tipo, así que lo trata como
-     descarga y le pone el nombre del 'Content-Disposition: inline;
-     filename="en-el-top"' que manda Vercel. De ahí el documento de 0 KB
-     llamado 'en-el-top' — o 'www.futbolhub.es' en la raíz, que no lleva
-     filename y cae al nombre del host.
-
-     Por eso pasaba con 5G y batería llena: no hace falta quedarse sin red,
-     basta con que el SW se duerma en el momento justo. Y por eso el arreglo
-     de la caché no lo evitaba.
-
-     Ahora el cuerpo va de la red a la pestaña sin que el SW lo toque, y la
-     copia para offline se pide por separado en copiaAparte(). */
-  if (esNavegacion(req)) {
-    e.respondWith((async () => {
-      try {
-        const res = await fetch(req);
-        enSegundoPlano(e, copiaAparte(cacheKey));
-        return res;                 // ni clone() ni new Response(): intacta
-      } catch (err) {
-        const cache = await caches.open(CACHE);
-        const hit = await cache.match(cacheKey);
-        if (hit) return servir(hit);
-        throw err;
-      }
-    })());
-    return;
-  }
+     Así que ahora, para una navegación, NO se llama a e.respondWith(): el
+     evento se deja sin responder y el navegador hace la petición él solo,
+     exactamente igual que si no hubiera ningún service worker instalado.
+     Precio asumido: se pierde el respaldo offline del HTML (sin red, el
+     usuario ve la pantalla nativa de "sin conexión" en vez de la última
+     copia guardada) — aceptable, porque el sitio depende de Supabase/
+     Firebase para los datos de cada juego y offline nunca fue jugable de
+     verdad. Los subrecursos (CSS/JS/imágenes) siguen exactamente igual que
+     antes, esta rama solo afecta al documento HTML de la navegación. */
+  if (esNavegacion(req)) return;
 
   if (isStaticAsset(url)) {
     // CACHE-FIRST
