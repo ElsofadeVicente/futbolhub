@@ -500,20 +500,23 @@
 
   /* Nombres repetidos (dos "Koke", dos "Rodri"...): sin nada mas escrito son
      dos filas identicas y elegir bien es imposible. Desambiguacion EN CASCADA,
-     igual que Coche y En la Cadena: la posicion siempre, y solo si sigue
-     habiendo empate se añade la nacion y despues el año de nacimiento. El club
-     NO se enseña: es dato de juego (los badges van de clubes), no una pista. */
+     pero SOLO cuando el nombre esta repetido en la propia lista: un jugador
+     sin homonimos no lleva ninguna pista. Orden: nacion primero, y solo si
+     sigue habiendo empate se añade la posicion y despues el año de
+     nacimiento. El club NO se enseña: es dato de juego (los badges van de
+     clubes), no una pista. */
   const POS_ES = { GK:'Portero', DEF:'Defensa', MID:'Centrocampista', FWD:'Delantero' };
   function acHint(it, sameName) {
+    if (sameName.length <= 1) return '';
     const bits = [];
-    const bucket = posBucket(it);
-    if (bucket) bits.push(POS_ES[bucket] || bucket);
-    if (sameName.length > 1) {
-      const samePos = sameName.filter(o => posBucket(o) === bucket);
-      if (samePos.length > 1 && it.nationalTeam) {
-        bits.push(it.nationalTeam);
-        const sameNat = samePos.filter(o => o.nationalTeam === it.nationalTeam);
-        if (sameNat.length > 1 && it.birthYear) bits.push('n. ' + it.birthYear);
+    if (it.nationalTeam) bits.push(it.nationalTeam);
+    const sameNat = sameName.filter(o => o.nationalTeam === it.nationalTeam);
+    if (sameNat.length > 1) {
+      const bucket = posBucket(it);
+      if (bucket) {
+        bits.push(POS_ES[bucket] || bucket);
+        const samePos = sameNat.filter(o => posBucket(o) === bucket);
+        if (samePos.length > 1 && it.birthYear) bits.push('n. ' + it.birthYear);
       }
     }
     return bits.join(' · ');
@@ -619,6 +622,7 @@
           toast(`${player.name} no juega actualmente en ${badge.label}`, 'err');
         else
           toast(`${player.name} no es ${badge.label.toLowerCase()}`, 'err');
+        input.value = '';
         return;
       }
 
