@@ -59,6 +59,19 @@
     const GOOGLE_ICON = `
       <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C41 35.4 44 30.2 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>`;
 
+    /* Iconos del bloque de identidad en Perfil: cámara sobre el avatar
+       (cambiar foto) y lápiz junto al nombre (cambiar nombre de usuario). */
+    const CAMERA_ICON = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8h3l1.6-2.2a1 1 0 0 1 .8-.4h5.2a1 1 0 0 1 .8.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+        <circle cx="12" cy="13.4" r="3.3"/>
+      </svg>`;
+
+    const PENCIL_ICON = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16.6 3.6a2.1 2.1 0 0 1 3 3L7.5 18.7l-4.2 1 1-4.2Z"/>
+      </svg>`;
+
     function avatarHTML(size) {
         if (profile && profile.avatar_url) {
             return `<img class="pw-avatar-img" src="${esc(profile.avatar_url)}" alt="">`;
@@ -275,6 +288,7 @@
         const games = (window.FHStreaks && FHStreaks.list()) || [];
         const conRacha = games.filter(g => g.streak > 0);
         const mejor = games.reduce((m, g) => Math.max(m, g.streak), 0);
+        const changed = !!(profile && profile.username_changed);
 
         const desde = profile && profile.created_at
             ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(profile.created_at))
@@ -283,13 +297,24 @@
         openModal(`
           <div class="pw-brand">Fútbol<span>HUB</span></div>
 
-          <div class="pw-settings-row">
-            <span class="pw-drop-avatar pw-avatar-lg">${avatarHTML()}</span>
+          <div class="pw-id-block">
+            <button class="pw-avatar-edit" type="button" data-action="change-photo" aria-label="Cambiar foto de perfil">
+              <span class="pw-drop-avatar pw-avatar-xl">${avatarHTML()}</span>
+              <span class="pw-avatar-edit-badge" aria-hidden="true">${CAMERA_ICON}</span>
+            </button>
+            <input class="pw-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
             <div class="pw-drop-id">
-              <div class="pw-drop-name">${esc(displayName())}</div>
+              <div class="pw-id-name-row">
+                <div class="pw-drop-name">${esc(displayName())}</div>
+                ${changed ? '' : `<button class="pw-icon-btn" type="button" data-action="change-username" aria-label="Cambiar nombre de usuario">${PENCIL_ICON}</button>`}
+              </div>
+              <div class="pw-drop-mail">${esc(session && session.user.email || '')}</div>
               ${desde ? `<div class="pw-drop-mail">Jugando desde el ${esc(desde)}</div>` : ''}
             </div>
           </div>
+          <p class="pw-hint pw-hint--indent">${changed
+            ? 'Ya has usado tu único cambio de nombre de usuario.'
+            : 'Toca la foto para cambiarla, o el lápiz para cambiar tu nombre (una sola vez).'}</p>
 
           <div class="pw-field-label">Resumen</div>
           ${games.length === 0 ? `<p class="pw-text">No se han podido leer las partidas.</p>` : `
@@ -425,32 +450,16 @@
     }
 
     function ajustesView() {
-        const changed = !!(profile && profile.username_changed);
         openModal(`
           <div class="pw-brand">Fútbol<span>HUB</span></div>
           <h3 class="pw-title">Ajustes</h3>
-
-          <div class="pw-settings-row">
-            <span class="pw-drop-avatar pw-avatar-lg">${avatarHTML()}</span>
-            <div class="pw-drop-id">
-              <div class="pw-drop-name">${esc(displayName())}</div>
-              <div class="pw-drop-mail">${esc(session && session.user.email || '')}</div>
-            </div>
-          </div>
-
-          <button class="pw-secondary" type="button" data-action="change-photo">Cambiar foto de perfil</button>
-          <input class="pw-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-
-          <div class="pw-field-label">Nombre de usuario</div>
-          ${changed
-            ? `<p class="pw-hint">Ya has usado tu único cambio de nombre, así que no se puede volver a cambiar.</p>`
-            : `<button class="pw-secondary" type="button" data-action="change-username">Cambiar nombre de usuario</button>
-               <p class="pw-hint">Solo se puede cambiar <strong>una vez</strong>. Elige bien.</p>`}
 
           ${window.FHTheme ? `
             <div class="pw-field-label">Diseño de la web</div>
             ${themePickerHTML()}
             ${themeNoteHTML()}` : ''}
+
+          <p class="pw-hint">Tu foto y tu nombre de usuario se cambian desde <button class="pw-linkbtn pw-linkbtn--inline" type="button" data-action="perfil">Perfil</button>.</p>
 
           <div class="pw-msg"></div>
           <button class="pw-danger" type="button" data-action="logout">Cerrar sesión</button>
@@ -471,7 +480,7 @@
             <div class="pw-msg"></div>
             <button class="pw-primary" type="submit">Guardar cambio definitivo</button>
           </form>
-          <button class="pw-linkbtn" type="button" data-action="ajustes">← Cancelar</button>
+          <button class="pw-linkbtn" type="button" data-action="perfil">← Cancelar</button>
         `);
     }
 
@@ -512,7 +521,7 @@
                 profile = await FHAuth.getProfile(true);
                 renderCircle();
                 setMsg('ok', 'Nombre de usuario cambiado.');
-                setTimeout(ajustesView, 1200);
+                setTimeout(perfilView, 1200);
             } else if (kind === 'new-password') {
                 const r = await FHAuth.updatePassword(f.get('password'));
                 if (!r.ok) return setMsg('error', r.error);
@@ -639,7 +648,7 @@
             if (!r.ok) return setMsg('error', r.error);
             profile = await FHAuth.getProfile(true);
             renderCircle();
-            ajustesView();              // repinta con la foto nueva
+            perfilView();                // repinta con la foto nueva
             setMsg('ok', 'Foto de perfil actualizada.');
         } finally {
             setBusy(false);

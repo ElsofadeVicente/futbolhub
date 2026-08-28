@@ -359,6 +359,82 @@ body.np-body .pw-root { position: absolute; }
 .pw-avatar-lg { flex: 0 0 52px; width: 52px; height: 52px; }
 .pw-avatar-lg .pw-avatar-letter { font-size: 1.5rem; }
 
+/* ── Bloque de identidad (Perfil): avatar editable + nombre editable ──
+   El avatar entero es el botón de "cambiar foto" (mismo patrón que
+   Twitter/Discord: tocar la foto la cambia, sin un botón de texto aparte).
+   El nombre lleva un lápiz al lado que abre el cambio de nombre — las dos
+   únicas acciones de cuenta viven aquí, no en Ajustes. */
+.pw-id-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.pw-avatar-xl { flex: 0 0 64px; width: 64px; height: 64px; }
+.pw-avatar-xl .pw-avatar-letter { font-size: 1.75rem; }
+
+.pw-avatar-edit {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 0;
+}
+.pw-avatar-edit .pw-drop-avatar { transition: filter .15s ease; }
+.pw-avatar-edit:hover .pw-drop-avatar,
+.pw-avatar-edit:focus-visible .pw-drop-avatar { filter: brightness(.7); }
+.pw-avatar-edit-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffcf6b;
+  color: #1a1400;
+  border: 2px solid #16181d;
+}
+.pw-avatar-edit-badge svg { width: 12px; height: 12px; }
+
+.pw-id-name-row { display: flex; align-items: center; gap: 6px; }
+.pw-id-name-row .pw-drop-name { white-space: normal; overflow: visible; }
+
+.pw-icon-btn {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  color: rgba(232, 230, 225, .75);
+  cursor: pointer;
+}
+.pw-icon-btn:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+.pw-icon-btn svg { width: 13px; height: 13px; }
+
+.pw-hint--indent { margin: 0 0 4px 2px; }
+
+.pw-linkbtn--inline {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: inherit;
+  color: rgba(232, 230, 225, .85);
+}
+.pw-linkbtn--inline:hover { color: #fff; }
+
 .pw-warn {
   padding: 10px 12px;
   margin-bottom: 14px;
