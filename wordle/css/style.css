@@ -81,50 +81,6 @@ button { cursor: pointer; }
 .eyebrow-cat { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--np-red); text-transform: uppercase; }
 
 /* ══════════════════════════════════════════════
-   INTRO
-   ══════════════════════════════════════════════ */
-#screen-intro {
-  align-items: center; justify-content: center;
-  padding: 28px 16px;
-}
-
-#wd-box {
-  width: 100%; max-width: 400px;
-  background: var(--np-white);
-  border: 1px solid var(--np-ink-soft);
-  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  border-radius: var(--r-md, 0);
-  display: flex; flex-direction: column;
-  animation: wdSlideUp 0.35s ease both;
-}
-@keyframes wdSlideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-
-#wd-art {
-  width: 100%; aspect-ratio: 8 / 3; overflow: hidden;
-  background: var(--np-paper2);
-  border-bottom: 1px solid var(--np-ink-soft);
-  position: relative;
-}
-#wd-art img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(0.15) contrast(1.05); }
-#wd-art.wd-art--fallback { display: flex; align-items: center; justify-content: center; }
-#wd-art.wd-art--fallback::after {
-  content: "WORDLE";
-  font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.1em; color: var(--np-ink-mid);
-}
-#wd-art-overlay {
-  position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px;
-  background: linear-gradient(to top, rgba(var(--np-ink-rgb, 15,18,14), 0.55) 0%, transparent 100%);
-  display: flex; align-items: flex-end;
-}
-#wd-art-overlay .eyebrow-num, #wd-art-overlay .eyebrow-sep, #wd-art-overlay .eyebrow-cat { color: rgba(var(--np-paper-rgb, 244,234,210), 0.85); }
-#wd-art-overlay .eyebrow-cat { color: #f4b89a; }
-
-#wd-body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 12px; border-top: 2px solid var(--bd-c, var(--np-ink)); }
-#wd-title { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1; color: var(--np-ink); letter-spacing: -0.01em; }
-#wd-desc { font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: var(--np-ink-mid); }
-.wd-rule { height: 1px; background: var(--np-ink-soft); }
-
-/* ══════════════════════════════════════════════
    BOTONES / ENLACES COMPARTIDOS
    ══════════════════════════════════════════════ */
 .btn-primary {
@@ -149,16 +105,6 @@ button { cursor: pointer; }
 
 a.btn-secondary { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 
-.stats-link-btn {
-  display: flex; align-items: center; gap: 7px;
-  background: none; border: none;
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--np-ink-mid); cursor: pointer; padding: 0;
-  transition: color 0.18s;
-}
-.stats-link-btn:hover { color: var(--np-red); }
-.stats-link-btn svg { flex-shrink: 0; }
-
 /* ══════════════════════════════════════════════
    PANTALLA DE JUEGO
    ══════════════════════════════════════════════ */
@@ -181,14 +127,26 @@ a.btn-secondary { display: inline-flex; align-items: center; justify-content: ce
   padding: 3px 6px;
 }
 
-#wd-rules-btn {
+.wd-topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+.wd-icon-btn {
   width: 30px; height: 30px; border-radius: 50%;
   border: 1.5px solid var(--bd-c, var(--np-ink)); background: transparent; color: var(--np-ink);
-  font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: 0.95rem;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s, color 0.15s;
 }
-#wd-rules-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+.wd-icon-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+#wd-rules-btn { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: 0.95rem; }
+
+/* ── Cargando / error de arranque ──
+   Sustituye al botón "JUGAR" que antes hacía de indicador: ahora no hay
+   pantalla de menú donde ponerlo, así que el hueco que iba a ocupar el
+   tablero avisa de que todavía no hay nada que pintar. fatal() reescribe
+   su texto y lo deja fijo (a diferencia del toast, que desaparece solo). */
+.wd-loading {
+  font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.06em;
+  color: var(--np-ink-mid); text-align: center; margin: 36px 0;
+}
 
 /* ── Tablero ──
    max-width + overflow-x: red de seguridad para palabras muy largas. El
@@ -264,6 +222,10 @@ a.btn-secondary { display: inline-flex; align-items: center; justify-content: ce
   .wd-key { height: 44px; font-size: 0.82rem; }
   .wd-key--wide { font-size: 0.58rem; }
 }
+
+/* ── Contenido SEO bajo el teclado (ver CLAUDE.md, "Páginas de contenido") ──
+   Antes vivía en la pantalla de menú, que ya no existe. */
+#wd-footer { width: 100%; max-width: 480px; margin-top: 30px; }
 
 /* ══════════════════════════════════════════════
    MODALES / OVERLAYS

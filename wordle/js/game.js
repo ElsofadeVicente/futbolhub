@@ -9,23 +9,29 @@
    longitud fija (decisión del usuario, 2026-08-27).
 
    El TABLERO se adapta a la longitud de la palabra del día (sin longitud
-   fija), pero los INTENTOS son siempre 5 (decisión del usuario, 2026-08-27:
-   "6 es mucho"), sea cual sea esa longitud. Los intentos que escribe quien
-   juega tampoco están restringidos a ningún banco: vale cualquier
-   combinación de letras de la misma longitud, y el juego da el mismo
-   feedback de color le pegue o no significado (igual que el Wordle real,
-   que valida contra un diccionario mucho más amplio que el de respuestas
-   posibles).
+   fija), y los INTENTOS son 6 (como el Wordle real; decisión revisada el
+   2026-08-28, sustituye a los 5 del 2026-08-27), sea cual sea esa longitud.
+   Los intentos que escribe quien juega tampoco están restringidos a ningún
+   banco: vale cualquier combinación de letras de la misma longitud, y el
+   juego da el mismo feedback de color le pegue o no significado (igual que
+   el Wordle real, que valida contra un diccionario mucho más amplio que el
+   de respuestas posibles).
 
    Mismo patrón de racha "por intento" que el resto de diarios (ver
    js/hub-streaks.js) y misma regla que La Carrera/El Crucigrama: SOLO la
    edición de HOY se guarda y cuenta para las estadísticas; las anteriores
    (el archivo) se pueden repetir libremente para practicar, sin persistir.
+
+   Sin pantalla de menú (decisión del 2026-08-28): al entrar se monta
+   directamente el tablero de la edición de hoy, sin botón "Jugar" de por
+   medio — el contenido SEO que antes vivía en esa pantalla (párrafo de
+   presentación, enlace a la guía, "Otros juegos") se mudó debajo del
+   teclado, en el propio #screen-game.
    ============================================= */
 (function () {
   'use strict';
 
-  const MAX_GUESSES = 5;
+  const MAX_GUESSES = 6;
 
   /* ── Fecha (hora de Madrid, igual que el resto de diarios) ── */
   function madridToday() {
@@ -79,12 +85,11 @@
 
   /* ── DOM ── */
   const $ = (id) => document.getElementById(id);
-  const introScreen = $('screen-intro');
   const gameScreen = $('screen-game');
   const boardEl = $('wd-board');
   const keyboardEl = $('wd-keyboard');
   const dayLabelEls = document.querySelectorAll('.wd-day-label');
-  const startBtn = $('wd-start-btn');
+  const loadingEl = $('wd-loading');
   const archiveTagEl = $('wd-archive-tag');
   const toastEl = $('toast');
   const elNav = $('day-nav');
@@ -123,11 +128,6 @@
     return _monthCache[mes];
   }
 
-  function showScreen(name) {
-    introScreen.classList.toggle('active', name === 'intro');
-    gameScreen.classList.toggle('active', name === 'game');
-  }
-
   function toast(msg, kind) {
     if (!toastEl) return;
     toastEl.textContent = msg;
@@ -136,9 +136,11 @@
     toastEl._t = setTimeout(() => { toastEl.className = 'toast'; }, 1600);
   }
 
+  /* Sin pantalla de menú no hay botón que deshabilitar: el error se deja
+     fijo en el hueco donde iba "Cargando…" (el toast desaparece solo a los
+     1600ms y el fallo no). */
   function fatal(msg) {
-    startBtn.disabled = true;
-    startBtn.textContent = 'SIN CONEXIÓN';
+    if (loadingEl) { loadingEl.textContent = msg; loadingEl.classList.remove('hidden'); }
     toast(msg);
   }
 
@@ -539,8 +541,6 @@
   }
 
   function renderAvisoAtrasada(fechaMostrada) {
-    const anfitrion = $('screen-intro');
-    if (!anfitrion) return;
     let el = document.getElementById('wd-aviso-atrasada');
     const debeVerse = _hoyFalta && fechaMostrada === _editions[_editions.length - 1];
     if (!debeVerse) { if (el) el.classList.add('hidden'); return; }
@@ -548,8 +548,7 @@
       el = document.createElement('p');
       el.id = 'wd-aviso-atrasada';
       el.className = 'fh-atrasado';
-      const wrap = document.getElementById('wd-body');
-      wrap.insertBefore(el, wrap.firstChild);
+      boardEl.parentNode.insertBefore(el, boardEl);
     }
     el.classList.remove('hidden');
     el.textContent = `La palabra de hoy todavía no está lista. Mientras tanto, aquí tienes la del ${_fechaLarga(fechaMostrada)}.`;
@@ -565,13 +564,6 @@
     elNavNext.disabled = atEnd;
     elNavLast.disabled = atEnd;
     elNavLabel.textContent = `#${_idx + 1}`;
-  }
-
-  function updateStartButtonLabel() {
-    if (!_ready) return;
-    if (_isToday && state.completed) startBtn.textContent = 'VER RESULTADO';
-    else if (_isToday && state.guesses.length > 0) startBtn.textContent = 'CONTINUAR ▶';
-    else startBtn.textContent = 'JUGAR ▶';
   }
 
   /* Prepara la edición idx: descarga (si hace falta) el mes, monta el
@@ -623,20 +615,13 @@
     updateArchiveTag();
     renderNav();
     renderAvisoAtrasada(fecha);
-    updateStartButtonLabel();
   }
 
-  function enterGame() {
-    if (!_ready) return;
-    showScreen('game');
-    if (_isToday && state.completed) setTimeout(openResult, 150);
-  }
-
-  /* ── Arranque ── */
+  /* ── Arranque ──
+     Sin pantalla de menú: se entra directo al tablero de hoy en cuanto
+     carga, sin botón "Jugar" de por medio. */
   async function start() {
     buildKeyboard();
-    startBtn.textContent = 'CARGANDO…';
-    startBtn.disabled = true;
 
     let idxJson;
     try {
@@ -675,11 +660,13 @@
     }
 
     _ready = true;
-    startBtn.disabled = false;
-    updateStartButtonLabel();
+    if (loadingEl) loadingEl.classList.add('hidden');
+    /* Igual que antes hacía enterGame(): si ya jugaste hoy, se abre el
+       resultado directamente en vez de dejarte mirando el tablero ya
+       resuelto sin saber que la partida está cerrada. */
+    if (_isToday && state.completed) setTimeout(openResult, 150);
   }
 
-  startBtn.addEventListener('click', enterGame);
   $('wd-rules-btn').addEventListener('click', openRules);
   $('wd-rules-close').addEventListener('click', closeRules);
   $('wd-rules-backdrop').addEventListener('click', closeRules);
@@ -689,7 +676,6 @@
   $('wd-result-close').addEventListener('click', closeResult);
   $('wd-result-backdrop').addEventListener('click', closeResult);
   $('wd-result-share-btn').addEventListener('click', shareResult);
-  $('wd-menu-btn').addEventListener('click', () => { closeResult(); showScreen('intro'); updateStartButtonLabel(); });
 
   if (elNavFirst) elNavFirst.addEventListener('click', () => goEdition(0));
   if (elNavPrev)  elNavPrev.addEventListener('click', () => goEdition(_idx - 1));

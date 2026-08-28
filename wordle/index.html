@@ -6,12 +6,12 @@
   <title>Adivina la palabra de fútbol del día | FutbolHUB</title>
 <link rel="canonical" href="https://www.futbolhub.es/wordle/">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-<meta name="description" content="Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
+<meta name="description" content="Wordle de fútbol: adivina en 6 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
 <meta property="og:title" content="Adivina la palabra de fútbol del día | FutbolHUB">
-<meta property="og:description" content="Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
+<meta property="og:description" content="Wordle de fútbol: adivina en 6 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
 <meta property="og:url" content="https://www.futbolhub.es/wordle/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/wordle.jpg">
 <meta property="og:image:width" content="1200">
@@ -20,7 +20,7 @@
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Adivina la palabra de fútbol del día | FutbolHUB">
-<meta name="twitter:description" content="Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
+<meta name="twitter:description" content="Wordle de fútbol: adivina en 6 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/wordle.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
 <link rel="manifest" href="../manifest.json">
@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260827c">
+  <link rel="stylesheet" href="css/style.css?v=20260828a">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
@@ -107,7 +107,7 @@
       "@type": "VideoGame",
       "@id": "https://www.futbolhub.es/wordle/#game",
       "name": "Wordle de FutbolHUB",
-      "description": "Wordle de fútbol: adivina en 5 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.",
+      "description": "Wordle de fútbol: adivina en 6 intentos una palabra —término, club o apellido— con pistas de color. Una palabra nueva cada día, elegida a mano, sin longitud fija.",
       "url": "https://www.futbolhub.es/wordle/",
       "image": "https://www.futbolhub.es/img/og/wordle.jpg",
       "inLanguage": "es-ES",
@@ -163,71 +163,48 @@
   <div class="ad-slot" data-ad="rail-right"></div>
 </aside>
 
-<!-- ═══════════ PANTALLA 1: INTRO ═══════════ -->
-<div id="screen-intro" class="screen active">
-  <a href="../" class="fh-volver">← Volver</a>
-
-  <div id="wd-box">
-    <div id="wd-art">
-      <picture>
-        <source srcset="../img/hub/wordle.webp" type="image/webp">
-        <img src="../img/hub/wordle.jpg" alt="Wordle" width="800" height="300"
-             onerror="this.parentElement.classList.add('wd-art--fallback')">
-      </picture>
-      <div id="wd-art-overlay">
-        <span class="eyebrow">
-          <span class="eyebrow-num">№ 14</span>
-          <span class="eyebrow-sep">·</span>
-          <span class="eyebrow-cat">Diario</span>
-        </span>
-      </div>
-    </div>
-
-    <div id="wd-body">
-      <h1 id="wd-title">Wordle</h1>
-      <p id="wd-desc">Adivina la palabra de fútbol del día en 5 intentos. Cada color te dice cuánto te acercas.</p>
-
-      <div class="wd-rule"></div>
-
-      <button id="wd-start-btn" class="btn-primary">JUGAR ▶</button>
-
-      <button id="wd-stats-open-btn" class="stats-link-btn">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
-        </svg>
-        Ver mis estadísticas
-      </button>
-
-      <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-      <p class="fh-intro-texto">Wordle es el juego 14 de FutbolHUB: cada día hay una única palabra de fútbol por adivinar —puede ser un término del juego, el nombre de un club o el apellido de un futbolista—, elegida a mano y sin longitud fija. Tienes 5 intentos para dar con ella y puedes escribir cualquier combinación de letras para tantear: al enviarla, cada letra se colorea de verde si está en el sitio correcto, de amarillo si está en la palabra pero en otra posición, y de gris si no aparece. El teclado en pantalla recuerda lo que ya has probado. Es la misma palabra para todo el mundo y solo cuenta el primer intento del día; las ediciones anteriores quedan en el archivo, navegable con las flechas de abajo, para practicar cuando quieras.</p>
-<p class="guia-link"><a href="/como-jugar/wordle/">Cómo se juega &rarr;</a></p>
-<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
-  <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
-  <ul class="fh-otros-lista">
-    <li><a href="../crucigrama/">Crucigrama de fútbol diario</a></li>
-    <li><a href="../la-carrera/">Adivina al futbolista por su trayectoria</a></li>
-    <li><a href="../en-el-once/">Adivina la alineación de un partido de fútbol</a></li>
-    <li><a href="../higher-or-lower/">Higher or Lower de futbolistas por valor</a></li>
-  </ul>
-</nav>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════ PANTALLA 2: PARTIDA ═══════════ -->
-<div id="screen-game" class="screen">
+<!-- ═══════════ PANTALLA: PARTIDA (sin menú previo: se entra directo al
+     tablero de hoy, sin botón "Jugar" de por medio) ═══════════ -->
+<div id="screen-game" class="screen active">
   <a href="../" class="fh-volver">← Volver</a>
 
   <div id="wd-topbar">
-    <span class="wd-topbar-left">
-      <span class="wd-day eyebrow-num">Wordle <span class="wd-day-label">#1</span></span>
+    <div class="wd-topbar-left">
+      <h1 class="wd-day eyebrow-num">Wordle</h1>
+      <span class="wd-day wd-day-label">#1</span>
       <span id="wd-archive-tag" class="wd-archive-tag hidden">Archivo</span>
-    </span>
-    <button id="wd-rules-btn" aria-label="Cómo se juega" title="Cómo se juega">?</button>
+    </div>
+    <div class="wd-topbar-actions">
+      <button id="wd-stats-open-btn" class="wd-icon-btn" aria-label="Ver mis estadísticas" title="Ver mis estadísticas">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
+        </svg>
+      </button>
+      <button id="wd-rules-btn" class="wd-icon-btn" aria-label="Cómo se juega" title="Cómo se juega">?</button>
+    </div>
   </div>
+
+  <p id="wd-loading" class="wd-loading">Cargando…</p>
 
   <div id="wd-board"></div>
   <div id="wd-keyboard"></div>
+
+  <!-- Contenido SEO (ver CLAUDE.md, "Páginas de contenido"): antes vivía en
+       una pantalla de menú aparte, ahora va aquí porque el juego ya no
+       tiene esa pantalla — sigue siendo HTML servido y visible, no oculto. -->
+  <div id="wd-footer">
+    <p class="fh-intro-texto">Wordle es el juego 14 de FutbolHUB: cada día hay una única palabra de fútbol por adivinar —puede ser un término del juego, el nombre de un club o el apellido de un futbolista—, elegida a mano y sin longitud fija. Tienes 6 intentos para dar con ella y puedes escribir cualquier combinación de letras para tantear: al enviarla, cada letra se colorea de verde si está en el sitio correcto, de amarillo si está en la palabra pero en otra posición, y de gris si no aparece. El teclado en pantalla recuerda lo que ya has probado. Es la misma palabra para todo el mundo y solo cuenta el primer intento del día; las ediciones anteriores quedan en el archivo, navegable con las flechas de abajo, para practicar cuando quieras.</p>
+    <p class="guia-link"><a href="/como-jugar/wordle/">Cómo se juega &rarr;</a></p>
+    <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+      <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
+      <ul class="fh-otros-lista">
+        <li><a href="../crucigrama/">Crucigrama de fútbol diario</a></li>
+        <li><a href="../la-carrera/">Adivina al futbolista por su trayectoria</a></li>
+        <li><a href="../en-el-once/">Adivina la alineación de un partido de fútbol</a></li>
+        <li><a href="../higher-or-lower/">Higher or Lower de futbolistas por valor</a></li>
+      </ul>
+    </nav>
+  </div>
 </div>
 
 <!-- ═══════════ Modal: Reglas ═══════════ -->
@@ -237,7 +214,7 @@
     <button id="wd-rules-close" class="close-btn" aria-label="Cerrar">✕</button>
     <h2>Cómo se juega</h2>
     <div class="wd-rules-list">
-      <p>Adivina la palabra de fútbol del día, letra a letra, en 5 intentos. Puedes escribir cualquier combinación de letras (de la misma longitud que la palabra de hoy): no hace falta que signifique nada, solo sirve para tantear qué letras están.</p>
+      <p>Adivina la palabra de fútbol del día, letra a letra, en 6 intentos. Puedes escribir cualquier combinación de letras (de la misma longitud que la palabra de hoy): no hace falta que signifique nada, solo sirve para tantear qué letras están.</p>
       <p>Tras cada intento, las letras cambian de color:</p>
       <div class="wd-rules-example">
         <span class="wd-mini wd-mini--correct"></span>
@@ -298,7 +275,6 @@
 
     <div class="wd-result-actions">
       <button id="wd-result-share-btn" class="btn-primary">📤 Compartir</button>
-      <button id="wd-menu-btn" class="btn-secondary">Menú</button>
       <a href="../" class="btn-secondary">🏠 Hub</a>
     </div>
   </div>
@@ -330,7 +306,7 @@
 <script src="../js/img-heal.js?v=20260727a"></script>
 <script src="../js/profile-widget.js?v=20260827a"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="js/game.js?v=20260827c"></script>
+<script src="js/game.js?v=20260828a"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).
   if ('serviceWorker' in navigator) {
