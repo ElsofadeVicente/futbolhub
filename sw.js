@@ -16,8 +16,11 @@
    comentario de más abajo, en la rama de 'esNavegacion'): v13 ya no clonaba
    el cuerpo y aun así se seguía viendo el archivo de 0 KB, reportado el
    2026-08-28 en iPhone/Safari. v14 solo forzó un refresco de versión; v12
-   antes de eso limpió las cabeceras de la COPIA en caché. */
-const CACHE = 'futbolhub-v15';
+   antes de eso limpió las cabeceras de la COPIA en caché.
+   v16: se quita self.skipWaiting() del install (ver el comentario de esa
+   rama) por un fallo DISTINTO — pantalla en blanco sin forma de recargar en
+   la PWA de iOS — reportado el 2026-08-29. */
+const CACHE = 'futbolhub-v16';
 
 /* Imágenes externas que queremos disponibles offline (La Carrera, Coche):
    escudos de club (tmssl) y retratos de jugador (transfermarkt). Son
@@ -36,9 +39,34 @@ const CACHE = 'futbolhub-v15';
    y reintenta. Ver también el mensaje 'drop-image' de abajo. */
 const EXTERNAL_IMG_HOSTS = ['tmssl.akamaized.net', 'img.a.transfermarkt.technology'];
 
-self.addEventListener('install', (e) => {
-  self.skipWaiting();
-});
+/* v16: ya NO se llama a self.skipWaiting() aquí. Reportado 2026-08-29 en la
+   PWA instalada de iOS: al pulsar "Volver" dentro de una sesión ya abierta
+   (La Carrera → hub), la pantalla se quedaba en BLANCO y sin ninguna forma de
+   recargar (una PWA standalone no tiene barra de URL ni botón de refrescar,
+   así que quedarse así es quedarse atascado del todo hasta forzar el cierre
+   de la app). No es el mismo síntoma que el archivo de 0 KB de más abajo (ahí
+   se descargaba un archivo; aquí no pasa nada, ni error ni descarga).
+
+   skipWaiting() fuerza a un service worker recién instalado a pasar a
+   'activate' YA, aunque la pestaña/PWA que sigue abierta esté controlada por
+   el anterior — es justo la combinación que WebKit tiene documentada como
+   inestable (bugs.webkit.org #261767, "FetchEvent.respondWith received an
+   error: TypeError: Internal error", con página en blanco de resultado): si
+   la navegación de "Volver" dispara a la vez la comprobación de actualización
+   del SW, activate y skipWaiting corren en paralelo con esa navegación, y en
+   ciertas versiones de iOS el resultado es que la petición se queda sin
+   resolver para siempre.
+
+   Sin skipWaiting(), el SW nuevo se queda 'esperando' hasta que no quede
+   ninguna pestaña/PWA controlada por el viejo — o sea, hasta que el usuario
+   cierre la app del todo y la vuelva a abrir. Es el ciclo de vida estándar de
+   un service worker (el que tiene cualquier sitio que no llame a
+   skipWaiting), y aquí no cuesta nada: el JS/CSS de cada página ya va
+   NETWORK-FIRST (ver más abajo), así que la frescura no depende de qué
+   versión del SW esté activa en ese momento — solo cambia CUÁNDO se limpian
+   las cachés viejas y se activa `clients.claim()`, que ahora pasa en el
+   arranque limpio siguiente, no a mitad de una sesión con páginas abiertas. */
+self.addEventListener('install', (e) => {});
 
 /* La página avisa de una imagen que no ha cargado: fuera de la caché,
    para que el siguiente intento vaya a la red y se guarde la buena. */
