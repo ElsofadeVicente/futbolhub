@@ -326,6 +326,9 @@
           <div class="pw-field-label">Liga competitiva</div>
           <div data-slot="liga"><p class="pw-text">Cargando…</p></div>
 
+          <div class="pw-field-label">Palmarés</div>
+          <div data-slot="ranked"><p class="pw-text">Cargando…</p></div>
+
           <button class="pw-secondary" type="button" data-action="estadisticas">Ver estadísticas completas</button>
         `);
 
@@ -337,6 +340,8 @@
         perfilView._token = token;
         if (!session) {
             slot.innerHTML = `<p class="pw-text">Inicia sesión para tener una división en la Liga.</p>`;
+            const rSlot = modal.querySelector('[data-slot="ranked"]');
+            if (rSlot) rSlot.innerHTML = `<p class="pw-text">Inicia sesión para tener palmarés.</p>`;
             return;
         }
         FHAuth.client.rpc('liga_panel', { p_juego: 'el-estadio' }).then(({ data, error }) => {
@@ -359,6 +364,36 @@
             if (perfilView._token !== token || !slot.isConnected) return;
             slot.innerHTML = `<p class="pw-text">No se ha podido cargar tu división.</p>`;
         });
+
+        /* Palmarés de los modos Clasificatoria (ranked 1v1 por ELO,
+           PLAN-coche-ranked.md §7). Una fila por juego con datos reales; hoy
+           solo Coche tiene filas en ranked_rating, así que es lo único que
+           puede salir, pero el bloque ya recorre "juegos" entero para que
+           los que se añadan después aparezcan solos sin tocar esta vista.
+           Igual que arriba: RPC directo contra FHAuth.client, no depende de
+           que js/ranked.js esté cargado (el hub y muchos juegos no lo cargan). */
+        const rankedSlot = modal.querySelector('[data-slot="ranked"]');
+        if (rankedSlot) {
+            FHAuth.client.rpc('ranked_perfil', { p_user: session.user.id }).then(({ data, error }) => {
+                if (perfilView._token !== token || !rankedSlot.isConnected) return;
+                if (error || !data || data.auth === false || !Array.isArray(data.juegos) || !data.juegos.length) {
+                    rankedSlot.innerHTML = `<p class="pw-text">Aún no has jugado ninguna Clasificatoria.</p>`;
+                    return;
+                }
+                const NOMBRE_JUEGO = { coche: 'Coche' };
+                rankedSlot.innerHTML = '<ul class="pw-stats-list">' + data.juegos.map(j => {
+                    const nombreJuego = NOMBRE_JUEGO[j.juego] || j.juego;
+                    const tramoMax = LIGA_TRAMOS[Math.max(0, Math.min(LIGA_TRAMOS.length - 1, Number(j.tramo_max) || 0))];
+                    return `<li class="pw-stats-row">
+                      <span class="pw-stats-name">${esc(nombreJuego)} — récord: ${esc(tramoMax)}</span>
+                      <span class="pw-stats-val">${esc(j.elo)} ELO · ${esc(j.victorias)}V-${esc(j.derrotas)}D</span>
+                    </li>`;
+                }).join('') + '</ul>';
+            }).catch(() => {
+                if (perfilView._token !== token || !rankedSlot.isConnected) return;
+                rankedSlot.innerHTML = `<p class="pw-text">No se ha podido cargar el palmarés.</p>`;
+            });
+        }
     }
 
     /* ── Estadísticas: lo jugado hoy y la racha de cada juego diario ──

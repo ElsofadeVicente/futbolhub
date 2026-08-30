@@ -447,6 +447,14 @@ async function _loadData() {
      (ya construidos) para no recargar datos. */
   try { if (window.FR && FR.setTeammateMaps) FR.setTeammateMaps(_REVERSE_TEAMMATE, _REVERSE_TEAMMATE_IDS); } catch (e) {}
 
+  /* Restrictions.generate() ahora delega en RankedEngine.generate() (Fase 0 de
+     PLAN-coche-ranked.md): el generador necesita esta misma lista y estos
+     mismos mapas inversos, o generaria con la lista de respaldo (38 nombres)
+     en vez de los 227 curados. Sin esto, el hilo principal (sin Worker
+     disponible) generaria una rejilla DISTINTA a la del Worker con la misma
+     semilla. */
+  try { if (window.RankedEngine) RankedEngine.setTeammateData(TEAMMATES_LIST, _REVERSE_TEAMMATE, _REVERSE_TEAMMATE_IDS); } catch (e) {}
+
   /* Máxima transferencia en €  */
   function _maxFee(transfers) {
     if (!transfers || !transfers.length) return 0;
@@ -536,855 +544,26 @@ async function _loadData() {
    ═══════════════════════════════════════════════════════════════ */
 const Restrictions = (() => {
 
-  /* ────────── Helpers RNG ────────── */
-  function _mulberry32(seed) {
-    return function() {
-      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-  function _shuffle(arr, rng) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-  /* Orden aleatorio ponderado sin reemplazo: cada item sale antes cuanto
-     mayor sea su peso. Se usa para elegir FAMILIA de restriccion con peso
-     proporcional a su nº de candidatos, de forma que cada candidato
-     individual (esté en una familia de 2 o de 38) tenga la misma
-     probabilidad de salir en vez de que las familias pequeñas dominen.
-     DEBE ser identica a la de coche/js/restrictions-worker.js para que
-     el seed sea determinista. */
-  function _weightedShuffle(items, weightFn, rng) {
-    const pool = items.map(it => ({ it, w: Math.max(weightFn(it), 1e-6) }));
-    const order = [];
-    while (pool.length) {
-      const total = pool.reduce((s, p) => s + p.w, 0);
-      let r = rng() * total;
-      let idx = pool.length - 1;
-      for (let i = 0; i < pool.length; i++) {
-        r -= pool[i].w;
-        if (r <= 0) { idx = i; break; }
-      }
-      order.push(pool[idx].it);
-      pool.splice(idx, 1);
-    }
-    return order;
-  }
-  /* Memoizada: normalize() se llama con las mismas cadenas (club/liga/
-     nacionalidad/jugador) miles de veces por generate() -- con el pool de
-     generacion ampliado (~1500 jugadores) recalcular NFD+regex en cada
-     llamada era medible. Cache pura, sin efectos secundarios. */
-  const _normCache = new Map();
-  function normalize(str) {
-    if (!str) return '';
-    const key = String(str);
-    const cached = _normCache.get(key);
-    if (cached !== undefined) return cached;
-    const out = key.toLowerCase()
-      .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, ' ').trim();
-    _normCache.set(key, out);
-    return out;
-  }
+  /* normalize() era local a este bloque (borrado en la Fase 0 del plan de
+     ranked junto con generate()/CLUBS_LIST/etc.) pero validate/findPlayer/
+     suggest/Restrictions.normalize la siguen necesitando aqui abajo. Misma
+     logica byte a byte en RankedEngine (extraida de este mismo archivo). */
+  const normalize = RankedEngine.normalize;
 
-  /* ────────── LOGOS ────────── */
-  function _logoUrl(tmName) {
-    return sbStorageUrl('team-logos', tmName.replace(/ /g, '_') + '.png');
-  }
-
-  /* ────────── LISTA 34 CLUBES ────────── */
-  /* tmName = nombre exacto en Transfermarkt (para validar player.teams)  */
-  /* display = nombre corto para mostrar en UI                            */
-  const CLUBS_LIST = [
-    { tmName:'Arsenal FC',           display:'Arsenal',        league:'Premier League' },
-    { tmName:'Manchester City',      display:'Man. City',      league:'Premier League' },
-    { tmName:'Manchester United',    display:'Man. United',    league:'Premier League' },
-    { tmName:'Aston Villa',          display:'Aston Villa',    league:'Premier League' },
-    { tmName:'Liverpool FC',         display:'Liverpool',      league:'Premier League' },
-    { tmName:'Chelsea FC',           display:'Chelsea',        league:'Premier League' },
-    { tmName:'Tottenham Hotspur',    display:'Tottenham',      league:'Premier League' },
-    { tmName:'Paris Saint-Germain',  display:'PSG',            league:'Ligue 1' },
-    { tmName:'AS Monaco',            display:'Monaco',         league:'Ligue 1' },
-    { tmName:'Olympique Lyon',       display:'Lyon',           league:'Ligue 1' },
-    { tmName:'Olympique Marseille',  display:'Marseille',      league:'Ligue 1' },
-    { tmName:'Bayern Munich',        display:'Bayern',         league:'Bundesliga' },
-    { tmName:'Borussia Dortmund',    display:'Dortmund',       league:'Bundesliga' },
-    { tmName:'Juventus FC',          display:'Juventus',       league:'Serie A' },
-    { tmName:'AS Roma',              display:'Roma',           league:'Serie A' },
-    { tmName:'AC Milan',             display:'AC Milan',       league:'Serie A' },
-    { tmName:'Inter Milan',          display:'Inter',          league:'Serie A' },
-    { tmName:'SSC Napoli',           display:'Napoli',         league:'Serie A' },
-    { tmName:'SS Lazio',             display:'Lazio',          league:'Serie A' },
-    { tmName:'Ajax Amsterdam',       display:'Ajax',           league:'Eredivisie' },
-    { tmName:'CA Boca Juniors',      display:'Boca Juniors',   league:'Liga Argentina' },
-    { tmName:'CA River Plate',       display:'River Plate',    league:'Liga Argentina' },
-    { tmName:'SL Benfica',           display:'Benfica',        league:'Primeira Liga' },
-    { tmName:'FC Porto',             display:'Porto',          league:'Primeira Liga' },
-    { tmName:'Sporting CP',          display:'Sporting CP',    league:'Primeira Liga' },
-    { tmName:'PSV Eindhoven',        display:'PSV',            league:'Eredivisie' },
-    { tmName:'FC Barcelona',         display:'Barcelona',      league:'La Liga' },
-    { tmName:'Atlético de Madrid',   display:'Atlético',       league:'La Liga' },
-    { tmName:'Real Madrid',          display:'Real Madrid',    league:'La Liga' },
-    { tmName:'Valencia CF',          display:'Valencia',       league:'La Liga' },
-    { tmName:'Sevilla FC',           display:'Sevilla',        league:'La Liga' },
-    { tmName:'Real Betis Balompié',  display:'Betis',          league:'La Liga' },
-    { tmName:'Villarreal CF',        display:'Villarreal',     league:'La Liga' },
-    { tmName:'Athletic Bilbao',      display:'Athletic',       league:'La Liga' },
-  { tmName:'Real Sociedad',        display:'Real Sociedad',  league:'La Liga' },
-  { tmName:'West Ham United',      display:'West Ham',       league:'Premier League' },
-  { tmName:'Leicester City',       display:'Leicester',      league:'Premier League' },
-  { tmName:'Bayer 04 Leverkusen',  display:'Leverkusen',     league:'Bundesliga' },
-  { tmName:'FC Schalke 04',        display:'Schalke',        league:'Bundesliga' },
-  { tmName:'ACF Fiorentina',       display:'Fiorentina',     league:'Serie A' },
-  { tmName:'Atalanta BC',          display:'Atalanta',       league:'Serie A' },
-  { tmName:'Galatasaray',          display:'Galatasaray',    league:'Süper Lig' },
-  { tmName:'Besiktas JK',          display:'Beşiktaş',       league:'Süper Lig' },
-  { tmName:'Fenerbahçe',           display:'Fenerbahçe',     league:'Süper Lig' },
-  { tmName:'Feyenoord Rotterdam',  display:'Feyenoord',      league:'Eredivisie' },
-  { tmName:'Newcastle United',     display:'Newcastle',      league:'Premier League' },
-  { tmName:'CR Flamengo',          display:'Flamengo',       league:'Brasileirão' },
-  ].map(c => ({ ...c, logoUrl: _logoUrl(c.tmName) }));
-
-  /* ────────── EQUIPOS POR LIGA ────────── */
-  /* Nombres exactos de Transfermarkt para validar player.teams */
-  const LEAGUE_TEAMS = {
-    'La Liga': [
-      'FC Barcelona','Real Madrid','Atlético de Madrid','Valencia CF','Sevilla FC',
-      'Real Betis Balompié','Villarreal CF','Athletic Bilbao','CA Osasuna','Celta de Vigo',
-      'RCD Espanyol Barcelona','RCD Mallorca','Rayo Vallecano','Getafe CF','Girona FC',
-      'Levante UD','Real Sociedad','Deportivo Alavés','Elche CF','Real Oviedo',
-      'Málaga CF','Deportivo de La Coruña','Real Zaragoza','Cádiz CF','UD Almería',
-      'Granada CF','SD Eibar','CD Leganés','SD Huesca','Real Valladolid CF',
-      'UD Las Palmas','Sporting Gijón','CD Castellón','FC Cartagena','SD Ponferradina',
-    ],
-    'Premier League': [
-      'Arsenal FC','Manchester City','Manchester United','Liverpool FC','Chelsea FC',
-      'Tottenham Hotspur','Aston Villa','West Ham United','Everton FC','Leicester City',
-      'Newcastle United','Wolverhampton Wanderers','Brighton & Hove Albion','Crystal Palace',
-      'Fulham FC','Brentford FC','Nottingham Forest','AFC Bournemouth',
-      'Leeds United','Burnley FC',
-      'Blackburn Rovers','Bolton Wanderers','Stoke City','Swansea City','Norwich City',
-      'Sunderland AFC','Middlesbrough FC','Birmingham City','Hull City',
-      'Southampton FC','Ipswich Town','Luton Town','Sheffield United','Derby County',
-    ],
-    'Serie A': [
-      'Juventus FC','AC Milan','Inter Milan','SSC Napoli','AS Roma','SS Lazio',
-      'Atalanta BC','ACF Fiorentina','Torino FC','Udinese Calcio','Bologna FC 1909',
-      'Cagliari Calcio','Genoa CFC','Hellas Verona','US Sassuolo','US Lecce',
-      'US Cremonese','Parma Calcio 1913','Como 1907',
-      'Sampdoria','Empoli FC','Venezia FC','AC Monza','Spezia Calcio',
-      'Benevento Calcio','FC Crotone','Frosinone Calcio',
-    ],
-    'Bundesliga': [
-      'Bayern Munich','Borussia Dortmund','RB Leipzig','Bayer 04 Leverkusen',
-      'Borussia Mönchengladbach','TSG 1899 Hoffenheim','Eintracht Frankfurt','VfL Wolfsburg',
-      'SV Werder Bremen','1.FSV Mainz 05','FC Augsburg','SC Freiburg','1.FC Köln',
-      '1.FC Union Berlin','VfB Stuttgart','1.FC Heidenheim 1846','Hamburger SV',
-      'FC Schalke 04','Hertha BSC','VfL Bochum 1848','1.FC Nürnberg',
-    ],
-    'Ligue 1': [
-      'Paris Saint-Germain','AS Monaco','Olympique Lyon','Olympique Marseille','LOSC Lille',
-      'Stade Rennais FC','OGC Nice','RC Lens','RC Strasbourg Alsace','FC Nantes',
-      'Angers SCO','FC Toulouse','Stade Brestois 29','AJ Auxerre','FC Lorient',
-      'Le Havre AC','FC Metz','Paris FC',
-      'Girondins de Bordeaux','AS Saint-Étienne','Montpellier HSC',
-    ],
-    'Primeira Liga': [
-      'SL Benfica','FC Porto','Sporting CP','SC Braga','Vitória Guimarães SC',
-      'Rio Ave FC','GD Estoril Praia','FC Famalicão','Moreirense FC','Boavista FC',
-      'Gil Vicente FC','CS Marítimo','FC Paços de Ferreira',
-    ],
-    'Eredivisie': [
-      'Ajax Amsterdam','PSV Eindhoven','Feyenoord Rotterdam','AZ Alkmaar','FC Twente Enschede',
-      'Vitesse Arnhem','SC Heerenveen','FC Utrecht','FC Groningen','Sparta Rotterdam',
-      'Willem II Tilburg','NEC Nijmegen','Go Ahead Eagles','Heracles Almelo','PEC Zwolle',
-    ],
-    'Süper Lig': [
-      'Galatasaray','Fenerbahce','Fenerbahçe','Besiktas JK','Trabzonspor','Basaksehir FK',
-      'Bursaspor','Fatih Karagümrük','Kayserispor','Caykur Rizespor','Kasimpasa',
-      'Antalyaspor','Sivasspor','Alanyaspor','Konyaspor','Göztepe','MKE Ankaragücü',
-    ],
-  };
-
-  /* Ligas de 1ª división expuestas como restricción "ha jugado en X".
-     La pertenencia se valida por el cid de competición (performances),
-     no por el nombre del equipo → distingue 1ª de 2ª división. */
-  const LEAGUE_CIDS = {
-    'La Liga':        'ES1',
-    'Premier League': 'GB1',
-    'Serie A':        'IT1',
-    'Bundesliga':     'L1',
-    'Ligue 1':        'FR1',
-    'Eredivisie':     'NL1',
-    'Primeira Liga':  'PO1',
-    'Süper Lig':      'TR1',
-    'Brasileirão':    'BRA1',
-    'Liga Argentina': 'ARG1',
-  };
-
-  /* Logo de liga (bucket league-logos) */
-  const LEAGUE_LOGOS = {
-    'La Liga':        sbStorageUrl('league-logos', 'LaLiga.png'),
-    'Premier League': sbStorageUrl('league-logos', 'PremierLeague.png'),
-    'Serie A':        sbStorageUrl('league-logos', 'SerieA.png'),
-    'Bundesliga':     sbStorageUrl('league-logos', 'Bundesliga.png'),
-    'Ligue 1':        sbStorageUrl('league-logos', 'Ligue1.png'),
-    'Eredivisie':     sbStorageUrl('league-logos', 'Eredivisie.png'),
-    'Primeira Liga':  sbStorageUrl('league-logos', 'PrimeiraLiga.png'),
-    'Süper Lig':      sbStorageUrl('league-logos', 'SuperLig.png'),
-    'Brasileirão':    sbStorageUrl('league-logos', 'Brasileirao.png'),
-    'Liga Argentina': sbStorageUrl('league-logos', 'LigaArgentina.png'),
-  };
-
-  /* ────────── NACIONALIDADES ────────── */
-  /* tmNat = valor en chunk.nat (inglés)   */
-  const NATIONALITIES = [
-    { tmNat:'Spain',       display:'España',    adj:'Español',    flag:'🇪🇸', flagImg:sbStorageUrl('team-flags','es.png') },
-    { tmNat:'England',     display:'Inglaterra', adj:'Inglés',    flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagImg:sbStorageUrl('team-flags','eng.png') },
-    { tmNat:'France',      display:'Francia',   adj:'Francés',   flag:'🇫🇷', flagImg:sbStorageUrl('team-flags','fr.png') },
-    { tmNat:'Argentina',   display:'Argentina', adj:'Argentino', flag:'🇦🇷', flagImg:sbStorageUrl('team-flags','ar.png') },
-    { tmNat:'Germany',     display:'Alemania',  adj:'Alemán',    flag:'🇩🇪', flagImg:sbStorageUrl('team-flags','de.png') },
-    { tmNat:'Brazil',      display:'Brasil',    adj:'Brasileño', flag:'🇧🇷', flagImg:sbStorageUrl('team-flags','br.png') },
-    { tmNat:'Netherlands', display:'Holanda',   adj:'Holandés',  flag:'🇳🇱', flagImg:sbStorageUrl('team-flags','nl.png') },
-    { tmNat:'Italy',       display:'Italia',    adj:'Italiano',   flag:'🇮🇹', flagImg:sbStorageUrl('team-flags','it.png') },
-    { tmNat:'Uruguay',     display:'Uruguay',   adj:'Uruguayo',   flag:'🇺🇾', flagImg:sbStorageUrl('team-flags','uy.png') },
-    { tmNat:'Senegal',     display:'Senegal',   adj:'Senegalés',  flag:'🇸🇳', flagImg:sbStorageUrl('team-flags','sn.png') },
-    { tmNat:'Cameroon',    display:'Camerún',   adj:'Camerunés',  flag:'🇨🇲', flagImg:sbStorageUrl('team-flags','cm.png') },
-    { tmNat:'Morocco',     display:'Marruecos', adj:'Marroquí',   flag:'🇲🇦', flagImg:sbStorageUrl('team-flags','ma.png') },
-    { tmNat:'Japan',       display:'Japón',     adj:'Japonés',    flag:'🇯🇵', flagImg:sbStorageUrl('team-flags','jp.png') },
-    /* Ampliacion 2026-08-19: de 13 a 23 nacionalidades. Todas tienen >=67
-       jugadores en data/players/chunks (el liston lo marcaba Japon con 49) y
-       bandera en el bucket team-flags. Van AL FINAL para no mover el orden de
-       las 13 de siempre. Esta lista esta duplicada en tres sitios
-       (js/futbol-restrictions.js, coche/js/script.js y
-       coche/js/restrictions-worker.js): si divergen, dos jugadores de la misma
-       sala de Coche generan rejillas distintas con la misma semilla. */
-    { tmNat:'Portugal', display:'Portugal', adj:'Portugués', flag:'🇵🇹', flagImg:sbStorageUrl('team-flags','pt.png') },
-    { tmNat:'Belgium', display:'Bélgica', adj:'Belga', flag:'🇧🇪', flagImg:sbStorageUrl('team-flags','be.png') },
-    { tmNat:'Croatia', display:'Croacia', adj:'Croata', flag:'🇭🇷', flagImg:sbStorageUrl('team-flags','hr.png') },
-    { tmNat:'Serbia', display:'Serbia', adj:'Serbio', flag:'🇷🇸', flagImg:sbStorageUrl('team-flags','rs.png') },
-    { tmNat:'Denmark', display:'Dinamarca', adj:'Danés', flag:'🇩🇰', flagImg:sbStorageUrl('team-flags','dk.png') },
-    { tmNat:'Colombia', display:'Colombia', adj:'Colombiano', flag:'🇨🇴', flagImg:sbStorageUrl('team-flags','co.png') },
-    { tmNat:'Mexico', display:'México', adj:'Mexicano', flag:'🇲🇽', flagImg:sbStorageUrl('team-flags','mx.png') },
-    { tmNat:'United States', display:'Estados Unidos', adj:'Estadounidense', flag:'🇺🇸', flagImg:sbStorageUrl('team-flags','us.png') },
-    { tmNat:'Nigeria', display:'Nigeria', adj:'Nigeriano', flag:'🇳🇬', flagImg:sbStorageUrl('team-flags','ng.png') },
-    { tmNat:'Ivory Coast', display:'Costa de Marfil', adj:'Marfileño', flag:'🇨🇮', flagImg:sbStorageUrl('team-flags','ci.png') },
-  ];
-
-  /* Icono de silueta por continente (bucket league-logos, reutilizado) */
-  const CONTINENT_LOGOS = {
-    europeo:    sbStorageUrl('league-logos', 'Europe.png'),
-    americano:  sbStorageUrl('league-logos', 'Americas.png'),
-    africano:   sbStorageUrl('league-logos', 'Africa.png'),
-    asiatico:   sbStorageUrl('league-logos', 'Asia.png'),
-  };
-
-  /* ────────── CONTINENTES ────────── */
-  const CONTINENT_NAT = {
-    europeo:    ['Spain','England','France','Germany','Netherlands','Portugal','Italy',
-                 'Belgium','Croatia','Serbia','Denmark','Sweden','Norway','Poland',
-                 'Czech Republic','Czech','Switzerland','Austria','Turkey','Türkiye','Turkiye','Czechia','Republic of Ireland','Israel','Belarus','Greece','Hungary',
-                 'Slovakia','Romania','Ukraine','Russia','Scotland','Wales','Northern Ireland',
-                 'Finland','Albania','Slovenia','Bosnia-Herzegovina','Montenegro','Iceland',
-                 'Ireland','Georgia','Kosovo','North Macedonia','North','Bulgaria','Cyprus','Latvia',
-                 'Lithuania','Estonia','Azerbaijan','Armenia','Luxembourg','Gibraltar',
-                 'Faroe','Faroe Islands'],
-    americano:  ['Argentina','Brazil','Colombia','Uruguay','Chile','Mexico','Paraguay',
-                 'Bolivia','Peru','Venezuela','Ecuador','United States','Jamaica',
-                 'Trinidad and Tobago','Curaçao','Suriname','Guadeloupe','Martinique','Montserrat','Puerto Rico','Honduras','Costa Rica','Costa','Panama','Guatemala',
-                 'El Salvador','Cuba','Dominican Republic','Canada','Haiti'],
-    africano:   ['Senegal','Nigeria','Ghana','Ivory Coast',"Côte d'Ivoire",'Cote','Cameroon',
-                 'Morocco','Egypt','Algeria','Tunisia','South Africa','South','Mali','Guinea',
-                 'Burkina Faso','DR Congo','DR','Congo','Democratic Republic of the Congo','Republic of the Congo','Togo','Gabon',
-                 'Equatorial Guinea','Equatorial','Zimbabwe','Kenya','Cape Verde','Cape','Sierra Leone',
-                 'Liberia','Gambia','The','Guinea-Bissau','The Gambia','Rwanda','Ethiopia','Tanzania',
-                 'Zambia','Uganda','Angola','Mauritius','Mozambique','Madagascar',
-                 'Benin','Niger','Chad','Sudan','South Sudan','Somalia','Eritrea',
-                 'Djibouti','Comoros','Lesotho','Botswana','Namibia','Malawi',
-                 'Eswatini','Libya','Mauritania','Central African Republic'],
-    asiatico:   ['Japan','South Korea','Iran','Saudi Arabia','Saudi','Qatar','UAE','Australia',
-                 'China','Iraq','Jordan','Bahrain','Kuwait','Uzbekistan','Vietnam',
-                 'Thailand','Indonesia','Philippines','India','Pakistan','Bangladesh',
-                 'North Korea','Hong Kong','Malaysia','Oman','Lebanon','Palestine','Syria',
-                 'New','New Zealand'],
-  };
-
-  /* ────────── TROFEOS DEFINIDOS ────────── */
-  /* Estos deben coincidir EXACTAMENTE con las claves de los JSON         */
-  const TROPHIES = {
-    individual: [
-      { key:'Pichichi La Liga',          display:'Pichichi',            icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','pichichi.png') },
-      { key:'Bota de Oro Premier League',display:'Bota de Oro Premier', icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','bota_oro_premier.png') },
-      { key:'Capocannoniere Serie A',    display:'Capocannoniere',      icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','capocannoniere.png') },
-      { key:'Maximo Goleador Bundesliga',display:'Goleador Bundesliga', icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','goleador_bundesliga.png') },
-      { key:'Maximo Goleador Ligue 1',   display:'Goleador Ligue 1',    icon:'⚽', imgUrl:sbStorageUrl('trophy-icons','goleador_ligue1.png') },
-      { key:'Balon de Oro',              display:'Balón de Oro',        icon:'🏅', imgUrl:sbStorageUrl('trophy-icons','balon_oro.png') },
-      { key:'Bota de Oro Mundial',       display:'Bota de Oro Mundial', icon:'🏅', imgUrl:sbStorageUrl('trophy-icons','bota_oro_mundial.png') },
-      { key:'Bota de Oro Europea',       display:'Bota de Oro Europea', icon:'🏅', imgUrl:sbStorageUrl('trophy-icons','bota_oro_europea.png') },
-    ],
-    domestic: [
-      { key:'Liga España',    display:'Ganador Liga Española', icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_espana.png') },
-      { key:'Liga Inglaterra',display:'Ganador Premier League',icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_inglaterra.png') },
-      { key:'Liga Italia',    display:'Ganador Serie A',       icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_italia.png') },
-      { key:'Liga Francia',   display:'Ganador Ligue 1',       icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_francia.png') },
-      { key:'Liga Alemania',  display:'Ganador Bundesliga',    icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','liga_alemania.png') },
-      { key:'Copa España',    display:'Copa del Rey',          icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_espana.png') },
-      { key:'Copa Inglaterra',display:'FA Cup',                icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_inglaterra.png') },
-      { key:'Copa Italia',    display:'Coppa Italia',          icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_italia.png') },
-      { key:'Copa Francia',   display:'Coupe de France',       icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_francia.png') },
-      { key:'Copa Alemania',  display:'DFB-Pokal',             icon:'🏆', imgUrl:sbStorageUrl('trophy-icons','copa_alemania.png') },
-    ],
-    international_club: [
-      { key:'Champions League',    display:'Champions League',    icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','champions.png') },
-      { key:'Europa League',       display:'Europa League',       icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','europa_league.png') },
-      { key:'Copa Libertadores',   display:'Copa Libertadores',   icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','copa_libertadores.png') },
-      { key:'Conference League',   display:'Conference League',   icon:'⭐', imgUrl:sbStorageUrl('trophy-icons','conference_league.png') },
-    ],
-    national: [
-      { key:'Eurocopa',    display:'Eurocopa',   icon:'🌍', imgUrl:sbStorageUrl('trophy-icons','eurocopa.png') },
-      { key:'Mundial',     display:'Mundial',    icon:'🌍', imgUrl:sbStorageUrl('trophy-icons','mundial.png') },
-      { key:'Copa America',display:'Copa América',icon:'🌍', imgUrl:sbStorageUrl('trophy-icons','copa_america.png') },
-    ],
-  };
-
-  /* ────────── ENTRENADORES ────────── */
-  const COACHES_LIST = [
-    { name:'Hansi Flick',       id:'67',   icon:'🎽' },
-    { name:'Jürgen Klopp',      id:'118',  icon:'🎽' },
-    { name:'Arsène Wenger',     id:'280',  icon:'🎽' },
-    { name:'Carlo Ancelotti',   id:'523',  icon:'🎽' },
-    { name:'José Mourinho',     id:'781',  icon:'🎽' },
-    { name:'Rafael Benítez',    id:'1522', icon:'🎽' },
-    { name:'Diego Simeone',     id:'2868', icon:'🎽' },
-    { name:'Antonio Conte',     id:'3517', icon:'🎽' },
-    { name:'Unai Emery',        id:'5075', icon:'🎽' },
-    { name:'Pep Guardiola',     id:'5672', icon:'🎽' },
-    { name:'Luis Enrique',      id:'6499', icon:'🎽' },
-    { name:'Zinédine Zidane',   id:'21284',icon:'🎽' },
-    /* Entrenador nuevo: hay que dejar su foto en coche/data/coaches/<id>.png y
-       subirla con admin/upload_images_to_storage.py coach-photos. Si por lo que
-       sea todavia no la tiene, marcalo `photo:false` y saldra con imgUrl null:
-       aqui se pinta el emoji y Tres en Raya y Bingo, que filtran por imgUrl, no
-       lo ofrecen — mejor eso que una imagen rota en una casilla de 70px. */
-    { name:'Thomas Tuchel',       id:'7471', icon:'🎽' },
-    { name:'Mauricio Pochettino', id:'9044', icon:'🎽' },
-  ];
-
-  /* ────────── COMPAÑEROS ────────── */
-  /* IDs de jugadores "famosos" para generar restricción compañero-de     */
-  /* TEAMMATES_LIST vive ahora en el ambito del modulo (arriba del todo) y
-     la construye _loadData desde companeros_principal.json. Estaba aqui
-     escrita a mano con 38 nombres fijos. */
-
-  /* ────────── Contar jugadores válidos (con early-exit) ────────── */
-  function _matching(restriction, db, minNeeded) {
-    const min = minNeeded || 2;
-    let count = 0;
-    for (let i = 0; i < db.length; i++) {
-      if (validate(db[i], restriction)) {
-        count++;
-        if (count >= min) return count;   /* early exit — no necesitamos contar más */
-      }
-    }
-    return count;
-  }
-
-  /* ────────── Construye el pool completo de candidatos mezclados con rng ────────── */
-  function _buildCandidates(rng) {
-    const candidates = [];
-
-    /* Nacionalidades */
-    for (const nat of _shuffle(NATIONALITIES, rng)) {
-      candidates.push({
-        type:'nationality', value:nat.tmNat, label:nat.adj,
-        imgUrl: nat.flagImg, icon: nat.flag, family:'nationality',
-      });
-    }
-
-    /* Ligas (validación por cid de performances; teams = fallback sin perf) */
-    for (const [liga, cid] of Object.entries(LEAGUE_CIDS)) {
-      candidates.push({
-        type:'league', value:liga, cid, teams: LEAGUE_TEAMS[liga] || [],
-        label:`Ha jugado en ${liga}`,
-        imgUrl: LEAGUE_LOGOS[liga] || null, icon:'⚽', family:'league',
-      });
-    }
-
-    /* Trofeos individuales */
-    for (const t of _shuffle(TROPHIES.individual, rng)) {
-      candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_individual' });
-    }
-
-    /* Trofeos domésticos */
-    for (const t of _shuffle(TROPHIES.domestic, rng)) {
-      candidates.push({ type:'trophy', value:t.key, label:t.display, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_domestic' });
-    }
-
-    /* Trofeos internacionales con clubes */
-    for (const t of _shuffle(TROPHIES.international_club, rng)) {
-      candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_intl' });
-    }
-
-    /* Trofeos con selección */
-    for (const t of _shuffle(TROPHIES.national, rng)) {
-      candidates.push({ type:'trophy', value:t.key, label:`Ganador ${t.display}`, imgUrl:t.imgUrl, icon:t.icon, family:'trophy_national' });
-    }
-
-    /* Entrenadores */
-    for (const c of _shuffle(COACHES_LIST, rng)) {
-      candidates.push({ type:'coach', value:c.name, label:`Entrenado por ${c.name}`, imgUrl:c.photo === false ? null : sbStorageUrl('coach-photos', `${c.id}.png`), icon:c.icon, family:'coach' });
-    }
-
-    /* Compañeros de */
-    /* Indice id→jugador: con 227 compañeros, un PLAYERS_DB.find() por cabeza
-       es un recorrido completo por cada uno. */
-    const _playersById = new Map();
-    for (const x of PLAYERS_DB) _playersById.set(x.id, x);
-    for (const p of _shuffle(TEAMMATES_LIST, rng)) {
-      /* La foto viene de la BD de jugadores (Supabase), no de un archivo local:
-         nunca hubo fotos propias en coche/data/players/photos. */
-      const dbPlayer = _playersById.get(p.id);
-      candidates.push({ type:'teammate', value:p.name, label:`Compañero de ${p.display || p.name}`, imgUrl:(dbPlayer && dbPlayer.img) || null, icon:p.icon, family:'teammate' });
-    }
-
-    /* Continent */
-    for (const [cont, label] of [['europeo','Europeo'],['americano','Continente Americano'],['africano','Africano'],['asiatico','Asiático']]) {
-      candidates.push({ type:'continent', value:cont, label, imgUrl:CONTINENT_LOGOS[cont], icon:'🌍', family:'continent' });
-    }
-
-    /* Nacido en década */
-    for (const [dec, label] of [['1970s','Nacido en los 70'],['1980s','Nacido en los 80'],['1990s','Nacido en los 90'],['2000s','Nacido en los 2000']]) {
-      candidates.push({ type:'birthDecade', value:dec, label, imgUrl:null, icon:'🎂', family:'birth' });
-    }
-
-    /* Altura — umbrales sacados de los percentiles reales del pool (p25 177,
-       p50 182, p75 186), no a ojo: "180 cm o más" lo cumplia el 59%. */
-    candidates.push({ type:'height_le', value:176, label:'Mide 176 cm o menos',  imgUrl:null, icon:'📏', family:'height' });
-    candidates.push({ type:'height_ge', value:185, label:'Mide 185 cm o más',    imgUrl:null, icon:'📏', family:'height' });
-    candidates.push({ type:'height_ge', value:190, label:'Mide 190 cm o más',    imgUrl:null, icon:'📏', family:'height' });
-
-    /* Pie — solo Zurdo. "Diestro" lo cumplia el 71% del pool (los ambidiestros
-       valen para las dos), asi que era un hueco regalado, y encima salia mucho
-       porque _ensureSolution premia lo que nunca bloquea la solucion. */
-    candidates.push({ type:'foot', value:'left',  label:'Zurdo',       imgUrl:null, icon:'🦶', family:'foot' });
-
-    /* Posición portero */
-    candidates.push({ type:'position_gk',  label:'Portero', imgUrl:null, icon:'🧤', family:'position' });
-    candidates.push({ type:'position_def', label:'Defensa', imgUrl:null, icon:'🛡️', family:'position' });
-
-    /* Internacionalidades */
-    candidates.push({ type:'caps_ge', value:50,  label:'50 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
-    candidates.push({ type:'caps_0',              label:'Sin internacionalidades',        imgUrl:null, icon:'🌍', family:'caps' });
-    /* Los umbrales se miden contra la BASE ENTERA (8.245), que es contra lo que
-       valida el juego cuando escribes un nombre, no contra el pool de generacion.
-       Ahi cualquier "menos de X" es un regalo: "50 o menos internacionalidades"
-       lo cumplia el 83% y "Internacional (>=1 partido)" el 99%. Fuera los dos;
-       quedan solo los cortes por arriba, que si dicen algo (>=50 el 17% de la
-       base, >=75 el 8%, >=100 el 4%). */
-    candidates.push({ type:'caps_ge', value:75,  label:'75 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
-    candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
-
-    /* Clubes — la mediana del pool son 6, asi que "3 o mas" pasaba el 92%. */
-    candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
-
-    /* Valor de traspaso — mediana 10,5M y p90 42M. Con el corte en 70M,
-       "menos de 70M" lo cumplia el 96% y "mas de 70M" solo el 3%. */
-    candidates.push({ type:'fee_gt', value:40000000, label:'Traspaso de más de 40M €',  imgUrl:null, icon:'💰', family:'fee' });
-    candidates.push({ type:'fee_gt', value:20000000, label:'Traspaso de más de 20M €',  imgUrl:null, icon:'💰', family:'fee' });
-
-    /* Goles en Champions League (precomputado desde performances) */
-    candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
-    candidates.push({ type:'champions_goals_ge', value:20, label:'20+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
-    candidates.push({ type:'champions_goals_ge', value:30, label:'30+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
-
-    /* Goles en una sola temporada de liga (mejor temporada en 1ª división) */
-    candidates.push({ type:'season_goals_ge', value:10, label:'10+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
-    candidates.push({ type:'season_goals_ge', value:20, label:'20+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
-    candidates.push({ type:'season_goals_ge', value:30, label:'30+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
-
-    /* Goles con su selección absoluta */
-    candidates.push({ type:'natGoals_ge', value:20, label:'20+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
-    candidates.push({ type:'natGoals_ge', value:30, label:'30+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
-    candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
-
-    /* MLS/Liga MX: como las ligas normales, validado por cid de performances (no por nombre de equipo) */
-    candidates.push({
-      type:'league_any', value:['MLS1','MEX1'],
-      label:'Ha jugado en MLS/Liga MX', imgUrl:sbStorageUrl('league-logos','UsaMexico.png'), icon:'⚽', family:'league_general',
-    });
-
-    /* Oriente Medio: Arabia Saudí, EAU, Qatar e Irán, validado por cid (no por nombre de club) */
-    candidates.push({
-      type:'league_any', value:['SA1','UAE1','QSL','IR1'],
-      label:'Ha jugado en Oriente Medio', imgUrl:sbStorageUrl('league-logos','OrienteMedio.png'), icon:'⚽', family:'league_general',
-    });
-
-    /* Ganador liga/copa doméstica (general) */
-    candidates.push({
-      type:'trophy_any', value:['Liga España','Liga Inglaterra','Liga Italia','Liga Francia','Liga Alemania'],
-      label:'Ganador Liga Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general',
-    });
-    candidates.push({
-      type:'trophy_any', value:['Copa España','Copa Inglaterra','Copa Italia','Copa Francia','Copa Alemania'],
-      label:'Ganador Copa Doméstica', imgUrl:null, icon:'🏆', family:'trophy_general',
-    });
-    candidates.push({
-      type:'trophy_any', value:['Eurocopa','Mundial','Copa America'],
-      label:'Ganador con Selección', imgUrl:null, icon:'🌍', family:'trophy_general',
-    });
-    candidates.push({
-      type:'trophy_any', value:['Champions League','Europa League','Copa Libertadores'],
-      label:'Ganador título continental (clubes)', imgUrl:null, icon:'⭐', family:'trophy_general',
-    });
-
-    return candidates;
-  }
-
-  const _ONECLUB_PROB = 0.02;   // muy poco frecuente: ~1 de cada 50 rondas
-
-  /* ────────── Generar restricciones ────────── */
+  /* ────────── Generar restricciones (delegado en el motor compartido) ──────────
+     PLAN-coche-ranked.md, Fase 0 (2026-08-29): esto era una copia completa de
+     coche/js/restrictions-worker.js -- constantes CLUBS_LIST, NATIONALITIES,
+     LEAGUE_TEAMS/CIDS/LOGOS, TROPHIES, COACHES_LIST + generate()/_buildCandidates/_matching/
+     _isRedundant/_familyUsed/_removeRedundancies/_ensureSolution -- con el
+     riesgo de divergencia del que ya avisaba el comentario del "new Worker"
+     de mas abajo (el "?v="). _isRedundant()/validate() ya delegaban en FR desde
+     2026-08-03; ahora generate() delega en js/ranked-engine.js, que ES ese
+     mismo codigo extraido a un modulo cargable en navegador, Worker y Node
+     (lo usa tambien coche/js/restrictions-worker.js y el arbitro de
+     Clasificatoria, api/ranked.js). Verificado: 300 semillas reales contra
+     FR.genPool, 0 discrepancias frente al generador viejo. */
   function generate(seed, db) {
-    const rng = _mulberry32(seed);
-
-    /* ══ PASO 1: Elegir restricciones de club ══ */
-    const shuffledClubs = _shuffle(CLUBS_LIST, rng);
-
-    /* ── B: Pre-filtrar pares de clubs por intersección mínima ──
-       Tope en 3 (antes 4): con 4, Athletic Bilbao y Feyenoord solo tenían UN
-       compañero de reparto posible (Barcelona y Liverpool) — el resto de la
-       BD real no llega a esa intersección. En 3 pasan a 2 y 7 opciones. */
-    const MIN_PAIR = Math.min(3, Math.max(2, Math.floor(db.length / 100)));
-    const clubRestrictions = [];
-
-    /* Club 1 */
-    let club1 = null;
-    for (const club of shuffledClubs) {
-      const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-      if (_matching(r, db, 1) >= 1) { club1 = { r, meta: club }; break; }
-    }
-    if (!club1) {
-      club1 = { r:{ type:'club', value:shuffledClubs[0].tmName, label:`Ha jugado en ${shuffledClubs[0].display}`, imgUrl:shuffledClubs[0].logoUrl, icon:'🏟️', family:'club' }, meta:shuffledClubs[0] };
-    }
-    clubRestrictions.push(club1.r);
-
-    /* ── One Club Man (~2%): sustituye el slot de "club 2" por "toda su
-       carrera en un solo club", igual que la liga lo hace con 15%. Nunca
-       cambia el total de restricciones (siguen siendo 5 siempre) — solo
-       aplica si el club1 elegido tiene ≥2 one-club-men reales en la BD. */
-    if (rng() < _ONECLUB_PROB) {
-      let ocmCount = 0;
-      for (const p of db) {
-        const t = p.teams || [];
-        if (t.length === 1 && normalize(t[0]) === normalize(club1.meta.tmName)) {
-          if (++ocmCount >= 2) break;
-        }
-      }
-      if (ocmCount >= 2) {
-        clubRestrictions.push({ type:'one_club', label:'One Club Man (un solo club)', imgUrl:null, icon:'🏰', family:'clubs_count' });
-      }
-    }
-
-    /* ── C: ~15% → sustituir club2 por una liga distinta a la del club1
-       (solo si el slot 2 no lo ocupó ya One Club Man) ── */
-    const useLeagueAsSecond = clubRestrictions.length < 2 && rng() < 0.15;
-
-    if (useLeagueAsSecond) {
-      const club1League = club1.meta.league;
-      const otherLeagues = Object.entries(LEAGUE_CIDS).filter(([lg]) => lg !== club1League);
-      if (otherLeagues.length > 0) {
-        const shuffledLeagues = _shuffle(otherLeagues, rng);
-        for (const [liga, cid] of shuffledLeagues) {
-          const lr = { type:'league', value:liga, cid, teams:LEAGUE_TEAMS[liga]||[], label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
-          if (db.some(p => validate(p, club1.r) && validate(p, lr))) {
-            clubRestrictions.push(lr); break;
-          }
-        }
-      }
-    }
-
-    /* Club 2 (si no se usó liga) — B: intersección ≥ MIN_PAIR */
-    if (clubRestrictions.length < 2) {
-      for (const club of shuffledClubs) {
-        if (club.tmName === club1.meta.tmName) continue;
-        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-        let pairCount = 0;
-        for (const p of db) {
-          if (validate(p, club1.r) && validate(p, r)) {
-            pairCount++;
-            if (pairCount >= MIN_PAIR) break;
-          }
-        }
-        if (pairCount >= MIN_PAIR) { clubRestrictions.push(r); break; }
-      }
-    }
-    /* Fallback: relajar a ≥ 1 */
-    if (clubRestrictions.length < 2) {
-      for (const club of shuffledClubs) {
-        if (club.tmName === club1.meta.tmName) continue;
-        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-        if (db.some(p => validate(p, club1.r) && validate(p, r))) {
-          clubRestrictions.push(r); break;
-        }
-      }
-    }
-    if (clubRestrictions.length < 2) {
-      for (const club of CLUBS_LIST) {
-        if (club.tmName !== club1.meta.tmName) {
-          clubRestrictions.push({ type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' });
-          break;
-        }
-      }
-    }
-
-    /* ══ PASO 2: Pool de candidatos ══ */
-    const candidates = _buildCandidates(rng);
-
-    /* ══ PASO 3: Filtrar jugables (mín 1 para compañeros, mín 2 para el resto) ══
-       Los compañeros se resuelven con el mapa inverso (O(1) por id) en vez de
-       recorrer el pool entero por cada uno: con 227 en la lista ese filtro era
-       el grueso del coste de generate(). */
-    const dbIds = new Set(db.map(p => p.id));
-    const playable = candidates.filter(r => {
-      if (r.type === 'teammate') {
-        const s = _REVERSE_TEAMMATE_IDS[normalize(r.value)];
-        if (s) { for (const id of s) if (dbIds.has(id)) return true; }
-        return _matching(r, db, 1) >= 1;
-      }
-      return _matching(r, db) >= 2;
-    });
-
-    /* ══ PASO 4: D — Selección ponderada por familia ══
-       Elegir primero una FAMILIA al azar (probabilidad uniforme),
-       luego un candidato de esa familia. */
-    const familyGroups = {};
-    for (const r of playable) {
-      const fam = r.family || r.type;
-      if (!familyGroups[fam]) familyGroups[fam] = [];
-      familyGroups[fam].push(r);
-    }
-    /* No repetir la familia del slot 2 si fue liga o One Club Man */
-    const usedFamilies = new Set();
-    if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'league') {
-      usedFamilies.add('league');
-    } else if (clubRestrictions.length === 2 && clubRestrictions[1].type === 'one_club') {
-      usedFamilies.add('clubs_count');
-    }
-
-    const familyNames = _weightedShuffle(
-      Object.keys(familyGroups).filter(f => {
-        if (!usedFamilies.has(f)) {
-          if (f === 'position') return rng() < 0.50;
-          return true;
-        }
-        return false;
-      }),
-      f => familyGroups[f].length,
-      rng
-    );
-    const chosen = [];
-    for (const fam of familyNames) {
-      if (chosen.length >= 3) break;
-      const group = _shuffle(familyGroups[fam], rng);
-      if (group[0]) { chosen.push(group[0]); usedFamilies.add(fam); }
-    }
-    if (chosen.length < 3) {
-      const remaining = _shuffle(playable.filter(r => !chosen.includes(r)), rng);
-      for (const r of remaining) {
-        if (chosen.length >= 3) break;
-        chosen.push(r);
-      }
-    }
-
-    let result = [...clubRestrictions, ...chosen.slice(0, 3)];
-
-    /* ══ PASO 5: Eliminar redundancias (siempre sustituyendo, nunca eliminando) ══ */
-    const shuffled = _shuffle(playable, rng);
-    result = _removeRedundancies(result, shuffled, db);
-
-    /* ══ PASO 6: Garantizar que ≥2 jugadores cumplen las 5 a la vez ══
-       Se busca solucion SIEMPRE. El 75% de antes dejaba 1 de cada 4 rondas sin
-       ningun jugador valido a proposito, por darle caos; con las restricciones
-       mas finas de ahora eso se juntaba con lo dificil que ya era acertar y
-       salian 20% de rondas donde el techo era 3. El caos que queda es de sobra:
-       aun pidiendo dos soluciones, el 2% de las rondas no llega a 5. */
-    result = _ensureSolution(result, shuffled, db);
-
-    return result;
-  }
-
-  /* ────────── Detecta si rA hace redundante/imposible a rB ────────── */
-  function _isRedundant(rA, rB) {
-    /* Dedup: lógica delegada en el motor compartido FR (idéntica, verificada). */
-    return FR.isRedundant(rA, rB);
-  }
-
-  /* Evita duplicar familia (p.ej. dos restricciones de liga) al sustituir
-     una restriccion por otra del pool. excludeIdx es la posicion que se
-     va a reemplazar (no cuenta contra si misma). DEBE ser identica a la
-     de coche/js/restrictions-worker.js para que el seed sea determinista. */
-  function _familyUsed(list, candidate, excludeIdx) {
-    const fam = candidate.family || candidate.type;
-    return list.some((r, i) => i !== excludeIdx && (r.family || r.type) === fam);
-  }
-
-  /* ────────── Sustituye restricciones redundantes por otras del pool ────────── */
-  function _removeRedundancies(restrictions, shuffledPool, db) {
-    let result = [...restrictions];
-    let changed = true;
-    while (changed) {
-      changed = false;
-      outer: for (let i = 0; i < result.length; i++) {
-        for (let j = 0; j < result.length; j++) {
-          if (i === j) continue;
-          if (_isRedundant(result[i], result[j])) {
-            /* result[j] es redundante respecto a result[i] — buscar sustituto */
-            const usedFamilies = new Set(
-              result.filter((_, k) => k !== j).map(r => r.family || r.type)
-            );
-            const replacement = shuffledPool.find(r =>
-              !result.includes(r) &&
-              !usedFamilies.has(r.family || r.type) &&
-              /* el sustituto no debe ser redundante con ninguna restricción que quede */
-              !result.some((existing, k) => k !== j && (_isRedundant(existing, r) || _isRedundant(r, existing))) &&
-              _matching(r, db) >= 2
-            );
-            if (replacement) {
-              result[j] = replacement;
-              changed = true;
-              break outer;
-            }
-            /* Si no hay sustituto disponible sin solapar familias, intentar
-               cualquier candidato aunque repita familia (menos malo que dejar redundancia) */
-            const relaxed = shuffledPool.find(r =>
-              !result.includes(r) &&
-              !result.some((existing, k) => k !== j && (_isRedundant(existing, r) || _isRedundant(r, existing))) &&
-              _matching(r, db) >= 2
-            );
-            if (relaxed) {
-              result[j] = relaxed;
-              changed = true;
-              break outer;
-            }
-            /* Sin candidatos en absoluto: dejar como está y salir del bucle
-               (no se elimina — se mantienen las 5) */
-            break outer;
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  /* ────────── Garantiza que ≥1 jugador cumple todas las restricciones ────────── */
-  function _ensureSolution(restrictions, shuffledPool, db) {
-    /* Pre-filtrar DB a jugadores que cumplen los clubs fijos (índices 0-1).
-       Esto reduce db de ~8000 a ~50-200, acelerando hasSolution 40-100x. */
-    const clubRestrictions = restrictions.filter(r => r.type === 'club');
-    const filteredDB = clubRestrictions.length > 0
-      ? db.filter(p => clubRestrictions.every(cr => validate(p, cr)))
-      : db;
-
-    /* No basta con que EXISTA una solucion: hay que poder encontrarla. Pidiendo
-       una sola, la ronda se resolvia con el unico futbolista de 8.245 que
-       encajaba, o sea que hacer 5/5 era loteria. Pidiendo DOS, los que cumplen
-       las cinco pasan de 0,8 a 2,3 por ronda y los que cumplen cuatro de 7,0 a
-       14,4. Medido: con 3 EMPEORA (77% de rondas con un 5/5 posible frente al
-       98% de 2), porque al generador le cuesta tanto dar con la combinacion que
-       se rinde y deja algo peor; con 5 se hunde al 23%. Dos es el punto dulce.
-       DEBE ser identico al de coche/js/restrictions-worker.js. */
-    const MIN_SOLUCIONES = 2;
-    const hasSolution = (rs) => {
-      /* Solo comprobar las restricciones no-club contra la DB pre-filtrada */
-      const nonClub = rs.filter(r => r.type !== 'club');
-      let n = 0;
-      for (const p of filteredDB) {
-        if (nonClub.every(r => validate(p, r))) { if (++n >= MIN_SOLUCIONES) return true; }
-      }
-      return false;
-    };
-    if (hasSolution(restrictions)) return restrictions;
-
-    const result = [...restrictions];
-    /* Los indices 0 y 1 son el ancla club1 + (club2/liga/one-club-man)
-       decidida en generate() comprobando interseccion real de jugadores.
-       Nunca deben sustituirse aqui: cambiarlos por un candidato generico
-       de la pool convierte el rompecabezas en trivial (1 solo club real
-       + restricciones sueltas sin relacion entre si). Solo los 3 huecos
-       libres (2-4) son sustituibles para buscar solucion. */
-    const swappableIdx = result.map((_, i) => i).filter(i => i >= 2);
-
-    for (const idx of swappableIdx) {
-      const original = result[idx];
-      for (const candidate of shuffledPool) {
-        if (result.includes(candidate)) continue;
-        if (_familyUsed(result, candidate, idx)) continue;
-        /* Evitar redundancias también con el candidato nuevo */
-        const wouldBeRedundant = result.some((r, i) =>
-          i !== idx && (_isRedundant(r, candidate) || _isRedundant(candidate, r))
-        );
-        if (wouldBeRedundant) continue;
-        result[idx] = candidate;
-        if (hasSolution(result)) return result;
-      }
-      /* Ningún candidato funcionó en esta posición — restaurar */
-      result[idx] = original;
-    }
-
-    /* ── Nuclear fallback: conservar SIEMPRE el ancla (índices 0-1) y
-       reconstruir desde cero los 3 huecos libres ── */
-    const anchors = result.slice(0, 2);
-    const nonClubPool = shuffledPool.filter(r => r.type !== 'club');
-    const nuclear = [...anchors];
-    /* Sembrar con las familias del ancla (p.ej. si el slot 1 es una liga,
-       no debe poder colarse otra liga mas abajo). */
-    const usedFamilies = {};
-    for (const a of anchors) {
-      const fam = a.family || a.type;
-      usedFamilies[fam] = (usedFamilies[fam] || 0) + 1;
-    }
-    for (const candidate of nonClubPool) {
-      if (nuclear.length >= 5) break;
-      const fam = candidate.family || candidate.type;
-      if ((usedFamilies[fam] || 0) >= 1) continue;
-      if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
-      nuclear.push(candidate);
-      if (hasSolution(nuclear)) {
-        usedFamilies[fam] = (usedFamilies[fam] || 0) + 1;
-      } else {
-        nuclear.pop();
-      }
-    }
-    /* Rellenar hasta 5 si quedaron pocas */
-    for (const candidate of nonClubPool) {
-      if (nuclear.length >= 5) break;
-      if (nuclear.includes(candidate)) continue;
-      if (_familyUsed(nuclear, candidate, -1)) continue;
-      if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
-      nuclear.push(candidate);
-      if (!hasSolution(nuclear)) nuclear.pop();
-    }
-    if (hasSolution(nuclear) && nuclear.length === 5) return nuclear;
-
-    /* Si la reconstruccion no llega a 5 CON solucion, se completa hasta 5 sin
-       exigirla. Antes se devolvia la lista corta tal cual y salian rondas de 4
-       restricciones — o de 2 — en el 4,5% de los casos. Una ronda sin solucion
-       garantizada es aceptable; una que no tiene 5 restricciones no lo es,
-       porque el juego entero se lee sobre esas cinco. */
-    for (const candidate of nonClubPool) {
-      if (nuclear.length >= 5) break;
-      if (nuclear.includes(candidate)) continue;
-      if (_familyUsed(nuclear, candidate, -1)) continue;
-      if (nuclear.some(r => _isRedundant(r, candidate) || _isRedundant(candidate, r))) continue;
-      nuclear.push(candidate);
-    }
-    return nuclear.length === 5 ? nuclear : result;
+    return RankedEngine.generate(seed, db);
   }
 
   /* ────────── Validar un jugador contra una restricción ────────── */
@@ -1523,13 +702,19 @@ const Sync = (() => {
     return {code, playerId:hostId};
   }
 
-  async function joinRoom(code, playerName, avatar) {
+  async function joinRoom(code, playerName, avatar, allowRanked) {
     const {get,update}=FB();
     const snap = await get(_ref(`${ROOMS_PATH}/${code}`));
     if (!snap.exists()) throw new Error('Sala no encontrada');
     const room = snap.val();
+    /* Clasificatoria no se une a mano por código: solo por emparejamiento
+       (_unirseAPartidaEmparejada pasa allowRanked=true). Sin este freno, el
+       código/enlace de una sala ranked (que se enseñaba igual que el de una
+       privada) dejaba entrar a un tercero a un "1 contra 1". */
+    if (room.isRanked && !allowRanked) throw new Error('Esa sala es de Clasificatoria: solo se entra por emparejamiento');
     if (room.status !== 'waiting') throw new Error('La partida ya ha comenzado');
     const count = Object.keys(room.players||{}).length;
+    if (room.isRanked && count >= 2) throw new Error('Esa partida clasificatoria ya tiene sus dos jugadores');
     if (count >= 5) throw new Error('Sala llena (máx. 5 jugadores)');
     const playerId = _genId();
     await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
@@ -1917,11 +1102,67 @@ const Sync = (() => {
     await update(_ref(`${ROOMS_PATH}/${code}`), settings);
   }
 
+  /* ── CLASIFICATORIA (ranked 1v1) ──
+     Misma sala que Privada/Pública (reutiliza toda la máquina de
+     rondas/reveal/reconexión ya probada), marcada con isRanked+matchId+
+     seedBase. isPublic:false a propósito: no lleva bots ni ajustes
+     editables, y el código no se comparte (se entra por emparejamiento,
+     nunca a mano). */
+  async function createRankedRoom(hostName, avatar, matchId, seedBase) {
+    const {set}=FB();
+    const code=_genCode(), hostId=_genId();
+    await set(_ref(`${ROOMS_PATH}/${code}`),{
+      status:'waiting', round:0, pointsToWin:5, roundSecs:45,
+      isPublic:false, isRanked:true, rankedMatchId:matchId, rankedSeedBase:seedBase,
+      createdAt:Date.now(), lobbyAt:Date.now(),
+      players:{[hostId]:{name:hostName,avatar:avatar||null,score:0,connected:true,isHost:true}},
+      restrictions:null, roundSeed:0, roundStartAt:null,
+      submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
+    });
+    _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${hostId}`);
+    return {code, playerId:hostId};
+  }
+
+  /* Cola de emparejamiento: NO decide el resultado, solo con quién juegas
+     (ver PLAN-coche-ranked.md §6.1) — manipularla en el peor caso solo
+     cambia el rival, nunca el ELO que se aplica al cerrar la partida. */
+  const RANKED_QUEUE_PATH = 'restricciones/ranked_queue';
+  const RANKED_PAIR_PATH  = 'restricciones/ranked_pairings';
+
+  async function rankedQueueJoin(uid, elo, name, avatar) {
+    const {set}=FB();
+    await set(_ref(`${RANKED_QUEUE_PATH}/${uid}`), { elo, ts: Date.now(), name, avatar: avatar||null });
+    _onDisconnectRemove(`${RANKED_QUEUE_PATH}/${uid}`);
+  }
+  async function rankedQueueLeave(uid) {
+    const {set}=FB();
+    _cancelOnDisconnect(`${RANKED_QUEUE_PATH}/${uid}`);
+    await set(_ref(`${RANKED_QUEUE_PATH}/${uid}`), null);
+  }
+  function rankedListenQueue(callback) {
+    const {onValue}=FB();
+    return onValue(_ref(RANKED_QUEUE_PATH), snap => callback(snap.exists() ? snap.val() : {}));
+  }
+  async function rankedAnnouncePairing(targetUid, payload) {
+    const {set}=FB();
+    await set(_ref(`${RANKED_PAIR_PATH}/${targetUid}`), payload);
+  }
+  function rankedListenPairing(uid, callback) {
+    const {onValue}=FB();
+    return onValue(_ref(`${RANKED_PAIR_PATH}/${uid}`), snap => { if (snap.exists()) callback(snap.val()); });
+  }
+  async function rankedClearPairing(uid) {
+    const {set}=FB();
+    await set(_ref(`${RANKED_PAIR_PATH}/${uid}`), null);
+  }
+
   return {
     createRoom, joinRoom, findOrCreatePublicRoom, listenRoom,
     startGame, nextRound, submitAnswer, startReveal, setFinished,
     resetToLobby, claimReset, rejoinRoom, rejoinInProgress, expirePublicRoom, disconnect, getRoom, updateRoomSettings,
     tryReconnect, rearmOnDisconnect, resume,
+    createRankedRoom, rankedQueueJoin, rankedQueueLeave, rankedListenQueue,
+    rankedAnnouncePairing, rankedListenPairing, rankedClearPairing,
   };
 })();
 
@@ -1943,9 +1184,21 @@ const App = (() => {
      escriba sobre una sala distinta a la que iniciaste la acción. */
   let _sessionToken = 0;
   function _newSession() { return ++_sessionToken; }
+  /* _isLocal se queda siempre en false (PLAN-coche-ranked.md, Fase 1: modo
+     Local eliminado). No se borra de los sitios donde forma parte de una
+     condicion compuesta (p.ej. "_isHost && !_isLocal && _isPublic") para no
+     tocar ramas de Privada/Publica ya probadas en produccion -- sencillamente
+     nunca vuelve a valer true, asi que esas ramas se comportan igual que
+     antes de este cambio. _localName SIGUE viva: pese al nombre es el nombre
+     de sesion general (Privada/Publica lo usan tambien), no algo del modo
+     Local. */
   let _isLocal    = false;
   let _localName  = '';
-  let _localRound = 0;
+
+  /* Clasificatoria (ranked 1v1 por ELO). Fase 1-3 de PLAN-coche-ranked.md. */
+  let _isRanked       = false;
+  let _rankedMatchId  = null;
+  let _rankedSeedBase = 0;
 
   let _round           = 0;
   let _players         = [];
@@ -1970,9 +1223,6 @@ const App = (() => {
   let _publicLobbyWarnTimer = null;
   const PUBLIC_LOBBY_TIMEOUT = 3 * 60 * 1000;
   const PUBLIC_LOBBY_WARN    = 30 * 1000;
-
-  let _localPointsToWin = 7;
-  let _localRoundSecs   = 60;
 
   /* Ajustes online (solo host puede cambiarlos en lobby) */
   let _onlinePointsToWin = 7;
@@ -2018,12 +1268,14 @@ const App = (() => {
         fn();
       };
       try {
-        /* Con version: el worker lleva su PROPIA copia de NATIONALITIES y CLUBS_LIST,
-           y tiene que ser identica a la de este archivo o dos jugadores de la misma
-           sala generan rejillas distintas con la misma semilla. Sin ?v= el
-           navegador se quedaba con el worker viejo indefinidamente mientras
-           script.js si se actualizaba: justo la divergencia que hay que evitar. */
-        worker = new Worker('js/restrictions-worker.js?v=20260825a');
+        /* Con version: el worker delega en js/ranked-engine.js (un solo generador,
+           PLAN-coche-ranked.md Fase 0), pero sigue haciendo falta el ?v= — sin
+           el cache-buster, un navegador con el worker.js viejo en caché no
+           recargaria ranked-engine.js hasta que el navegador decida revalidar
+           por su cuenta, y mientras tanto seguiria siendo el mismo archivo (no
+           hay copia que diverja, pero si el motor compartido cambia de version
+           conviene forzar la recarga igualmente). */
+        worker = new Worker('js/restrictions-worker.js?v=20260829a');
       } catch(e) {
         finish(() => { try { resolve(Restrictions.generate(seed, db)); } catch(err){ reject(err); } });
         return;
@@ -2279,9 +1531,10 @@ const App = (() => {
 
   function _setupAccountName() {
     if (!(window.FHAuth && FHAuth.onIdentity)) return;
-    const NAME_INPUTS = ['input-host-name','input-join-name','input-public-name','input-local-name'];
+    const NAME_INPUTS = ['input-host-name','input-join-name','input-public-name'];
     FHAuth.onIdentity(id => {
       _syncMyIdentityToRoom();
+      if (_currentScreen() === 'screen-menu') _refreshRankedPanel();
       NAME_INPUTS.forEach(i => {
         const el = document.getElementById(i);
         if (el) el.style.display = id ? 'none' : '';
@@ -2316,55 +1569,6 @@ const App = (() => {
   function _avatarInner(p) {
     if (window.FHAuth && FHAuth.avatarInner) return FHAuth.avatarInner(p && p.name, p && p.avatar);
     return _escHtml(((p && p.name) || '?').charAt(0).toUpperCase());
-  }
-
-  /* ════════════════════════════════════════
-     MODO LOCAL — igual que Blackjack
-     ════════════════════════════════════════ */
-  async function startLocalGame() {
-    const name = _accountName('input-local-name');
-    if (!name) { _showError('error-local', 'Escribe tu nombre'); return; }
-    _clearError('error-local');
-
-    const btn = document.querySelector('#panel-local .btn-primary');
-    if (btn) { btn.disabled = true; btn.textContent = 'CARGANDO…'; }
-
-    try {
-      /* Verificar que los datos base cargan (error rápido y visible si hay problema) */
-      await _loadGameData();
-
-      _isLocal=true; _isHost=true; _playerId='local-p1';
-      _localName=name; _localRound=0;
-      _players=[{id:'local-p1', name, avatar:_accountAvatar(), score:0}];
-
-      if (btn) { btn.disabled = false; btn.textContent = 'JUGAR SOLO ▶'; }
-
-      /* Transicionar a screen-round primero (igual que Cadena), para que el countdown
-         aparezca sobre la pantalla de juego y no sobre el menú */
-      _showScreen('screen-round');
-      _renderTopbar(1, _players);
-      _renderSubmissions(_players, {});
-
-      /* Mostrar cuenta atrás mínima mientras terminan de precargar todos los chunks
-         y se generan las restricciones de la primera ronda en el worker */
-      const firstSeed = Date.now() + 1 * 7919;
-      _showPreloadCountdown(firstSeed, () => _startLocalRound());
-
-    } catch(e) {
-      console.error('[App] startLocalGame error:', e);
-      let msg = e.message || 'Error desconocido al cargar datos';
-      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS')) {
-        msg = '❌ No se pueden leer los JSON. ¿Estás en file://? Usa: npx serve . o python -m http.server 8080';
-      } else if (msg.includes('404') || msg.includes('not found') || msg.includes('No se encontró')) {
-        msg = '❌ Archivos no encontrados. Comprueba que la carpeta data/ está junto a index.html';
-      } else if (msg.includes('vacíos')) {
-        msg = '❌ JSON vacíos. Comprueba el archivo compañeros_principal.json';
-      }
-      _showError('error-local', msg);
-      showToast('❌ Error al cargar datos', 'error');
-      _isLocal=false; _isHost=false; _playerId=null;
-      if (btn) { btn.disabled = false; btn.textContent = 'JUGAR SOLO ▶'; }
-    }
   }
 
   let _onlineCountdownIv = null;
@@ -2483,13 +1687,58 @@ const App = (() => {
     document.getElementById(`tab-${tab}`)?.classList.add('active');
     document.querySelectorAll('.menu-panel').forEach(p=>p.classList.remove('active'));
     document.getElementById(`panel-${tab}`)?.classList.add('active');
-    ['error-private','error-public','error-local'].forEach(id=>_clearError(id));
+    ['error-private','error-public','error-ranked'].forEach(id=>_clearError(id));
     const btnPublic = document.getElementById('btn-find-public');
     if (btnPublic) { btnPublic.disabled=false; btnPublic.textContent='BUSCAR PARTIDA ▶'; }
     const btnPrivPrimary = document.querySelector('#panel-private .btn-primary');
     if (btnPrivPrimary) { btnPrivPrimary.disabled=false; btnPrivPrimary.textContent='CREAR SALA ▶'; }
     const btnPrivSecondary = document.querySelector('#panel-private .btn-secondary');
     if (btnPrivSecondary) { btnPrivSecondary.disabled=false; btnPrivSecondary.textContent='UNIRSE A SALA ▶'; }
+    if (tab === 'ranked') _refreshRankedPanel();
+  }
+
+  /* Pinta el bloqueo/desbloqueo y el tramo/ELO/racha del panel Clasificatoria.
+     Se llama al abrir la pestaña y en cada cambio de sesión (login/logout). */
+  async function _refreshRankedPanel() {
+    const locked      = document.getElementById('ranked-locked');
+    const unlocked     = document.getElementById('ranked-unlocked');
+    const comingSoon  = document.getElementById('ranked-coming-soon');
+    if (!RANKED_DISPONIBLE) {
+      if (comingSoon) comingSoon.classList.remove('hidden');
+      if (locked)   locked.classList.add('hidden');
+      if (unlocked) unlocked.classList.add('hidden');
+      return;
+    }
+    if (comingSoon) comingSoon.classList.add('hidden');
+    if (!locked || !unlocked || !window.FHAuth) return;
+    const session = await FHAuth.getSession();
+    if (!session) {
+      locked.classList.remove('hidden'); unlocked.classList.add('hidden');
+      return;
+    }
+    locked.classList.add('hidden'); unlocked.classList.remove('hidden');
+    if (!window.FHRanked) return;
+    try {
+      const perfil = await FHRanked.perfil('coche');
+      const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === 'coche');
+      const elo         = fila ? fila.elo       : 200;
+      const tramo       = fila ? fila.tramo     : 0;
+      const racha       = fila ? fila.racha     : 0;
+      const victorias   = fila ? fila.victorias : 0;
+      const derrotas    = fila ? fila.derrotas  : 0;
+      const provisional = fila ? fila.provisional : true;
+      const info = window.FHLiga ? FHLiga.tramoInfo(tramo) : null;
+      const logoEl    = document.getElementById('ranked-tramo-logo');
+      const nombreEl  = document.getElementById('ranked-tramo-nombre');
+      const eloEl     = document.getElementById('ranked-tramo-elo');
+      const rachaEl   = document.getElementById('ranked-tramo-racha');
+      const recordEl  = document.getElementById('ranked-tramo-record');
+      if (logoEl) { if (info) { logoEl.src = info.logo; logoEl.style.display = ''; } else { logoEl.style.display = 'none'; } }
+      if (nombreEl) nombreEl.textContent = info ? info.nombre : 'Tercera División';
+      if (eloEl) eloEl.textContent = elo + ' ELO' + (provisional ? ' (provisional)' : '');
+      if (rachaEl) rachaEl.textContent = '🔥 ' + racha;
+      if (recordEl) recordEl.textContent = victorias + 'V-' + derrotas + 'D';
+    } catch(e) { console.warn('[App] No se pudo cargar el perfil ranked:', e); }
   }
 
   /* ════════════════════════════════════════
@@ -2644,6 +1893,220 @@ const App = (() => {
   }
 
   /* ════════════════════════════════════════
+     CLASIFICATORIA (ranked 1v1 por ELO)
+     PLAN-coche-ranked.md, Fases 1-3. Emparejamiento por cola en Firebase
+     (NO autoritativo: solo decide con quién juegas — ver §6.1 del plan);
+     el resultado y el ELO los fija siempre api/ranked.js.
+     ════════════════════════════════════════ */
+  /* Interruptor: codigo entero ya funciona (verificado), pero se guarda
+     "en la sombra" hasta decidir como gestionar el lanzamiento (rate
+     limiting real, moderacion, temporada 1...). Poner en true reactiva
+     la pestaña sin tocar nada mas. */
+  const RANKED_DISPONIBLE     = false;
+  const RANKED_PUNTOS         = 5;
+  const RANKED_SEGUNDOS_RONDA = 45;
+  const RANKED_MM_VENTANA_INI  = 50;
+  const RANKED_MM_VENTANA_MAX  = 400;
+  const RANKED_MM_VENTANA_SEGS = 60;
+
+  let _rankedSearching    = false;
+  let _rankedAutoStarting = false;
+  let _rankedQueueUnsub   = null;
+  let _rankedPairUnsub    = null;
+  let _rankedMyUid        = null;
+  let _rankedSearchStart  = 0;
+
+  function _rankedVentanaActual() {
+    const elapsed = (Date.now() - _rankedSearchStart) / 1000;
+    const t = Math.min(1, Math.max(0, elapsed / RANKED_MM_VENTANA_SEGS));
+    return RANKED_MM_VENTANA_INI + t * (RANKED_MM_VENTANA_MAX - RANKED_MM_VENTANA_INI);
+  }
+
+  function _rankedSetSearchUI(searching, hint) {
+    const btn = document.getElementById('btn-buscar-rival');
+    const cancelBtn = document.getElementById('btn-cancelar-busqueda');
+    if (btn) btn.classList.toggle('hidden', searching);
+    if (cancelBtn) cancelBtn.classList.toggle('hidden', !searching);
+    const hintEl = document.getElementById('ranked-search-hint');
+    if (hintEl) hintEl.textContent = hint || '';
+  }
+
+  function _rankedStopListening() {
+    if (_rankedQueueUnsub) { try { _rankedQueueUnsub(); } catch(e){} _rankedQueueUnsub=null; }
+    if (_rankedPairUnsub)  { try { _rankedPairUnsub();  } catch(e){} _rankedPairUnsub=null; }
+  }
+
+  async function buscarRival() {
+    if (!RANKED_DISPONIBLE) { showToast('Clasificatoria: muy pronto disponible', 'warning'); return; }
+    if (_rankedSearching) return;
+    if (!window._FB?.configured) { showToast('⚠️ Firebase no disponible — comprueba la conexión', 'error'); return; }
+    if (!window.FHAuth || !window.FHRanked) { showToast('Componentes de Clasificatoria no cargados', 'error'); return; }
+    const session = await FHAuth.getSession();
+    if (!session) { showToast('Inicia sesión para jugar Clasificatoria', 'error'); return; }
+    const uid = session.user.id;
+    _rankedMyUid = uid;
+    _rankedSetSearchUI(true, 'Cargando datos…');
+
+    try {
+      await _loadGameData();
+      let elo = 200;
+      try {
+        const perfil = await FHRanked.perfil('coche');
+        const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === 'coche');
+        if (fila && typeof fila.elo === 'number') elo = fila.elo;
+      } catch(e) { console.warn('[App] ranked perfil falló, uso ELO base 200:', e); }
+
+      const identity = FHAuth.identity && FHAuth.identity();
+      const name   = (identity && identity.username)  || 'Jugador';
+      const avatar = (identity && identity.avatarUrl) || null;
+
+      _rankedSearching   = true;
+      _rankedSearchStart = Date.now();
+      _rankedSetSearchUI(true, 'Buscando rival…');
+      await Sync.rankedQueueJoin(uid, elo, name, avatar);
+      _rankedArmarEscucha(uid, elo, name, avatar);
+    } catch(e) {
+      console.error('[App] buscarRival error:', e);
+      showToast('Error buscando rival: ' + (e.message||''), 'error');
+      cancelarBusquedaRival();
+    }
+  }
+
+  /* Escucha la cola de emparejamiento (busca rival por ventana de ELO) y el
+     buzón de emparejamiento (por si alguien de uid menor nos encuentra a
+     nosotros primero). Un solo sitio para las dos búsquedas: antes el
+     reintento de _crearPartidaEmparejada tenía su PROPIA copia de este
+     filtro con el ELO fijo en 200 en lugar del real, y nunca volvía a
+     escuchar el buzón — así que tras un fallo de red ese jugador solo podía
+     emparejar de una forma y con rivales equivocados. */
+  function _rankedArmarEscucha(uid, elo, name, avatar) {
+    _rankedPairUnsub = Sync.rankedListenPairing(uid, (pairing) => {
+      if (!_rankedSearching) return;
+      _unirseAPartidaEmparejada(pairing, name, avatar);
+    });
+    _rankedQueueUnsub = Sync.rankedListenQueue((queue) => {
+      if (!_rankedSearching) return;
+      const ventana = _rankedVentanaActual();
+      const candidatos = Object.entries(queue || {})
+        .filter(([otroUid, e]) => otroUid !== uid && e && Math.abs((e.elo??200) - elo) <= ventana)
+        .sort((a,b) => Math.abs((a[1].elo??200)-elo) - Math.abs((b[1].elo??200)-elo));
+      if (!candidatos.length) return;
+      const [rivalUid] = candidatos[0];
+      if (uid < rivalUid) _crearPartidaEmparejada(uid, elo, name, avatar, rivalUid);
+    });
+  }
+
+  async function _crearPartidaEmparejada(myUid, myElo, myName, myAvatar, rivalUid) {
+    if (!_rankedSearching) return;
+    _rankedSearching = false;
+    _rankedStopListening();
+    try {
+      const { matchId, seedBase } = await FHRanked.call('crear', { juego:'coche', oponente_uid: rivalUid });
+      const { code, playerId } = await Sync.createRankedRoom(myName, myAvatar, matchId, seedBase);
+      await Sync.rankedAnnouncePairing(rivalUid, { code, matchId, seedBase, from: myUid });
+      Sync.rankedQueueLeave(myUid).catch(()=>{});
+      Sync.rankedQueueLeave(rivalUid).catch(()=>{});
+      _newSession();
+      _roomCode=code; _playerId=playerId; _isHost=true; _isPublic=false; _isLocal=false;
+      _isRanked=true; _rankedMatchId=matchId; _rankedSeedBase=seedBase; _localName=myName;
+      _rankedSetSearchUI(false, '');
+      _saveSession(); _listenRoom(); _showLobby();
+    } catch(e) {
+      console.error('[App] crear partida ranked error:', e);
+      showToast('No se pudo crear la partida, reintentando…', 'error');
+      _rankedSearching = true; /* seguir buscando: puede que el rival ya no esté disponible */
+      _rankedArmarEscucha(myUid, myElo, myName, myAvatar);
+    }
+  }
+
+  async function _unirseAPartidaEmparejada(pairing, name, avatar) {
+    if (!pairing || !pairing.code || !_rankedSearching) return;
+    _rankedSearching = false;
+    _rankedStopListening();
+    try {
+      const result = await Sync.joinRoom(pairing.code, name, avatar, true);
+      Sync.rankedQueueLeave(_rankedMyUid).catch(()=>{});
+      Sync.rankedClearPairing(_rankedMyUid).catch(()=>{});
+      _newSession();
+      _roomCode=result.code; _playerId=result.playerId; _isHost=false; _isPublic=false; _isLocal=false;
+      _isRanked=true; _rankedMatchId=pairing.matchId; _rankedSeedBase=pairing.seedBase; _localName=name;
+      _rankedSetSearchUI(false, '');
+      _saveSession(); _listenRoom(); _showLobby();
+    } catch(e) {
+      console.error('[App] unirse a partida emparejada error:', e);
+      showToast('No se pudo entrar a la partida emparejada', 'error');
+      cancelarBusquedaRival();
+    }
+  }
+
+  async function cancelarBusquedaRival() {
+    _rankedSearching = false;
+    _rankedStopListening();
+    if (_rankedMyUid) {
+      Sync.rankedQueueLeave(_rankedMyUid).catch(()=>{});
+      Sync.rankedClearPairing(_rankedMyUid).catch(()=>{});
+    }
+    _rankedSetSearchUI(false, '');
+  }
+
+  /* Auto-empieza en cuanto el segundo jugador entra: en Clasificatoria no hay
+     botón EMPEZAR ni ajustes editables (puntos/segundos fijos, ver §9 del
+     plan). Solo lo dispara el host, y una sola vez por sala. */
+  async function _startRankedGame(room) {
+    if (!_isHost || !_isRanked || !_roomCode || _rankedAutoStarting) return;
+    const humanCount = Object.values(room.players||{}).filter(p=>p.connected!==false).length;
+    if (humanCount < 2) return;
+    _rankedAutoStarting = true;
+    const startRoom = _roomCode;
+    try {
+      await _loadGameData();
+      const seed = _rankedSeedBase;
+      const restrictions = await _generateAsync(seed, _genPool());
+      const fresh = await Sync.getRoom(startRoom);
+      if (!fresh || fresh.status !== 'waiting' || _roomCode !== startRoom) return;
+      await Sync.startGame(startRoom, { seed, restrictions, pointsToWin: RANKED_PUNTOS, roundSecs: RANKED_SEGUNDOS_RONDA });
+    } catch(e) {
+      console.error('[App] _startRankedGame error:', e);
+    } finally {
+      _rankedAutoStarting = false;
+    }
+  }
+
+  let _leaderboardOpen = false;
+  async function toggleLeaderboard() {
+    const box = document.getElementById('ranked-leaderboard');
+    const btn = document.getElementById('btn-ranked-leaderboard');
+    if (!box) return;
+    _leaderboardOpen = !_leaderboardOpen;
+    box.classList.toggle('hidden', !_leaderboardOpen);
+    if (btn) btn.textContent = _leaderboardOpen ? 'Ocultar clasificación ▴' : 'Ver clasificación ▾';
+    if (!_leaderboardOpen || !window.FHRanked) return;
+    box.innerHTML = '<p class="panel-hint">Cargando…</p>';
+    try {
+      const session = window.FHAuth ? await FHAuth.getSession() : null;
+      const data = await FHRanked.leaderboard('coche', 20);
+      if (!data || !Array.isArray(data.top) || !data.top.length) {
+        box.innerHTML = '<p class="panel-hint">Todavía no hay clasificación esta temporada.</p>';
+        return;
+      }
+      const myUid = session && session.user.id;
+      box.innerHTML = '<ol class="ranked-leaderboard-list">' + data.top.map(row => {
+        const info = window.FHLiga ? FHLiga.tramoInfo(row.tramo) : null;
+        const soyYo = row.user_id === myUid;
+        return `<li class="ranked-leaderboard-row${soyYo ? ' ranked-leaderboard-row--yo' : ''}">
+          <span class="ranked-leaderboard-puesto">${row.puesto}</span>
+          <span class="ranked-leaderboard-nombre">${_escHtml(row.username || '—')}</span>
+          <span class="ranked-leaderboard-emoji">${info ? info.emoji : ''}</span>
+          <span class="ranked-leaderboard-elo">${row.elo}</span>
+        </li>`;
+      }).join('') + '</ol>';
+    } catch(e) {
+      console.warn('[App] No se pudo cargar la clasificación:', e);
+      box.innerHTML = '<p class="panel-hint">No se pudo cargar la clasificación.</p>';
+    }
+  }
+
+  /* ════════════════════════════════════════
      EMPEZAR PARTIDA (host online)
      ════════════════════════════════════════ */
   async function startGame() {
@@ -2693,18 +2156,6 @@ const App = (() => {
     }
   }
 
-  function adjustLocalPoints(delta) {
-    _localPointsToWin = Math.max(5, Math.min(15, _localPointsToWin + delta));
-    const el = document.getElementById('local-points-display');
-    if (el) el.textContent = _localPointsToWin;
-  }
-
-  function adjustLocalSecs(delta) {
-    _localRoundSecs = Math.max(30, Math.min(120, _localRoundSecs + delta));
-    const el = document.getElementById('local-secs-display');
-    if (el) el.textContent = _localRoundSecs;
-  }
-
   /* Ajustes online — solo accesibles para el host en el lobby */
   async function adjustOnlinePoints(delta) {
     if (!_isHost || !_roomCode) return;
@@ -2724,70 +2175,16 @@ const App = (() => {
     catch(e) { console.warn('[App] adjustOnlineSecs error:', e); }
   }
 
-  function _startLocalRound() {
-    _localRound++;
-    _round = _localRound;
-    _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
-    _showScreen('screen-round');
-    _renderTopbar(_localRound, _players);
-    _renderSubmissions(_players, {});
-    const secs = _isSuddenDeath ? SUDDEN_DEATH_SECS : (_localRoundSecs || ROUND_SECS);
-    /* Resetear display del timer inmediatamente para no mostrar el valor de la ronda anterior */
-    const _timerEl = document.getElementById('round-timer');
-    const _barEl   = document.getElementById('round-timer-bar');
-    if (_timerEl) { _timerEl.textContent = secs; _timerEl.classList.remove('urgent'); }
-    if (_barEl)   { _barEl.style.width = '100%';  _barEl.classList.remove('urgent'); }
-    /* Banner muerte súbita local */
-    let sdBanner = document.getElementById('sudden-death-banner');
-    if (_isSuddenDeath) {
-      if (!sdBanner) {
-        sdBanner = document.createElement('div');
-        sdBanner.id = 'sudden-death-banner';
-        sdBanner.style.cssText = "background:#c0392b;color:#fff;text-align:center;padding:8px 0;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;";
-        sdBanner.textContent = '💀 MUERTE SÚBITA — RONDA EXPRESS 20s';
-        const rg = document.getElementById('restrictions-grid');
-        if (rg) rg.parentNode.insertBefore(sdBanner, rg);
-      }
-    } else if (sdBanner) { sdBanner.remove(); }
-    /* Input deshabilitado hasta que salgan las restricciones */
-    const pi=document.getElementById('player-input');
-    if (pi) { pi.value=''; pi.disabled=true; _acClose(); }
-    const sb=document.getElementById('submit-btn');
-    if (sb) sb.disabled=true;
-
-    /* Usar cache pregenerada si está disponible; si no, generar ahora.
-       En ambos casos el cálculo pesado queda fuera del hilo de pintura. */
-    const _doAnimate = (restrictions) => {
-      _restrictions = restrictions;
-      _nextRestrictionsCache = null;
-      _animateRestrictions(_restrictions, () => {
-        if (pi) pi.disabled = false;
-        if (sb) sb.disabled = false;
-        _startTimer(Date.now(), secs);
-      });
-    };
-
-    if (_nextRestrictionsCache) {
-      _doAnimate(_nextRestrictionsCache);
-    } else {
-      /* Sin cache: generar en worker para no bloquear el hilo principal */
-      const seed = Date.now() + _localRound * 7919;
-      _generateAsync(seed, _genPool())
-        .then(restrictions => _doAnimate(restrictions))
-        .catch(() => {
-          /* Último recurso: sincrónico si el worker falla */
-          _doAnimate(Restrictions.generate(seed, _genPool()));
-        });
-    }
-  }
-
   /* Pregeneración silenciosa de la siguiente ronda.
      Se llama desde la pantalla de resultados, cuando el usuario
      está leyendo y el hilo principal tiene tiempo libre. */
   function _preGenerateNextRestrictions() {
     if (!PLAYERS_DB.length) return;
-    const nextRoundNum = _isLocal ? (_localRound + 1) : (_round + 1);
-    const seed = Date.now() + nextRoundNum * 7919;
+    const nextRoundNum = _round + 1;
+    /* Clasificatoria: misma formula que en nextRound() (seedBase + ronda
+       0-indexada). Si esto se queda con Date.now(), la cache pregenerada
+       serviría una rejilla que NO coincide con la que espera el arbitro. */
+    const seed = _isRanked ? (_rankedSeedBase + _round) : Date.now() + nextRoundNum * 7919;
     _generateAsync(seed, _genPool())
       .then(restrictions => {
         _nextRestrictionsCache = restrictions;
@@ -3049,6 +2446,7 @@ const App = (() => {
         if (_wantReplay || _currentScreen() === 'screen-lobby') {
           _updateLobbyUI(room);
         }
+        if (room.isRanked && _isHost) _startRankedGame(room);
         break;
       case 'playing':
         if (room.round !== _round) {
@@ -3136,20 +2534,39 @@ const App = (() => {
     }
     if (room.players?.[_playerId]) { _isHost = room.players[_playerId].isHost === true; }
     if (typeof room.isPublic === 'boolean') { _isPublic = room.isPublic; }
+    /* Restaurar identidad ranked desde la sala: sin esto, recargar a mitad de
+       una partida clasificatoria dejaba _isRanked/_rankedMatchId/_rankedSeedBase
+       en null para siempre en esa sesión (los únicos sitios que los ponían
+       eran _crearPartidaEmparejada/_unirseAPartidaEmparejada, nunca un
+       reconexión), y ese jugador dejaba de contar para el árbitro sin avisar. */
+    if (typeof room.isRanked === 'boolean') { _isRanked = room.isRanked; }
+    if (_isRanked) {
+      if (room.rankedMatchId)  _rankedMatchId  = room.rankedMatchId;
+      if (room.rankedSeedBase != null) _rankedSeedBase = room.rankedSeedBase;
+    }
     /* El código va a la URL estés en sala privada o pública. Antes la pública
        no lo escribía ("no hay nada que compartir") y con eso recargar dentro
        de una partida pública te devolvía al menú sin remedio. Que el enlace de
-       invitación no se ofrezca en las públicas lo sigue decidiendo el lobby
-       (lobby-code-card se oculta), no la barra de direcciones. */
+       invitación no se ofrezca en las públicas ni en las ranked lo sigue
+       decidiendo el lobby (lobby-code-card se oculta), no la barra de
+       direcciones. */
     if (_roomCode && window.FHRuta) FHRuta.set({ sala: _roomCode });
     else if (_roomCode && !_isPublic) {
       const targetUrl = window.location.pathname + '?sala=' + _roomCode;
       if (!window.location.search.includes(_roomCode)) history.replaceState(null, '', targetUrl);
     }
+    /* Ranked no reparte código para unirse a mano (se entra solo por
+       emparejamiento): antes salía la misma tarjeta de invitación que en
+       Privada porque las salas ranked también llevan isPublic:false, así que
+       un código filtrado (captura de pantalla, historial) dejaba colarse a un
+       tercero en un "1 contra 1". */
     const codeCard = document.getElementById('lobby-code-card');
-    if (codeCard) codeCard.style.display = _isPublic ? 'none' : '';
+    if (codeCard) codeCard.style.display = (_isPublic || _isRanked) ? 'none' : '';
     const badge = document.getElementById('lobby-mode-badge');
-    if (badge) { badge.style.display = _isPublic ? 'block' : 'none'; badge.textContent = _isPublic ? '🌐 Sala Pública' : ''; }
+    if (badge) {
+      badge.style.display = (_isPublic || _isRanked) ? 'block' : 'none';
+      badge.textContent = _isRanked ? '🏆 Clasificatoria' : (_isPublic ? '🌐 Sala Pública' : '');
+    }
 
     const listEl = document.getElementById('lobby-players-list');
     if (listEl && room.players) {
@@ -3174,7 +2591,11 @@ const App = (() => {
     const MIN_LOBBY_WAIT = 10;
     const cooldownActive = room.resetAt && lobbyAge < MIN_LOBBY_WAIT;
 
-    if (_isHost && startBtn) {
+    /* Ranked no tiene boton EMPEZAR manual: arranca sola en cuanto entra el
+       rival (_startRankedGame). Enseñarselo al host igual que en Privada
+       dejaba clicar "EMPEZAR" -> App.startGame() generico, que usa una
+       semilla de Date.now() que el arbitro nunca validaria. */
+    if (_isHost && startBtn && !_isRanked) {
       startBtn.style.display='block';
       startBtn.disabled = count < 2 || cooldownActive;
       startBtn.textContent = cooldownActive
@@ -3183,7 +2604,8 @@ const App = (() => {
     }
     else if (startBtn) { startBtn.style.display='none'; }
     if (hintEl) {
-      if (cooldownActive) hintEl.textContent = 'Esperando a que se unan todos…';
+      if (_isRanked) hintEl.textContent = count < 2 ? 'Esperando al rival…' : 'Rival encontrado, empezando…';
+      else if (cooldownActive) hintEl.textContent = 'Esperando a que se unan todos…';
       else if (_isPublic && !_isHost) hintEl.textContent = 'Esperando a que el host empiece…';
       else if (count < 2) hintEl.textContent = _isPublic ? 'Buscando más jugadores…' : 'Esperando jugadores… (mínimo 2)';
       else hintEl.textContent = `${count} jugadores listos — ¡empieza cuando quieras!`;
@@ -3202,9 +2624,12 @@ const App = (() => {
       clearTimeout(_cooldownTickTimer); _cooldownTickTimer = null;
     }
 
-    /* Panel de ajustes online — solo visible en sala privada */
+    /* Panel de ajustes online — solo visible en sala privada. Ranked tambien
+       lleva isPublic:false, asi que sin el !_isRanked de aqui el anfitrion
+       de una clasificatoria podia cambiar puntos-para-ganar/segundos por
+       ronda (RANKED_PUNTOS/RANKED_SEGUNDOS_RONDA son fijos a proposito). */
     const settingsEl = document.getElementById('lobby-settings');
-    if (settingsEl && !_isPublic) {
+    if (settingsEl && !_isPublic && !_isRanked) {
       /* Leer valores de la sala si existen */
       if (room.pointsToWin != null) _onlinePointsToWin = room.pointsToWin;
       if (room.roundSecs   != null) _onlineRoundSecs   = room.roundSecs;
@@ -3475,8 +2900,7 @@ const App = (() => {
         const sb=document.getElementById('submit-btn');
         if (pi) pi.disabled=true;
         if (sb) sb.disabled=true;
-        if (_isHost && !_revealTriggered && !_isLocal) _triggerReveal(_lastRoom);
-        else if (_isLocal) _localReveal();
+        if (_isHost && !_revealTriggered) _triggerReveal(_lastRoom);
       }
     };
     tick();
@@ -3705,10 +3129,18 @@ const App = (() => {
     if (pi2) pi2.disabled = true;
     showToast(`✓ ${player.name} enviado`, 'success');
 
-    if (_isLocal) { _stopTimer(); _localReveal(); return; }
-
     try {
       const doneCount = await Sync.submitAnswer(_roomCode, _playerId, player.name, player.id||null);
+      /* Clasificatoria: registro AUTORITATIVO en el arbitro (api/ranked.js).
+         El marcador que se ve en pantalla sale de Firebase, como siempre; este
+         envio es la unica fuente que cuenta para el ELO. Sin bloquear la UI
+         (fire-and-forget): si falla, "cerrar" al final de la partida sigue
+         siendo el que decide, y este envio se puede reintentar via idempotencia
+         (ver api/ranked.js) si algun dia hace falta un reintento explicito. */
+      if (_isRanked && _rankedMatchId && window.FHRanked) {
+        FHRanked.call('submit', { matchId:_rankedMatchId, ronda:_round-1, answerId: player.id||null })
+          .catch(e => console.warn('[App] ranked submit falló (no afecta a esta pantalla):', e));
+      }
       const connected = _players.filter(p=>p.connected!==false).length;
       if (_isHost && !_revealTriggered && doneCount>=connected) _triggerReveal(_lastRoom);
     } catch(e) {
@@ -3816,81 +3248,6 @@ const App = (() => {
   }
 
   /* ════════════════════════════════════════
-     REVEAL LOCAL
-     ════════════════════════════════════════ */
-  async function _localReveal() {
-    _stopTimer();
-    const subs    = _mySubmission ? {[_playerId]:{playerName:_mySubmission, footballerId:_mySubmissionId}} : {};
-    const results = await _computeResults(subs, _restrictions, _players);
-    _players      = _applyPoints(_players, results);
-    const ptw     = _localPointsToWin || POINTS_WIN;
-
-    if (_isSuddenDeath) {
-      /* En muerte súbita: ¿alguien ganó esta ronda? */
-      const roundWinner = _players
-        .filter(p => _suddenDeathPlayers.includes(p.id))
-        .find(p => results[p.id]?.isWinner);
-      if (roundWinner) {
-        _isSuddenDeath=false; _suddenDeathPlayers=[];
-        /* Mostrar resultados primero, luego ganador tras 10s */
-        _renderResultsUI(_localRound, _restrictions, results, _players);
-        _showScreen('screen-results');
-        const nxt=document.getElementById('btn-next-round');
-        if (nxt) nxt.classList.add('hidden');
-        _showFinishedCountdown(null, 10, () => _showLocalFinished(roundWinner, true));
-        return;
-      }
-      /* Bug 3: Narrowing — eliminar a los que sacaron menos puntos */
-      const sdScores = _suddenDeathPlayers.map(id => ({id, pts: results[id]?.points||0}));
-      const maxPts = Math.max(...sdScores.map(r=>r.pts));
-      const stillTied = sdScores.filter(r=>r.pts===maxPts).map(r=>r.id);
-      if (stillTied.length < _suddenDeathPlayers.length && stillTied.length >= 2) {
-        _suddenDeathPlayers = stillTied;
-      }
-      /* Si solo queda 1, ese gana */
-      if (stillTied.length === 1) {
-        const winner = _players.find(p=>p.id===stillTied[0]);
-        _isSuddenDeath=false; _suddenDeathPlayers=[];
-        _renderResultsUI(_localRound, _restrictions, results, _players);
-        _showScreen('screen-results');
-        const nxt=document.getElementById('btn-next-round');
-        if (nxt) nxt.classList.add('hidden');
-        _showFinishedCountdown(null, 10, () => _showLocalFinished(winner, true));
-        return;
-      }
-    } else {
-      const reached = _players.filter(p=>p.score>=ptw);
-      if (reached.length >= 2) {
-        /* Empate → muerte súbita */
-        _isSuddenDeath = true;
-        _suddenDeathPlayers = reached.map(p=>p.id);
-        _renderResultsUI(_localRound, _restrictions, results, _players);
-        _showScreen('screen-results');
-        const nxt=document.getElementById('btn-next-round');
-        if (nxt) nxt.classList.remove('hidden');
-        showToast('💀 ¡MUERTE SÚBITA! Rondas express de 20 segundos', 'error');
-        return;
-      } else if (reached.length === 1) {
-        /* Mostrar resultados primero, luego ganador tras 10s */
-        _renderResultsUI(_localRound, _restrictions, results, _players);
-        _showScreen('screen-results');
-        const nxt=document.getElementById('btn-next-round');
-        if (nxt) nxt.classList.add('hidden');
-        _showFinishedCountdown(null, 10, () => _showLocalFinished(reached[0], true));
-        return;
-      }
-    }
-
-    _renderResultsUI(_localRound, _restrictions, results, _players);
-    _showScreen('screen-results');
-    const nxt=document.getElementById('btn-next-round');
-    if (nxt) nxt.classList.remove('hidden');
-    /* Aprovechar que el usuario está leyendo resultados para precalcular
-       las restricciones de la siguiente ronda en background */
-    _preGenerateNextRestrictions();
-  }
-
-  /* ════════════════════════════════════════
      MOSTRAR RESULTADOS (online)
      ════════════════════════════════════════ */
   function _showResultsScreen(room) {
@@ -3974,26 +3331,6 @@ const App = (() => {
      SIGUIENTE RONDA (host)
      ════════════════════════════════════════ */
   async function nextRound() {
-    if (_isLocal) {
-      const ptw = _localPointsToWin || POINTS_WIN;
-      /* Muerte súbita local */
-      if (!_isSuddenDeath) {
-        const reached = _players.filter(p=>p.score>=ptw);
-        if (reached.length >= 2) {
-          /* Empate → muerte súbita */
-          _isSuddenDeath = true;
-          _suddenDeathPlayers = reached.map(p=>p.id);
-          showToast('💀 ¡MUERTE SÚBITA! Rondas express de 20 segundos', 'error');
-          _startLocalRound(); return;
-        } else if (reached.length === 1) {
-          _showLocalFinished(reached[0]); return;
-        }
-      } else {
-        /* Ya en muerte súbita: ¿hay ganador? */
-        /* El ganador se detecta en _localReveal → aquí solo continuamos */
-      }
-      _startLocalRound(); return;
-    }
     if (!_isHost||!_roomCode) return;
     const _token = _sessionToken;
     const _room  = _roomCode;
@@ -4040,7 +3377,11 @@ const App = (() => {
       }
     }
 
-    const seed = Date.now()+(_round*3137);
+    /* Clasificatoria: semilla determinista (seedBase + ronda 0-indexada) para
+       que el arbitro (api/ranked.js) pueda reproducir exactamente la misma
+       rejilla sin fiarse de lo que escriba Firebase. _round es la ronda que
+       ACABA de terminar, así que la que entra es la ronda _round (0-indexada). */
+    const seed = _isRanked ? (_rankedSeedBase + _round) : Date.now()+(_round*3137);
     /* Usar cache pregenerada si está disponible (salvo al entrar en muerte súbita) */
     const cached = forceFreshRestrictions ? null : _nextRestrictionsCache;
     _nextRestrictionsCache = null;
@@ -4090,6 +3431,73 @@ const App = (() => {
       }).join('');
     }
     _showScreen('screen-finished');
+
+    const rankedBox = document.getElementById('ranked-result-box');
+    if (room.isRanked && room.rankedMatchId) {
+      _showRankedResult(room);
+    } else if (rankedBox) {
+      rankedBox.classList.add('hidden'); rankedBox.innerHTML = '';
+    }
+  }
+
+  /* Clasificatoria: cierra la partida en el árbitro (idempotente — lo puede
+     llamar cualquiera de los dos, o los dos a la vez) y pinta ELO antes →
+     después + cambio de tramo. El marcador que ya se ve arriba (final-scores)
+     sale de Firebase; esto es la confirmación AUTORITATIVA, puede tardar un
+     instante y por eso se pinta aparte, no bloquea la pantalla de fin. */
+  async function _showRankedResult(room) {
+    const box = document.getElementById('ranked-result-box');
+    if (!box || !window.FHRanked || !window.FHAuth) return;
+    box.classList.remove('hidden');
+    box.innerHTML = '<p class="ranked-result-loading">Confirmando resultado con el servidor…</p>';
+    try {
+      const session = await FHAuth.getSession();
+      if (!session) { box.classList.add('hidden'); box.innerHTML=''; return; }
+      const myUid = session.user.id;
+      const resultado = await FHRanked.call('cerrar', { matchId: room.rankedMatchId });
+      const soyA   = resultado.aUid === myUid;
+      const delta  = (soyA ? resultado.eloDeltaA : resultado.eloDeltaB) ?? 0;
+      const gane   = !!resultado.ganadorUid && resultado.ganadorUid === myUid;
+      const empate = !resultado.ganadorUid;
+
+      let despues = null;
+      try {
+        const perfil = await FHRanked.perfil('coche');
+        const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === 'coche');
+        if (fila && typeof fila.elo === 'number') despues = fila.elo;
+      } catch(e) { /* sin perfil fresco, se muestra solo el delta */ }
+
+      const antes = despues != null ? despues - delta : null;
+      const tramoDespues = despues != null ? FHRanked.tramoDeElo(despues) : null;
+      const tramoAntes   = antes   != null ? FHRanked.tramoDeElo(antes)   : null;
+      const subioTramo = tramoAntes != null && tramoDespues != null && tramoDespues > tramoAntes;
+      const bajoTramo  = tramoAntes != null && tramoDespues != null && tramoDespues < tramoAntes;
+      const infoTramo  = (window.FHLiga && tramoDespues != null) ? FHLiga.tramoInfo(tramoDespues) : null;
+
+      const resultLabel = empate ? 'EMPATE' : (gane ? '¡VICTORIA!' : 'DERROTA');
+      const resultClass = empate ? 'ranked-result-tie' : (gane ? 'ranked-result-win' : 'ranked-result-loss');
+      const signo = delta > 0 ? '+' : '';
+
+      box.innerHTML = `
+        <div class="ranked-result-card ${resultClass}">
+          <div class="ranked-result-label">${_escHtml(resultLabel)}</div>
+          <div class="ranked-result-elo">
+            ${antes != null ? `<span class="ranked-elo-antes">${antes}</span><span class="ranked-elo-arrow">→</span>` : ''}
+            <span class="ranked-elo-despues">${despues ?? '—'}</span>
+            <span class="ranked-elo-delta">${signo}${delta}</span>
+          </div>
+          ${infoTramo ? `
+            <div class="ranked-result-tramo">
+              <img src="${_escHtml(infoTramo.logo)}" alt="" class="ranked-tramo-logo" onerror="this.style.display='none'">
+              <span>${infoTramo.emoji} ${_escHtml(infoTramo.nombre)}</span>
+            </div>` : ''}
+          ${subioTramo ? '<div class="ranked-result-ascenso">⬆ ¡Has subido de tramo!</div>' : ''}
+          ${bajoTramo  ? '<div class="ranked-result-descenso">⬇ Has bajado de tramo</div>' : ''}
+        </div>`;
+    } catch(e) {
+      console.warn('[App] No se pudo confirmar el resultado ranked:', e);
+      box.innerHTML = '<p class="ranked-result-error">No se pudo confirmar el resultado con el servidor. Tu ELO se actualizará solo si vuelves a abrir Coche más tarde.</p>';
+    }
   }
 
   /* Muestra un contador regresivo antes de ejecutar onDone().
@@ -4143,42 +3551,19 @@ const App = (() => {
     }
   }
 
-  function _showLocalFinished(winner, _skipCountdown=false) {
-    _stopTimer();
-    const doFinish = () => {
-      document.getElementById('winner-name').textContent = winner.name;
-      const scoresEl=document.getElementById('final-scores');
-      if (scoresEl) {
-        scoresEl.innerHTML=[..._players].sort((a,b)=>b.score-a.score).map(p=>{
-          const isW = p.id===winner.id;
-          return '<div class="final-score-item ' + (isW?'winner-item':'') + '">' +
-            '<span class="final-score-name">' + _escHtml(p.name) + ' ' + (isW?'🏆':'') + '</span>' +
-            '<span class="final-score-pts">' + p.score + ' pts</span>' +
-            '</div>';
-        }).join('');
-      }
-      _showScreen('screen-finished');
-    };
-    if (!_skipCountdown && _currentScreen() === 'screen-results') {
-      _showFinishedCountdown(null, 10, doFinish);
-    } else {
-      doFinish();
-    }
-  }
-
   /* ════════════════════════════════════════
      JUGAR DE NUEVO / MENÚ
      ════════════════════════════════════════ */
   async function playAgain() {
+    /* Clasificatoria no tiene "revancha": resetToLobby solo reinicia
+       status/round/players, nunca isRanked/rankedMatchId/rankedSeedBase, así
+       que reutilizar la sala repetía la MISMA partida ya cerrada con la
+       misma semilla (el arbitro rechazaba cada submit con partida_no_activa
+       y el resultado final que se veía era el de la partida vieja). Una
+       partida ranked nueva exige un "crear" nuevo en el arbitro, así que
+       "jugar de nuevo" aquí es simplemente: salir y volver a buscar rival. */
+    if (_isRanked) { await leaveRoom(); setTab('ranked'); return; }
     _wantReplay = true;
-    if (_isLocal) {
-      _players=[{..._players[0],score:0}]; _localRound=0;
-      _isSuddenDeath=false; _suddenDeathPlayers=[];
-      _nextRestrictionsCache=null;
-      /* Limpiar banners y elementos residuales de la partida anterior */
-      _cleanupRoundDOM();
-      _acClose(); _startLocalRound(); return;
-    }
     if (!_roomCode||!_lastRoom?.players) { showMenu(); return; }
     const token = _sessionToken;
     const room  = _roomCode;
@@ -4730,7 +4115,8 @@ const App = (() => {
     if (typeof CocheBots !== 'undefined') CocheBots.stop();
     _lastArmedStatus=null;
     _roomCode=null; _playerId=null; _isHost=false; _isPublic=false;
-    _isLocal=false; _localName=''; _localRound=0;
+    _isLocal=false; _localName='';
+    _isRanked=false; _rankedMatchId=null; _rankedSeedBase=0;
     _round=0; _players=[]; _restrictions=[];
     _submitted=false; _mySubmission=null; _mySubmissionId=null; _revealTriggered=false;
     _lastRoom=null; _wantReplay=false;
@@ -4784,8 +4170,8 @@ const App = (() => {
 
   return {
     init, setTab,
-    createRoom, joinRoom, findPublicRoom, startLocalGame,
-    adjustLocalPoints, adjustLocalSecs,
+    createRoom, joinRoom, findPublicRoom,
+    buscarRival, cancelarBusquedaRival, toggleLeaderboard,
     adjustOnlinePoints, adjustOnlineSecs,
     leaveRoom, startGame, nextRound,
     submitAnswer, selectAutocomplete, selectAndSubmit,

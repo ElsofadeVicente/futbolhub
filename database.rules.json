@@ -40,6 +40,28 @@
         "$code": {
           ".write": true
         }
+      },
+      // CLASIFICATORIA (ranked 1v1 por ELO, PLAN-coche-ranked.md). Cola de
+      // emparejamiento por uid de Supabase: cada cliente escribe SU propia
+      // entrada; se lee entera para buscar rival por ventana de ELO. Igual
+      // que matchmaking, esto NO decide el resultado — solo con quién juegas
+      // (ver §6.1 del plan); el ELO lo fija siempre api/ranked.js.
+      "ranked_queue": {
+        ".read": true,
+        "$uid": {
+          ".write": true
+        }
+      },
+      // Buzón de emparejamiento: el jugador de uid menor escribe aquí el
+      // código de sala para el de uid mayor (que no tiene forma de saberlo
+      // de antemano). Sin auth de Firebase no se puede exigir que solo
+      // escriba "quien corresponde"; el peor caso es un aviso falso a un uid
+      // que no está buscando partida, que ese cliente simplemente ignora.
+      "ranked_pairings": {
+        "$uid": {
+          ".read": true,
+          ".write": true
+        }
       }
     },
 

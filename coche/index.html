@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260819a">
+  <link rel="stylesheet" href="css/style.css?v=20260830a">
   <link rel="stylesheet" href="../css/ads.css?v=20260808a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
@@ -195,11 +195,11 @@
     <div class="menu-tabs">
       <button class="menu-tab active" id="tab-private">&#x1F512; Privada</button>
       <button class="menu-tab"        id="tab-public">&#x1F310; P&uacute;blica</button>
-      <button class="menu-tab"        id="tab-local">&#x1F3AE; Local</button>
+      <button class="menu-tab"        id="tab-ranked">&#x1F3C6; Clasificatoria</button>
     </div>
     <script>
       (function () {
-        var tabs = ['private', 'public', 'local'];
+        var tabs = ['private', 'public', 'ranked'];
         tabs.forEach(function (tab) {
           var btn = document.getElementById('tab-' + tab);
           if (!btn) return;
@@ -247,34 +247,39 @@
       <p class="menu-error hidden" id="error-public"></p>
     </div>
 
-    <!-- Panel local -->
-    <div id="panel-local" class="menu-panel">
-      <p class="panel-hint">Juega solo contra ti mismo — practica las restricciones sin necesidad de internet</p>
-      <input id="input-local-name" class="menu-input" type="text" placeholder="Tu nombre" maxlength="20" />
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:0.1em;color:var(--np-ink-mid);text-transform:uppercase;">Puntos para ganar</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button aria-label="Quitar un punto para ganar" onclick="App.adjustLocalPoints(-1)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
-            <span id="local-points-display" style="font-family:'Anton',sans-serif;font-size:1.4rem;color:var(--np-red);min-width:20px;text-align:center;">7</span>
-            <button aria-label="Sumar un punto para ganar" onclick="App.adjustLocalPoints(1)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:0.1em;color:var(--np-ink-mid);text-transform:uppercase;">Segundos por ronda</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button aria-label="Quitar diez segundos por ronda" onclick="App.adjustLocalSecs(-10)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
-            <span id="local-secs-display" style="font-family:'Anton',sans-serif;font-size:1.4rem;color:var(--np-red);min-width:30px;text-align:center;">60</span>
-            <button aria-label="Sumar diez segundos por ronda" onclick="App.adjustLocalSecs(10)" style="width:28px;height:28px;background:var(--np-paper2);border:1px solid var(--np-ink);color:var(--np-ink);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
-          </div>
-        </div>
+    <!-- Panel Clasificatoria (ranked 1v1 por ELO, PLAN-coche-ranked.md) -->
+    <div id="panel-ranked" class="menu-panel">
+      <div id="ranked-coming-soon" class="ranked-locked hidden">
+        <p class="panel-hint">🏗️ Clasificatoria — muy pronto disponible</p>
+        <p class="ranked-locked-sub">Partidas 1 contra 1 emparejadas por ELO, con tramos desde Tercera División hasta el Mundial. Lo estamos ultimando.</p>
       </div>
-      <button class="btn-primary" onclick="App.startLocalGame()">JUGAR SOLO ▶</button>
-      <p class="menu-error hidden" id="error-local"></p>
+      <div id="ranked-locked" class="ranked-locked hidden">
+        <p class="panel-hint">🔒 Inicia sesión para competir</p>
+        <p class="ranked-locked-sub">La Clasificatoria enfrenta a dos jugadores por ELO y necesita saber quién eres — entra con tu cuenta desde el círculo de arriba a la derecha.</p>
+      </div>
+      <div id="ranked-unlocked" class="ranked-unlocked hidden">
+        <div id="ranked-tramo-card" class="ranked-tramo-card">
+          <img id="ranked-tramo-logo" class="ranked-tramo-logo" src="" alt="" style="display:none" onerror="this.style.display='none'">
+          <div class="ranked-tramo-info">
+            <div id="ranked-tramo-nombre" class="ranked-tramo-nombre">Tercera División</div>
+            <div id="ranked-tramo-elo" class="ranked-tramo-elo">200 ELO</div>
+          </div>
+          <div class="ranked-tramo-stats">
+            <span id="ranked-tramo-racha">🔥 0</span>
+            <span id="ranked-tramo-record">0V-0D</span>
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-buscar-rival" onclick="App.buscarRival()">BUSCAR RIVAL ▶</button>
+        <button class="btn-secondary hidden" id="btn-cancelar-busqueda" onclick="App.cancelarBusquedaRival()">✕ Cancelar búsqueda</button>
+        <p id="ranked-search-hint" class="panel-hint"></p>
+        <button class="ranked-leaderboard-toggle" id="btn-ranked-leaderboard" onclick="App.toggleLeaderboard()">Ver clasificación ▾</button>
+        <div id="ranked-leaderboard" class="ranked-leaderboard hidden"></div>
+      </div>
+      <p class="menu-error hidden" id="error-ranked"></p>
     </div>
 
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-    <p class="fh-intro-texto">Coche te da cinco restricciones a la vez —un club, una nacionalidad, un rango de edad, un trofeo, lo que toque ese día— y sesenta segundos para escribir el nombre de un futbolista real que las cumpla todas. No basta con acertar cualquiera: cuantas más restricciones cumpla a la perfección tu respuesta frente a las de tus rivales, más puntos te llevas esa ronda. Se juega en salas online de dos a cinco personas, por código privado o buscando partida pública, y cada partida reparte restricciones nuevas sacadas de una base amplia de clubes, selecciones, entrenadores y compañeros de vestuario, así que memorizar combinaciones de partidas anteriores no sirve de mucho. Gana quien más puntos sume al final de todas las rondas.</p>
+    <p class="fh-intro-texto">Coche te da cinco restricciones a la vez —un club, una nacionalidad, un rango de edad, un trofeo, lo que toque ese día— y sesenta segundos para escribir el nombre de un futbolista real que las cumpla todas. No basta con acertar cualquiera: cuantas más restricciones cumpla a la perfección tu respuesta frente a las de tus rivales, más puntos te llevas esa ronda. Se juega en salas online de dos a cinco personas, por código privado o buscando partida pública, y cada partida reparte restricciones nuevas sacadas de una base amplia de clubes, selecciones, entrenadores y compañeros de vestuario, así que memorizar combinaciones de partidas anteriores no sirve de mucho. Gana quien más puntos sume al final de todas las rondas. Con cuenta iniciada también puedes competir en la Clasificatoria: partidas 1 contra 1 emparejadas por ELO, con tramos desde Tercera División hasta el Mundial.</p>
 <p class="guia-link"><a href="/como-jugar/coche/">Cómo se juega &rarr;</a></p>
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
@@ -428,6 +433,7 @@
   <h2 class="finished-title">¡GANADOR!</h2>
   <div class="winner-name"  id="winner-name">—</div>
   <div class="final-scores" id="final-scores"></div>
+  <div id="ranked-result-box" class="ranked-result-box hidden"></div>
   <div class="finished-actions">
     <button class="btn-primary" id="btn-play-again" onclick="App.playAgain()">🔄 Jugar de nuevo</button>
     <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
@@ -461,7 +467,7 @@
     var _real  = null;
     var methods = [
       'setTab','createRoom','joinRoom','findPublicRoom',
-      'startLocalGame','adjustLocalPoints','adjustLocalSecs',
+      'buscarRival','cancelarBusquedaRival','toggleLeaderboard',
       'adjustOnlinePoints','adjustOnlineSecs',
       'leaveRoom','startGame','nextRound',
       'submitAnswer','selectAutocomplete','selectAndSubmit',
@@ -528,14 +534,17 @@
 </script>
 
 <script src="../js/supabase-config.js"></script>
+<script src="../js/ranked-engine.js?v=20260830a"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="../js/futbol-restrictions.js?v=20260825a"></script>
+<script src="../js/futbol-restrictions.js?v=20260830a"></script>
 <script src="../js/vendor/supabase-js.min.js"></script>
 <script src="../js/auth.js?v=20260827a"></script>
+<script src="../js/liga.js?v=20260830a"></script>
+<script src="../js/ranked.js?v=20260830a"></script>
 <script src="../js/progress-sync.js?v=20260827a"></script>
 <script src="../js/hub-streaks.js?v=20260827b"></script>
 <script src="../js/img-heal.js?v=20260727a"></script>
-<script src="../js/profile-widget.js?v=20260827a"></script>
+<script src="../js/profile-widget.js?v=20260830a"></script>
 <script src="../js/bot-core.js?v=20260723a"></script>
 <script src="../js/bot-names.js?v=20260723a"></script>
 <script type="module">
@@ -573,7 +582,7 @@
   /* Version FIJA, no Date.now(): con el timestamp la URL cambiaba en cada
      carga y script.js (213 KB) se volvia a descargar SIEMPRE, sin caché de
      navegador ni de service worker. Al tocar el archivo, sube la letra. */
-  const V = '?v=20260825a';
+  const V = '?v=20260830b';
 
   const s = document.createElement('script');
   s.src = 'js/script.js' + V;

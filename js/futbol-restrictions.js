@@ -25,10 +25,20 @@
    Los datos de restriccion (entrenados_por, ganadores, companeros, perf_stats,
    gen_pool) viven en game-data/general/; se lee de ahi con respaldo a
    game-data/coche/ para no romper mientras no se haya subido la copia general.
+   Tambien cargable en Node (api/ranked.js, el arbitro de Coche competitivo):
+   exporta via module.exports igual que js/supabase-config.js, tomando de ahi
+   el sbStorageUrl que en navegador viene del global. `fetch` es global en
+   Node 18+, asi que _loadData() no necesita cambios entre entornos.
    ============================================================================= */
 'use strict';
 
-window.FR = (function () {
+(function (root, factory) {
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = factory(require('./supabase-config').sbStorageUrl);
+  } else {
+    root.FR = factory(root.sbStorageUrl);
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (sbStorageUrl) {
 
   /* ─────────────────── Normalizacion de texto ─────────────────── */
   function acNorm(s) {
@@ -1089,6 +1099,12 @@ window.FR = (function () {
        ya construidos, para que FR.validate('teammate') funcione sin FR.init()
        (sin recargar datos). */
     setTeammateMaps(rev, revIds) { _REVERSE_TEAMMATE = rev || {}; _REVERSE_TEAMMATE_IDS = revIds || {}; },
+    /* Lectura de esos mismos mapas: los necesita RankedEngine.setTeammateData
+       (js/ranked-engine.js) para que el arbitro (api/ranked.js) genere la
+       MISMA rejilla que el cliente sin reconstruir el mapa inverso por su
+       cuenta — sería una cuarta copia de la misma lógica. */
+    get reverseTeammate()    { return _REVERSE_TEAMMATE; },
+    get reverseTeammateIds() { return _REVERSE_TEAMMATE_IDS; },
     rng: { mulberry32, shuffle, weightedShuffle },
     get genPool()  { return GEN_POOL; },
     get playersDb(){ return PLAYERS_DB; },
@@ -1097,4 +1113,4 @@ window.FR = (function () {
     TROPHIES, COACHES_LIST, TEAMMATES_LIST, CONTINENT_NAT, CONTINENT_LOGOS,
   };
   return FR;
-})();
+});

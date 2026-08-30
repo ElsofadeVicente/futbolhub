@@ -168,6 +168,61 @@ a      { text-decoration: none; }
 .menu-error.hidden { display: none; }
 
 /* ═══════════════════════════════════════════
+   CLASIFICATORIA (ranked 1v1 por ELO)
+   PLAN-coche-ranked.md
+   ═══════════════════════════════════════════ */
+.ranked-locked.hidden, .ranked-unlocked.hidden { display: none; }
+.ranked-locked-sub {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--np-ink-mid);
+  text-align: center; line-height: 1.6; letter-spacing: 0.02em; margin-top: 4px;
+}
+.ranked-unlocked { display: flex; flex-direction: column; gap: 10px; }
+.ranked-tramo-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--np-paper2); border: 1.5px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0); padding: 12px 14px;
+}
+.ranked-tramo-logo { width: 42px; height: 42px; object-fit: contain; flex-shrink: 0; }
+.ranked-tramo-info { flex: 1; min-width: 0; }
+.ranked-tramo-nombre {
+  font-family: 'Anton', sans-serif; font-size: 1rem; letter-spacing: 0.03em;
+  color: var(--np-ink); text-transform: uppercase;
+}
+.ranked-tramo-elo {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--np-ink-mid);
+  letter-spacing: 0.05em; margin-top: 2px;
+}
+.ranked-tramo-stats {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--np-ink-mid);
+  white-space: nowrap;
+}
+#btn-cancelar-busqueda.hidden { display: none; }
+#ranked-search-hint { min-height: 1.2em; }
+.ranked-leaderboard-toggle {
+  background: none; border: none; color: var(--np-ink-mid);
+  font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em;
+  text-transform: uppercase; text-align: center; cursor: pointer; padding: 4px;
+}
+.ranked-leaderboard-toggle:hover { color: var(--np-ink); }
+.ranked-leaderboard.hidden { display: none; }
+.ranked-leaderboard-list {
+  list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto;
+  border: 1.5px solid var(--bd-c, var(--np-ink));
+}
+.ranked-leaderboard-row {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  border-bottom: 1px solid var(--np-ink-soft);
+  font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--np-ink);
+  background: var(--np-paper2);
+}
+.ranked-leaderboard-row:last-child { border-bottom: none; }
+.ranked-leaderboard-row--yo { background: var(--np-ink); color: var(--np-paper); }
+.ranked-leaderboard-puesto { width: 22px; opacity: 0.6; text-align: right; }
+.ranked-leaderboard-nombre { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ranked-leaderboard-elo { font-family: 'Anton', sans-serif; font-size: 0.9rem; }
+
+/* ═══════════════════════════════════════════
    BOTONES
    ═══════════════════════════════════════════ */
 .btn-primary {
@@ -532,6 +587,45 @@ a      { text-decoration: none; }
 .final-score-pts  { font-family:'Anton',sans-serif; font-size:1.5rem; letter-spacing:1px; color:var(--np-red); line-height:1; }
 .final-score-item.winner-item .final-score-pts { color:var(--np-paper); }
 .finished-actions { display:flex; flex-direction:column; gap:8px; width:100%; max-width:320px; }
+
+/* ═══════════════════════════════════════════
+   RESULTADO CLASIFICATORIA (ELO antes → después)
+   PLAN-coche-ranked.md
+   ═══════════════════════════════════════════ */
+.ranked-result-box.hidden { display: none; }
+.ranked-result-box { width: 100%; max-width: 320px; }
+.ranked-result-loading, .ranked-result-error {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--np-ink-mid);
+  text-align: center; letter-spacing: 0.04em; line-height: 1.5;
+}
+.ranked-result-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 1.5px solid var(--bd-c, var(--np-ink)); border-radius: var(--r-md, 0);
+  padding: 14px; background: var(--np-paper2);
+}
+.ranked-result-label {
+  font-family: 'Anton', sans-serif; font-size: 1.1rem; letter-spacing: 0.1em;
+}
+.ranked-result-win  .ranked-result-label { color: #1a7a3a; }
+.ranked-result-loss .ranked-result-label { color: var(--np-red); }
+.ranked-result-tie  .ranked-result-label { color: var(--np-ink-mid); }
+.ranked-result-elo {
+  display: flex; align-items: baseline; gap: 6px;
+  font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--np-ink);
+}
+.ranked-elo-antes { opacity: 0.55; }
+.ranked-elo-arrow { opacity: 0.4; }
+.ranked-elo-despues { font-family:'Anton',sans-serif; font-size: 1.3rem; }
+.ranked-elo-delta { font-weight: 600; }
+.ranked-result-win  .ranked-elo-delta { color: #1a7a3a; }
+.ranked-result-loss .ranked-elo-delta { color: var(--np-red); }
+.ranked-result-tramo {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--np-ink-mid);
+}
+.ranked-result-tramo .ranked-tramo-logo { width: 28px; height: 28px; }
+.ranked-result-ascenso { color: #1a7a3a; font-family:'DM Mono',monospace; font-size:0.72rem; letter-spacing:0.05em; }
+.ranked-result-descenso { color: var(--np-red); font-family:'DM Mono',monospace; font-size:0.72rem; letter-spacing:0.05em; }
 
 /* ═══════════════════════════════════════════
    MUERTE SÚBITA
