@@ -103,24 +103,7 @@ body {
 }
 
 /* El botón de volver del menú era .menu-back-btn (absolute, 18px). Ahora es
-   .fh-volver, ver css/volver.css. Lo que queda aquí es su gemelo de la
-   esquina derecha, que se coloca en espejo exacto: mismo top y el mismo
-   calc contra --ad-col-w, para que los dos queden a la misma altura y a la
-   misma distancia del borde del área de juego. */
-.menu-stats-btn {
-    position: fixed;
-    top: calc(var(--volver-gap, 14px) + env(safe-area-inset-top, 0px));
-    right: calc(var(--ad-col-w, 0px) + var(--volver-gap, 14px));
-    z-index: 30;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    font-family: 'DM Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
-    color: var(--np-ink); text-transform: uppercase; padding: 5px 10px;
-    border: 1px solid var(--bd-c, var(--np-ink)); background: var(--np-paper2);
-    border-radius: var(--r-md, 0); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-    transition: background 0.12s, color 0.12s;
-    cursor: pointer;
-}
-.menu-stats-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+   .fh-volver, ver css/volver.css. */
 
 .mode-title {
     font-family: 'Anton', sans-serif;
@@ -1062,46 +1045,6 @@ body {
     color: var(--text-muted);
     margin-bottom: 20px;
 }
-/* ── ESTADÍSTICAS: distribución de aciertos ── */
-.stats-dist-wrap { margin: 4px 0 20px; text-align: left; }
-.stats-dist-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 8px;
-    text-align: center;
-}
-.stats-dist { display: flex; flex-direction: column; gap: 3px; }
-.stats-dist-row {
-    display: flex; align-items: center; gap: 6px;
-    font-family: 'DM Mono', monospace; font-size: 0.66rem;
-}
-.stats-dist-row .sd-label {
-    width: 1.4rem; text-align: right; color: var(--text-muted); flex: none;
-}
-.stats-dist-row .sd-bar-wrap { flex: 1; min-width: 0; }
-.stats-dist-row .sd-bar {
-    background: var(--np-ink);
-    color: var(--np-paper);
-    padding: 1px 5px;
-    min-width: 1.4rem;
-    text-align: right;
-    font-weight: 700;
-    transition: width 0.4s ease;
-}
-/* La fila del último resultado se resalta en verde */
-.stats-dist-row.sd-current .sd-bar { background: var(--correct); color: #08210f; }
-.stats-dist-row.sd-zero .sd-bar { background: rgba(var(--np-ink-rgb, 15,18,14), 0.18); color: var(--text-muted); }
-
-.stats-empty {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 0.95rem;
-    color: var(--text-muted);
-    margin-bottom: 20px;
-}
-
 .completion-buttons {
     display: flex;
     flex-direction: column;
@@ -1140,10 +1083,6 @@ body {
 
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 600px) {
-    /* El SVG basta: el rótulo "STATS" se cae para no competir con el título.
-       Las coordenadas ya no se tocan aquí — las pone el mismo calc que
-       .fh-volver, así que los dos botones siguen alineados. */
-    .menu-stats-btn span { display: none; }
     .mode-title { font-size: 2.6rem; letter-spacing: 6px; }
     .mode-btn { padding: 14px 16px; }
     .mode-btn-title { font-size: 1.35rem; }

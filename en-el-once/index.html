@@ -182,13 +182,6 @@
 <div id="once-menu" class="once-menu-screen">
   <button class="fh-volver" onclick="window.location.href='../'">← Volver</button>
 
-  <button class="menu-stats-btn" onclick="showStatsModal()" title="Tus estadísticas" aria-label="Tus estadísticas">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>
-    </svg>
-    <span>STATS</span>
-  </button>
-
   <h1 class="mode-title">EN EL ONCE</h1>
   
   <div class="mode-buttons">
@@ -376,26 +369,7 @@
            el JS lo localiza con querySelector('.completion-buttons .next-btn') -->
       <button class="next-btn" onclick="nextMatch()">Siguiente partido →</button>
       <button class="next-btn" id="once-share-btn" onclick="onceShare()">📤 Compartir</button>
-      <button class="give-up-btn" onclick="closeCompletionModal(); showStatsModal();">📊 Estadísticas</button>
       <button class="give-up-btn" onclick="closeCompletionModal()">Ver alineación</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal de estadísticas -->
-<div id="stats-modal" class="completion-modal">
-  <div class="completion-content">
-    <div class="completion-title">📊 TUS ESTADÍSTICAS</div>
-    <div class="completion-stats" id="stats-top"></div>
-    <div class="stats-dist-wrap">
-      <div class="stats-dist-title">Aciertos por partida (de 11)</div>
-      <div class="stats-dist" id="stats-dist"></div>
-    </div>
-    <div class="stats-empty" id="stats-empty" style="display:none;">
-      Aún no has jugado ningún Once Diario. ¡Juega el de hoy y vuelve!
-    </div>
-    <div class="completion-buttons">
-      <button class="give-up-btn" onclick="closeStatsModal()">Cerrar</button>
     </div>
   </div>
 </div>
