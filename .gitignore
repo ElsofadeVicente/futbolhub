@@ -27,8 +27,6 @@ data/transfermarkt_api_exports/
 # nunca deben subirse a GitHub.
 data/teams/logos/
 data/teams/flags/
-blackjack/data/teams/logos/
-blackjack/data/teams/flags/
 coche/data/logos/
 coche/data/flags/
 coche/data/trofeos/
@@ -42,7 +40,12 @@ coche/data/coaches/
 crucigrama/data/
 la-torre/data/
 en-el-once/data/
-en-el-top/data/enteltop.json
+# en-el-top/data/enteltop.json era el formato viejo (un solo archivo, hasta
+# el 2026-07-28); el juego migró a un JSON por mes, y esos meses se colaron
+# en git porque la regla de abajo no cubría archivos nuevos con otro nombre.
+en-el-top/data/
+la-carrera/data/
+wordle/data/
 higher-or-lower/data/
 el-estadio/data/estadios.json
 # Las copias que deja generar_estadios.py al guardar: son respaldos de un
