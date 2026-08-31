@@ -492,8 +492,13 @@ const BlackjackGame = (() => {
   /* ─── club → URL del escudo en Supabase Storage (bucket team-logos) ─── */
   function _getLogoUrl(club) {
     if (!club) return null;
-    // Misma lógica que safe_filename() en download-assets.py
+    // Misma lógica que safe_key() en admin/upload_images_to_storage.py, que
+    // es quien decide la clave real en Storage: sin quitar acentos/diéresis
+    // aquí, un club como "Atlético Saguntino" o "1.FC Köln" pediría un
+    // archivo que nunca coincide con el que se subió (Storage rechaza claves
+    // no-ASCII, así que la clave subida siempre va sin acentos).
     const fname = club.trim()
+      .normalize('NFKD').replace(/[̀-ͯ]/g, '')
       .replace(/[\/:\*\?"<>|]/g, '_')
       .replace(/\s+/g, '_');
     return sbStorageUrl('team-logos', `${fname}.png`);
