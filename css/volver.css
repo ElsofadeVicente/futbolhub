@@ -118,3 +118,64 @@
      que este flota en hueco vacío y la reserva sobra. */
   .fh-volver-hueco { margin-top: 0; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   QUE LOS BOTONES FLOTANTES NO SE COMAN LA TARJETA DE PORTADA
+   ══════════════════════════════════════════════════════════════════
+   Tanto .fh-volver como el círculo de perfil (.pw-root, en css/
+   profile-widget.css) son `position: fixed` y se dibujan ENCIMA del
+   contenido. Medido en producción a 375px de ancho en La Carrera:
+
+     .fh-volver   ocupa de y=14 a y=38, +2px de sombra  ->  hasta 40
+     .pw-root     ocupa de y=14 a y=56 (42px de alto)   ->  hasta 56
+     #mode-box    empieza en y=46  ->  el arte de la tarjeta, en y=47
+
+   O sea que en un móvil el botón pisaba el marco de la tarjeta y el
+   círculo se comía la esquina superior derecha del banner. En escritorio
+   no pasa: ahí .fh-volver se va a x=186 (fuera de la columna de anuncios)
+   y la tarjeta queda centrada y más estrecha.
+
+   Se les reserva sitio en la portada de los juegos que tienen tarjeta
+   pegada arriba. 64px = los 56 del círculo (el más alto de los dos) más
+   un respiro. Va aquí y no en el CSS de cada juego porque el que invade
+   es este botón, y así los dos casos se arreglan y se explican en el
+   mismo sitio. Esta hoja carga DESPUÉS que la del juego, así que gana a
+   igual especificidad de id.
+
+   Si añades una portada nueva con tarjeta arriba, súmala a la lista. */
+@media (max-width: 900px) {
+  /* La banda superior que hay que dejar libre. Es lo que ocupa el mas alto
+     de los dos, el circulo de perfil (10 -> 48), mas un respiro. */
+  #intro-screen,              /* La Carrera  */
+  #mode-screen,               /* En el Top   */
+  #once-menu,                 /* En el Once  */
+  .sd-intro-wrap,             /* Superdraft  */
+  .hol-mode-menu-inner,       /* Higher or Lower */
+  .menu-wrap,                 /* En la Cadena */
+  .menu-hero,                 /* Blackjack, El Mentiroso, El Estadio */
+  .cruc-nav-row {             /* El Crucigrama */
+    padding-top: 56px;
+  }
+
+  /* Estos tienen el titulo pegado al borde y el hueco va en el titulo, no en
+     el contenedor: son .screen centrados y meterles padding arriba los
+     descentra entero. */
+  #screen-menu .menu-title { margin-top: 46px; }
+
+  /* Wordle NO lleva hueco: su barra superior ya empieza en y=52, por debajo
+     de los dos flotantes (medido). Ponerle padding solo empujaba el teclado
+     mas abajo de la barra de ediciones. */
+
+  /* ── Los dos casos que NO son "titulo tapado" sino algo peor ──
+
+     BINGO: el circulo de perfil se comia el lado derecho del boton SALTAR
+     (medido: boton 273-347, circulo 327-365). No es que se viera feo — es que
+     tocar esa esquina abria el menu de perfil en vez de saltar al futbolista,
+     en un juego con 10 segundos por ronda. Se aparta el boton del borde. */
+  .caller-side { padding-right: 46px; }
+
+  /* PORTADA: el circulo caia encima del bloque de la derecha de la cabecera
+     ("EDICION DIGITAL"). Se le quita sitio por la derecha en vez de bajar la
+     cabecera entera, que descolocaria toda la portada. */
+  .masthead-edition { padding-right: 44px; }
+}

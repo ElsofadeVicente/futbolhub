@@ -83,7 +83,6 @@ body::before {
 @keyframes spin { to { transform: rotate(360deg); } }
 .carrera-fail { color: var(--np-red); font-family: var(--font-mono); font-size: 12px; letter-spacing: .15em; text-align: center; padding: 0 20px; }
 .crest-spacer { width: 20px; height: 20px; flex-shrink: 0; }
-
 /* ── Pantalla de inicio ──────────────────────── */
 #intro-screen {
   position: relative; z-index: 1; min-height: 100vh;

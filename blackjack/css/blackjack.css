@@ -176,6 +176,10 @@ body {
 .menu-panel.active { display: flex; flex-direction: column; gap: 9px; }
 
 .menu-input {
+  /* Sin esto el campo mide 100% MAS los 24px de padding y los 3 de borde, y
+     se sale 7px de la pantalla en un movil: blackjack.css no trae un
+     box-sizing global como el resto de hojas del proyecto. */
+  box-sizing: border-box;
   background: var(--np-paper2); border: 1.5px solid var(--bd-c, var(--np-ink));
   border-radius: var(--r-md, 0); padding: 10px 12px; color: var(--np-ink);
   font-family: 'DM Mono', monospace; font-size: 0.82rem; letter-spacing: 0.06em;

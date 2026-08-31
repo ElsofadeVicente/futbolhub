@@ -78,10 +78,65 @@ function uniformChunkFile(id) {
   const lo = Math.floor(id / 100000) * 100000;
   return `${lo}-${lo + 99999}.json`;
 }
+/* ── PREVENIR, NO CURAR ───────────────────────────────────────────────────
+   El fallo que dejaba la pantalla en blanco empezaba SIEMPRE aquí: una
+   petición que se cae al volver a la app después de tenerla en segundo
+   plano. iOS suspende la red mientras la app no está delante, así que la
+   primera petición al volver se cae con un `TypeError: Load failed` aunque
+   la cobertura sea perfecta y un segundo después funcione todo.
+
+   Antes se intentaba UNA vez y quien llamaba se tragaba el error devolviendo
+   null, que aguas abajo se convertía en "no hay carrera" y de ahí en una
+   pantalla vacía. O sea que un parpadeo de red de medio segundo rompía la
+   partida entera.
+
+   Ahora se reintenta solo, y sobre todo se ESPERA a que haya red: si el
+   navegador dice que está sin conexión, no tiene sentido gastar los intentos
+   contra la pared — se espera al evento 'online' (con un tope, para no
+   quedarse colgado para siempre) y se sigue. Con esto, el caso normal deja
+   de producir ningún error que enseñar.
+
+   Los 404 y 400 NO se reintentan: significan que ese archivo no existe, y
+   repetirlo tres veces solo retrasa la respuesta. Se reintenta lo que puede
+   ser transitorio: un fallo de red y los errores de servidor (5xx, 429). */
+const REINTENTOS = 3;
+const ESPERA_MS  = [350, 1000];        // entre intento y intento
+const ESPERA_RED_MS = 6000;            // tope esperando a recuperar conexión
+
+function _duerme(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* Espera a tener conexión otra vez, con tope. navigator.onLine es poco de
+   fiar en positivo (dice true con una wifi sin salida), pero en NEGATIVO es
+   fiable: si dice false, seguro que no hay red. */
+function _esperarRed() {
+  if (navigator.onLine !== false) return Promise.resolve();
+  return new Promise(resolve => {
+    let listo = false;
+    const fin = () => { if (listo) return; listo = true; window.removeEventListener('online', fin); resolve(); };
+    window.addEventListener('online', fin);
+    setTimeout(fin, ESPERA_RED_MS);
+  });
+}
+
 async function fetchJson(url, cache = 'no-cache') {
-  const r = await fetch(url, { cache });
-  if (!r.ok) throw new Error(`HTTP ${r.status} → ${url}`);
-  return r.json();
+  let ultimo;
+  for (let intento = 0; intento < REINTENTOS; intento++) {
+    if (intento) await _duerme(ESPERA_MS[intento - 1] || 1000);
+    await _esperarRed();
+    try {
+      const r = await fetch(url, { cache });
+      if (r.ok) return await r.json();
+      // 4xx que no sea 429: el archivo no está, reintentar no lo va a traer.
+      if (r.status >= 400 && r.status < 500 && r.status !== 429) {
+        throw new Error(`HTTP ${r.status} → ${url}`);
+      }
+      ultimo = new Error(`HTTP ${r.status} → ${url}`);
+    } catch (e) {
+      if (/HTTP 4/.test(e.message || '')) throw e;
+      ultimo = e;      // fallo de red o JSON a medias: se reintenta
+    }
+  }
+  throw ultimo || new Error(`No se pudo cargar ${url}`);
 }
 // players / transfers: chunks uniformes de 100k → el archivo se calcula del ID.
 async function loadFromUniform(kind, id) {
@@ -595,11 +650,24 @@ async function init() {
     if (i >= 0 && i !== _idx) { _idx = i; playCurrent(); }
   });
 
+  /* Volver a la app despues de tenerla en segundo plano es EL momento en el
+     que aparecia la pantalla en blanco: iOS suspende la red, la peticion que
+     estuviera en vuelo falla y la pantalla se quedaba sin nada visible. Este
+     repaso no arregla la causa (eso lo hacen fail() y el try/catch), es la
+     ultima red: si al volver no hay nada que mirar, se vuelve a la portada. */
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) asegurarAlgoVisible();
+  });
+  window.addEventListener('pageshow', () => asegurarAlgoVisible());
+
   // ¿Ya jugaste hoy?
   const saved = loadTodayResult();
   if (_editions[_idx] === today && saved) {
-    elLoading.classList.add('hidden');
+    /* NO se esconde elLoading aqui: prepareAndPlay lo vuelve a mostrar
+       inmediatamente, y si algo falla por el camino queremos que siga
+       habiendo algo en pantalla. */
     await prepareAndPlay(today, saved);
+    asegurarAlgoVisible();
     return;
   }
 
@@ -623,8 +691,58 @@ async function loadAllMonths(today) {
   }
 }
 
+/* ── EL FALLO NO PUEDE DEJAR LA PANTALLA EN BLANCO ────────────────────────
+   Esto era, literalmente, la pantalla en blanco de la PWA. La version anterior
+   escribia el mensaje dentro de elLoading:
+
+       elLoading.innerHTML = `<p class="carrera-fail">${html}</p>`;
+
+   y el unico sitio que la llamaba de verdad lo hacia ASI:
+
+       if (!career.length) { elLoading.classList.add('hidden'); return fail(...); }
+
+   o sea, ESCONDIA elLoading y acto seguido escribia el error DENTRO. Con
+   #intro-screen ya oculto (lo esconde prepareAndPlay al empezar), #game-screen
+   y #end-screen ocultos de serie y #loading-screen recien ocultado, no quedaba
+   ni un elemento visible en la pagina: blanco absoluto y sin ningun boton con
+   el que salir — que en la app instalada, sin barra de direcciones, es un
+   callejon sin salida.
+
+   Y saltaba solo, sin tocar nada: loadFromUniform() y loadPerformances() se
+   tragan cualquier error y devuelven null, asi que un fetch fallido —lo normal
+   al volver a la app despues de tenerla en segundo plano, con la red aun
+   levantandose— dejaba career vacia y caia justo por ahi.
+
+   Ahora fail() SIEMPRE deja algo visible y algo que pulsar. */
+/* Último recurso. Con el reintento automático de fetchJson esto ya no lo
+   dispara un parpadeo de red; si aun así se llega, es que el dato de verdad
+   no está. Lo único que NO puede pasar es que la página se quede vacía: se
+   deja el mensaje a la vista y la barra de ediciones para poder irse a otro
+   día. Nada de botón de reintentar: reintentar es cosa de fetchJson, y un
+   botón que repite lo que ya ha fallado tres veces es pedirle al jugador que
+   arregle lo nuestro. */
 function fail(html) {
   elLoading.innerHTML = `<p class="carrera-fail">${html}</p>`;
+  elLoading.classList.remove('hidden');
+  if (elNav) { elNav.classList.remove('hidden'); renderNav(); }
+}
+
+/* Red de seguridad final. Si por lo que sea acaban las cuatro pantallas
+   ocultas a la vez, la pagina esta en blanco y el usuario no tiene forma de
+   salir. Antes de permitir eso, se vuelve a la portada del juego.
+
+   Se llama al terminar cada transicion y tambien al volver de segundo plano:
+   ese es el momento en el que aparecio el problema, porque es cuando una
+   peticion a medias se queda sin red. */
+function asegurarAlgoVisible() {
+  const pantallas = [elLoading, elIntro, elGame, elEnd];
+  const alguna = pantallas.some(el => el && !el.classList.contains('hidden'));
+  if (alguna) return false;
+  console.warn('[La Carrera] Ninguna pantalla visible: se vuelve a la portada.');
+  if (elLoading) elLoading.classList.add('hidden');
+  if (elIntro)   elIntro.classList.remove('hidden');
+  if (elNav)     { elNav.classList.remove('hidden'); renderNav(); }
+  return true;
 }
 
 function playCurrent() {
@@ -661,12 +779,26 @@ function renderNav() {
 //  PREPARAR JUGADOR Y EMPEZAR
 // ══════════════════════════════════════════════
 async function prepareAndPlay(date, saved) {
+  try {
+    return await _prepareAndPlay(date, saved);
+  } catch (e) {
+    /* Nadie esperaba esta promesa, asi que sin este catch un error aqui era
+       un unhandledrejection silencioso que dejaba la pantalla a medias. */
+    console.error('[La Carrera] No se pudo preparar la partida:', e);
+    fail('No se ha podido cargar la partida. Comprueba la conexión.');
+  } finally {
+    asegurarAlgoVisible();
+  }
+}
+
+async function _prepareAndPlay(date, saved) {
   const entry = _days[date];
   if (!entry || !entry.id) return fail('No hay jugador para ese día.');
   _idx = Math.max(0, _editions.indexOf(date));
 
   elIntro.classList.add('hidden');
   elLoading.classList.remove('hidden');
+  elLoading.innerHTML = '<div class="spin"></div><p>Cargando carrera…</p>';
 
   const id = entry.id;
   const [transfers, perf, playerRec] = await Promise.all([
@@ -676,7 +808,15 @@ async function prepareAndPlay(date, saved) {
   ]);
 
   const career = buildCareer(transfers, perf);
-  if (!career.length) { elLoading.classList.add('hidden'); return fail('No se pudo montar la carrera de este jugador.'); }
+  if (!career.length) {
+    /* OJO: aqui NO se esconde elLoading. fail() escribe dentro y lo deja a la
+       vista; esconderlo antes es lo que dejaba la pagina en blanco. */
+    return fail(
+      (transfers || perf)
+        ? 'No se pudo montar la carrera de este futbolista.'
+        : 'No se han podido cargar los datos. Comprueba la conexión.'
+    );
+  }
 
   _target = {
     id,
