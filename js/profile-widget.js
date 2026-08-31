@@ -275,7 +275,7 @@
        La Liga (ver CLAUDE.md, "Liga competitiva") hoy solo existe en El
        Estadio, y js/liga.js solo se carga en esa página — el perfil se abre
        desde cualquiera de las 14, así que se pide con la MISMA RPC
-       (`liga_panel`) directamente contra FHAuth.client en vez de depender
+       (`liga_panel`) directamente contra el cliente de auth.js en vez de depender
        de que liga.js esté cargado. Los nombres de tramo se duplican aquí
        (8 líneas, liga.js los tiene con logo e info completa) porque
        liga.js no siempre está disponible; si cambian allí, cambiar aquí. */
@@ -344,7 +344,7 @@
             if (rSlot) rSlot.innerHTML = `<p class="pw-text">Inicia sesión para tener palmarés.</p>`;
             return;
         }
-        FHAuth.client.rpc('liga_panel', { p_juego: 'el-estadio' }).then(({ data, error }) => {
+        FHAuth.ready().then(c => c.rpc('liga_panel', { p_juego: 'el-estadio' })).then(({ data, error }) => {
             if (perfilView._token !== token || !slot.isConnected) return;
             if (error || !data || data.auth === false || !Array.isArray(data.clasificacion)) {
                 slot.innerHTML = `<p class="pw-text">No se ha podido cargar tu división.</p>`;
@@ -370,11 +370,11 @@
            solo Coche tiene filas en ranked_rating, así que es lo único que
            puede salir, pero el bloque ya recorre "juegos" entero para que
            los que se añadan después aparezcan solos sin tocar esta vista.
-           Igual que arriba: RPC directo contra FHAuth.client, no depende de
+           Igual que arriba: RPC directo contra el cliente de auth.js, no depende de
            que js/ranked.js esté cargado (el hub y muchos juegos no lo cargan). */
         const rankedSlot = modal.querySelector('[data-slot="ranked"]');
         if (rankedSlot) {
-            FHAuth.client.rpc('ranked_perfil', { p_user: session.user.id }).then(({ data, error }) => {
+            FHAuth.ready().then(c => c.rpc('ranked_perfil', { p_user: session.user.id })).then(({ data, error }) => {
                 if (perfilView._token !== token || !rankedSlot.isConnected) return;
                 if (error || !data || data.auth === false || !Array.isArray(data.juegos) || !data.juegos.length) {
                     rankedSlot.innerHTML = `<p class="pw-text">Aún no has jugado ninguna Clasificatoria.</p>`;

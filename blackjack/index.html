@@ -29,9 +29,14 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Supabase es el origen del que salen TODOS los datos de juego y la
+       sesion. Sin este preconnect, el DNS + TCP + TLS contra ese host no
+       empieza hasta que el JS del final del body hace su primer fetch: son
+       tres idas y vueltas en el camino critico que en un movil se notan. -->
+  <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/blackjack.css?v=20260831a" />
-  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
+  <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/sala.css?v=20260819a">
@@ -94,7 +99,6 @@
   })();
 </script>
 <!-- Google AdSense -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -240,6 +244,10 @@
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
     <p class="fh-intro-texto">Blackjack de FutbolHUB coge la mecánica del veintiuno y la cambia por futbolistas: cada carta que sacas suma un valor que no ves hasta que decides plantarte, así que pedir una más siempre es una apuesta a ciegas. El objetivo es acercarte todo lo posible a la cifra objetivo de la ronda sin pasarte, y quien se pasa queda eliminado de esa mano. Se juega en salas online de hasta seis jugadores, por código privado o buscando partida pública, y también existe un modo en solitario para practicar el pulso sin depender de que se conecte nadie más. Cada ronda reparte jugadores distintos, así que memorizar valores de partidas anteriores no ayuda: hay que decidir con lo que tienes delante.</p>
 <p class="guia-link"><a href="/como-jugar/blackjack/">Cómo se juega &rarr;</a></p>
+<!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
+     Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
+<div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
+
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
   <ul class="fh-otros-lista">
@@ -403,6 +411,13 @@
     <button class="btn-primary" onclick="App.playAgain()">🔄 Jugar de nuevo</button>
     <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
   </div>
+<!-- Unidad de movil del panel de fin de partida: solo <1240px y solo
+     cuando este panel se muestra de verdad (js/ads.js no pide nada a
+     Google hasta que el hueco tiene ancho real). Va DESPUES de los
+     botones: si el anuncio carga tarde, que empuje hacia abajo lo que ya
+     no vas a pulsar y no el boton que tenias bajo el dedo. -->
+<div class="ad-slot ad-slot--flow" data-ad="movil-final"></div>
+
 </div>
 
 <!-- ═══════════════════════════════════════════════
@@ -469,17 +484,16 @@
      cualquiera de ellos, sube la letra. */
   const V = '?v=20260824a';
   const scripts = [
-    '../js/supabase-config.js',
-    '../js/vendor/supabase-js.min.js',
-    '../js/auth.js?v=20260827a',
-    '../js/progress-sync.js?v=20260827a',
+    '../js/supabase-config.js?v=20260831a',
+    '../js/auth.js?v=20260831b',
+    '../js/progress-sync.js?v=20260831b',
     '../js/hub-streaks.js?v=20260827b',
-    '../js/img-heal.js?v=20260727a',
-    '../js/profile-widget.js?v=20260830a',
+    '../js/img-heal.js?v=20260831a',
+    '../js/profile-widget.js?v=20260831b',
     '../js/ruta.js?v=20260820a',
-    '../js/shared.js',
-    '../js/player-data-loader.js',
-    '../js/extended-data-loader.js',
+    '../js/shared.js?v=20260831a',
+    '../js/player-data-loader.js?v=20260831a',
+    '../js/extended-data-loader.js?v=20260831a',
     '../js/bot-core.js' + V,
     '../js/bot-names.js' + V,
     'js/blackjack-sets.js' + V,
@@ -496,8 +510,11 @@
      Un <script> creado con JS es async por defecto (se ejecuta cuando llega,
      en cualquier orden). Poniéndole async = false se bajan todos EN PARALELO
      pero se ejecutan en el orden en que se insertan — que es justo lo que
-     hace falta, porque auth.js necesita a supabase-js, los bots necesitan a
-     blackjack-app, etc. */
+     hace falta, porque auth.js necesita a supabase-config, los bots necesitan
+     a blackjack-app, etc.
+
+     supabase-js YA NO esta en esta lista: lo carga auth.js por su cuenta y
+     solo si hace falta (ver la cabecera de js/auth.js). */
   const pendientes = scripts.map(src => new Promise(res => {
     const s = document.createElement('script');
     s.src = src;
@@ -531,6 +548,6 @@
     });
   }
 </script>
-<script defer src="../js/ads.js?v=20260808c"></script>
+<script defer src="../js/ads.js?v=20260831a"></script>
 </body>
 </html>

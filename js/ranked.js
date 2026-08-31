@@ -3,7 +3,7 @@
    PLAN-coche-ranked.md
 
    Cargar SIEMPRE después de:
-     js/auth.js   (usa FHAuth.client / FHAuth.getSession(), lleva la sesión)
+     js/auth.js   (usa FHAuth.ready() / FHAuth.getSession(), lleva la sesión)
      js/liga.js   (reutiliza FHLiga.TRAMOS/tramoInfo — mismos nombres/logos
                    de tramo que la liga de El Estadio, ver §2 del plan)
 
@@ -25,7 +25,9 @@
   'use strict';
 
   if (!window.FHAuth) { console.error('[FHRanked] Falta auth.js'); return; }
-  const client = FHAuth.client;
+
+  /* supabase-js se carga en diferido (ver js/auth.js): el cliente se pide
+     con await FHAuth.ready() dentro de cada funcion, no al cargar. */
 
   const TRAMOS_UMBRALES = [0, 350, 550, 750, 950, 1150, 1350, 1600];
 
@@ -55,6 +57,7 @@
     try {
       const session = await FHAuth.getSession();
       if (!session) return { auth: false };
+      const client = await FHAuth.ready();
       const { data, error } = await client.rpc('ranked_perfil', { p_user: session.user.id });
       if (error) { console.warn('[FHRanked] perfil:', error.message); return null; }
       return data;
@@ -66,6 +69,7 @@
 
   async function leaderboard(juego, limit) {
     try {
+      const client = await FHAuth.ready();
       const { data, error } = await client.rpc('ranked_leaderboard', { p_juego: juego, p_limit: limit || 100 });
       if (error) { console.warn('[FHRanked] leaderboard:', error.message); return null; }
       return data;

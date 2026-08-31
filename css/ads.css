@@ -56,3 +56,31 @@
 /* Sin unidad configurada, con bloqueador, o sin consentimiento: AdSense
    deja el <ins> vacío. Que no quede un boquete de 600px. */
 .ad-slot:not([data-ad-filled]) { min-height: 0; }
+
+/* ── Unidades de MOVIL, dentro del flujo del juego (2026-08-31) ──
+   Los dos rascacielos son lo unico que habia, y viven en columnas que
+   desaparecen por debajo de 1240px: en un movil no cabia ni un anuncio, o
+   sea que la PWA cargaba AdSense entero para servir cero. Estos dos huecos
+   son la contrapartida — y van solo donde NO se juega:
+
+     data-ad="movil-menu"   menu del juego, debajo de la descripcion
+     data-ad="movil-final"  panel de fin de partida, DESPUES de los botones
+
+   Colocados detras de los botones a proposito: si el anuncio carga tarde y
+   empuja el contenido, que empuje hacia abajo lo que ya no vas a pulsar, no
+   el boton que tenias debajo del dedo.
+
+   Solo por debajo del umbral: en escritorio ya estan los rascacielos y
+   duplicar seria apretar la pagina y la densidad publicitaria sin ganar
+   nada. Al ocultarse con display:none su offsetWidth es 0, y js/ads.js ya
+   no pinta lo que no ocupa sitio: no hace falta ninguna regla mas. */
+.ad-slot--flow {
+  display: block;
+  width: 100%;
+  max-width: 336px;
+  margin: 24px auto 0;
+}
+@media (min-width: 1240px) {
+  .ad-slot--flow { display: none; }
+}
+.ad-slot--flow ins.adsbygoogle { display: block; }

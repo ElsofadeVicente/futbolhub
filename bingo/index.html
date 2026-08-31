@@ -29,11 +29,16 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Supabase es el origen del que salen TODOS los datos de juego y la
+       sesion. Sin este preconnect, el DNS + TCP + TLS contra ese host no
+       empieza hasta que el JS del final del body hace su primer fetch: son
+       tres idas y vueltas en el camino critico que en un movil se notan. -->
+  <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Tres en Raya) -->
-  <link rel="stylesheet" href="../coche/css/style.css?v=20260819a">
+  <link rel="stylesheet" href="../coche/css/style.css?v=20260824a">
   <link rel="stylesheet" href="css/style.css?v=20260827a">
-  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
+  <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/sala.css?v=20260819a">
@@ -95,7 +100,6 @@
       signalGooglefcPresent();
     })();
   </script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -251,6 +255,10 @@
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
     <p class="fh-intro-texto">Bingo reparte un cartón con dieciséis categorías —un club, una nacionalidad, un trofeo, un rango de edad— y cada diez segundos aparece un futbolista real que tienes que colocar en la casilla que creas que le corresponde, antes de que llegue el siguiente. La gracia está en que no hay validación en el momento: puedes colocar mal a propósito o por error y no lo sabrás hasta que el cartón se completa entero, así que hasta el final no sabes si has hecho bingo de verdad. Se juega en salas online con más gente, todos con el mismo cartón pero a su propio ritmo, y se ve el progreso y el resultado final de cada jugador al término de la partida.</p>
 <p class="guia-link"><a href="/como-jugar/bingo/">Cómo se juega &rarr;</a></p>
+<!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
+     Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
+<div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
+
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
   <ul class="fh-otros-lista">
@@ -340,6 +348,13 @@
       <button class="btn-primary"   id="btn-again" onclick="App.playAgain()">🔄 Otra partida</button>
       <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
     </div>
+<!-- Unidad de movil del panel de fin de partida: solo <1240px y solo
+     cuando este panel se muestra de verdad (js/ads.js no pide nada a
+     Google hasta que el hueco tiene ancho real). Va DESPUES de los
+     botones: si el anuncio carga tarde, que empuje hacia abajo lo que ya
+     no vas a pulsar y no el boton que tenias bajo el dedo. -->
+<div class="ad-slot ad-slot--flow" data-ad="movil-final"></div>
+
   </div>
 </div>
 
@@ -397,15 +412,14 @@
   window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
 </script>
 
-<script src="../js/supabase-config.js"></script>
-<script src="../js/vendor/supabase-js.min.js"></script>
-<script src="../js/auth.js?v=20260827a"></script>
-<script src="../js/progress-sync.js?v=20260827a"></script>
+<script src="../js/supabase-config.js?v=20260831a"></script>
+<script src="../js/auth.js?v=20260831b"></script>
+<script src="../js/progress-sync.js?v=20260831b"></script>
 <script src="../js/hub-streaks.js?v=20260827b"></script>
-<script src="../js/img-heal.js?v=20260727a"></script>
-<script src="../js/profile-widget.js?v=20260830a"></script>
+<script src="../js/img-heal.js?v=20260831a"></script>
+<script src="../js/profile-widget.js?v=20260831b"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="../js/futbol-restrictions.js?v=20260825a"></script>
+<script src="../js/futbol-restrictions.js?v=20260830a"></script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getDatabase, ref, set, get, update, onValue, push,
@@ -449,6 +463,6 @@
     });
   }
 </script>
-<script defer src="../js/ads.js?v=20260808c"></script>
+<script defer src="../js/ads.js?v=20260831a"></script>
 </body>
 </html>

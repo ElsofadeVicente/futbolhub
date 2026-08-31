@@ -236,7 +236,8 @@
     async function readRemote() {
         const session = await FHAuth.getSession();
         if (!session) return null;
-        const { data, error } = await FHAuth.client
+        const client = await FHAuth.ready();
+        const { data, error } = await client
             .from('profiles').select('progress').eq('id', session.user.id).maybeSingle();
         if (error) {
             if (/progress/i.test(error.message || '')) {
@@ -255,7 +256,8 @@
     async function writeRemote(payload) {
         const session = await FHAuth.getSession();
         if (!session) return false;
-        const { error } = await FHAuth.client
+        const client = await FHAuth.ready();
+        const { error } = await client
             .from('profiles').update({ progress: payload }).eq('id', session.user.id);
         if (error) {
             console.warn('[FHProgress] Error guardando el progreso:', error.message);

@@ -28,6 +28,11 @@
 <meta name="theme-color" content="#16181d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Supabase es el origen del que salen TODOS los datos de juego y la
+     sesion. Sin este preconnect, el DNS + TCP + TLS contra ese host no
+     empieza hasta que el JS del final del body hace su primer fetch: son
+     tres idas y vueltas en el camino critico que en un movil se notan. -->
+<link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
 <link rel="preload" as="image" href="./img/hub/once.webp" type="image/webp" fetchpriority="high">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./css/hub.css?v=20260819a">
@@ -89,7 +94,6 @@
   })();
 </script>
 <!-- Google AdSense -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -688,10 +692,10 @@
 
 </div><!-- /hub -->
 
-<script src="./js/shared.js"></script>
+<script src="./js/shared.js?v=20260831a"></script>
 <script src="./js/hub-streaks.js?v=20260827b"></script>
 <script defer src="./js/hub-ticker.js?v=20260808f"></script>
-<script defer src="./js/ads.js?v=20260808c"></script>
+<script defer src="./js/ads.js?v=20260831a"></script>
 <script>
   /* "Gestionar cookies": vuelve a abrir el aviso de Funding Choices para
      cambiar o retirar el consentimiento. Solo se enseña el botón si el CMP
@@ -749,11 +753,10 @@
       `No. ${edition} · ${dias[weekdayIdx] || ''} ${String(d).padStart(2,'0')} ${meses[m - 1]} · ${y}<br>MADRID · PRIMERA EDICIÓN`;
   })();
 </script>
-<script src="./js/vendor/supabase-js.min.js"></script>
-<script src="./js/supabase-config.js"></script>
-<script src="./js/auth.js?v=20260827a"></script>
-<script src="./js/progress-sync.js?v=20260827a"></script>
-<script src="./js/img-heal.js?v=20260727a"></script>
-<script src="./js/profile-widget.js?v=20260830a"></script>
+<script src="./js/supabase-config.js?v=20260831a"></script>
+<script src="./js/auth.js?v=20260831b"></script>
+<script src="./js/progress-sync.js?v=20260831b"></script>
+<script src="./js/img-heal.js?v=20260831a"></script>
+<script src="./js/profile-widget.js?v=20260831b"></script>
 </body>
 </html>

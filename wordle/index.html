@@ -29,9 +29,14 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Supabase es el origen del que salen TODOS los datos de juego y la
+       sesion. Sin este preconnect, el DNS + TCP + TLS contra ese host no
+       empieza hasta que el JS del final del body hace su primer fetch: son
+       tres idas y vueltas en el camino critico que en un movil se notan. -->
+  <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=20260828a">
-  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
+  <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
@@ -86,7 +91,6 @@
     signalGooglefcPresent();
   })();
 </script>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -195,6 +199,10 @@
   <div id="wd-footer">
     <p class="fh-intro-texto">Wordle es el juego 14 de FutbolHUB: cada día hay una única palabra de fútbol por adivinar —puede ser un término del juego, el nombre de un club o el apellido de un futbolista—, elegida a mano y sin longitud fija. Tienes 6 intentos para dar con ella y puedes escribir cualquier combinación de letras para tantear: al enviarla, cada letra se colorea de verde si está en el sitio correcto, de amarillo si está en la palabra pero en otra posición, y de gris si no aparece. El teclado en pantalla recuerda lo que ya has probado. Es la misma palabra para todo el mundo y solo cuenta el primer intento del día; las ediciones anteriores quedan en el archivo, navegable con las flechas de abajo, para practicar cuando quieras.</p>
     <p class="guia-link"><a href="/como-jugar/wordle/">Cómo se juega &rarr;</a></p>
+<!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
+     Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
+<div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
+
     <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
       <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
       <ul class="fh-otros-lista">
@@ -298,13 +306,12 @@
   window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
 </script>
 
-<script src="../js/supabase-config.js"></script>
-<script src="../js/vendor/supabase-js.min.js"></script>
-<script src="../js/auth.js?v=20260827a"></script>
-<script src="../js/progress-sync.js?v=20260827a"></script>
+<script src="../js/supabase-config.js?v=20260831a"></script>
+<script src="../js/auth.js?v=20260831b"></script>
+<script src="../js/progress-sync.js?v=20260831b"></script>
 <script src="../js/hub-streaks.js?v=20260827b"></script>
-<script src="../js/img-heal.js?v=20260727a"></script>
-<script src="../js/profile-widget.js?v=20260830a"></script>
+<script src="../js/img-heal.js?v=20260831a"></script>
+<script src="../js/profile-widget.js?v=20260831b"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
 <script src="js/game.js?v=20260828a"></script>
 <script>
@@ -315,6 +322,6 @@
     });
   }
 </script>
-<script defer src="../js/ads.js?v=20260808c"></script>
+<script defer src="../js/ads.js?v=20260831a"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
    cada juego pasa su propio identificador ("juego") y pinta su panel a su
    manera; esta capa solo habla con Supabase.
 
-   Cargar SIEMPRE después de js/auth.js (usa FHAuth.client, que lleva la
+   Cargar SIEMPRE después de js/auth.js (usa FHAuth.ready(), que lleva la
    sesión del usuario, así las RPC ven auth.uid()).
 
    Requiere haber ejecutado supabase/setup_liga.sql en la base de datos.
@@ -34,7 +34,11 @@
     'use strict';
 
     if (!window.FHAuth) { console.error('[FHLiga] Falta auth.js'); return; }
-    const client = FHAuth.client;
+
+    /* El cliente de Supabase ya no existe al cargar la pagina: auth.js trae
+       supabase-js solo cuando hace falta (208 KB que el visitante sin sesion
+       no necesita). Cada RPC de aqui lo pide con await FHAuth.ready(), que es
+       idempotente y resuelve al instante si ya estaba creado. */
 
     /* Logos: escudos reales de cada categoría (Transfermarkt para las
        españolas, los trofeos que ya usa La Carrera para las europeas/Mundial).
@@ -71,6 +75,7 @@
                 console.warn('[FHLiga] enviarDiario sin pistas: no se sube nada.');
                 return null;
             }
+            const client = await FHAuth.ready();
             const { data, error } = await client.rpc('liga_enviar_diario', params);
             if (error) { console.warn('[FHLiga] enviarDiario:', error.message); return null; }
             return data;
@@ -82,6 +87,7 @@
 
     async function panel(juego) {
         try {
+            const client = await FHAuth.ready();
             const { data, error } = await client.rpc('liga_panel', { p_juego: juego });
             if (error) { console.warn('[FHLiga] panel:', error.message); return null; }
             return data;
@@ -93,6 +99,7 @@
 
     async function top100(juego) {
         try {
+            const client = await FHAuth.ready();
             const { data, error } = await client.rpc('liga_top100', { p_juego: juego });
             if (error) { console.warn('[FHLiga] top100:', error.message); return null; }
             return data;

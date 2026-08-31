@@ -1,36 +1,48 @@
 /* =============================================
    IMG-HEAL.JS — Reintentar las fotos que no cargan
-   QUIÉN COÑO FALTA
+   FutbolHUB
 
-   Las fotos de futbolista y los escudos vienen de CDNs externas
-   (transfermarkt, tmssl). Cuando una de esas peticiones falla —un 429 por
-   pedir varias de golpe, un corte de red al volver de segundo plano, un
-   404 puntual— el navegador se queda con la respuesta rota:
+   Las fotos de futbolista y los escudos salen de Transfermarkt, pero YA NO
+   se piden en directo a su CDN: pasan por /api/img, nuestro proxy con cache
+   en Supabase Storage (ver api/img.js y fhImgUrl en js/supabase-config.js).
 
-     · El service worker (sw.js) las guarda cache-first. Como son
-       peticiones no-cors, la respuesta es opaca y desde el SW no hay
-       manera de distinguir una foto buena de un error: se guarda el fallo
-       y esa foto ya no vuelve a cargar NUNCA en ese dispositivo, aunque
-       el jugador sí tenga foto en la base de datos.
-     · Y aunque no hubiera SW, la caché HTTP del navegador puede repetir
-       el fallo un buen rato.
+   Aun asi se caen: un 502 del proxy la primera vez que una imagen se pide
+   (que es cuando de verdad va a buscarla a Transfermarkt), un corte de red
+   al volver de segundo plano, un 429 por pedir doce escudos de golpe. Y
+   cuando eso pasa el navegador se queda con el fallo cacheado un buen rato:
+   la foto no vuelve a cargar aunque el jugador si la tenga.
 
-   Aquí sí sabemos si una foto está mal: nos lo dice el evento 'error' de
-   la propia <img>. Así que al fallar:
-     1. Le decimos al service worker que borre esa entrada de su caché.
-     2. Reintentamos (hasta MAX_TRIES) con una espera creciente y un
-        parámetro nuevo en la URL, para saltarnos también la caché HTTP.
+   Aqui si sabemos si una foto esta mal, porque nos lo dice el evento
+   'error' de la propia <img>. Al fallar se reintenta hasta MAX_TRIES con
+   una espera creciente y un parametro nuevo en la URL, para saltarse
+   tambien la cache HTTP del navegador.
 
-   Se engancha solo: basta con incluir este archivo en la página. No hace
-   falta tocar el HTML de ningún juego porque escucha el evento 'error' en
-   fase de captura, que es la única que burbujea hasta document.
+   ── CORREGIDO EL 2026-08-31 ───────────────────────────────────────────────
+   Este archivo llevaba tiempo SIN REINTENTAR NADA, en silencio. Su lista de
+   hosts eran los dos dominios de Transfermarkt, y desde que las imagenes
+   pasan por /api/img ninguna <img> del sitio apunta ya ahi: son URLs de
+   NUESTRO propio origen, asi que isExternalPhoto() devolvia false siempre y
+   el manejador se iba sin hacer nada. Ahora reconoce las tres formas en las
+   que puede venir una foto (el proxy, la CDN de Supabase donde el proxy las
+   deja, y el hotlink directo por si queda alguno), que es lo que hace falta
+   para que vuelva a servir de algo.
+
+   Tambien se ha quitado el aviso al service worker para que borrase la
+   entrada de su cache: sw.js ya no cachea nada ni tiene manejador de
+   'message', asi que ese postMessage era un no-op.
+
+   Se engancha solo: basta con incluir este archivo en la pagina. Escucha el
+   evento 'error' en fase de CAPTURA, que es la unica en la que los errores
+   de recurso llegan hasta document.
    ============================================= */
 (function () {
   'use strict';
 
-  /* Solo las CDNs de imágenes: las de nuestro propio dominio ya se
-     controlan desde el sw.js y no tienen este problema. */
+  /* Los hosts de Transfermarkt siguen aqui porque queda algun hotlink
+     suelto, pero el caso normal hoy son las otras dos formas. */
   const HOSTS = ['tmssl.akamaized.net', 'img.a.transfermarkt.technology'];
+  /* Donde el proxy deja las imagenes ya cacheadas: /api/img redirige aqui. */
+  const SUPABASE_IMG = /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/img-cache\//;
 
   const MAX_TRIES  = 2;      // reintentos por imagen (además del original)
   const RETRY_BASE = 600;    // ms; el segundo intento espera el doble
@@ -39,25 +51,30 @@
   const tries = new WeakMap();   // <img> → nº de reintentos gastados
   const undo  = new WeakMap();   // <img> → cómo estaba la pantalla antes del fallo
 
+  /* Una foto reintentable es: la que pasa por nuestro proxy, la que ya vive
+     en el bucket de imagenes, o un hotlink directo a Transfermarkt. Lo que
+     NO entra —y es a proposito— son los escudos y banderas de los otros
+     buckets de Storage y cualquier imagen propia del sitio: esas o estan o
+     no estan, y reintentarlas solo multiplicaria peticiones. */
   function isExternalPhoto(src) {
-    try { return HOSTS.includes(new URL(src, location.href).hostname); }
-    catch { return false; }
+    try {
+      const u = new URL(src, location.href);
+      if (HOSTS.includes(u.hostname)) return true;
+      if (SUPABASE_IMG.test(u.href)) return true;
+      return u.origin === location.origin && u.pathname === '/api/img';
+    } catch { return false; }
   }
 
-  /* Quitar nuestra propia marca para pedir siempre desde la URL limpia:
-     así el service worker (que ignora la query) guarda una sola entrada. */
+  /* Se quita nuestra propia marca antes de reintentar, para que el segundo
+     intento no herede el parametro del primero y la URL base sea siempre la
+     misma. OJO con /api/img: ahi la query lleva ?u=<url original>, asi que
+     hay que borrar SOLO nuestra clave, nunca reconstruir la query entera. */
   function cleanUrl(src) {
     try {
       const u = new URL(src, location.href);
       u.searchParams.delete(PARAM);
       return u.toString();
     } catch { return src; }
-  }
-
-  function dropFromSW(url) {
-    const sw = navigator.serviceWorker;
-    if (!sw || !sw.controller) return;
-    try { sw.controller.postMessage({ type: 'drop-image', url }); } catch (e) { /* nada */ }
   }
 
   function onError(e) {
@@ -83,7 +100,6 @@
     }
 
     const url = cleanUrl(img.src);
-    dropFromSW(url);
 
     /* Espera creciente: si el fallo es por pedir muchas fotos a la vez,
        darle un respiro a la CDN antes de volver a la carga. */

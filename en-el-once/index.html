@@ -30,11 +30,16 @@
 <!-- Fuentes -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Supabase es el origen del que salen TODOS los datos de juego y la
+     sesion. Sin este preconnect, el DNS + TCP + TLS contra ese host no
+     empieza hasta que el JS del final del body hace su primer fetch: son
+     tres idas y vueltas en el camino critico que en un movil se notan. -->
+<link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 
 <!-- Estilos -->
 <link rel="stylesheet" href="./css/once.css?v=20260827a">
-  <link rel="stylesheet" href="../css/ads.css?v=20260808a">
+  <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260819a">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
@@ -97,7 +102,6 @@
   })();
 </script>
 <!-- Google AdSense -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1248309481500017" crossorigin="anonymous"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -220,6 +224,10 @@
   <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
   <p class="fh-intro-texto">En el Once no es un test de memoria al azar: cada partido es real, con su marcador y su fecha, y en el modo Diario todo el mundo recibe el mismo encuentro, así que comparar tu resultado con quien quieras tiene sentido. Si prefieres elegir tú la época, hay un modo por Liga, uno por noches de Champions, otro de selecciones nacionales —Mundiales, Eurocopas, remontadas que ya son leyenda— y un modo Aleatorio que mezcla las tres fuentes. En cada intento aciertas o fallas un futbolista del once titular; si fallas se te muestra igualmente antes de pasar al siguiente, así que un despiste no frena la partida. El objetivo es reconstruir la alineación completa con el menor número de fallos posible.</p>
 <p class="guia-link"><a href="/como-jugar/en-el-once/">Cómo se juega &rarr;</a></p>
+<!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
+     Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
+<div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
+
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
   <ul class="fh-otros-lista">
@@ -375,14 +383,13 @@
 </div>
 
 <!-- Scripts -->
-<script src="../js/supabase-config.js"></script>
-<script src="../js/vendor/supabase-js.min.js"></script>
-<script src="../js/auth.js?v=20260827a"></script>
-<script src="../js/progress-sync.js?v=20260827a"></script>
+<script src="../js/supabase-config.js?v=20260831a"></script>
+<script src="../js/auth.js?v=20260831b"></script>
+<script src="../js/progress-sync.js?v=20260831b"></script>
 <script src="../js/hub-streaks.js?v=20260827b"></script>
-<script src="../js/img-heal.js?v=20260727a"></script>
-<script src="../js/profile-widget.js?v=20260830a"></script>
-<script src="../js/shared.js"></script>
+<script src="../js/img-heal.js?v=20260831a"></script>
+<script src="../js/profile-widget.js?v=20260831b"></script>
+<script src="../js/shared.js?v=20260831a"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
 <script src="./js/once-game.js?v=20260831a"></script>
 <script>
@@ -394,6 +401,6 @@
     });
   }
 </script>
-<script defer src="../js/ads.js?v=20260808c"></script>
+<script defer src="../js/ads.js?v=20260831a"></script>
 </body>
 </html>
