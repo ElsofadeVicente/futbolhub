@@ -46,6 +46,7 @@ en-el-once/data/
 en-el-top/data/
 la-carrera/data/
 wordle/data/
+en-la-cadena/data/
 higher-or-lower/data/
 el-estadio/data/estadios.json
 # Las copias que deja generar_estadios.py al guardar: son respaldos de un
