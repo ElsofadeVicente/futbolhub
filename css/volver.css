@@ -59,38 +59,34 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  width: 100%;
   box-sizing: border-box;
-  padding: var(--volver-gap) var(--volver-gap) 0;
-  /* Dentro de una .screen que sea flex, la fila tiene que ocupar una LINEA
-     ENTERA. Sin esto, en las portadas cuyo contenedor es flex en direccion
-     FILA (#mode-screen de En el Top, #intro-screen de La Carrera) la fila se
-     colocaba AL LADO de la tarjeta y la empujaba fuera de la pantalla: 72px
-     de desbordamiento horizontal medidos. El flex-wrap que hace falta para
-     que 100% provoque salto de linea lo pone js/cabecera.js, que es quien
-     sabe si el padre es flex en fila. */
-  flex: 0 0 100%;
-  align-self: stretch;
-  /* Por encima del contenido de su propia pantalla (algunos juegos ponen
-     z-index a lo que va debajo), pero muy por debajo de modales y toasts,
-     que van a 50 o más en los 13 juegos. */
+  width: 100%;
+
+  /* A RAS DEL BORDE, como cuando flotaban. El botón queda a 14px del borde
+     de la pantalla y el círculo a 14px del otro: son las mismas posiciones
+     de siempre, solo que ahora ocupando sitio en vez de por encima. Que la
+     fila herede el padding del contenedor del juego (16, 20, 28px según el
+     juego) los metía hacia dentro y los descolocaba; js/cabecera.js cancela
+     ese padding con márgenes negativos, ver sacarDelPadding(). */
+  padding: var(--volver-gap) var(--volver-gap) 10px;
+
+  /* `flex: 0 0 auto` y NUNCA `flex-basis: 100%` aquí.
+
+     En un contenedor flex EN COLUMNA el eje principal es el VERTICAL, así
+     que un flex-basis del 100% no es "todo el ancho": es TODO EL ALTO. En El
+     Estadio la fila acabó midiendo 803px de alto y empujó el menú entero por
+     debajo del borde inferior de la pantalla.
+
+     El 100% que sí hace falta —el de las portadas cuyo contenedor es flex en
+     dirección FILA (#mode-screen de En el Top, #intro-screen de La Carrera),
+     donde sin él la cabecera se coloca AL LADO de la tarjeta y la empuja
+     fuera— lo pone js/cabecera.js, que es quien mira la dirección del padre
+     antes de tocar nada. */
+  flex: 0 0 auto;
+
   position: relative;
   z-index: 30;
 }
-
-/* Fila sin boton Volver (una pantalla de juego que no tiene ancla). Se
-   queda como un elemento mas del flujo, justo encima del contenido.
-
-   NO lleva `margin-bottom: auto`, aunque en un flex en columna eso la
-   subiria del todo: probado en Bingo, ese auto se come TODO el espacio
-   libre y manda el carton al fondo de la pantalla. Vale mas que el circulo
-   quede pegado al contenido que reventar la composicion del juego. */
-
-/* Si la fila cae dentro de una barra que YA tiene su propio padding (el HUD
-   de El Estadio, la cabecera del partido de En el Once), no se duplica. */
-#game-hud > .fh-cabecera,
-.match-header > .fh-cabecera,
-.reveal-header > .fh-cabecera { padding: 0; }
 
 .fh-volver {
   /* En el flujo. Ver .fh-cabecera arriba. */

@@ -527,7 +527,11 @@
 
 /* ── Móvil ── */
 @media (max-width: 540px) {
-  .pw-root { top: 10px; right: 10px; }
+  /* NADA de top/right aqui: eran los offsets de cuando .pw-root flotaba
+     (position: fixed). Ahora va en el flujo dentro de .fh-cabecera y es
+     `relative`, asi que un `right: 10px` no lo pega al borde — lo DESPLAZA
+     10px hacia la izquierda. Medido en Coche: el circulo quedaba a 24px del
+     borde en vez de a 14, descolocado respecto al boton Volver. */
   .pw-circle { width: 38px; height: 38px; }
   .pw-modal { padding: 22px 16px 18px; }
 }
