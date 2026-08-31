@@ -729,6 +729,12 @@
                 shift = Math.max(shift, r.width);
             }
         });
+        /* Solo tiene sentido mientras el círculo flote. Desde que va en el
+           flujo (js/cabecera.js lo mete en .fh-cabecera, dentro del área de
+           juego), `right` no hace nada y la columna de anuncios ya no puede
+           quedar debajo. Se deja la función porque se llama en resize y en
+           load, y salir pronto es más barato que quitar los listeners. */
+        if (getComputedStyle(root).position !== 'fixed') { root.style.right = ''; return; }
         root.style.right = shift > 0 ? (shift + 12) + 'px' : '';
     }
     window.addEventListener('resize', positionClearOfAds);

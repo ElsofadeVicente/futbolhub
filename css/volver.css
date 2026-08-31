@@ -43,14 +43,58 @@
   --volver-gap: 14px;
 }
 
-.fh-volver {
-  position: fixed;
-  top: calc(var(--volver-gap) + env(safe-area-inset-top, 0px));
-  left: calc(var(--ad-col-w, 0px) + var(--volver-gap));
-  /* Por encima de las columnas de anuncios (z-index 3-20 según el juego) y
-     del contenido, pero por DEBAJO de cualquier modal, menú a pantalla
-     completa o toast (todos ≥ 50 en los 13 juegos). */
+/* ── LA FILA DE CABECERA ──────────────────────────────────────────────
+   El botón y el círculo de perfil van DENTRO de esta fila, que la monta
+   js/cabecera.js alrededor del .fh-volver que esté visible. Ocupa su sitio
+   en el flujo: empuja el contenido hacia abajo y se va con el scroll, así
+   que no puede taparle nada a nadie por construcción.
+
+   Antes los dos eran `position: fixed` y se dibujaban ENCIMA: se comían el
+   título en 13 de las 15 páginas y en Bingo el círculo llegaba a tapar
+   medio botón SALTAR. Se probó a reservarles una banda con paddings, pero
+   eso compensa el síntoma: mientras floten, cada pantalla nueva vuelve a
+   nacer con el problema. */
+.fh-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--volver-gap) var(--volver-gap) 0;
+  /* Dentro de una .screen que sea flex, la fila tiene que ocupar una LINEA
+     ENTERA. Sin esto, en las portadas cuyo contenedor es flex en direccion
+     FILA (#mode-screen de En el Top, #intro-screen de La Carrera) la fila se
+     colocaba AL LADO de la tarjeta y la empujaba fuera de la pantalla: 72px
+     de desbordamiento horizontal medidos. El flex-wrap que hace falta para
+     que 100% provoque salto de linea lo pone js/cabecera.js, que es quien
+     sabe si el padre es flex en fila. */
+  flex: 0 0 100%;
+  align-self: stretch;
+  /* Por encima del contenido de su propia pantalla (algunos juegos ponen
+     z-index a lo que va debajo), pero muy por debajo de modales y toasts,
+     que van a 50 o más en los 13 juegos. */
+  position: relative;
   z-index: 30;
+}
+
+/* Fila sin boton Volver (una pantalla de juego que no tiene ancla). Se
+   queda como un elemento mas del flujo, justo encima del contenido.
+
+   NO lleva `margin-bottom: auto`, aunque en un flex en columna eso la
+   subiria del todo: probado en Bingo, ese auto se come TODO el espacio
+   libre y manda el carton al fondo de la pantalla. Vale mas que el circulo
+   quede pegado al contenido que reventar la composicion del juego. */
+
+/* Si la fila cae dentro de una barra que YA tiene su propio padding (el HUD
+   de El Estadio, la cabecera del partido de En el Once), no se duplica. */
+#game-hud > .fh-cabecera,
+.match-header > .fh-cabecera,
+.reveal-header > .fh-cabecera { padding: 0; }
+
+.fh-volver {
+  /* En el flujo. Ver .fh-cabecera arriba. */
+  position: static;
 
   display: inline-flex;
   align-items: center;
@@ -103,79 +147,27 @@
   outline-offset: 2px;
 }
 
-/* Hueco para las pantallas cuyo contenido empieza pegado arriba a la
-   izquierda. En La Carrera, En el Top y El Crucigrama el enlace iba DENTRO
-   del flujo (en la barra superior o en la tarjeta); al sacarlo de ahí, en
-   pantallas estrechas el contenido que quedaba detrás pasaría por debajo del
-   botón. Se usa margin-top y no padding-top a propósito: los elementos a los
-   que se aplica se seleccionan por #id y una regla de id le ganaría al
-   padding de esta clase, pero ninguno declara margin-top. */
-.fh-volver-hueco { margin-top: 44px; }
+/* .fh-volver-hueco ya NO reserva nada, y la clase se queda solo para no
+   tener que tocar el HTML de La Carrera y En el Top, que la llevan puesta.
 
-@media (min-width: 900px) {
-  /* A partir de aquí el contenido de esos tres juegos (máx. 640-720px
-     centrado) deja a la izquierda más margen del que ocupa el botón, así
-     que este flota en hueco vacío y la reserva sobra. */
-  .fh-volver-hueco { margin-top: 0; }
-}
+   Reservaba 44px en la barra superior de esos juegos porque el botón
+   flotaba por encima y el contenido se le metía debajo. Ahora el botón va
+   en .fh-cabecera, en el flujo y ENCIMA de esa barra, así que esos 44px
+   eran hueco muerto: medido en La Carrera, 130px entre la cabecera y el
+   "Intento 1 / 7". */
+.fh-volver-hueco { margin-top: 0; }
 
 /* ══════════════════════════════════════════════════════════════════
-   QUE LOS BOTONES FLOTANTES NO SE COMAN LA TARJETA DE PORTADA
+   LO QUE HUBO AQUÍ, Y POR QUÉ YA NO ESTÁ
    ══════════════════════════════════════════════════════════════════
-   Tanto .fh-volver como el círculo de perfil (.pw-root, en css/
-   profile-widget.css) son `position: fixed` y se dibujan ENCIMA del
-   contenido. Medido en producción a 375px de ancho en La Carrera:
+   Hubo un bloque que reservaba una banda de 56px en las portadas de los
+   14 juegos, apartaba el botón SALTAR de Bingo y encogía el bloque de la
+   cabecera de la portada. Existía por una razón: .fh-volver y el círculo
+   de perfil eran `position: fixed` y se dibujaban ENCIMA del contenido,
+   así que había que apartarles el contenido a mano, página por página.
 
-     .fh-volver   ocupa de y=14 a y=38, +2px de sombra  ->  hasta 40
-     .pw-root     ocupa de y=14 a y=56 (42px de alto)   ->  hasta 56
-     #mode-box    empieza en y=46  ->  el arte de la tarjeta, en y=47
-
-   O sea que en un móvil el botón pisaba el marco de la tarjeta y el
-   círculo se comía la esquina superior derecha del banner. En escritorio
-   no pasa: ahí .fh-volver se va a x=186 (fuera de la columna de anuncios)
-   y la tarjeta queda centrada y más estrecha.
-
-   Se les reserva sitio en la portada de los juegos que tienen tarjeta
-   pegada arriba. 64px = los 56 del círculo (el más alto de los dos) más
-   un respiro. Va aquí y no en el CSS de cada juego porque el que invade
-   es este botón, y así los dos casos se arreglan y se explican en el
-   mismo sitio. Esta hoja carga DESPUÉS que la del juego, así que gana a
-   igual especificidad de id.
-
-   Si añades una portada nueva con tarjeta arriba, súmala a la lista. */
-@media (max-width: 900px) {
-  /* La banda superior que hay que dejar libre. Es lo que ocupa el mas alto
-     de los dos, el circulo de perfil (10 -> 48), mas un respiro. */
-  #intro-screen,              /* La Carrera  */
-  #mode-screen,               /* En el Top   */
-  #once-menu,                 /* En el Once  */
-  .sd-intro-wrap,             /* Superdraft  */
-  .hol-mode-menu-inner,       /* Higher or Lower */
-  .menu-wrap,                 /* En la Cadena */
-  .menu-hero,                 /* Blackjack, El Mentiroso, El Estadio */
-  .cruc-nav-row {             /* El Crucigrama */
-    padding-top: 56px;
-  }
-
-  /* Estos tienen el titulo pegado al borde y el hueco va en el titulo, no en
-     el contenedor: son .screen centrados y meterles padding arriba los
-     descentra entero. */
-  #screen-menu .menu-title { margin-top: 46px; }
-
-  /* Wordle NO lleva hueco: su barra superior ya empieza en y=52, por debajo
-     de los dos flotantes (medido). Ponerle padding solo empujaba el teclado
-     mas abajo de la barra de ediciones. */
-
-  /* ── Los dos casos que NO son "titulo tapado" sino algo peor ──
-
-     BINGO: el circulo de perfil se comia el lado derecho del boton SALTAR
-     (medido: boton 273-347, circulo 327-365). No es que se viera feo — es que
-     tocar esa esquina abria el menu de perfil en vez de saltar al futbolista,
-     en un juego con 10 segundos por ronda. Se aparta el boton del borde. */
-  .caller-side { padding-right: 46px; }
-
-  /* PORTADA: el circulo caia encima del bloque de la derecha de la cabecera
-     ("EDICION DIGITAL"). Se le quita sitio por la derecha en vez de bajar la
-     cabecera entera, que descolocaria toda la portada. */
-  .masthead-edition { padding-right: 44px; }
-}
+   Está borrado a propósito. Los dos van ahora dentro de .fh-cabecera, en
+   el flujo: ocupan su sitio y ya no pueden pisar nada, así que compensar
+   sobra. Si vuelve a hacer falta algo así, es señal de que algo ha vuelto
+   a flotar.
+   ══════════════════════════════════════════════════════════════════ */

@@ -10,10 +10,15 @@
 .pw-overlay, .pw-overlay * { box-sizing: border-box; }
 
 .pw-root {
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  z-index: 99990;
+  /* EN EL FLUJO, no flotando: js/cabecera.js lo mete dentro de la fila
+     .fh-cabecera (o, en la portada, dentro de .masthead-top). `relative` y
+     no `static` porque el desplegable es `position: absolute` colgado de
+     aquí: con static se colocaría respecto a otro ancestro y saldría
+     descolocado. */
+  position: relative;
+  z-index: 30;
+  flex: 0 0 auto;
+  margin-left: auto;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   opacity: 0;
   transition: opacity .25s ease;
