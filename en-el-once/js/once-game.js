@@ -810,16 +810,17 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
 
     document.getElementById('next-match-btn').style.display = 'none';
 
-    // Comprobar si hay algún día anterior jugable (async, no bloquea la carga).
-    // OJO: no basta con mirar el día inmediatamente anterior. El array del mes
-    // en curso puede llevar solo los primeros N días curados (el resto del mes
-    // todavía no se ha subido) y el juego, mientras tanto, muestra el ÚLTIMO
-    // día curado como "hoy" (getDailyMatchForOffset cae a él por posición). Si
-    // el chequeo solo mirara el día de ayer, ese hueco bastaba para desactivar
-    // «‹»/« por completo y dejar inalcanzables los días 1..N que sí existen.
-    const prevAvailable = offsetDays < 60 ? await hasEarlierAvailable(offsetDays) : false;
-    await updateDailyHeader(offsetDays, prevAvailable);
-
+    // El partido en sí (formación, fotos, resultado guardado) se pinta YA:
+    // no depende de nada de red que no se haya pedido arriba. Antes esto
+    // esperaba (await) a hasEarlierAvailable + updateDailyHeader — que en
+    // la primera llamada de la sesión dispara buildDailyEditionsList() y
+    // esa función se baja el archivo mensual ENTERO de cada mes publicado
+    // en once-diario, uno a uno — así que abrir o navegar a una edición se
+    // quedaba con la pantalla en blanco hasta que terminaba de descargar
+    // TODO el histórico, y eso solo empeora según se acumulan meses. Esas
+    // dos llamadas solo pintan la barra de navegación (flechas «/‹/›/» y
+    // la etiqueta "#N"), así que ahora van en paralelo sin bloquear: la
+    // barra se actualiza en cuanto está lista, el partido no la espera.
     document.getElementById('game').style.display = 'block';
 
     const saved = loadDailyResult(offsetDays);
@@ -836,6 +837,21 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
         renderFormation();
         updateRevealedCount();
     }
+
+    // Comprobar si hay algún día anterior jugable (async, no bloquea la carga).
+    // OJO: no basta con mirar el día inmediatamente anterior. El array del mes
+    // en curso puede llevar solo los primeros N días curados (el resto del mes
+    // todavía no se ha subido) y el juego, mientras tanto, muestra el ÚLTIMO
+    // día curado como "hoy" (getDailyMatchForOffset cae a él por posición). Si
+    // el chequeo solo mirara el día de ayer, ese hueco bastaba para desactivar
+    // «‹»/« por completo y dejar inalcanzables los días 1..N que sí existen.
+    (async () => {
+        const prevAvailable = offsetDays < 60 ? await hasEarlierAvailable(offsetDays) : false;
+        // Si mientras tanto se navegó a otra edición, esta respuesta ya no
+        // corresponde a lo que se ve en pantalla: no pisar su barra de nav.
+        if (dailyOffset !== offsetDays) return;
+        await updateDailyHeader(offsetDays, prevAvailable);
+    })();
 }
 
 async function updateDailyHeader(offsetDays, prevAvailable = false) {
@@ -1652,6 +1668,7 @@ function getKnownName(fullName) {
 function handleKeyPress(key) {
     if (failedPlayers.has(currentPlayerIndex)) return;
     if (guessLocked) return;
+    if (key.length === 1) key = onceNormalizeText(key);
     const player     = getPlayerByIndex(currentPlayerIndex);
     const targetName = onceNormalizeText(removeSpecialChars(getKnownName(player.name)));
 

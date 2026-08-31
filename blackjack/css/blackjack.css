@@ -19,6 +19,17 @@
 
 /* ── Fondo: papel + grano + líneas de columna ── */
 body {
+  margin: 0;
+  min-height: 100vh;
+  /* #game-topbar y el .screen activo son hermanos y AMBOS ocupaban su
+     alto natural (topbar ~55px + .screen con min-height:100vh), así que
+     el documento se pasaba del viewport por el alto del topbar (+8px de
+     margen por defecto del navegador) y hacía falta un pelín de scroll
+     para ver el juego entero. Con body en columna flex y el topbar como
+     item normal, el .screen (flex:1, ver más abajo) solo ocupa lo que
+     sobra: topbar + juego caben siempre en el mismo alto de pantalla. */
+  display: flex;
+  flex-direction: column;
   background-color: var(--np-paper);
   background-image:
     radial-gradient(ellipse 115% 95% at 50% 50%,
@@ -65,7 +76,7 @@ body {
    PANTALLAS
    ══════════════════════════════════════════════ */
 .screen {
-  display: none; min-height: 100vh;
+  display: none; flex: 1 1 auto; min-height: 0;
   flex-direction: column; align-items: center;
 }
 .screen.active { display: flex; }

@@ -251,7 +251,6 @@ function crucFatal(texto) {
             <div style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:var(--text-light);opacity:0.7;text-align:center;max-width:320px;">
                 ${texto}
             </div>
-            <button class="next-btn" style="margin-top:10px;" onclick="goToHub()">← VOLVER AL HUB</button>
         </div>`;
 }
 

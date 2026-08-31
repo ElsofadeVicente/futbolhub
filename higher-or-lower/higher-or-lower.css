@@ -101,7 +101,14 @@ a      { text-decoration: none; }
 .hol-game {
   display: none;
   position: relative;
-  width: 100%;
+  /* width:auto (no 100%): en escritorio con columnas de anuncio,
+     .hol-game lleva margin-left/margin-right = var(--ad-col-w) (ver
+     media query de arriba). Con width:100% esos márgenes se SUMABAN
+     al 100% del viewport en vez de restarse, y el juego quedaba
+     descentrado 172px hacia la derecha (desbordaba por la derecha,
+     tapado por la columna de anuncios). width:auto sí se encoge entre
+     los márgenes, que es lo que ya hacía bien .hol-mode-menu. */
+  width: auto;
   min-height: 100vh;
   background: transparent;
   flex-direction: column;

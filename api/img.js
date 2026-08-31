@@ -44,14 +44,22 @@ function claveStorage(origen) {
   return `${prefijo}${origen.pathname}`;
 }
 
-async function leerDeCache(key) {
+// Antes esto traía el archivo entero de Supabase Storage (GET + descarga
+// completa del buffer) para volver a re-enviarlo byte a byte a través de
+// esta función — un salto de red de más (Vercel -> Supabase -> Vercel ->
+// navegador) en CADA imagen ya cacheada, que es el caso normal. Con miles
+// de fotos por partida eso era el segundo incómodo que se notaba al cargar.
+// Ahora solo se comprueba con HEAD (sin cuerpo) que el archivo existe, y se
+// redirige al navegador directo a la URL pública de Storage: la imagen la
+// sirve la CDN de Supabase sin volver a pasar por esta función.
+async function existeEnCache(key) {
   const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { method: 'HEAD' });
     if (!res.ok) return null;
     const tipo = res.headers.get('content-type') || '';
     if (!tipo.startsWith('image/')) return null;
-    return { buf: Buffer.from(await res.arrayBuffer()), tipo };
+    return { url, tipo };
   } catch {
     return null;
   }
@@ -98,11 +106,13 @@ module.exports = async function handler(req, res) {
 
   const key = claveStorage(origen);
 
-  const cacheado = await leerDeCache(key);
+  const cacheado = await existeEnCache(key);
   if (cacheado) {
-    res.setHeader('Content-Type', cacheado.tipo);
-    res.setHeader('Cache-Control', CACHE_CONTROL);
-    res.status(200).send(cacheado.buf);
+    // writeHead a pelo (no res.redirect, que es un helper de Vercel que el
+    // servidor de desarrollo local no reproduce) para que funcione igual
+    // en dev-server.js y en producción.
+    res.writeHead(301, { Location: cacheado.url, 'Cache-Control': CACHE_CONTROL });
+    res.end();
     return;
   }
 
