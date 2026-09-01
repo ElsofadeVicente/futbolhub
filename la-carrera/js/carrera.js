@@ -563,6 +563,39 @@ function loadTodayResult() {
 // ══════════════════════════════════════════════
 let _nameIndex = [];
 let _perfManifest = { ranges: [] };
+let _falloDeRed = false;        // alguna peticion del calendario se cayo por red
+let _bindHecho = false;          // los listeners de una vez ya estan puestos
+let _arranqueIncompleto = false; // el arranque fallo: se puede reintentar
+let _reintentando = false;
+
+/* ── LOS INDICES SE PIDEN APARTE Y SIN BLOQUEAR ───────────────────────────
+   name-index.json (autocompletado) y el manifest de performances (solo hace
+   falta para RECONSTRUIR una carrera) estaban en el arranque, en tres awaits
+   seguidos: si se caia cualquiera de ellos, fail() y juego muerto. Pero por
+   el camino de "hoy ya jugado con la carrera guardada" no se usa ninguno de
+   los dos — se pinta el resultado desde local. O sea, dos peticiones que no
+   hacian falta decidiendo si se podia ver algo que ya estaba en el
+   dispositivo. Es el mismo arreglo que se le hizo a En el Top el
+   2026-09-01; aquello (4489d03) quito el refetch de la CARRERA pero dejo
+   estos dos en el arranque.
+
+   Ahora no los espera nadie, y si fallan se vuelven a pedir en cuanto
+   alguien los necesita de verdad. */
+let _indicesPromesa = null;
+function asegurarIndices() {
+  if (_indicesPromesa) return _indicesPromesa;
+  _indicesPromesa = Promise.all([
+    fetchJson(sbStorageUrl('player-db', 'players/name-index.json')),
+    fetchJson(sbStorageUrl('player-db', 'performances/chunks/manifest.json')),
+  ]).then(([ni, manifest]) => {
+    _nameIndex    = ni;
+    _perfManifest = manifest;
+  }).catch(e => {
+    _indicesPromesa = null;   // que el fallo no se quede pegado
+    throw e;
+  });
+  return _indicesPromesa;
+}
 let _days = {};           // { "AAAA-MM-DD": {id, name} } de todos los meses
 let _editions = [];       // fechas jugables (<= hoy), ASCENDENTE (edición 1 = la más antigua)
 let _idx = 0;             // índice de la edición actual dentro de _editions
@@ -623,19 +656,25 @@ async function init() {
   bindModalEvents();
 
   const today = getTodayMadrid();
+  /* Lo UNICO que hay que esperar es el calendario: ahi esta quien toca hoy.
+     Los indices van por su cuenta (asegurarIndices), sin bloquear ni poder
+     tumbar el arranque. */
   try {
-    _nameIndex    = await fetchJson(sbStorageUrl('player-db', 'players/name-index.json'));
-    _perfManifest = await fetchJson(sbStorageUrl('player-db', 'performances/chunks/manifest.json'));
     await loadAllMonths(today);
   } catch (e) {
-    return fail(`No se pudieron cargar los datos.<br><small>${e.message}</small>`);
+    console.error('[La Carrera] fallo cargando el calendario', e);
   }
 
   _editions = Object.keys(_days)
     .filter(d => d <= today && _days[d] && _days[d].id)
     .sort();   // ascendente: edición 1 = la más antigua
 
-  if (!_editions.length) return fail('No hay carrera disponible todavía.');
+  if (!_editions.length) {
+    _arranqueIncompleto = _falloDeRed;   // solo se reintenta si fue la red
+    return fail(_falloDeRed ? 'No se pudieron cargar los datos.'
+                            : 'No hay carrera disponible todavía.');
+  }
+  _arranqueIncompleto = false;
 
   /* ¿Falta la edición de hoy? Se calcula UNA vez, al cargar los meses. */
   _hoyFalta = !(_days[today] && _days[today].id);
@@ -654,20 +693,27 @@ async function init() {
     FHRuta.set({ dia: real === today ? null : real });
   }
 
-  elStartBtn.addEventListener('click', () => playCurrent());
-  elStatsOpen.addEventListener('click', openStats);
-  elNavFirst.addEventListener('click', () => goEdition(0));
-  elNavPrev .addEventListener('click', () => goEdition(_idx - 1));
-  elNavNext .addEventListener('click', () => goEdition(_idx + 1));
-  elNavLast .addEventListener('click', () => goEdition(_editions.length - 1));
+  /* Los listeners de una vez, UNA VEZ: init() es reintentable (ver
+     reintentarArranque) y sin esta guarda cada reintento dejaria los botones
+     de la barra de ediciones con manejadores de sobra, o sea saltando varias
+     ediciones de un toque. */
+  if (!_bindHecho) {
+    _bindHecho = true;
+    elStartBtn.addEventListener('click', () => playCurrent());
+    elStatsOpen.addEventListener('click', openStats);
+    elNavFirst.addEventListener('click', () => goEdition(0));
+    elNavPrev .addEventListener('click', () => goEdition(_idx - 1));
+    elNavNext .addEventListener('click', () => goEdition(_idx + 1));
+    elNavLast .addEventListener('click', () => goEdition(_editions.length - 1));
 
-  // El botón Atrás del móvil: la navegación por días deja rastro (pushState),
-  // así que tiene que llevar de vuelta a la edición anterior y no fuera del juego.
-  if (window.FHRuta) FHRuta.alVolver(() => {
-    const d = FHRuta.fecha('dia') || today;
-    const i = _editions.indexOf(d);
-    if (i >= 0 && i !== _idx) { _idx = i; playCurrent(); }
-  });
+    // El botón Atrás del móvil: la navegación por días deja rastro (pushState),
+    // así que tiene que llevar de vuelta a la edición anterior y no fuera del juego.
+    if (window.FHRuta) FHRuta.alVolver(() => {
+      const d = FHRuta.fecha('dia') || getTodayMadrid();
+      const i = _editions.indexOf(d);
+      if (i >= 0 && i !== _idx) { _idx = i; playCurrent(); }
+    });
+  }
 
   /* Volver a la app despues de tenerla en segundo plano es EL momento en el
      que aparecia la pantalla en blanco: iOS suspende la red, la peticion que
@@ -696,13 +742,34 @@ async function init() {
     return;
   }
 
+  /* Se va a poder jugar: ahora si merece la pena bajar los indices, en
+     paralelo y sin que nadie los espere. Aqui y no al principio de init(),
+     porque por el camino de "hoy ya jugado" no se usan para nada. */
+  asegurarIndices().catch(() => { /* se reintenta al escribir o al jugar */ });
+
   elLoading.classList.add('hidden');
   elIntro.classList.remove('hidden');
+}
+
+/* Un arranque fallido ya no se queda muerto: se reintenta solo al volver la
+   pagina al primer plano, al restaurarse o al recuperar conexion. Mismo
+   patron que En el Top; el aviso lo da FHRed.alRecuperar (js/red.js). */
+function reintentarArranque() {
+  if (!_arranqueIncompleto || _reintentando) return;
+  _reintentando = true;
+  const cuerpo = document.getElementById('loading-body') || elLoading;
+  if (cuerpo) cuerpo.innerHTML = '<div class="spin"></div><p>Reintentando…</p>';
+  elLoading.classList.remove('hidden');
+  Promise.resolve().then(init)
+    .catch(e => { console.error('[La Carrera] el reintento de arranque fallo', e);
+                  fail('No se pudieron cargar los datos.'); })
+    .then(() => { _reintentando = false; });
 }
 
 /* Carga el mes actual y los anteriores (hasta 3 fallos seguidos), para poder
    navegar "muy para atrás" a través de meses. */
 async function loadAllMonths(today) {
+  _falloDeRed = false;
   let [y, m] = today.slice(0, 7).split('-').map(Number);
   let misses = 0;
   for (let k = 0; k < 36 && misses < 3; k++) {
@@ -710,8 +777,8 @@ async function loadAllMonths(today) {
     try {
       const res = await fetch(sbStorageUrl('game-data', `la-carrera/${key}.json`), { cache: 'no-cache' });
       if (res.ok) { const j = await res.json(); Object.assign(_days, j.days || j); misses = 0; }
-      else misses++;
-    } catch { misses++; }
+      else misses++;   // 404 = ese mes no existe, que es como se sabe donde acaba el archivo
+    } catch { _falloDeRed = true; misses++; }   // sin respuesta = la red, y eso si se reintenta
     m--; if (m < 1) { m = 12; y--; }
   }
 }
@@ -860,6 +927,10 @@ async function _prepareAndPlay(date, saved) {
   elLoading.classList.remove('hidden');
   elLoading.innerHTML = '<div class="spin"></div><p>Cargando carrera…</p>';
 
+  /* Reconstruir la carrera SI necesita el manifest de performances. Si no
+     llego en el arranque se pide aqui, que es su primer uso real. */
+  try { await asegurarIndices(); } catch { /* loadPerformances aguanta sin el */ }
+
   const [transfers, perf, playerRec] = await Promise.all([
     loadFromUniform('transfers', id),
     loadPerformances(id, _perfManifest),
@@ -1006,6 +1077,13 @@ const POS_LABEL = { GK: 'Portero', DEF: 'Defensa', MID: 'Centrocampista', FWD: '
 async function buildSug(query) {
   const seq = ++_acSeq;
   const q = norm(query);
+  /* Los indices ya no vienen en el arranque. Si aun no han llegado (o se
+     cayeron) se piden ahora y se repite ESTA busqueda al llegar, para no
+     obligar al jugador a volver a escribir. */
+  if (!_nameIndex.length) {
+    try { await asegurarIndices(); } catch { return; }
+    if (seq !== _acSeq) return;
+  }
 
   // 1) Candidatos por nombre, sin IDs repetidos.
   let exact = [], starts = [], word = [], contains = [];
@@ -1251,6 +1329,18 @@ function renderHistogram(stats) {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+/* Volver a la app / recuperar cobertura: si el arranque llego a fallar, se
+   reintenta solo en vez de dejar el mensaje de error muerto en pantalla —
+   que en la PWA, sin barra de direcciones, no tiene salida. */
+if (window.FHRed && FHRed.alRecuperar) FHRed.alRecuperar(reintentarArranque);
+else {
+  window.addEventListener('pageshow', reintentarArranque);
+  window.addEventListener('online', reintentarArranque);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) reintentarArranque();
+  });
+}
 
 /* ── Aviso de edicion atrasada ──────────────────────────────
    Si la edición de HOY no existe, el juego cae a la última disponible sin

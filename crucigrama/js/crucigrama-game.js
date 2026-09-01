@@ -9,6 +9,12 @@ let crucData        = null;   // entrada del crucigrama actual
 let crucOffset      = 0;      // 0 = la edición de hoy, >0 = ediciones anteriores
 let crucEdition     = 1;      // nº de edición = posición en la lista de días publicados
 let crucIndex       = null;   // { months:[...], days:[...] } del índice de Storage
+/* El arranque llego a fallar por RED: se puede reintentar solo. Antes el
+   mensaje de error se quedaba muerto en pantalla para siempre — nadie
+   reintentaba— y decia "prueba a recargar la pagina", que en la PWA de iOS,
+   sin barra de direcciones, es un consejo imposible de seguir. */
+let crucArranqueIncompleto = false;
+let crucReintentando       = false;
 let crucEditions    = [];     // días publicados y jugables (<= hoy), ASCENDENTE
 let crucIdx         = 0;      // índice de la edición actual dentro de crucEditions
 const crucMonthCache = {};    // "AAAA-MM" -> { fecha: entrada }, meses ya descargados
@@ -292,7 +298,8 @@ async function crucStart() {
             crucIndex = await res.json();
         }
     } catch {
-        crucFatal('No he podido cargar la lista de crucigramas.<br>Prueba a recargar la página.');
+        crucArranqueIncompleto = true;
+        crucFatal('No he podido cargar la lista de crucigramas.<br>Se reintentará solo.');
         return;
     }
 
@@ -303,9 +310,11 @@ async function crucStart() {
     crucEditions = dias.filter(d => d <= hoy).sort();
 
     if (!crucEditions.length) {
+        // Esto NO es la red: el indice llego y viene vacio. No hay nada que reintentar.
         crucFatal('Todavía no hay ningún crucigrama publicado.');
         return;
     }
+    crucArranqueIncompleto = false;
 
     // Se abre por el de hoy; si hoy no tiene, por el último publicado.
     const i = crucEditions.indexOf(hoy);
@@ -359,7 +368,8 @@ async function crucGoEdition(idx, sinTocarUrl) {
     try {
         dias = await crucLoadMonth(mes);
     } catch {
-        crucFatal('No he podido cargar ese crucigrama.<br>Prueba a recargar la página.');
+        crucArranqueIncompleto = true;
+        crucFatal('No he podido cargar ese crucigrama.<br>Se reintentará solo.');
         return;
     }
     const entrada = dias[fecha];
@@ -1405,3 +1415,24 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     openCrucigrama();
 });
+
+/* Volver a la app tras tenerla en segundo plano es EL momento en que esto
+   fallaba: iOS suspende la red y la primera peticion al volver muere aunque
+   la cobertura sea perfecta. Si el arranque se cayo por eso, se rehace solo
+   en vez de dejar al jugador delante de un error sin salida. */
+function crucReintentarArranque() {
+    if (!crucArranqueIncompleto || crucReintentando) return;
+    crucReintentando = true;
+    crucLoading('REINTENTANDO...');
+    Promise.resolve().then(crucStart)
+        .catch(e => { console.error('[Crucigrama] el reintento de arranque fallo', e); })
+        .then(() => { crucReintentando = false; });
+}
+if (window.FHRed && FHRed.alRecuperar) FHRed.alRecuperar(crucReintentarArranque);
+else {
+    window.addEventListener('pageshow', crucReintentarArranque);
+    window.addEventListener('online', crucReintentarArranque);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) crucReintentarArranque();
+    });
+}
