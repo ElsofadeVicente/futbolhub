@@ -104,6 +104,16 @@ function recordResult(found) {
 // ══════════════════════════════════════════════
 //  PARTIDA DIARIA (localStorage)
 // ══════════════════════════════════════════════
+let _attemptMarked = false;
+/* Deja constancia de un intento en curso (score parcial, no el final que
+   escribe saveTodayResult al terminar). Solo la primera vez por partida. */
+function markAttemptedToday() {
+  if (!_isToday || _ended || _attemptMarked) return;
+  _attemptMarked = true;
+  try {
+    localStorage.setItem(`enteltop_day_${getTodayMadrid()}`, JSON.stringify({ score: _found.size }));
+  } catch {}
+}
 function saveTodayResult(questionId, foundArr, score) {
   try {
     localStorage.setItem(TODAY_KEY, JSON.stringify({
@@ -413,9 +423,10 @@ function bindModalEvents() {
 //  START GAME
 // ══════════════════════════════════════════════
 function startGame() {
-  _found      = new Set();
-  _ended      = false;
-  _statsSaved = false;
+  _found        = new Set();
+  _ended        = false;
+  _statsSaved   = false;
+  _attemptMarked = false;
   _timeLeft   = TIMER_TIMED;
 
   elMode.classList.add('hidden');
@@ -715,6 +726,10 @@ function submitSug(item) {
 //  VALIDATION
 // ══════════════════════════════════════════════
 function validate(name, id) {
+  // Racha del hub: un intento real rompe la racha ya, no solo al terminar
+  // el minuto. Cerrar la app a medio quiz no dejaba nada guardado (el
+  // resultado solo se escribía en endGame) y la racha sobrevivía intacta.
+  markAttemptedToday();
   const map = _question._normMap;
   let hit = map.get(norm(name));
   if (!hit && id) hit = map.get(String(id));

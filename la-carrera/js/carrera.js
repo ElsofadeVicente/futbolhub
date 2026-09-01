@@ -518,6 +518,19 @@ function recordResult(won, attempts) {
   }
   saveStats(s);
 }
+let _attemptMarked = false;
+/* Deja constancia de que hoy YA se ha intentado, aunque no se termine. Solo
+   escribe la primera vez por partida (_attemptMarked): saveTodayResult()
+   escribe después el resultado real y esto no debe pisarlo si se llama de
+   nuevo (no puede pasar hoy, pero por si acaso). No usar typeof s.won para
+   comprobar "ya hay resultado": un intento a medias YA deja `won:false`. */
+function markAttemptedToday() {
+  if (!_isToday || _ended || _attemptMarked) return;
+  _attemptMarked = true;
+  try {
+    localStorage.setItem(`carrera_day_${getTodayMadrid()}`, JSON.stringify({ won: false }));
+  } catch {}
+}
 function saveTodayResult() {
   try {
     const day = getTodayMadrid();
@@ -796,11 +809,41 @@ async function _prepareAndPlay(date, saved) {
   if (!entry || !entry.id) return fail('No hay jugador para ese día.');
   _idx = Math.max(0, _editions.indexOf(date));
 
+  const id = entry.id;
+  _isToday = (date === getTodayMadrid());
+
+  /* Partida de hoy ya jugada y con la carrera guardada entera: se enseña YA
+     con lo que hay en local, SIN pedir red. Antes esto igualmente refetcheaba
+     transfers+performances+player para reconstruir la carrera, y solo
+     entonces miraba `saved` — o sea que un resultado ya ganado, guardado y
+     completo dependía de una petición de red que no hacía ninguna falta.
+     Esa petición es justo la que se cae al volver la PWA de segundo plano
+     (red aún reconectando), así que "gana, sal al hub, vuelve a entrar" caía
+     en fail() por un fetch inútil. Ahora el camino sin red es el normal para
+     este caso, y la foto (lo único que sí pide red) llega de propina sin
+     bloquear la pantalla de resultado. */
+  if (saved && Array.isArray(saved.career) && saved.career.length) {
+    elIntro.classList.add('hidden');
+    elLoading.classList.add('hidden');
+    _target = { id, name: entry.name || '', img: '', career: saved.career };
+    _total = saved.career.length;
+    _attempt = saved.attempts; _won = saved.won; _ended = true; _statsSaved = true;
+    _visible = _total;
+    showEnd();
+    loadFromUniform('players', id).then(rec => {
+      if (!rec || !rec.img || !elRevealImg) return;
+      _target.img = rec.img;
+      elRevealImg.src = fhImgUrl(rec.img);
+      elRevealImg.alt = _target.name;
+      elRevealImg.parentElement.style.display = '';
+    }).catch(() => {});
+    return;
+  }
+
   elIntro.classList.add('hidden');
   elLoading.classList.remove('hidden');
   elLoading.innerHTML = '<div class="spin"></div><p>Cargando carrera…</p>';
 
-  const id = entry.id;
   const [transfers, perf, playerRec] = await Promise.all([
     loadFromUniform('transfers', id),
     loadPerformances(id, _perfManifest),
@@ -825,18 +868,10 @@ async function _prepareAndPlay(date, saved) {
     career
   };
   _total   = career.length;
-  _isToday = (date === getTodayMadrid());
 
   elLoading.classList.add('hidden');
 
-  if (saved) {   // partida de hoy ya jugada → mostrar resultado
-    // Preferir la carrera guardada junto al resultado (la que se jugó de
-    // verdad) sobre la recién recalculada, por si los datos del jugador
-    // cambiaron entre medias.
-    if (Array.isArray(saved.career) && saved.career.length) {
-      _target.career = saved.career;
-      _total = saved.career.length;
-    }
+  if (saved) {   // partida de hoy ya jugada, sin carrera guardada (formato viejo)
     _attempt = saved.attempts; _won = saved.won; _ended = true; _statsSaved = true;
     _visible = _total;
     showEnd();
@@ -846,7 +881,7 @@ async function _prepareAndPlay(date, saved) {
 }
 
 function startGame() {
-  _attempt = 1; _visible = 1; _ended = false; _won = false; _statsSaved = false;
+  _attempt = 1; _visible = 1; _ended = false; _won = false; _statsSaved = false; _attemptMarked = false;
   elEnd.classList.add('hidden');
   elIntro.classList.add('hidden');
   elGame.classList.remove('hidden');
@@ -1063,6 +1098,10 @@ function submitSug(item) { closeSug(); elInput.value = ''; if (!_ended) guess(it
 //  LÓGICA DE ADIVINAR
 // ══════════════════════════════════════════════
 function guess(name, id) {
+  // Racha del hub: un intento real (aunque falle) tiene que romperla ya, no
+  // solo al completar el día. Sin esto, cerrar la app a mitad de partida no
+  // dejaba ningún rastro y la racha sobrevivía como si no hubieras jugado.
+  markAttemptedToday();
   // El jugador objetivo está identificado por su ID: al elegir de la lista se
   // compara por ID, así un homónimo (otro "Luis Suárez") NO cuenta como acierto.
   // Solo se recurre al nombre si por lo que sea no llegó un ID.

@@ -78,14 +78,26 @@
       href: 'crucigrama',
       label: 'Crucigrama',
       today: madridToday,
+      /* El reloj autoguarda cada 10s SOLO por tener la pestaña abierta,
+         aunque no hayas escrito una letra — eso no es un intento y no debe
+         romper la racha (regla: "si solo entro no la pierdo"). Se distingue
+         mirando si hay algo real hecho: letras escritas, o Comprobar/Revelar
+         usados. Con eso sí, completar mal (con ayudas) o dejarlo a medias
+         cuenta como fallo, igual que el resto de diarios. */
       stateFor(day) {
         const s = readJSON(`cruc_${day.replace(/-/g, '')}`);
-        if (!s || !s.completed) return null;
+        if (!s) return null;
+        const attempted = s.completed || s.checked || Object.keys(s.userGrid || {}).length > 0;
+        if (!attempted) return null;
+        if (!s.completed) return 'loss';
         return s.clean === false ? 'loss' : 'win';   // con ayudas no cuenta como victoria
       },
       detailFor(day) {
         const s = readJSON(`cruc_${day.replace(/-/g, '')}`);
-        if (!s || !s.completed) return null;
+        if (!s) return null;
+        const attempted = s.completed || s.checked || Object.keys(s.userGrid || {}).length > 0;
+        if (!attempted) return null;
+        if (!s.completed) return 'En curso';
         return s.clean === false ? 'Completado con ayudas' : 'Completado sin ayudas';
       },
     },
@@ -108,14 +120,19 @@
       href: 'en-el-once',
       label: 'En el Once',
       today: madridToday,
+      /* completed:false = partida en curso (o dejada a medias, que en la
+         práctica es lo mismo hasta que se retoma). Antes esto se leía como
+         "no jugado" y no rompía la racha; ahora un intento real la rompe ya,
+         y solo se recupera completando el once entero. */
       stateFor(day) {
         const s = readJSON(`oncediario_${day.replace(/-/g, '')}`);
-        if (!s || !s.matchStats || s.completed === false) return null;
-        return s.matchStats.guessed === 11 ? 'win' : 'loss';
+        if (!s || !s.matchStats) return null;
+        return (s.completed !== false && s.matchStats.guessed === 11) ? 'win' : 'loss';
       },
       detailFor(day) {
         const s = readJSON(`oncediario_${day.replace(/-/g, '')}`);
-        if (!s || !s.matchStats || s.completed === false) return null;
+        if (!s || !s.matchStats) return null;
+        if (s.completed === false) return `${s.matchStats.guessed} de 11 (en curso)`;
         return `${s.matchStats.guessed} de 11`;
       },
     },
@@ -154,14 +171,17 @@
       href: 'wordle',
       label: 'Wordle',
       today: madridToday,
+      /* Se guarda tras CADA intento (writeJSON en submitGuess), completed
+         solo al final. Un intento sin acabar la palabra ya rompe la racha. */
       stateFor(day) {
         const s = readJSON(`wordle_day_${day}`);
-        if (!s || !s.completed) return null;
-        return s.won ? 'win' : 'loss';
+        if (!s || !Array.isArray(s.guesses) || !s.guesses.length) return null;
+        return (s.completed && s.won) ? 'win' : 'loss';
       },
       detailFor(day) {
         const s = readJSON(`wordle_day_${day}`);
-        if (!s || !s.completed) return null;
+        if (!s || !Array.isArray(s.guesses) || !s.guesses.length) return null;
+        if (!s.completed) return `${s.guesses.length}/5 (en curso)`;
         return s.won ? `Acertado en ${s.guesses.length}/5` : 'Fallado';
       },
     },
