@@ -88,6 +88,7 @@ async function guardarEnCache(key, buf, tipo) {
 module.exports = async function handler(req, res) {
   const crudo = req.query.u;
   if (!crudo || typeof crudo !== 'string') {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.status(400).end('Falta ?u=');
     return;
   }
@@ -96,10 +97,12 @@ module.exports = async function handler(req, res) {
   try {
     origen = new URL(crudo);
   } catch {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.status(400).end('URL invalida');
     return;
   }
   if (!HOSTS_PERMITIDOS.includes(origen.hostname)) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.status(400).end('Origen no permitido');
     return;
   }
@@ -111,7 +114,14 @@ module.exports = async function handler(req, res) {
     // writeHead a pelo (no res.redirect, que es un helper de Vercel que el
     // servidor de desarrollo local no reproduce) para que funcione igual
     // en dev-server.js y en producción.
-    res.writeHead(301, { Location: cacheado.url, 'Cache-Control': CACHE_CONTROL });
+    res.writeHead(301, {
+      Location: cacheado.url,
+      'Cache-Control': CACHE_CONTROL,
+      // Safari no pinta una respuesta sin Content-Type: la ofrece como
+      // archivo. Aqui es un subrecurso y el riesgo es bajo, pero la regla
+      // es no dejar salir NINGUNA respuesta sin tipo (ver v19 en CLAUDE.md).
+      'Content-Type': 'text/plain; charset=utf-8',
+    });
     res.end();
     return;
   }
@@ -122,15 +132,18 @@ module.exports = async function handler(req, res) {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FutbolHUB/1.0; +https://www.futbolhub.es)' },
     });
   } catch {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.status(502).end('No se pudo contactar con el origen');
     return;
   }
   if (!origenRes.ok) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.status(origenRes.status).end('El origen no tiene esa imagen');
     return;
   }
   const tipo = origenRes.headers.get('content-type') || '';
   if (!tipo.startsWith('image/')) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.status(502).end('La respuesta del origen no es una imagen');
     return;
   }
