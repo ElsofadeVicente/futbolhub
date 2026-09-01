@@ -232,6 +232,7 @@ function crucLoading(msg) {
     const screen = document.getElementById('crucigrama-screen');
     if (!screen) return;
     screen.innerHTML = `
+        <button class="fh-volver" onclick="goToHub()">← Volver</button>
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px;">
             <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;color:var(--neon-green);animation:pulse 1s infinite;">${msg}</div>
             <div style="font-size:2rem;">📰</div>
@@ -259,9 +260,16 @@ function crucFatal(texto) {
    { month, days: { "AAAA-MM-DD": entrada } }. */
 async function crucLoadMonth(mes) {
     if (crucMonthCache[mes]) return crucMonthCache[mes];
-    const res = await fetch(sbStorageUrl('game-data', `crucigrama/${mes}.json`), { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`mes ${mes} no disponible`);
-    const j = await res.json();
+    /* Con reintento y espera de red (js/red.js): el momento en que esto se
+       caía era volver a la app tras tenerla en segundo plano, con iOS aún
+       levantando la conexión. */
+    const j = window.FHRed
+        ? await FHRed.json(sbStorageUrl('game-data', `crucigrama/${mes}.json`))
+        : await (async () => {
+            const res = await fetch(sbStorageUrl('game-data', `crucigrama/${mes}.json`), { cache: 'no-cache' });
+            if (!res.ok) throw new Error(`mes ${mes} no disponible`);
+            return res.json();
+        })();
     crucMonthCache[mes] = j.days || {};
     return crucMonthCache[mes];
 }
@@ -276,9 +284,13 @@ async function crucStart() {
     crucLoading('CARGANDO...');
 
     try {
-        const res = await fetch(sbStorageUrl('game-data', 'crucigrama/index.json'), { cache: 'no-cache' });
-        if (!res.ok) throw new Error('sin índice');
-        crucIndex = await res.json();
+        if (window.FHRed) {
+            crucIndex = await FHRed.json(sbStorageUrl('game-data', 'crucigrama/index.json'));
+        } else {
+            const res = await fetch(sbStorageUrl('game-data', 'crucigrama/index.json'), { cache: 'no-cache' });
+            if (!res.ok) throw new Error('sin índice');
+            crucIndex = await res.json();
+        }
     } catch {
         crucFatal('No he podido cargar la lista de crucigramas.<br>Prueba a recargar la página.');
         return;
@@ -458,12 +470,17 @@ function crucEsc(s) {
 
 function buildCrucigramaScreen() {
     const screen = document.getElementById('crucigrama-screen');
-    screen.innerHTML = '';
+    /* NO se vacía antes de tener el marcado nuevo. Vaciar y luego construir
+       significa que cualquier tropiezo al construir (una fecha con otra
+       forma, un dato que falta) deja el contenedor VACIO — y como en esta
+       página el <body> es prácticamente solo este div, eso es la pantalla en
+       blanco entera, sin siquiera el botón Volver. Se monta la cadena
+       completa primero y se asigna de una sola vez. */
 
     const alPrincipio = crucIdx <= 0;
     const alFinal     = crucIdx >= crucEditions.length - 1;
 
-    screen.innerHTML = `
+    const marcado = `
         <!-- HEADER -->
         <div class="cruc-header">
             <div class="cruc-nav-row">
@@ -607,6 +624,8 @@ function buildCrucigramaScreen() {
         </div>
 
     `;
+
+    screen.innerHTML = marcado;
 
     renderGrid();
     renderCluesList();
@@ -1375,5 +1394,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── INIT AL CARGAR ──────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+    /* Rescate para js/pantalla-viva.js. Aquí hace especial falta: el <body>
+       de esta página es prácticamente un solo <div> que el juego reemplaza
+       entero, así que si ese reemplazo se queda a medias no hay ninguna otra
+       pantalla que encender — y sin esto el rescate genérico solo podría
+       ofrecer su panel. */
+    window.FHPantallaViva = window.FHPantallaViva || {};
+    window.FHPantallaViva.rescate = () => {
+        crucFatal('No he podido montar el crucigrama.<br>Prueba a recargar la página.');
+    };
     openCrucigrama();
 });

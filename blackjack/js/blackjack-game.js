@@ -786,9 +786,16 @@ const BlackjackGame = (() => {
       'finished':       'screen-finished',
     };
     const screenId = map[phase] || 'screen-menu';
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    /* Se busca la pantalla PRIMERO y solo se apagan las demás si existe. Al
+       revés —apagar todas y luego encender— basta con que el id no esté (un
+       renombrado, una pantalla retirada) para dejar la página sin ninguna
+       pantalla activa: en blanco y, en la PWA, sin forma de salir. */
     const el = document.getElementById(screenId);
-    if (el) el.classList.add('active');
+    if (!el) { console.error('[Blackjack] No existe la pantalla #' + screenId); return; }
+    el.classList.add('active');
+    document.querySelectorAll('.screen').forEach(s => {
+      if (s !== el) s.classList.remove('active');
+    });
   }
 
   function _posLabel(pos) {

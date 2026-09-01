@@ -8,6 +8,42 @@ const STATS_KEY         = 'enteltop_stats';
 const TODAY_KEY         = 'enteltop_today';
 const TIMER_TIMED       = 120;
 
+/* ── PEDIR DATOS SIN QUE UN PARPADEO DE RED ROMPA LA PARTIDA ──────────────
+   Un `fetch` pelado se cae entero la primera vez que la PWA vuelve de
+   segundo plano, porque iOS tiene la red aún levantándose. FHRed (js/red.js)
+   reintenta y espera a que haya conexión. Si esa hoja no llegara a cargar se
+   usa fetch normal, para no dejar el juego sin datos por una dependencia. */
+function fhJson(url) {
+  if (window.FHRed) return FHRed.json(url);
+  return fetch(url, { cache: 'no-cache' }).then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+
+/* ── UN FALLO NO PUEDE DEJAR LA PANTALLA VACIA ────────────────────────────
+   Antes esto escribía el mensaje reemplazando el innerHTML de #loading-screen
+   entero, con lo que se llevaba por delante el botón Volver: quedaba una
+   página con cuatro palabras en rojo y ninguna forma de salir, que en la app
+   instalada (sin barra de direcciones) es un callejón sin salida. Ahora solo
+   se toca el cuerpo, la cabecera se queda, y se deja también la barra de
+   ediciones para poder irse a otro día. */
+function fallo(texto, detalle) {
+  const cuerpo = document.getElementById('loading-body');
+  if (cuerpo) {
+    cuerpo.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'top-fail';
+    p.textContent = detalle ? `${texto} (${detalle})` : texto;
+    cuerpo.appendChild(p);
+  }
+  if (elLoading) elLoading.classList.remove('hidden');
+  if (elMode)  elMode.classList.add('hidden');
+  if (elGame)  elGame.classList.add('hidden');
+  if (elEnd)   elEnd.classList.add('hidden');
+  if (elNav && _editions.length > 1) { elNav.classList.remove('hidden'); renderNav(); }
+}
+
 // ── Banderas ───────────────────────────────────
 const FLAG_REMAP = {
   en: 'gb-eng', sco: 'gb-sct', wls: 'gb-wls', nir: 'gb-nir',
@@ -238,16 +274,20 @@ async function init() {
 
   const today = getTodayMadrid();
   try {
+    /* fhJson y no fetch a pelo: reintenta y ESPERA a que vuelva la conexión.
+       El momento en que esto se caía no era estar sin cobertura, era volver a
+       la app tras tenerla en segundo plano (iOS suspende la red y la primera
+       petición al volver se cae). Ver js/red.js. */
     const [, nameIndex, teamNames, leagueTeams] = await Promise.all([
       loadAllMonths(today),
-      fetch(sbStorageUrl('player-db', 'players/name-index.json'), { cache: 'no-cache' }).then(r => r.json()),
-      fetch(sbStorageUrl('player-db', 'team-names/team-names.json'), { cache: 'no-cache' }).then(r => r.json()),
-      fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'), { cache: 'no-cache' }).then(r => r.json()),
+      fhJson(sbStorageUrl('player-db', 'players/name-index.json')),
+      fhJson(sbStorageUrl('player-db', 'team-names/team-names.json')),
+      fhJson(sbStorageUrl('player-db', 'leagues/league-teams.json')),
     ]);
     _nameIndex = nameIndex;
     _teamIndex = buildTeamIndex(teamNames, leagueTeams);
   } catch (e) {
-    elLoading.innerHTML = `<p style="color:#b5221e;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.15em;text-align:center">Error al cargar datos.<br>${e.message}</p>`;
+    fallo('No se han podido cargar los datos.', e && e.message);
     return;
   }
 
@@ -256,7 +296,7 @@ async function init() {
     .sort();   // ascendente: edición 1 = la más antigua
 
   if (!_editions.length) {
-    elLoading.innerHTML = '<p style="color:#b5221e;font-family:\'DM Mono\',monospace;font-size:12px;letter-spacing:.15em;text-align:center">No hay preguntas disponibles todavía.</p>';
+    fallo('No hay preguntas disponibles todavía.');
     return;
   }
 
@@ -291,21 +331,45 @@ async function init() {
   });
 
   prepareQuestion(_idx);
+  bindModeScreenEvents();
+
+  /* Rescate propio para js/pantalla-viva.js: si alguna vez se llega a tener
+     las cuatro pantallas ocultas, que se vuelva al menú del juego y no a un
+     panel genérico. Se declara ANTES de la primera transición, que es
+     justo donde puede hacer falta. */
+  window.FHPantallaViva = window.FHPantallaViva || {};
+  window.FHPantallaViva.rescate = irAlMenu;
 
   // ¿Ya jugaste la edición de hoy?
   const todayResult = loadTodayResult();
   if (_isToday && todayResult && todayResult.questionId === _question.id) {
-    _found      = new Set(todayResult.found);
-    _ended      = true;
-    _statsSaved = true;
-    elLoading.classList.add('hidden');
-    showEndScreen(todayResult.score === 10);
-    return;
+    /* Todo el bloque protegido: un resultado guardado con otra forma (found
+       que no es una lista, por ejemplo) hacía saltar `new Set(...)` y dejaba
+       la carga escondida sin nada detrás. Si algo va mal aquí, al menú, que
+       desde ahí se puede volver a jugar. */
+    try {
+      _found      = new Set(todayResult.found || []);
+      _ended      = true;
+      _statsSaved = true;
+      showEndScreen(todayResult.score === 10);
+      return;
+    } catch (e) {
+      console.error('[En el Top] No se pudo enseñar el resultado guardado', e);
+      _ended = false; _statsSaved = false; _found = new Set();
+    }
   }
 
-  bindModeScreenEvents();
-  elLoading.classList.add('hidden');
+  irAlMenu();
+}
+
+/* Enseñar el menú: se enseña ANTES de esconder, por lo mismo que
+   showEndScreen. Es también el rescate del juego. */
+function irAlMenu() {
+  if (!elMode) return;
   elMode.classList.remove('hidden');
+  elLoading.classList.add('hidden');
+  elGame.classList.add('hidden');
+  elEnd.classList.add('hidden');
 }
 
 /* Carga el mes actual y los anteriores (hasta 3 fallos seguidos), para poder
@@ -316,9 +380,15 @@ async function loadAllMonths(today) {
   for (let k = 0; k < 36 && misses < 3; k++) {
     const key = `${y}-${String(m).padStart(2, '0')}`;
     try {
-      const res = await fetch(sbStorageUrl('game-data', `en-el-top/${key}.json`), { cache: 'no-cache' });
-      if (res.ok) { const j = await res.json(); Object.assign(_days, j.days || j); misses = 0; }
-      else misses++;
+      /* fhJson: un 404 (mes que no existe) no se reintenta y cuenta como
+         fallo, pero un parpadeo de red sí. Antes esto era un fetch pelado:
+         si la petición del MES EN CURSO se caía al volver la app de segundo
+         plano, el juego se quedaba sin la edición de hoy y servía la de
+         ayer sin decir nada, con el resultado guardado de hoy sin poder
+         enseñarse. */
+      const j = await fhJson(sbStorageUrl('game-data', `en-el-top/${key}.json`));
+      Object.assign(_days, j.days || j);
+      misses = 0;
     } catch { misses++; }
     m--; if (m < 1) { m = 12; y--; }
   }
@@ -429,9 +499,11 @@ function startGame() {
   _attemptMarked = false;
   _timeLeft   = TIMER_TIMED;
 
+  // Enseñar antes de esconder: ver el comentario de showEndScreen.
+  elGame.classList.remove('hidden');
   elMode.classList.add('hidden');
   elEnd.classList.add('hidden');
-  elGame.classList.remove('hidden');
+  elLoading.classList.add('hidden');
   elNav.classList.remove('hidden');
   renderNav();
   elArchiveTag.classList.toggle('hidden', _isToday);
@@ -776,10 +848,31 @@ function endGame(won) {
   setTimeout(() => showEndScreen(won), 900);
 }
 
+/* PRIMERO SE MONTA, DESPUES SE CAMBIA DE PANTALLA. Y no al revés, que era el
+   fallo: esto empezaba escondiendo #game-screen y solo enseñaba #end-screen
+   veinte líneas más abajo. Cualquier tropiezo en medio (un dato con otra
+   forma, un elemento que no está) dejaba las cuatro pantallas ocultas a la
+   vez — o sea, la página en blanco de la que no se puede salir. Montando
+   antes, si algo falla no se ha escondido nada todavía y se sigue viendo lo
+   que hubiera. */
 function showEndScreen(won) {
-  elGame.classList.add('hidden');
-
   const n = _found.size;
+
+  const filas = document.createDocumentFragment();
+  try {
+    for (const p of (_question.top10 || [])) {
+      const row = makeRow(p);
+      row.classList.add(_found.has(p.r) ? 'found' : 'revealed');
+      const nombre = row.querySelector('.name-text');
+      if (nombre) nombre.textContent = p.n;
+      filas.appendChild(row);
+    }
+  } catch (e) {
+    /* Sin las filas el resultado se entiende igual (marcador y pregunta), así
+       que se enseña de todos modos: mejor un panel incompleto que ninguno. */
+    console.error('[En el Top] No se pudieron montar las filas del resultado', e);
+  }
+
   if (n === 10)    { elEndEmoji.textContent = '🏆'; elEndTitle.textContent = '¡Top perfecto!'; }
   else if (n >= 7) { elEndEmoji.textContent = '🥇'; elEndTitle.textContent = '¡Muy bien!'; }
   else if (n >= 4) { elEndEmoji.textContent = '🥈'; elEndTitle.textContent = 'Bien, pero podías más'; }
@@ -787,18 +880,15 @@ function showEndScreen(won) {
   else             { elEndEmoji.textContent = '😬'; elEndTitle.textContent = '¡Sin ninguno!'; }
 
   elEndSub.textContent = `${n} / 10 adivinados`;
-  elEndQ.textContent   = _question.q;
+  elEndQ.textContent   = (_question && _question.q) || '';
+  elEndRows.innerHTML  = '';
+  elEndRows.appendChild(filas);
 
-  elEndRows.innerHTML = '';
-  for (const p of _question.top10) {
-    const iFound = _found.has(p.r);
-    const row = makeRow(p);
-    row.classList.add(iFound ? 'found' : 'revealed');
-    row.querySelector('.name-text').textContent = p.n;
-    elEndRows.appendChild(row);
-  }
-
+  // Ya está todo montado: ahora sí se puede cambiar de pantalla.
   elEnd.classList.remove('hidden');
+  elGame.classList.add('hidden');
+  elLoading.classList.add('hidden');
+  elMode.classList.add('hidden');
   elNav.classList.remove('hidden');
   renderNav();
 

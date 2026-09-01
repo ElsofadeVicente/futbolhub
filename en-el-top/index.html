@@ -35,7 +35,7 @@
        tres idas y vueltas en el camino critico que en un movil se notan. -->
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260825a">
+  <link rel="stylesheet" href="css/style.css?v=20260901h">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260901b">
@@ -182,8 +182,15 @@
 
   <!-- ── Loading ─────────────────────────────────────────────── -->
   <div id="loading-screen">
-    <div class="spin"></div>
-    <p>Cargando edición de hoy…</p>
+    <!-- El botón va TAMBIEN aquí: esta pantalla es la que se queda cuando la
+         carga falla, y sin él quedaba una página con cuatro palabras en rojo
+         y ninguna forma de salir — que en la PWA, sin barra de direcciones,
+         obliga a matar la app. -->
+    <a href="../" class="fh-volver">← Volver</a>
+    <div id="loading-body">
+      <div class="spin"></div>
+      <p>Cargando edición de hoy…</p>
+    </div>
   </div>
 
   <!-- ── Selección de modo ─────────────────────────────────── -->
@@ -363,8 +370,10 @@
   <script src="../js/img-heal.js?v=20260831a"></script>
   <script src="../js/profile-widget.js?v=20260831e"></script>
 <script src="../js/cabecera.js?v=20260901f"></script>
+<script src="../js/pantalla-viva.js?v=20260901i"></script>
+<script src="../js/red.js?v=20260901c"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="js/game.js?v=20260901a"></script>
+<script src="js/game.js?v=20260901h"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).
   // Ruta a la RAIZ para que el scope cubra el hub y todos los juegos.

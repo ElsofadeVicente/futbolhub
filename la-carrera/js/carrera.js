@@ -119,6 +119,12 @@ function _esperarRed() {
 }
 
 async function fetchJson(url, cache = 'no-cache') {
+  /* Desde el 2026-09-01 esta lógica vive en js/red.js y la comparten los 14
+     juegos (y además envuelve window.fetch, así que ya reintenta por debajo).
+     Se delega para no reintentar dos veces —tres intentos dentro de otros
+     tres son nueve— y el bucle de abajo se queda solo como respaldo por si
+     esa hoja no llegara a cargar. */
+  if (window.FHRed) return FHRed.json(url, { cache });
   let ultimo;
   for (let intento = 0; intento < REINTENTOS; intento++) {
     if (intento) await _duerme(ESPERA_MS[intento - 1] || 1000);
@@ -673,6 +679,12 @@ async function init() {
   });
   window.addEventListener('pageshow', () => asegurarAlgoVisible());
 
+  /* Y el mismo rescate, pero para js/pantalla-viva.js, que además detecta el
+     caso en el que una pantalla está "visible" pero vacía por dentro (un
+     render que se quedó a medias) — eso este repaso no lo ve. */
+  window.FHPantallaViva = window.FHPantallaViva || {};
+  window.FHPantallaViva.rescate = () => asegurarAlgoVisible(true);
+
   // ¿Ya jugaste hoy?
   const saved = loadTodayResult();
   if (_editions[_idx] === today && saved) {
@@ -735,7 +747,11 @@ async function loadAllMonths(today) {
    botón que repite lo que ya ha fallado tres veces es pedirle al jugador que
    arregle lo nuestro. */
 function fail(html) {
-  elLoading.innerHTML = `<p class="carrera-fail">${html}</p>`;
+  /* Se escribe en #loading-body, NO en #loading-screen: ahí dentro vive
+     ahora el botón Volver, y reemplazar el contenedor entero se lo llevaba
+     por delante — el mensaje se veía, sí, pero sin ninguna salida. */
+  const cuerpo = document.getElementById('loading-body') || elLoading;
+  cuerpo.innerHTML = `<p class="carrera-fail">${html}</p>`;
   elLoading.classList.remove('hidden');
   if (elNav) { elNav.classList.remove('hidden'); renderNav(); }
 }
@@ -747,10 +763,10 @@ function fail(html) {
    Se llama al terminar cada transicion y tambien al volver de segundo plano:
    ese es el momento en el que aparecio el problema, porque es cuando una
    peticion a medias se queda sin red. */
-function asegurarAlgoVisible() {
+function asegurarAlgoVisible(forzar) {
   const pantallas = [elLoading, elIntro, elGame, elEnd];
   const alguna = pantallas.some(el => el && !el.classList.contains('hidden'));
-  if (alguna) return false;
+  if (alguna && !forzar) return false;
   console.warn('[La Carrera] Ninguna pantalla visible: se vuelve a la portada.');
   if (elLoading) elLoading.classList.add('hidden');
   if (elIntro)   elIntro.classList.remove('hidden');

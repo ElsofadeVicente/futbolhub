@@ -1028,3 +1028,17 @@ body::before {
   #mode-box { box-shadow: none; }
   .np-modal { box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
 }
+
+/* El cuerpo de la pantalla de carga va aparte del boton Volver: asi el
+   mensaje de error puede reemplazarlo sin llevarse la cabecera, y el boton se
+   queda arriba en vez de centrarse junto al spinner. margin:auto en un item
+   de un flex en columna lo centra en el espacio que sobra. */
+#loading-screen { justify-content: flex-start; }
+#loading-body {
+  margin: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.top-fail {
+  color: var(--np-red); font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: .15em; text-align: center; padding: 0 20px;
+}

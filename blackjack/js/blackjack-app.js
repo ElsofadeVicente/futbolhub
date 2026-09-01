@@ -1706,8 +1706,16 @@ const App = (() => {
      HELPERS
      ══════════════════════════════════════════ */
   function _showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id)?.classList.add('active');
+    /* Se busca la pantalla PRIMERO y solo se apagan las demás si existe. Al
+       revés —apagar todas y luego encender— basta con que el id no esté (un
+       renombrado, una pantalla retirada) para dejar la página sin ninguna
+       pantalla activa: en blanco y, en la PWA, sin forma de salir. */
+    const destino = document.getElementById(id);
+    if (!destino) { console.error('[Blackjack] No existe la pantalla #' + id); return; }
+    destino.classList.add('active');
+    document.querySelectorAll('.screen').forEach(s => {
+      if (s !== destino) s.classList.remove('active');
+    });
     // Defensa extra: el menú nunca debe arrastrar la barra "Objetivo" de una partida
     // anterior (bug: al salir a mitad de partida podía quedar visible al hacer scroll).
     if (id === 'screen-menu') {

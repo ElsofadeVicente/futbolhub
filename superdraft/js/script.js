@@ -820,8 +820,15 @@
 
   /* ═══════════════════ PANTALLAS / NAV ═══════════════════ */
   function showScreen(id) {
+    /* Si el id no es ninguno de los dos, el toggle apagaba LOS DOS y dejaba
+       la página sin ninguna pantalla activa: en blanco, y en la PWA sin
+       forma de salir. Se comprueba antes de apagar nada. */
+    const destino = $(id);
+    if (!destino) { console.error('[Superdraft] No existe la pantalla #' + id); return; }
+    destino.classList.add('active');
     ['screen-intro','screen-game'].forEach(s => {
-      const el = $(s); if (el) el.classList.toggle('active', s === id);
+      if (s === id) return;
+      const el = $(s); if (el) el.classList.remove('active');
     });
   }
 

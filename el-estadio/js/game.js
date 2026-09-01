@@ -147,8 +147,16 @@ function updateStats(total) {
    PANTALLAS
    ══════════════════════════════════════════════ */
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  /* Se busca la pantalla PRIMERO y solo se apagan las demás si existe. Antes
+     era al revés y el getElementById iba SIN comprobar: un id que no esté
+     apagaba las cinco pantallas y acto seguido lanzaba una excepción, o sea
+     página en blanco y sin forma de salir en la PWA. */
+  const destino = document.getElementById(id);
+  if (!destino) { console.error('[El Estadio] No existe la pantalla #' + id); return; }
+  destino.classList.add('active');
+  document.querySelectorAll('.screen').forEach(s => {
+    if (s !== destino) s.classList.remove('active');
+  });
 }
 
 /* ══════════════════════════════════════════════
