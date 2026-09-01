@@ -156,7 +156,17 @@ function saveTodayResult(questionId, foundArr, score) {
       date: getTodayMadrid(),
       questionId,
       found: foundArr,
-      score
+      score,
+      /* Copia de la pregunta del dia (son 10 filas: unos pocos KB). Con esto,
+         volver a entrar a una edicion ya jugada no necesita NADA de red y el
+         resultado se pinta entero desde local. Era lo que hacia que "termina,
+         sal al hub y vuelve" dependiera de una peticion que en la PWA de iOS
+         se cae al volver de segundo plano. Mismo criterio que la carrera
+         guardada de La Carrera. */
+      q: _question ? {
+        id: _question.id, q: _question.q, unit: _question.unit,
+        hint: _question.hint, type: _question.type, top10: _question.top10
+      } : null
     }));
     // Registro por fecha (no se sobreescribe al día siguiente) — lo usa el hub
     // para calcular la racha de días con 10/10.
@@ -218,6 +228,65 @@ let _acDebounce = null;
 let _cdInterval = null;
 let _docClickBound = false;
 
+let _falloDeRed         = false; // alguna peticion del calendario se cayo por red
+let _timerStart        = 0;      // instante real de arranque del reloj
+let _bindHecho         = false;  // los listeners de una vez ya estan puestos
+let _arranqueIncompleto = false; // el juego no llego a montarse: se puede reintentar
+let _reintentando      = false;
+let _pendientes        = [];     // setTimeout en vuelo, para poder cancelarlos
+
+/* Un setTimeout que se puede cancelar en bloque. Los tres que tiene el juego
+   (revelar, pintar el resultado, abrir estadisticas) llegan CON RETRASO, asi
+   que si mientras tanto se cambia de edicion caen encima de la partida nueva:
+   se veia el panel de resultado del dia anterior sobre un juego recien
+   empezado. Cancelarlos al empezar cierra ese hueco. */
+function luegoDe(ms, fn) {
+  const id = setTimeout(() => {
+    _pendientes = _pendientes.filter(x => x !== id);
+    fn();
+  }, ms);
+  _pendientes.push(id);
+  return id;
+}
+function cancelarPendientes() {
+  _pendientes.forEach(clearTimeout);
+  _pendientes = [];
+}
+
+/* ── LOS INDICES DEL AUTOCOMPLETADO SE PIDEN APARTE, Y SIN BLOQUEAR ────────
+   name-index.json, team-names.json y league-teams.json SOLO hacen falta
+   mientras se juega: para pintar el menu, una edicion del archivo o el
+   resultado de una partida ya terminada no se usan para nada.
+
+   Estaban dentro del Promise.all del arranque, o sea que las tres eran
+   OBLIGATORIAS para poder enseñar cualquier cosa — y como Promise.all falla
+   al primer rechazo, que se cayera una sola dejaba el juego entero en la
+   pantalla de error. En la PWA de iOS, que vuelve de segundo plano con la
+   red aun levantandose y tumba las primeras peticiones, eso es exactamente
+   lo que pasaba al reentrar: tres peticiones que no hacian ninguna falta se
+   llevaban por delante una partida de hoy ya jugada y guardada en local.
+   Es el mismo arreglo que se le hizo a La Carrera el 2026-09-01.
+
+   Ahora se piden en paralelo pero sin que nadie las espere, y si fallan se
+   vuelven a pedir en cuanto alguien las necesita de verdad. */
+let _indicesPromesa = null;
+function asegurarIndices() {
+  if (_indicesPromesa) return _indicesPromesa;
+  _indicesPromesa = Promise.all([
+    fhJson(sbStorageUrl('player-db', 'players/name-index.json')),
+    fhJson(sbStorageUrl('player-db', 'team-names/team-names.json')),
+    fhJson(sbStorageUrl('player-db', 'leagues/league-teams.json')),
+  ]).then(([nameIndex, teamNames, leagueTeams]) => {
+    _nameIndex = nameIndex;
+    _teamIndex = buildTeamIndex(teamNames, leagueTeams);
+  }).catch(e => {
+    // Que el fallo no se quede pegado: el siguiente que los pida, reintenta.
+    _indicesPromesa = null;
+    throw e;
+  });
+  return _indicesPromesa;
+}
+
 // ── Refs ───────────────────────────────────────
 let elLoading, elMode, elGame, elEnd;
 let elModeOpts, elStartGameBtn, elStatsOpenBtn;
@@ -273,22 +342,16 @@ async function init() {
   elNavLabel        = document.getElementById('nav-label');
 
   const today = getTodayMadrid();
+
+  /* Lo UNICO que hay que esperar para poder enseñar algo es el calendario:
+     ahi viven la pregunta del dia y su top10. Los indices del autocompletado
+     se piden aparte y solo cuando se va a poder jugar (ver mas abajo).
+     fhJson y no fetch a pelo: reintenta y ESPERA a que vuelva la conexion
+     (ver js/red.js). */
   try {
-    /* fhJson y no fetch a pelo: reintenta y ESPERA a que vuelva la conexión.
-       El momento en que esto se caía no era estar sin cobertura, era volver a
-       la app tras tenerla en segundo plano (iOS suspende la red y la primera
-       petición al volver se cae). Ver js/red.js. */
-    const [, nameIndex, teamNames, leagueTeams] = await Promise.all([
-      loadAllMonths(today),
-      fhJson(sbStorageUrl('player-db', 'players/name-index.json')),
-      fhJson(sbStorageUrl('player-db', 'team-names/team-names.json')),
-      fhJson(sbStorageUrl('player-db', 'leagues/league-teams.json')),
-    ]);
-    _nameIndex = nameIndex;
-    _teamIndex = buildTeamIndex(teamNames, leagueTeams);
+    await loadAllMonths(today);
   } catch (e) {
-    fallo('No se han podido cargar los datos.', e && e.message);
-    return;
+    console.error('[En el Top] fallo cargando el calendario', e);
   }
 
   _editions = Object.keys(_days)
@@ -296,9 +359,16 @@ async function init() {
     .sort();   // ascendente: edición 1 = la más antigua
 
   if (!_editions.length) {
-    fallo('No hay preguntas disponibles todavía.');
+    /* Sin calendario no se puede jugar. Pero si la edicion de HOY ya esta
+       jugada y guardada entera, el resultado se puede enseñar sin tocar la
+       red: es justo el caso de "termino, sale al hub y vuelve a entrar". */
+    if (mostrarResultadoGuardadoSinRed()) { _arranqueIncompleto = false; return; }
+    _arranqueIncompleto = _falloDeRed;   // solo se reintenta si fue la red
+    fallo(_falloDeRed ? 'No se han podido cargar los datos.'
+                      : 'No hay preguntas disponibles todavía.');
     return;
   }
+  _arranqueIncompleto = false;
 
   /* ¿Falta la edición de hoy? Se calcula UNA vez, al cargar los meses. */
   _hoyFalta = !(_days[today] && _days[today].id);
@@ -316,22 +386,30 @@ async function init() {
     FHRuta.set({ dia: real === today ? null : real });
   }
 
-  // Siempre vincular modales (necesario tanto para partida nueva como ya jugada)
-  bindModalEvents();
-  elNavFirst.addEventListener('click', () => goEdition(0));
-  elNavPrev .addEventListener('click', () => goEdition(_idx - 1));
-  elNavNext .addEventListener('click', () => goEdition(_idx + 1));
-  elNavLast .addEventListener('click', () => goEdition(_editions.length - 1));
+  /* Los listeners de una vez, UNA VEZ. init() es reintentable (ver
+     reintentarArranque): si un arranque fallido vuelve a pasar por aqui, sin
+     esta guarda cada boton de la barra de ediciones acabaria con dos, tres o
+     cuatro manejadores y un solo toque saltaria varias ediciones — el mismo
+     fallo de manejadores duplicados que ya se corrigio en En el Once. */
+  if (!_bindHecho) {
+    _bindHecho = true;
+    bindModalEvents();
+    elNavFirst.addEventListener('click', () => goEdition(0));
+    elNavPrev .addEventListener('click', () => goEdition(_idx - 1));
+    elNavNext .addEventListener('click', () => goEdition(_idx + 1));
+    elNavLast .addEventListener('click', () => goEdition(_editions.length - 1));
 
-  // El Atrás del móvil deshace la navegación por ediciones, no sale del juego.
-  if (window.FHRuta) FHRuta.alVolver(() => {
-    const d = FHRuta.fecha('dia') || today;
-    const i = _editions.indexOf(d);
-    if (i >= 0 && i !== _idx) goEdition(i, true);
-  });
+    // El Atrás del móvil deshace la navegación por ediciones, no sale del juego.
+    if (window.FHRuta) FHRuta.alVolver(() => {
+      const d = FHRuta.fecha('dia') || getTodayMadrid();
+      const i = _editions.indexOf(d);
+      if (i >= 0 && i !== _idx) goEdition(i, true);
+    });
+
+    bindModeScreenEvents();
+  }
 
   prepareQuestion(_idx);
-  bindModeScreenEvents();
 
   /* Rescate propio para js/pantalla-viva.js: si alguna vez se llega a tener
      las cuatro pantallas ocultas, que se vuelva al menú del juego y no a un
@@ -359,7 +437,63 @@ async function init() {
     }
   }
 
+  /* Se va a poder jugar: ahora si merece la pena ir bajando los indices del
+     autocompletado, en paralelo y sin que nadie los espere. Aqui abajo y no
+     al principio de init() a proposito: por el camino de "hoy ya esta jugado"
+     no se usan para nada, y son ~200 KB que en un movil se pagan cada vez que
+     se entra a ver el resultado. */
+  asegurarIndices().catch(() => { /* se reintenta al escribir */ });
+
   irAlMenu();
+}
+
+/* El resultado de HOY, guardado entero, enseñado sin pedir nada a la red.
+   Devuelve true si ha podido. Solo sirve para partidas guardadas a partir
+   del 2026-09-01 (antes no se guardaba la pregunta); las de antes siguen el
+   camino normal, que ya no depende de los indices. */
+function mostrarResultadoGuardadoSinRed() {
+  const r = loadTodayResult();
+  if (!r || !r.q || !Array.isArray(r.q.top10) || !r.q.top10.length) return false;
+  try {
+    _question = r.q;
+    _question._normMap = buildNormMap(_question.top10);
+    _isToday    = true;
+    _found      = new Set(r.found || []);
+    _ended      = true;
+    _statsSaved = true;
+    showEndScreen(r.score === 10);
+    return true;
+  } catch (e) {
+    console.error('[En el Top] no se pudo enseñar el resultado guardado sin red', e);
+    return false;
+  }
+}
+
+/* ── VOLVER A INTENTARLO EN VEZ DE QUEDARSE MUERTO ────────────────────────
+   Un arranque fallido dejaba en pantalla un mensaje de error del que no se
+   salia: nadie reintentaba nunca, asi que el jugador tenia que salir al hub
+   y entrar otra vez. En la PWA de iOS ese fallo es el caso NORMAL (la app
+   vuelve de segundo plano con la red aun levantandose), asi que quedarse
+   muerto ahi es justo lo peor. Ahora se reintenta solo en cuanto la pagina
+   vuelve al primer plano, se restaura o recupera conexion — ver
+   FHRed.alRecuperar en js/red.js.
+
+   init() es idempotente para esto: los listeners de una vez van detras de
+   _bindHecho y el resto es recalcular y repintar. */
+function reintentarArranque() {
+  if (!_arranqueIncompleto || _reintentando) return;
+  _reintentando = true;
+  const cuerpo = document.getElementById('loading-body');
+  if (cuerpo) {
+    cuerpo.innerHTML = '';
+    const sp = document.createElement('div'); sp.className = 'spin';
+    const p  = document.createElement('p');   p.textContent = 'Reintentando…';
+    cuerpo.appendChild(sp); cuerpo.appendChild(p);
+  }
+  Promise.resolve().then(init).catch(e => {
+    console.error('[En el Top] el reintento de arranque fallo', e);
+    fallo('No se han podido cargar los datos.');
+  }).then(() => { _reintentando = false; });
 }
 
 /* Enseñar el menú: se enseña ANTES de esconder, por lo mismo que
@@ -377,6 +511,7 @@ function irAlMenu() {
 async function loadAllMonths(today) {
   let [y, m] = today.slice(0, 7).split('-').map(Number);
   let misses = 0;
+  _falloDeRed = false;
   for (let k = 0; k < 36 && misses < 3; k++) {
     const key = `${y}-${String(m).padStart(2, '0')}`;
     try {
@@ -389,7 +524,14 @@ async function loadAllMonths(today) {
       const j = await fhJson(sbStorageUrl('game-data', `en-el-top/${key}.json`));
       Object.assign(_days, j.days || j);
       misses = 0;
-    } catch { misses++; }
+    } catch (e) {
+      /* Un 404 es "ese mes no existe" y es normal (asi se sabe donde acaba el
+         archivo). Un fallo SIN status es la red, y eso si se puede reintentar
+         mas tarde: hay que distinguirlos o el mensaje miente y el reintento
+         no sabe si tiene algo que hacer. */
+      if (!(e && e.status)) _falloDeRed = true;
+      misses++;
+    }
     m--; if (m < 1) { m = 12; y--; }
   }
 }
@@ -406,6 +548,8 @@ function prepareQuestion(idx) {
    salvo que sea la de hoy y ya esté jugada: entonces muestra ese resultado
    guardado en vez de reiniciar la partida (igual que la-carrera). */
 function goEdition(idx, desdeAtras) {
+  stopTimer();
+  cancelarPendientes();
   idx = Math.max(0, Math.min(_editions.length - 1, idx));
   _idx = idx;
   prepareQuestion(_idx);
@@ -431,7 +575,7 @@ function goEdition(idx, desdeAtras) {
 }
 
 function renderNav() {
-  if (!elNav) return;
+  if (!elNav || !_editions.length) return;
   const n = _editions.length;
   const atStart = _idx <= 0, atEnd = _idx >= n - 1;
   elNavFirst.disabled = atStart;
@@ -493,6 +637,19 @@ function bindModalEvents() {
 //  START GAME
 // ══════════════════════════════════════════════
 function startGame() {
+  /* Barrer la partida anterior ANTES de montar la nueva: reloj y setTimeout
+     en vuelo (revelar, pintar resultado, abrir estadisticas). Si no, saltar
+     de edicion con algo pendiente traia el final de la partida vieja encima
+     de la recien empezada. */
+  stopTimer();
+  cancelarPendientes();
+  /* Y los modales de la partida anterior. closeStats() se lleva ademas su
+     setInterval del "nuevo Top en HH:MM:SS", que si no seguia latiendo
+     debajo del juego nuevo. */
+  if (elStatsOverlay)  closeStats();
+  if (elGiveupOverlay) elGiveupOverlay.classList.add('hidden');
+  asegurarIndices().catch(() => { /* el autocompletado reintenta al escribir */ });
+
   _found        = new Set();
   _ended        = false;
   _statsSaved   = false;
@@ -609,24 +766,49 @@ function updateScore() {
 // ══════════════════════════════════════════════
 //  TIMER
 // ══════════════════════════════════════════════
+/* stopTimer() lo PRIMERO. Sin eso, cambiar de edicion con el cronometro en
+   marcha dejaba el interval anterior corriendo para siempre: _timerInterval
+   se sobrescribia con el nuevo y el viejo ya no lo paraba nadie. Y no era
+   solo memoria — el interval huerfano seguia contando desde SU arranque, asi
+   que al llegar a cero llamaba a endGame(false) sobre la partida que
+   estuvieras jugando en ese momento. Medido: tres cambios de edicion dejaban
+   tres relojes vivos.
+
+   El instante de arranque va en una variable de modulo (no en un closure)
+   para poder rehacer el interval al volver de segundo plano sin perder la
+   cuenta: el tiempo se calcula siempre contra el reloj real, asi que
+   congelar y descongelar la pagina no regala ni quita segundos. */
 function startTimer() {
-  _timeLeft = TIMER_TIMED;
+  stopTimer();
+  _timerStart = Date.now();
+  _timeLeft   = TIMER_TIMED;
   updateTimerUI(_timeLeft);
-  const start = Date.now();
-  _timerInterval = setInterval(() => {
-    const elapsed = (Date.now() - start) / 1000;
-    _timeLeft = Math.max(0, TIMER_TIMED - elapsed);
-    updateTimerUI(_timeLeft);
-    if (_timeLeft <= 0) {
-      clearInterval(_timerInterval);
-      if (!_ended) endGame(false);
-    }
-  }, 200);
+  _timerInterval = setInterval(tickTimer, 200);
+}
+
+function tickTimer() {
+  const elapsed = (Date.now() - _timerStart) / 1000;
+  _timeLeft = Math.max(0, TIMER_TIMED - elapsed);
+  updateTimerUI(_timeLeft);
+  if (_timeLeft <= 0) {
+    stopTimer();
+    if (!_ended) endGame(false);
+  }
 }
 
 function stopTimer() {
   clearInterval(_timerInterval);
   _timerInterval = null;
+}
+
+/* Al volver la pagina de segundo plano (o de la congelacion del
+   back-forward cache de Safari) el interval puede haberse quedado parado.
+   Se pone al dia con el reloj real y se vuelve a enganchar. */
+function reanudarReloj() {
+  if (_mode !== 'timed' || _ended || !_timerStart) return;
+  if (!elGame || elGame.classList.contains('hidden')) return;
+  tickTimer();
+  if (!_ended && !_timerInterval) _timerInterval = setInterval(tickTimer, 200);
 }
 
 function updateTimerUI(t) {
@@ -694,8 +876,18 @@ function wordBoundaryMatch(n, q) {
 }
 
 function buildSug(query) {
-  if (questionType() === 'team') buildTeamSug(query);
-  else                           buildPlayerSug(query);
+  const esEquipo = questionType() === 'team';
+  /* Los indices ya no vienen en el arranque (ver asegurarIndices). Si todavia
+     no han llegado —o se cayeron— se piden ahora y se repite ESTA misma
+     busqueda al llegar, para que el jugador no tenga que volver a escribir. */
+  if (esEquipo ? !_teamIndex.length : !_nameIndex.length) {
+    asegurarIndices().then(() => {
+      if (elInput && elInput.value === query) buildSug(query);
+    }).catch(() => { /* sin sugerencias; escribir el nombre entero sigue valiendo */ });
+    return;
+  }
+  if (esEquipo) buildTeamSug(query);
+  else          buildPlayerSug(query);
 }
 
 function buildPlayerSug(query) {
@@ -811,7 +1003,7 @@ function validate(name, id) {
     _found.add(hit.r);
     revealRow(hit, 'found');
     updateScore();
-    if (_found.size === 10) { stopTimer(); setTimeout(() => endGame(true), 600); }
+    if (_found.size === 10) { stopTimer(); luegoDe(600, () => endGame(true)); }
   } else {
     shakeInput();
   }
@@ -845,7 +1037,7 @@ function endGame(won) {
     if (!_found.has(p.r)) revealRow(p, 'revealed');
   }
 
-  setTimeout(() => showEndScreen(won), 900);
+  luegoDe(900, () => showEndScreen(won));
 }
 
 /* PRIMERO SE MONTA, DESPUES SE CAMBIA DE PANTALLA. Y no al revés, que era el
@@ -889,13 +1081,14 @@ function showEndScreen(won) {
   elGame.classList.add('hidden');
   elLoading.classList.add('hidden');
   elMode.classList.add('hidden');
-  elNav.classList.remove('hidden');
-  renderNav();
+  /* Sin calendario (resultado enseñado desde local, sin red) la barra de
+     ediciones no lleva a ninguna parte: mismo criterio que fallo(). */
+  if (_editions.length > 1) { elNav.classList.remove('hidden'); renderNav(); }
 
   // Abrir estadísticas automáticamente siempre que termine la partida
   // (ganada o perdida), tras un breve delay para que se vea primero el
   // resultado antes de que aparezca el modal encima.
-  setTimeout(openStats, 700);
+  luegoDe(700, openStats);
 }
 
 // ══════════════════════════════════════════════
@@ -1019,9 +1212,46 @@ function renderHistogram(hist) {
 }
 
 // ══════════════════════════════════════════════
-//  BOOT
+//  BOOT Y CICLO DE VIDA
 // ══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', init);
+
+/* SALIR Y VOLVER A ENTRAR NO PUEDE DEJAR EL JUEGO MUERTO.
+
+   Safari (y la PWA de iOS mas todavia) congela la pagina al salir de ella y
+   la descongela tal cual al volver: el DOM y las variables siguen intactos,
+   asi que NO hay que remontar nada — remontar seria justo lo que se cargaria
+   una partida en curso. Lo unico que hay que hacer aqui son dos cosas:
+
+     · Si el arranque llego a fallar, reintentarlo. Antes ese error se
+       quedaba en pantalla para siempre.
+     · Poner el reloj al dia. Un interval congelado no cuenta el rato que la
+       pagina ha estado fuera, asi que al volver enseñaria un tiempo que no
+       es; tickTimer lo recalcula contra el reloj real.
+
+   pageshow cubre la restauracion (incluido el back-forward cache),
+   visibilitychange el volver de segundo plano y online el recuperar
+   cobertura. FHRed.alRecuperar los junta y los limita a un aviso cada 1,5 s,
+   porque al volver de segundo plano llegan los tres a la vez. */
+function alVolverALaVida() {
+  reintentarArranque();
+  reanudarReloj();
+}
+if (window.FHRed && FHRed.alRecuperar) FHRed.alRecuperar(alVolverALaVida);
+else {
+  window.addEventListener('pageshow', alVolverALaVida);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) alVolverALaVida();
+  });
+  window.addEventListener('online', alVolverALaVida);
+}
+
+/* Al irse (o al congelarse la pagina) se para lo que solo pinta: el
+   cronometro de "nuevo Top en HH:MM:SS". El reloj de la partida NO se toca
+   aqui — se recalcula solo al volver — y los setTimeout en vuelo tampoco:
+   cancelarlos dejaria una partida restaurada del back-forward cache con
+   todo revelado y sin panel de resultado. */
+window.addEventListener('pagehide', stopCountdown);
 
 /* ── Aviso de edicion atrasada ──────────────────────────────
    Si la edición de HOY no existe, el juego cae a la última disponible sin

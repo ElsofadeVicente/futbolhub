@@ -183,5 +183,49 @@
 
   instalar();
 
-  window.FHRed = { pedir: pedir, json: json, jsonOpcional: jsonOpcional };
+  /* ── Y CUANDO EL ARRANQUE YA SE HA CAIDO DEL TODO ───────────────────────
+     Reintentar la peticion sirve mientras la pagina esta cargando. Pero si
+     el arranque de un juego llego a fallar, lo que queda en pantalla es un
+     mensaje de error MUERTO: nadie vuelve a intentarlo nunca, y el jugador
+     se queda ahi hasta que sale y entra otra vez a mano. En la PWA de iOS
+     eso no es el caso raro, es el normal — la app se suspende, vuelve con la
+     red todavia levantandose, la primera tanda de peticiones se cae, y ese
+     error se queda para siempre aunque un segundo despues haya cobertura de
+     sobra.
+
+     alRecuperar(fn) llama a fn en los tres momentos en que puede haber
+     dejado de fallar: al volver la pagina al primer plano, al restaurarse
+     (incluido el back-forward cache de Safari) y al recuperar conexion. El
+     juego decide si tiene algo que hacer; aqui solo se avisa.
+
+     Se avisa como mucho una vez cada 1,5 s: los tres eventos llegan JUNTOS
+     al volver de segundo plano y no tiene sentido reintentar tres veces. */
+  var oyentes = [];
+  var ultimoAviso = 0;
+
+  function avisar() {
+    var ahora = Date.now();
+    if (ahora - ultimoAviso < 1500) return;
+    ultimoAviso = ahora;
+    for (var i = 0; i < oyentes.length; i++) {
+      try { oyentes[i](); }
+      catch (e) { console.warn('[FHRed] un oyente de recuperacion fallo', e); }
+    }
+  }
+
+  function alRecuperar(fn) {
+    if (typeof fn !== 'function') return;
+    oyentes.push(fn);
+    if (oyentes.length > 1) return;   // los listeners, una sola vez
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) avisar();
+    });
+    window.addEventListener('pageshow', avisar);
+    window.addEventListener('online', avisar);
+  }
+
+  window.FHRed = {
+    pedir: pedir, json: json, jsonOpcional: jsonOpcional,
+    alRecuperar: alRecuperar,
+  };
 })();
