@@ -43,6 +43,60 @@
       ]
     },
     {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle|aviso-legal|contacto|privacidad|sobre-futbolhub|como-jugar)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle|aviso-legal|contacto|privacidad|sobre-futbolhub|como-jugar)/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/como-jugar/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/como-jugar/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle)/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
       "source": "/(.*)\\.(png|jpg|jpeg|webp|gif|svg|ico|woff|woff2|ttf|mp3|ogg)",
       "has": [
         {
