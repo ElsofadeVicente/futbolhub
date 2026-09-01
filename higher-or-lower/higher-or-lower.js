@@ -205,16 +205,20 @@ function showModeMenu() {
   HOL.isAnimating = false;
   HOL.currentMode = null;
   buildModeMenu();
-  DOM.modeMenu.classList.add('active');
-  DOM.game.classList.remove('active');
+  if (DOM.modeMenu) DOM.modeMenu.classList.add('active');
+  if (DOM.game) DOM.game.classList.remove('active');
   /* El menú es la URL limpia: si no, recargar te devolvería al modo que
      acabas de abandonar. */
   if (window.FHRuta) FHRuta.borrar('modo');
 }
 
 function hideModeMenu() {
-  DOM.modeMenu.classList.remove('active');
+  /* Enseñar ANTES de esconder. Al reves, si #hol-game no estuviera, la
+     primera linea deja el menu oculto y la segunda revienta: pantalla en
+     blanco y, en la PWA, sin forma de salir. */
+  if (!DOM.game) { console.error('[Higher or Lower] No existe la pantalla del juego'); return; }
   DOM.game.classList.add('active');
+  if (DOM.modeMenu) DOM.modeMenu.classList.remove('active');
 }
 
 async function selectMode(modeKey) {

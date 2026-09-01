@@ -1,0 +1,46 @@
+# =============================================
+# .gitattributes — finales de linea, de una vez y para siempre
+#
+# POR QUE EXISTE
+# El proyecto se edita en Windows con core.autocrlf=true, asi que git ya
+# guardaba LF... salvo en los archivos que se commitearon en su dia CON CRLF
+# dentro. Esos quedaban en un limbo: cualquier herramienta que los reescriba
+# los normaliza y git los ve como un archivo entero cambiado, y —lo que de
+# verdad importa— lo que hay en el repo (y por tanto lo que sirve Vercel) NO
+# son los mismos bytes que lo que se ve en local.
+#
+# Eso no es cosmetico. La Carrera lleva una CSP de bloqueo con los hashes
+# SHA-256 de sus <script> en linea: si local y desplegado difieren en un solo
+# \r, el hash calculado en local es valido aqui e INVALIDO en produccion, y el
+# navegador bloquea el script en silencio. El 2026-08-26 estuvo a punto de
+# pasar exactamente eso, con un script de reemplazo por lotes que escribio los
+# archivos con CRLF; se detecto de milagro comparando `git show :archivo`
+# contra el archivo en disco antes de fijar ningun hash.
+#
+# Con esto, todo el texto se guarda y se sirve con LF, y la suposicion que
+# hacen admin/comprobar_csp.py y admin/comprobar_versiones.py (hashear en LF)
+# pasa a ser cierta por construccion en vez de por suerte.
+# =============================================
+
+# Todo lo que git detecte como texto: LF en el repo y en el working tree.
+* text=auto eol=lf
+
+# Y lo que NO debe tocar jamas (que un "text=auto" mal detectado corrompe).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.mp3  binary
+*.ogg  binary
+*.wav  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.pdf  binary
+*.zip  binary
+
+# Los .bat los ejecuta cmd.exe de Windows: ahi CRLF es lo suyo.
+*.bat text eol=crlf

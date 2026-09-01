@@ -80,7 +80,16 @@ function _setupAccountName(){
 
 let _toastTimer=null;
 function toast(msg,type){const el=$('#toast');if(!el)return;el.textContent=msg;el.className=`toast show ${type||''}`;clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
-function showScreen(id){$$('.screen').forEach(s=>s.classList.remove('active'));$(id)?.classList.add('active');}
+/* Se busca la pantalla PRIMERO y solo se apagan las demas si existe. Al reves
+   —apagar todas y luego encender— basta con que el id no este para dejar la
+   pagina sin ninguna pantalla activa: en blanco y, en la PWA, sin forma de
+   salir. El `?.` no salvaba nada: solo hacia que no fallara al esconderlo todo. */
+function showScreen(id){
+  const destino=$(id);
+  if(!destino){console.error('[El Mentiroso] No existe la pantalla '+id);return;}
+  destino.classList.add('active');
+  $$('.screen').forEach(s=>{if(s!==destino)s.classList.remove('active');});
+}
 function genCode(n=6){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:n},()=>c[Math.floor(Math.random()*c.length)]).join('');}
 function genId(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
 
