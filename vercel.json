@@ -88,6 +88,24 @@
       ]
     },
     {
+      "source": "/(crucigrama|en-el-top)/archivo",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(crucigrama|en-el-top)/archivo/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
       "source": "/(.*)\\.html",
       "headers": [
         {
