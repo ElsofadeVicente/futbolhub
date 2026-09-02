@@ -37,10 +37,9 @@ const PlayerDB = {
         if (this.initialized) return;
 
         try {
-            const response = await fetch(sbStorageUrl('player-db', 'players/meta.json'), { cache: 'no-cache' });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            // Por fhFetchData (api/data.js -> CDN de Vercel) y sin `no-cache`:
+            // ver el comentario de _fetchChunkRange en js/futbol-restrictions.js.
+            const response = await fhFetchData('player-db', 'players/meta.json');
             this.meta = await response.json();
             this.initialized = true;
             console.log(`✅ PlayerDB inicializado: ${this.meta.totalPlayers.toLocaleString()} jugadores en ${this.meta.ranges.length} chunks`);
@@ -77,10 +76,7 @@ const PlayerDB = {
 
         // Cargar desde Storage
         try {
-            const response = await fetch(sbStorageUrl('player-db', `players/${chunkFile}`), { cache: 'no-cache' });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const response = await fhFetchData('player-db', `players/${chunkFile}`);
             const data = await response.json();
 
             // Guardar en cache

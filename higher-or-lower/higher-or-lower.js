@@ -272,7 +272,7 @@ async function loadModeData(mode) {
     let loaded = 0;
     for (const file of mode.files) {
       try {
-        const res = await fetch(sbStorageUrl('player-db', `higher-or-lower/${mode.folder}${file}`), { cache: 'no-cache' });
+        const res = await fhFetchData('player-db', `higher-or-lower/${mode.folder}${file}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         for (const [id, player] of Object.entries(data)) {
@@ -290,7 +290,7 @@ async function loadModeData(mode) {
   }
 
   try {
-    const res = await fetch(sbStorageUrl('player-db', `higher-or-lower/${mode.file}`), { cache: 'no-cache' });
+    const res = await fhFetchData('player-db', `higher-or-lower/${mode.file}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {

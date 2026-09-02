@@ -52,15 +52,73 @@ function sbStorageSafeKey(name) {
     return String(name).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
 }
 
+/* Buckets de IMAGEN (escudos, banderas, logos de liga, fotos de entrenador,
+ * iconos de trofeo). Se sirven por api/data.js en vez de directos a Supabase:
+ * son ~140 sitios de llamada repartidos por los 14 juegos y pesan lo suyo —
+ * una partida de Superdraft precarga 49 imagenes, unos 666 KB. Supabase las
+ * manda ademas con `Cache-Control: no-cache`, asi que hoy se revalidan todas
+ * en cada carga; por el proxy van con cache de CDN y de navegador.
+ *
+ * Los buckets de DATOS (player-db, game-data) NO estan aqui a proposito: sus
+ * lecturas ya se enrutan una a una con fhDataUrl/fhFetchData, porque ahi hay
+ * que distinguir lo estatico (se cachea) de la edicion del dia (no). */
+const FH_BUCKETS_IMAGEN = ['team-logos', 'team-flags', 'league-logos', 'coach-photos', 'trophy-icons'];
+
 /** URL pública de un archivo en Supabase Storage (buckets creados como públicos).
  *  Admite rutas con subcarpetas ("juego/archivo.json"): cada segmento se
- *  normaliza y codifica por separado para no convertir "/" en "%2F". */
+ *  normaliza y codifica por separado para no convertir "/" en "%2F".
+ *
+ *  Para los buckets de imagen devuelve la URL de nuestro proxy cacheado, y
+ *  ABSOLUTA (no "/api/data?…") para no cambiarle el contrato a quien haga
+ *  `new URL(sbStorageUrl(...))`. Fuera del navegador (Node, tests) no hay
+ *  origen al que apuntar, así que se sigue devolviendo la de Supabase. */
 function sbStorageUrl(bucket, name) {
     const key = String(name)
         .split('/')
         .map(part => encodeURIComponent(sbStorageSafeKey(part)))
         .join('/');
+    if (FH_BUCKETS_IMAGEN.includes(bucket) && typeof location !== "undefined" && location.origin) {
+        return `${location.origin}/api/data?b=${bucket}&k=${key}`;
+    }
     return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${key}`;
+}
+
+/* URL del mismo archivo pero a través de api/data.js, que lo cachea en la CDN
+ * de Vercel. Solo para los datos GORDOS y que cambian poco (chunks de
+ * jugadores, data/general, name-index): son 1,48 MB por visitante nuevo y con
+ * el plan Free de Supabase (5 GB/mes) eso son ~3.600 partidas al mes. El
+ * contenido diario NO debe pasar por aquí — pesa poco y ahí la frescura
+ * importa. Ver el comentario de cabecera de api/data.js. */
+function fhDataUrl(bucket, name) {
+    const key = String(name)
+        .split('/')
+        .map(part => sbStorageSafeKey(part))
+        .join('/');
+    return `/api/data?b=${encodeURIComponent(bucket)}&k=${encodeURIComponent(key)}`;
+}
+
+/**
+ * Pide un archivo de datos por el proxy cacheado y, si eso falla por lo que
+ * sea, lo vuelve a pedir directo a Supabase.
+ *
+ * El respaldo no es paranoia: sin él, cualquier entorno sin funciones de api/
+ * (un `python -m http.server`, un Preview mal configurado) dejaría a los
+ * juegos sin datos, y un fallo del proxy en producción tumbaría Coche, Bingo,
+ * Tres en Raya y Superdraft a la vez. Con él, lo peor que pasa es que se
+ * vuelve al comportamiento de antes: funciona, solo que sin cachear.
+ *
+ * Devuelve la Response (ya comprobada con res.ok) o lanza, para que quien
+ * llama distinga "no hay datos" de "no se pudo pedir" — que es justo lo que
+ * confundía el catch-devuelve-null de La Carrera (ver CLAUDE.md).
+ */
+async function fhFetchData(bucket, name, opts = {}) {
+    try {
+        const res = await fetch(fhDataUrl(bucket, name), opts);
+        if (res.ok) return res;
+    } catch { /* al respaldo */ }
+    const res = await fetch(sbStorageUrl(bucket, name), opts);
+    if (!res.ok) throw new Error(`HTTP ${res.status} en ${bucket}/${name}`);
+    return res;
 }
 
 /* Hosts de Transfermarkt cuyas imágenes NO se sirven en directo: se ve el
@@ -93,6 +151,7 @@ function fhImgUrl(url) {
 if (typeof module !== "undefined" && module.exports) {
     module.exports = {
         SUPABASE_URL, SUPABASE_KEY, SB_HEADERS, sbFetch, sbFetchAll,
-        sbStorageUrl, sbStorageSafeKey, fhImgUrl, FH_IMG_HOSTS_PROXY,
+        sbStorageUrl, sbStorageSafeKey, fhDataUrl, fhFetchData, FH_BUCKETS_IMAGEN,
+        fhImgUrl, FH_IMG_HOSTS_PROXY,
     };
 }

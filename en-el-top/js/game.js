@@ -14,8 +14,13 @@ const TIMER_TIMED       = 120;
    reintenta y espera a que haya conexión. Si esa hoja no llegara a cargar se
    usa fetch normal, para no dejar el juego sin datos por una dependencia. */
 function fhJson(url) {
-  if (window.FHRed) return FHRed.json(url);
-  return fetch(url, { cache: 'no-cache' }).then(r => {
+  /* Lo que va por api/data.js (datos estaticos: name-index, team-names,
+     ligas) se cachea en el navegador 5 minutos; forzarle `no-cache` seria
+     tirar por tierra justo eso. Las ediciones del dia siguen con no-cache,
+     que ahi la frescura si importa. */
+  var opts = url.startsWith('/api/data') ? undefined : { cache: 'no-cache' };
+  if (window.FHRed) return FHRed.json(url, opts);
+  return fetch(url, opts).then(r => {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   });
@@ -273,9 +278,9 @@ let _indicesPromesa = null;
 function asegurarIndices() {
   if (_indicesPromesa) return _indicesPromesa;
   _indicesPromesa = Promise.all([
-    fhJson(sbStorageUrl('player-db', 'players/name-index.json')),
-    fhJson(sbStorageUrl('player-db', 'team-names/team-names.json')),
-    fhJson(sbStorageUrl('player-db', 'leagues/league-teams.json')),
+    fhJson(fhDataUrl('player-db', 'players/name-index.json')),
+    fhJson(fhDataUrl('player-db', 'team-names/team-names.json')),
+    fhJson(fhDataUrl('player-db', 'leagues/league-teams.json')),
   ]).then(([nameIndex, teamNames, leagueTeams]) => {
     _nameIndex = nameIndex;
     _teamIndex = buildTeamIndex(teamNames, leagueTeams);

@@ -489,9 +489,9 @@
   /* Version FIJA, no Date.now(): con el timestamp ninguno de estos scripts
      se cacheaba nunca — se bajaban enteros en cada carga. Al tocar
      cualquiera de ellos, sube la letra. */
-  const V = '?v=20260901j';
+  const V = '?v=20260902a';
   const scripts = [
-    '../js/supabase-config.js?v=20260831a',
+    '../js/supabase-config.js?v=20260902a',
     '../js/auth.js?v=20260831b',
     '../js/progress-sync.js?v=20260831b',
     '../js/hub-streaks.js?v=20260901a',
@@ -502,15 +502,15 @@
     '../js/red.js?v=20260901d',
     '../js/ruta.js?v=20260820a',
     '../js/shared.js?v=20260831a',
-    '../js/player-data-loader.js?v=20260831a',
-    '../js/extended-data-loader.js?v=20260831a',
+    '../js/player-data-loader.js?v=20260902a',
+    '../js/extended-data-loader.js?v=20260902a',
     /* Los dos bots son COMPARTIDOS con Coche: van con su propia versión, no
        con la V de Blackjack. Colgándolos de V, cada despliegue de Blackjack
        les cambiaba la URL y el visitante se los volvía a descargar aunque no
        hubieran cambiado — y encima los tenía cacheados con otra versión desde
        Coche, o sea dos copias del mismo archivo. */
     '../js/bot-core.js?v=20260723a',
-    '../js/bot-names.js?v=20260723a',
+    '../js/bot-names.js?v=20260902a',
     'js/blackjack-sets.js' + V,
     'js/blackjack-game.js' + V,
     'js/blackjack-sync.js' + V,

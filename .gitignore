@@ -95,8 +95,9 @@ el-estadio/data/files/estadios-editor.html
 # Clave secreta y caché de admin/sync_supabase.py — NUNCA subir a git.
 admin/.supabase_secret
 admin/.sync_cache.json
-# Foto de hashes de admin/comprobar_versiones.py (el guardarrail de los ?v=)
+admin/.imagenes_cache.json
 admin/.versiones_cache.json
+# Foto de hashes de admin/comprobar_versiones.py (el guardarrail de los ?v=)
 admin/.club_names_cache.json
 admin/.comp_names_cache.json
 

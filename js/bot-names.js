@@ -50,21 +50,21 @@ const BotNames = (() => {
   /* ─── Lee y normaliza un JSON de nombres ───
      Admite tanto ["a","b"] como {"names":["a","b"]} */
   async function _fetchJson(url) {
-    const res = await fetch(url, { cache: 'no-cache' });
+    const res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     return _clean(Array.isArray(data) ? data : data?.names);
   }
 
-  /* ─── Supabase Storage (fuente principal) ─── */
+  /* ─── Supabase Storage (override opcional) ─── */
   function _fromStorage() {
     if (typeof sbStorageUrl !== 'function') {
       return Promise.reject(new Error('sbStorageUrl no disponible'));
     }
-    return _fetchJson(sbStorageUrl('game-data', STORAGE_FILE));
+    return _fetchJson(fhDataUrl('game-data', STORAGE_FILE));
   }
 
-  /* ─── Copia local del repo (respaldo) ─── */
+  /* ─── Copia local del repo (fuente principal) ─── */
   function _fromLocalJson() {
     return _fetchJson(LOCAL_JSON);
   }
@@ -76,14 +76,25 @@ const BotNames = (() => {
     if (_names)   return Promise.resolve(_names);
     if (_promise) return _promise;
 
-    _promise = _fromStorage()
+    /* PRIMERO LA COPIA LOCAL, y no es un detalle: `game-data/bot-names.json`
+       NUNCA se ha subido a Storage (no hay ninguna seccion de
+       sync_supabase.py que lo suba), asi que pedirlo primero era un 400
+       garantizado en CADA carga de los 6 juegos con bots — y encima en la
+       ruta critica, retrasando la creacion de bots lo que tarde esa ida y
+       vuelta a Supabase. El archivo local esta en git, se despliega con el
+       resto del sitio y es el que manda de verdad.
+
+       Si algun dia se quieren cambiar los nombres SIN desplegar: sube
+       data/bot-names.json a game-data/ (haria falta anadirlo al sync) y
+       vuelve a poner _fromStorage() delante. */
+    _promise = _fromLocalJson()
       .then(list => {
         if (list && list.length) return list;
         throw new Error('archivo vacío');
       })
       .catch(e => {
-        console.warn('[BotNames] Storage no disponible (' + e.message + '), usando copia local');
-        return _fromLocalJson();
+        console.warn('[BotNames] copia local no disponible (' + e.message + '), probando Storage');
+        return _fromStorage();
       })
       .then(list => {
         _names = list || [];

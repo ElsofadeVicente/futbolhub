@@ -428,17 +428,22 @@
     return r ? `${r[0]}-${r[1]}` : null;
   }
 
+  /* Estos tres van por fhFetchData (api/data.js -> CDN de Vercel) y NO por
+     sbStorageUrl directo: entre los 15 chunks y data/general son 1,48 MB por
+     visitante nuevo, y con el plan Free de Supabase (5 GB/mes) eso es un techo
+     de ~3.600 partidas al mes. Se quito ademas el `cache: 'no-cache'` que
+     llevaban: obligaba a revalidar cada archivo en cada carga, asi que pasar
+     de Coche a Bingo — que usan EXACTAMENTE los mismos datos — se volvia a
+     bajar el megabyte y medio entero. */
   async function _fetchChunkRange(name) {
     try {
-      const res = await fetch(sbStorageUrl('player-db', `players/chunks/${name}.json`), { cache: 'no-cache' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fhFetchData('player-db', `players/chunks/${name}.json`);
       return await res.json();
     } catch (e) { console.warn('[FR] Error cargando jugadores:', e); return null; }
   }
   async function _fetchLeagues() {
     try {
-      const res = await fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'), { cache: 'no-cache' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fhFetchData('player-db', 'leagues/league-teams.json');
       return await res.json();
     } catch (e) { console.warn('[FR] Error cargando ligas:', e); return null; }
   }
@@ -447,8 +452,8 @@
   async function _fetchGeneralJsonFile(name) {
     for (const prefix of ['general', 'coche']) {
       try {
-        const res = await fetch(sbStorageUrl('game-data', `${prefix}/${name}`), { cache: 'no-cache' });
-        if (res.ok) return await res.json();
+        const res = await fhFetchData('game-data', `${prefix}/${name}`);
+        return await res.json();
       } catch (e) { /* siguiente prefijo */ }
     }
     console.warn(`[FR] No se pudo cargar ${name} (general ni coche)`);

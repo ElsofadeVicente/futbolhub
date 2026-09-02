@@ -147,7 +147,7 @@ async function fetchJson(url, cache = 'no-cache') {
 // players / transfers: chunks uniformes de 100k → el archivo se calcula del ID.
 async function loadFromUniform(kind, id) {
   try {
-    const d = await fetchJson(sbStorageUrl('player-db', `${kind}/chunks/${uniformChunkFile(id)}`));
+    const d = await fetchJson(fhDataUrl('player-db', `${kind}/chunks/${uniformChunkFile(id)}`), 'default');
     return d[String(id)] || null;
   } catch { return null; }
 }
@@ -156,7 +156,7 @@ async function loadPerformances(id, manifest) {
   const range = (manifest.ranges || []).find(r => id >= r.min && id <= r.max);
   if (!range) return null;
   try {
-    const d = await fetchJson(sbStorageUrl('player-db', `performances/chunks/${range.file}`));
+    const d = await fetchJson(fhDataUrl('player-db', `performances/chunks/${range.file}`), 'default');
     return d[String(id)] || null;
   } catch { return null; }
 }
@@ -171,7 +171,7 @@ async function acGetPlayer(id) {
   if (sid in _acPlayerCache) return _acPlayerCache[sid];
   const file = uniformChunkFile(id);
   if (!_acChunkCache[file]) {
-    try { _acChunkCache[file] = await fetchJson(sbStorageUrl('player-db', `players/chunks/${file}`)); }
+    try { _acChunkCache[file] = await fetchJson(fhDataUrl('player-db', `players/chunks/${file}`), 'default'); }
     catch { _acChunkCache[file] = {}; }
   }
   const d = _acChunkCache[file][sid] || null;
@@ -585,8 +585,8 @@ let _indicesPromesa = null;
 function asegurarIndices() {
   if (_indicesPromesa) return _indicesPromesa;
   _indicesPromesa = Promise.all([
-    fetchJson(sbStorageUrl('player-db', 'players/name-index.json')),
-    fetchJson(sbStorageUrl('player-db', 'performances/chunks/manifest.json')),
+    fetchJson(fhDataUrl('player-db', 'players/name-index.json'), 'default'),
+    fetchJson(fhDataUrl('player-db', 'performances/chunks/manifest.json'), 'default'),
   ]).then(([ni, manifest]) => {
     _nameIndex    = ni;
     _perfManifest = manifest;

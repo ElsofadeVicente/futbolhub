@@ -116,8 +116,9 @@ async function _fetchChunkRangeFromSupabase(cf) {
   if (!m) return null;
   const [, lo, hi] = m;
   try {
-    const res = await fetch(sbStorageUrl('player-db', `players/chunks/${lo}-${hi}.json`), { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // Por fhFetchData (api/data.js -> CDN de Vercel) y sin `no-cache`: ver el
+    // comentario de _fetchChunkRange en js/futbol-restrictions.js.
+    const res = await fhFetchData('player-db', `players/chunks/${lo}-${hi}.json`);
     return await res.json();
   } catch (e) {
     console.warn('[Coche] Error cargando jugadores:', e);
@@ -128,8 +129,7 @@ async function _fetchChunkRangeFromSupabase(cf) {
 /* ── Antes data/teams/league-teams.json, ahora player-db/leagues/ ── */
 async function _fetchLeaguesFromSupabase() {
   try {
-    const res = await fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'), { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const res = await fhFetchData('player-db', 'leagues/league-teams.json');
     return await res.json();
   } catch (e) {
     console.warn('[Coche] Error cargando ligas:', e);
@@ -144,8 +144,8 @@ async function _fetchLeaguesFromSupabase() {
 async function _fetchCocheJsonFile(name) {
   for (const prefix of ['general', 'coche']) {
     try {
-      const res = await fetch(sbStorageUrl('game-data', `${prefix}/${name}`), { cache: 'no-cache' });
-      if (res.ok) return await res.json();
+      const res = await fhFetchData('game-data', `${prefix}/${name}`);
+      return await res.json();
     } catch (e) { /* siguiente prefijo */ }
   }
   console.warn(`[Coche] Error cargando ${name} (general ni coche)`);

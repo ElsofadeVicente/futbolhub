@@ -353,7 +353,10 @@
         <!-- LA CARRERA -->
         <a href="./la-carrera/" class="np-card" style="--i:4">
           <div class="np-card-art">
-            <img src="./img/hub/carrera.jpg" alt="La Carrera" width="800" height="300" loading="lazy" decoding="async">
+            <picture>
+              <source srcset="./img/hub/carrera.webp" type="image/webp">
+              <img src="./img/hub/carrera.jpg" alt="La Carrera" width="800" height="300" loading="lazy" decoding="async">
+            </picture>
           </div>
           <div class="np-card-body">
             <div class="np-card-eyebrow">
@@ -753,7 +756,7 @@
       `No. ${edition} · ${dias[weekdayIdx] || ''} ${String(d).padStart(2,'0')} ${meses[m - 1]} · ${y}<br>MADRID · PRIMERA EDICIÓN`;
   })();
 </script>
-<script src="./js/supabase-config.js?v=20260831a"></script>
+<script src="./js/supabase-config.js?v=20260902a"></script>
 <script src="./js/auth.js?v=20260831b"></script>
 <script src="./js/progress-sync.js?v=20260831b"></script>
 <script src="./js/img-heal.js?v=20260831a"></script>

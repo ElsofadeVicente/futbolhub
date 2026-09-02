@@ -59,7 +59,7 @@ const CadenaData = (() => {
 
   async function loadPlayerChunk(cf) {
     if (chunkCache[cf]) return chunkCache[cf];
-    const res = await fetch(sbStorageUrl('player-db', `players/chunks/${cf}`), { cache: 'no-cache' });
+    const res = await fhFetchData('player-db', `players/chunks/${cf}`);
     if (!res.ok) throw new Error(`Chunk no encontrado: ${cf}`);
     const data = await res.json();
     chunkCache[cf] = data;
@@ -85,9 +85,9 @@ const CadenaData = (() => {
 
     _initPromise = (async () => {
       const [ni, tn, leagueTeams] = await Promise.all([
-        fetch(sbStorageUrl('player-db', 'players/name-index.json'), { cache: 'no-cache' }).then(r => r.json()),
-        fetch(sbStorageUrl('player-db', 'team-names/team-names.json'), { cache: 'no-cache' }).then(r => r.json()),
-        fetch(sbStorageUrl('player-db', 'leagues/league-teams.json'), { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
+        fhFetchData('player-db', 'players/name-index.json').then(r => r.json()),
+        fhFetchData('player-db', 'team-names/team-names.json').then(r => r.json()),
+        fhFetchData('player-db', 'leagues/league-teams.json').then(r => r.json()).catch(() => null),
       ]);
 
       nameIndex = ni;

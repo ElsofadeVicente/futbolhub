@@ -926,7 +926,7 @@ async function init() {
 
   // Cargar estadios
   try {
-    const res = await fetch(sbStorageUrl('game-data', 'el-estadio/estadios.json'), { cache: 'no-cache' });
+    const res = await fhFetchData('game-data', 'el-estadio/estadios.json');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     state.estadios = await res.json();
   } catch (e) {

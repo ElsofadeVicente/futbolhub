@@ -352,8 +352,10 @@ const MDeck = (function () {
     };
   }
 
+  /* Sin `no-cache`: los tres llamantes piden datos estaticos que ya van por
+     api/data.js (CDN de Vercel). Ver js/supabase-config.js:fhDataUrl. */
   async function _fetchJson(url) {
-    const res = await fetch(url, { cache: 'no-cache' });
+    const res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status + ' · ' + url);
     return res.json();
   }
@@ -364,7 +366,7 @@ const MDeck = (function () {
     if (_promise) return _promise;
 
     _promise = (async () => {
-      const meta = await _fetchJson(sbStorageUrl('player-db', 'players/meta.json'));
+      const meta = await _fetchJson(fhDataUrl('player-db', 'players/meta.json'));
       const ranges = (meta.ranges || []).filter(r => r.min < MAX_POOL_ID);
       if (!ranges.length) throw new Error('meta.json sin rangos utilizables');
 
@@ -372,14 +374,14 @@ const MDeck = (function () {
          por un baremo propio y el juego sigue funcionando. */
       let fame = null;
       try {
-        const raw = await _fetchJson(sbStorageUrl('game-data', 'coche/gen_pool.json'));
+        const raw = await _fetchJson(fhDataUrl('game-data', 'coche/gen_pool.json'));
         if (Array.isArray(raw) && raw.length) fame = raw.map(String);
       } catch (e) { console.warn('[Mentiroso] gen_pool.json no disponible, se usa baremo propio', e); }
 
       let done = 0;
       const total = ranges.length;
       const chunks = await Promise.all(ranges.map(async r => {
-        const data = await _fetchJson(sbStorageUrl('player-db', 'players/' + r.file));
+        const data = await _fetchJson(fhDataUrl('player-db', 'players/' + r.file));
         done++;
         if (onProgress) onProgress(done / total);
         return data;

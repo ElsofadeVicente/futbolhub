@@ -1009,7 +1009,7 @@ let _kitRules = KIT_RULES;
 let _gkKit    = GK_KIT;
 
 function loadKitsJson() {
-  fetch(sbStorageUrl('game-data', 'en-el-once/kits.json'), { cache: 'no-cache' })
+  fhFetchData('game-data', 'en-el-once/kits.json')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (!data) return;
@@ -1043,7 +1043,7 @@ function getKit(team){
 let _crestRules = [];   // [[keys(may\u00fasculas), url], ...]
 
 function loadEscudosJson() {
-  fetch(sbStorageUrl('game-data', 'en-el-once/escudos.json'), { cache: 'no-cache' })
+  fhFetchData('game-data', 'en-el-once/escudos.json')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (!data || !Array.isArray(data.teams)) return;
