@@ -330,13 +330,14 @@ const Sync=(()=>{
   async function createRoom(hostName,mode,startLives,avatar){
     const{set}=FB();
     const code=genCode(),hostId=genId();
+    const uid=await window._FBAuthReady;
     await set(_ref(`${PATH}/${code}`),{
       game:'mentiroso',status:'waiting',mode,startLives,
       round:0,seed:0,turnSeq:0,bet:0,betOwner:null,turn:null,studyUntil:0,
       condKey:null,condArg:null,condNum:null,condLabel:null,
       totalCards:0,dealHands:null,dealCenter:null,
       resolution:null,finished:null,winnerId:null,winnerName:null,
-      players:{[hostId]:{name:hostName,avatar:avatar||null,lives:startLives,connected:true,isHost:true}},
+      players:{[hostId]:{name:hostName,avatar:avatar||null,lives:startLives,connected:true,isHost:true,uid}},
     });
     _registerPresence(code,hostId);
     return {code,playerId:hostId};
@@ -351,8 +352,9 @@ const Sync=(()=>{
     if(room.status!=='waiting')throw new Error('La partida ya ha comenzado');
     if(Object.keys(room.players||{}).length>=8)throw new Error('Sala llena');
     const playerId=genId();
+    const uid=await window._FBAuthReady;
     await update(_ref(`${PATH}/${code}/players/${playerId}`),{
-      name:playerName,avatar:avatar||null,lives:room.startLives||3,connected:true,isHost:false,
+      name:playerName,avatar:avatar||null,lives:room.startLives||3,connected:true,isHost:false,uid,
     });
     _registerPresence(code,playerId);
     return {code,playerId};

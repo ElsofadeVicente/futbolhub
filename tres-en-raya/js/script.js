@@ -748,6 +748,7 @@ window._AppReal = (function () {
       const { set } = FB();
       code = _genCode(); myPid = _genId(); myIdx = 0;
       _resetSession(); isPublicRoom = !!isPublic;
+      const uid = await window._FBAuthReady;
       try {
         await set(_ref(`${ROOMS}/${code}`), {
           status: 'waiting', isPublic: !!isPublic, createdAt: Date.now(),
@@ -756,7 +757,7 @@ window._AppReal = (function () {
           series: {}, roundOver: null, gameNum: 1,
           winnerIdx: null, winLine: null, drawOffer: null, rematch: {},
           abandonedBy: null, afk: null,
-          players: { [myPid]: { name: name || 'Jugador 1', idx: 0, connected: true, isHost: true } },
+          players: { [myPid]: { name: name || 'Jugador 1', idx: 0, connected: true, isHost: true, uid } },
         });
         if (isPublic) await set(_ref(`${MM}/${code}`), { status: 'waiting', createdAt: Date.now() });
       } catch (e) { _connErr(e); return; }
@@ -788,6 +789,7 @@ window._AppReal = (function () {
     async function _claimSeat(joinCode, name) {
       const { runTransaction } = FB();
       const pid = _genId();
+      const uid = await window._FBAuthReady;
       const path = `${ROOMS}/${joinCode}`;
       return _withRoomListener(path, async () => {
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -803,7 +805,7 @@ window._AppReal = (function () {
               const idx = live.some(p => p.idx === 0) ? 1 : 0;
               ps[pid] = {
                 name: name || (idx === 0 ? 'Jugador 1' : 'Jugador 2'),
-                idx, connected: true, isHost: idx === 0,
+                idx, connected: true, isHost: idx === 0, uid,
               };
               r.players = ps;
               return r;

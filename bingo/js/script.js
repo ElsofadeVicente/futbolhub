@@ -787,10 +787,11 @@
       code = newCode();
       isHost = true;
       const seed = Math.floor(Math.random() * 2147483647);
+      const authUid = await window._FBAuthReady;
       await F.set(F.ref(F.db, `bingo/rooms/${code}`), {
         host: myUid(), status: 'waiting', seed, public: !!isPublic,
         createdAt: F.serverTimestamp(),
-        players: { [myUid()]: { name, filled: 0, done: false, joinedAt: F.serverTimestamp() } },
+        players: { [myUid()]: { name, filled: 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid } },
       });
       if (isPublic) {
         await F.set(F.ref(F.db, `bingo/matchmaking/${code}`), {
@@ -810,8 +811,9 @@
       if (data.status !== 'waiting') throw new Error('empezada');
       code = joinCode;
       isHost = data.host === myUid();
+      const authUid = await window._FBAuthReady;
       await F.set(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`), {
-        name, filled: 0, done: false, joinedAt: F.serverTimestamp(),
+        name, filled: 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid,
       });
       listen();
       return code;
@@ -1020,8 +1022,9 @@
       const snap = await F.get(F.ref(F.db, `bingo/rooms/${code}`));
       if (!snap.exists()) { code = null; throw new Error('no-existe'); }
       isHost = snap.val().host === myUid();
+      const authUid = await window._FBAuthReady;
       await F.set(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`), {
-        name, filled: filled || 0, done: false, joinedAt: F.serverTimestamp(),
+        name, filled: filled || 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid,
       });
       listen();
       return code;

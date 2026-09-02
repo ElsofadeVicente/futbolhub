@@ -96,6 +96,7 @@ const BlackjackSync = (() => {
     const { set, serverTimestamp } = FB();
     const code = _genCode();
     const hostId = _genId();
+    const uid = await window._FBAuthReady;
 
     const now = Date.now();
     const room = {
@@ -108,7 +109,7 @@ const BlackjackSync = (() => {
       setSeed:        0,
       objective:      0,
       players: {
-        [hostId]: { name: hostName, avatar: avatar || null, score: 0, connected: true, isHost: true }
+        [hostId]: { name: hostName, avatar: avatar || null, score: 0, connected: true, isHost: true, uid }
       },
       decisions:      {},
       doneCount:      0,
@@ -136,8 +137,9 @@ const BlackjackSync = (() => {
     if (playerCount >= 6) throw new Error('Sala llena (máx. 6 jugadores)');
 
     const playerId = _genId();
+    const uid = await window._FBAuthReady;
     await update(_ref(`blackjack/rooms/${code}/players/${playerId}`), {
-      name: playerName, avatar: avatar || null, score: 0, connected: true, isHost: false
+      name: playerName, avatar: avatar || null, score: 0, connected: true, isHost: false, uid
     });
     _onDisconnectRemove(`blackjack/rooms/${code}/players/${playerId}`);
 

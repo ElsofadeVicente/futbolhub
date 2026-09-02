@@ -77,12 +77,17 @@ const CadenaGame = (() => {
       const code = this.genCode();
       const { db, ref, set, serverTimestamp } = FB;
       const rRef = ref(db, this.roomPath(code));
+      /* Auth anónima — PRIMER PASO del rediseño de identidad (sin tocar
+         reglas todavía). Solo el índice 0 es el cliente real que crea la
+         sala; los demás nombres de este array (si algún día se pasa más de
+         uno) son de pase-y-juega local, no clientes autenticados aparte. */
+      const uid = await window._FBAuthReady;
 
       const roomData = {
         status: 'lobby',
         lives,
         hostId: 0,
-        players: players.map((name, i) => ({ id: i, name, avatar: (avatars && avatars[i]) || null, lives, eliminated: false })),
+        players: players.map((name, i) => ({ id: i, name, avatar: (avatars && avatars[i]) || null, lives, eliminated: false, uid: i === 0 ? uid : null })),
         turnIndex: 0,
         chain: [],
         chainLength: 0,
@@ -106,7 +111,8 @@ const CadenaGame = (() => {
       if (roomData.status !== 'lobby') throw new Error('La partida ya empezó');
 
       const newId = roomData.players.length;
-      const updPlayers = [...roomData.players, { id: newId, name: playerName, avatar: avatar || null, lives: roomData.lives, eliminated: false }];
+      const uid = await window._FBAuthReady;
+      const updPlayers = [...roomData.players, { id: newId, name: playerName, avatar: avatar || null, lives: roomData.lives, eliminated: false, uid }];
       await update(rRef, { players: updPlayers });
       this.roomRef = rRef;
       return { roomData: { ...roomData, players: updPlayers }, myId: newId };

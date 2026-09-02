@@ -145,6 +145,7 @@ function cacheDom() {
     goRecord:       document.getElementById('hol-go-record'),
     playAgainBtn:   document.getElementById('hol-play-again'),
     changeModeBtn:  document.getElementById('hol-change-mode'),
+    backIngame:     document.getElementById('hol-back-ingame'),
   };
 }
 
@@ -308,6 +309,7 @@ async function initGame() {
   DOM.btnLower.addEventListener('click',  () => handleChoice('lower'));
 
   DOM.playAgainBtn.addEventListener('click', restartGame);
+  if (DOM.backIngame) DOM.backIngame.addEventListener('click', showModeMenu);
   if (DOM.changeModeBtn) DOM.changeModeBtn.addEventListener('click', () => {
     DOM.gameoverScreen.classList.remove('active');
     showModeMenu();

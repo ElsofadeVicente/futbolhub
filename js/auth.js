@@ -467,8 +467,10 @@
        una <img> si hay foto (y es de nuestro Storage), o la inicial del nombre. */
     function avatarInner(name, avatarUrl) {
         if (isSafeAvatarUrl(avatarUrl)) {
-            return `<img src="${escHtml(avatarUrl)}" alt="" class="fh-avatar-img" ` +
-                   `style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;">`;
+            /* Sin style="" aquí: La Carrera lleva CSP de bloqueo (style-src sin
+               unsafe-inline) y un atributo style en el HTML la violaría — las
+               propiedades van en .fh-avatar-img, en css/profile-widget.css. */
+            return `<img src="${escHtml(avatarUrl)}" alt="" class="fh-avatar-img">`;
         }
         return escHtml((name || '?').charAt(0).toUpperCase());
     }

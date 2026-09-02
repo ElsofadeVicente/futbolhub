@@ -691,10 +691,11 @@ const Sync = (() => {
   async function createRoom(hostName, avatar) {
     const {set,serverTimestamp}=FB();
     const code=_genCode(), hostId=_genId();
+    const uid = await window._FBAuthReady;
     await set(_ref(`${ROOMS_PATH}/${code}`),{
       status:'waiting', round:0, pointsToWin:7, roundSecs:60,
       isPublic:false, createdAt:Date.now(), lobbyAt:Date.now(),
-      players:{[hostId]:{name:hostName,avatar:avatar||null,score:0,connected:true,isHost:true}},
+      players:{[hostId]:{name:hostName,avatar:avatar||null,score:0,connected:true,isHost:true,uid}},
       restrictions:null, roundSeed:0, roundStartAt:null,
       submissions:{}, lockedPlayers:{}, doneCount:0, results:null, winnerId:null,
     });
@@ -717,8 +718,9 @@ const Sync = (() => {
     if (room.isRanked && count >= 2) throw new Error('Esa partida clasificatoria ya tiene sus dos jugadores');
     if (count >= 5) throw new Error('Sala llena (máx. 5 jugadores)');
     const playerId = _genId();
+    const uid = await window._FBAuthReady;
     await update(_ref(`${ROOMS_PATH}/${code}/players/${playerId}`),{
-      name:playerName, avatar:avatar||null, score:0, connected:true, isHost:false,
+      name:playerName, avatar:avatar||null, score:0, connected:true, isHost:false, uid,
     });
     _onDisconnectRemove(`${ROOMS_PATH}/${code}/players/${playerId}`);
     return {code, playerId};

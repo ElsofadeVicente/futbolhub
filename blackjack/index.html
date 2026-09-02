@@ -43,7 +43,7 @@
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
-<link rel="stylesheet" href="../css/profile-widget.css?v=20260901a">
+<link rel="stylesheet" href="../css/profile-widget.css?v=20260902a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
      Sin defer y en el <head> para que no se vea un fogonazo. -->
 <script src="../js/theme.js?v=20260809a"></script>
@@ -454,6 +454,8 @@
   import { getDatabase, ref, set, get, update, onValue, push,
            serverTimestamp, remove, runTransaction, onDisconnect }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+  import { getAuth, signInAnonymously }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
   const FIREBASE_CONFIG = {
     apiKey:            "AIzaSyDNh3m2ro5PsrrGTlhdxhqo93WWusJHUrM",
@@ -486,13 +488,23 @@
   // Exponer onDisconnect para blackjack-sync.js
   window._FBOnDisconnect = onDisconnect;
 
+  /* Auth anónima — PRIMER PASO del rediseño de identidad: solo añade el uid al
+     registro de jugador, sin tocar ninguna regla de RTDB todavía. Ver la misma
+     nota en tres-en-raya/index.html. */
+  window._FBAuthUid = null;
+  window._FBAuthReady = (FB_CONFIGURED && firebaseApp)
+    ? signInAnonymously(getAuth(firebaseApp))
+        .then(cred => { window._FBAuthUid = cred.user.uid; return cred.user.uid; })
+        .catch(e => { console.warn('⚠️ Firebase Auth anónima:', e); return null; })
+    : Promise.resolve(null);
+
   /* Version FIJA, no Date.now(): con el timestamp ninguno de estos scripts
      se cacheaba nunca — se bajaban enteros en cada carga. Al tocar
      cualquiera de ellos, sube la letra. */
-  const V = '?v=20260902a';
+  const V = '?v=20260902b';
   const scripts = [
     '../js/supabase-config.js?v=20260902a',
-    '../js/auth.js?v=20260831b',
+    '../js/auth.js?v=20260902a',
     '../js/progress-sync.js?v=20260831b',
     '../js/hub-streaks.js?v=20260901a',
     '../js/img-heal.js?v=20260831a',
