@@ -44,7 +44,7 @@
   <link rel="stylesheet" href="../css/volver.css?v=20260901b">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
-<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260901a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
@@ -222,12 +222,19 @@
 
   </div>
   <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-  <p class="fh-intro-texto">En el Once no es un test de memoria al azar: cada partido es real, con su marcador y su fecha, y en el modo Diario todo el mundo recibe el mismo encuentro, así que comparar tu resultado con quien quieras tiene sentido. Si prefieres elegir tú la época, hay un modo por Liga, uno por noches de Champions, otro de selecciones nacionales —Mundiales, Eurocopas, remontadas que ya son leyenda— y un modo Aleatorio que mezcla las tres fuentes. En cada intento aciertas o fallas un futbolista del once titular; si fallas se te muestra igualmente antes de pasar al siguiente, así que un despiste no frena la partida. El objetivo es reconstruir la alineación completa con el menor número de fallos posible.</p>
-<p class="guia-link"><a href="/como-jugar/en-el-once/">Cómo se juega &rarr;</a></p>
 <!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
      Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
 <div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
 
+<!-- Tarjeta de la guia. Sustituye al parrafo largo que colgaba debajo del
+     boton Jugar (era un muro de texto gris que partia la tarjeta) y al
+     enlace suelto "Como se juega". El texto completo vive en la guia, al
+     otro lado de la flecha. Patron tomado de playfootball.games. -->
+<a class="fh-guia-card" href="/como-jugar/en-el-once/">
+  <h2 class="fh-guia-card-titulo">Cómo se juega a En el Once</h2>
+  <p class="fh-guia-card-texto">Un partido real, con su fecha y su marcador. ¿Te acuerdas de los once que salieron de titulares?</p>
+  <span class="fh-guia-card-flecha" aria-hidden="true">&rarr;</span>
+</a>
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
   <ul class="fh-otros-lista">

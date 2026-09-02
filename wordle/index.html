@@ -41,7 +41,7 @@
   <link rel="stylesheet" href="../css/volver.css?v=20260901b">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
   <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
-<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260901a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
@@ -197,13 +197,20 @@
        una pantalla de menú aparte, ahora va aquí porque el juego ya no
        tiene esa pantalla — sigue siendo HTML servido y visible, no oculto. -->
   <div id="wd-footer">
-    <p class="fh-intro-texto">Wordle es el juego 14 de FutbolHUB: cada día hay una única palabra de fútbol por adivinar —puede ser un término del juego, el nombre de un club o el apellido de un futbolista—, elegida a mano y sin longitud fija. Tienes 6 intentos para dar con ella y puedes escribir cualquier combinación de letras para tantear: al enviarla, cada letra se colorea de verde si está en el sitio correcto, de amarillo si está en la palabra pero en otra posición, y de gris si no aparece. El teclado en pantalla recuerda lo que ya has probado. Es la misma palabra para todo el mundo y solo cuenta el primer intento del día; las ediciones anteriores quedan en el archivo, navegable con las flechas de abajo, para practicar cuando quieras.</p>
-    <p class="guia-link"><a href="/como-jugar/wordle/">Cómo se juega &rarr;</a></p>
 <!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
      Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
 <div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
 
-    <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
+    <!-- Tarjeta de la guia. Sustituye al parrafo largo que colgaba debajo del
+     boton Jugar (era un muro de texto gris que partia la tarjeta) y al
+     enlace suelto "Como se juega". El texto completo vive en la guia, al
+     otro lado de la flecha. Patron tomado de playfootball.games. -->
+<a class="fh-guia-card" href="/como-jugar/wordle/">
+  <h2 class="fh-guia-card-titulo">Cómo se juega a Wordle</h2>
+  <p class="fh-guia-card-texto">Una palabra de fútbol al día, la misma para todo el mundo, letra a letra y en seis intentos.</p>
+  <span class="fh-guia-card-flecha" aria-hidden="true">&rarr;</span>
+</a>
+<nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
       <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
       <ul class="fh-otros-lista">
         <li><a href="../crucigrama/">Crucigrama de fútbol diario</a></li>

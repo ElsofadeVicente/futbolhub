@@ -38,13 +38,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 
 <!-- Estilos -->
-<link rel="stylesheet" href="./css/crucigrama.css?v=20260824d">
+<link rel="stylesheet" href="./css/crucigrama.css?v=20260902a">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260901b">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
-<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260901a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
@@ -183,11 +183,19 @@
   <section class="cruc-intro">
     <p class="cruc-intro-kicker">FutbolHUB · Nº 03 · Diario</p>
     <h1 class="cruc-intro-title">El Crucigrama de fútbol</h1>
-    <p class="cruc-intro-sub">El Crucigrama de FutbolHUB es un crucigrama de toda la vida —horizontales, verticales, casillas que se cruzan— en el que todas las definiciones son de fútbol: el nombre de un estadio, el primer nombre de pila de alguien al que todos conocemos por el apodo, quién ganó un Balón de Oro concreto, a qué premio se le llama de una forma determinada. Hay una rejilla nueva cada día, pensada para resolverse en un par de minutos y no en una tarde entera, con definiciones que se sacan de memoria y otras que se adivinan por los cruces, como en cualquier crucigrama que se precie. Si te atascas, puedes revelar una letra o una palabra suelta sin perder la partida entera.</p>
     <p class="cruc-intro-load">Cargando la edición de hoy…</p>
-    <p class="cruc-intro-links">
-      <a href="/como-jugar/crucigrama/">Cómo se juega</a>
-    </p>
+  </section>
+</div>
+
+<!-- Texto propio de la pagina. Vive FUERA de #crucigrama-screen a proposito:
+     crucigrama-game.js hace screen.innerHTML = marcado al montar la rejilla, y
+     mientras esto estuvo dentro se lo llevaba por delante — la pagina que
+     Googlebot indexa se quedaba en 50 palabras, la mitad numeros de casilla.
+     Comprobado con la captura de la Prueba de resultados enriquecidos. -->
+<section class="cruc-info">
+  <h2 class="cruc-info-titulo">Qué es el Crucigrama de fútbol</h2>
+  <p class="cruc-info-texto">El Crucigrama de FutbolHUB es un crucigrama de toda la vida —horizontales, verticales, casillas que se cruzan— en el que todas las definiciones son de fútbol: el nombre de un estadio, el primer nombre de pila de alguien al que todos conocemos por el apodo, quién ganó un Balón de Oro concreto, a qué premio se le llama de una forma determinada. Hay una rejilla nueva cada día, pensada para resolverse en un par de minutos y no en una tarde entera, con definiciones que se sacan de memoria y otras que se adivinan por los cruces, como en cualquier crucigrama que se precie. Si te atascas, puedes revelar una letra o una palabra suelta sin perder la partida entera.</p>
+  <p class="cruc-info-links"><a href="/como-jugar/crucigrama/">Cómo se juega al Crucigrama</a></p>
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
   <ul class="fh-otros-lista">
@@ -197,8 +205,7 @@
     <li><a href="/blackjack/">Blackjack de futbolistas online</a></li>
   </ul>
 </nav>
-  </section>
-</div>
+</section>
 
 <!-- Scripts -->
 <script src="../js/supabase-config.js?v=20260831a"></script>

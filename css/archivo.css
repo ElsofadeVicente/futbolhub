@@ -1,0 +1,84 @@
+/* ==========================================================================
+   archivo.css — las paginas de /<juego>/archivo/, generadas por
+   admin/generar_archivo.py.
+
+   Van encima de css/pagina.css (la hoja de las guias y las legales), que ya
+   trae el cromo: cabecera, migas, .wrap, .kicker, .lead, .btn y el pie. Aqui
+   solo estan las dos piezas que pagina.css no tiene, porque hasta ahora
+   ninguna pagina estatica necesitaba tablas: la tabla de definiciones y la
+   lista de ediciones.
+
+   Como el resto de hojas estaticas del sitio, no usa el sistema de temas
+   (data-theme): resuelve claro/oscuro con prefers-color-scheme, igual que
+   pagina.css, y hereda de ella los colores por currentColor.
+   ========================================================================== */
+
+.ar-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 28px;
+  font-size: 0.95rem;
+}
+
+.ar-tabla th {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid currentColor;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.ar-tabla td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.28);
+  vertical-align: top;
+}
+
+/* Columna del numero: estrecha y que no se parta nunca. */
+.ar-num {
+  width: 2.5em;
+  white-space: nowrap;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* La definicion se lleva el ancho sobrante; es la columna larga. */
+.ar-def { width: auto; }
+
+/* La solucion en versalitas y sin partir: son nombres propios y respuestas de
+   crucigrama, y leerlas cortadas a mitad no ayuda a nadie. */
+.ar-sol {
+  white-space: nowrap;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Por debajo de 560px la tabla de tres columnas no cabe sin apretujar la
+   definicion a dos palabras por linea. Se deja desbordar con scroll propio,
+   nunca el body — misma regla que el resto del sitio. */
+@media (max-width: 560px) {
+  .ar-tabla { font-size: 0.88rem; }
+  .ar-tabla td, .ar-tabla th { padding: 7px 6px; }
+}
+
+.ar-lista {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+}
+
+.ar-lista li {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.28);
+}
+
+/* min-height 24px: objetivo tactil minimo (WCAG 2.5.8), mismo criterio que
+   guia-link.css y otros-juegos.css. */
+.ar-lista a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-weight: 600;
+}

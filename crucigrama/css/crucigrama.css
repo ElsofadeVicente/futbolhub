@@ -1063,3 +1063,38 @@ body.cruc-sheet-abierto { overflow: hidden; }
 }
 
 :root[data-theme="v2"] .cruc-atrasado { border-left-color: #ff6b66; }
+
+/* Texto propio de la página, debajo del juego. Vive fuera de
+   #crucigrama-screen porque el JS reemplaza el innerHTML de ese contenedor al
+   montar la rejilla y se llevaba por delante la descripción: la página
+   renderizada se quedaba en 50 palabras. Mismo sitio que ocupa el párrafo
+   descriptivo en los otros 13 juegos (bajo la zona de juego).
+   Patrón de variables con respaldo: sin --r-md/--bd-c sale cuadrado y con
+   filete de tinta, como el resto del tema clásico. */
+.cruc-info {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+  border-top: 2px solid var(--bd-c, var(--np-ink));
+  text-align: left;
+}
+.cruc-info-titulo {
+  margin: 0 0 10px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 900;
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  color: var(--np-ink);
+}
+.cruc-info-texto {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--np-ink-mid);
+}
+.cruc-info-links {
+  margin: 12px 0 0;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: .78rem;
+  letter-spacing: .1em;
+}
+.cruc-info-links a { color: var(--np-ink); }

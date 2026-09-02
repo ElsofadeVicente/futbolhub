@@ -41,7 +41,7 @@
   <link rel="stylesheet" href="../css/volver.css?v=20260901b">
   <link rel="stylesheet" href="../css/sala.css?v=20260819a">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
-<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260901a">
 <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
@@ -256,12 +256,19 @@
       <button class="btn-primary" style="margin-top:16px;width:100%" onclick="App.menuStartLocal()">EMPEZAR ▶</button>
     </div>
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-    <p class="fh-intro-texto">En la Cadena se juega por turnos y con una sola regla: cada nombre tiene que encajar con el anterior. Empiezas por un jugador, el siguiente tiene que nombrar un equipo por el que pasó, el de después otro jugador de ese equipo, y así sucesivamente sin repetir nunca un nombre ya dicho en la partida. Fallar, repetirte o quedarte sin tiempo te cuesta una vida, y puedes elegir jugar con una, dos o tres según lo larga que quieras la partida. Se juega online con amigos por un código de sala, buscando partida pública con desconocidos, o pasando el mismo móvil por turnos en modo local. Gana quien queda en pie cuando a todos los demás se les acaban las vidas.</p>
-<p class="guia-link"><a href="/como-jugar/en-la-cadena/">Cómo se juega &rarr;</a></p>
 <!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
      Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
 <div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
 
+<!-- Tarjeta de la guia. Sustituye al parrafo largo que colgaba debajo del
+     boton Jugar (era un muro de texto gris que partia la tarjeta) y al
+     enlace suelto "Como se juega". El texto completo vive en la guia, al
+     otro lado de la flecha. Patron tomado de playfootball.games. -->
+<a class="fh-guia-card" href="/como-jugar/en-la-cadena/">
+  <h2 class="fh-guia-card-titulo">Cómo se juega a En la Cadena</h2>
+  <p class="fh-guia-card-texto">Jugador, equipo, jugador, equipo. Encadena sin repetir y sin quedarte en blanco cuando te toque.</p>
+  <span class="fh-guia-card-flecha" aria-hidden="true">&rarr;</span>
+</a>
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
   <ul class="fh-otros-lista">

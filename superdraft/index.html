@@ -42,7 +42,7 @@
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260901b">
   <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
-<link rel="stylesheet" href="../css/intro-texto.css?v=20260827a">
+<link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260901a">
   <!-- Diseño elegido en Ajustes: pone data-theme en el <html>.
@@ -198,12 +198,19 @@
     <button id="sd-start-btn" class="btn-primary">JUGAR ▶</button>
 
     <!-- Enlace a la guía del juego (ver CLAUDE.md, "Páginas de contenido"). -->
-    <p class="fh-intro-texto">Superdraft te reta a montar el mejor once posible maximizando un objetivo que cambia cada día: unas veces es la suma de edades, otras el total de goles con la selección, otras el valor de mercado conjunto. Cada ronda gira una tragaperras que saca un club, una liga o una nacionalidad al azar, y tú eliges qué futbolista colocar en la posición que toca —portero, defensa, centrocampista o delantero— para que cumpla ese requisito y sume lo máximo posible al objetivo del día. Cada futbolista solo se puede usar una vez en todo el once, así que hay que repartir bien a quién guardas para más adelante. Es un reto diario con archivo, y solo cuenta el primer intento del día.</p>
-<p class="guia-link"><a href="/como-jugar/superdraft/">Cómo se juega &rarr;</a></p>
 <!-- Unidad de movil: solo <1240px, solo cuando esta pantalla se ve.
      Ver js/ads.js (carga perezosa) y css/ads.css (.ad-slot--flow). -->
 <div class="ad-slot ad-slot--flow" data-ad="movil-menu"></div>
 
+<!-- Tarjeta de la guia. Sustituye al parrafo largo que colgaba debajo del
+     boton Jugar (era un muro de texto gris que partia la tarjeta) y al
+     enlace suelto "Como se juega". El texto completo vive en la guia, al
+     otro lado de la flecha. Patron tomado de playfootball.games. -->
+<a class="fh-guia-card" href="/como-jugar/superdraft/">
+  <h2 class="fh-guia-card-titulo">Cómo se juega a Superdraft</h2>
+  <p class="fh-guia-card-texto">Monta el mejor once posible maximizando el objetivo del día, con los jugadores que te vaya dando la tragaperras.</p>
+  <span class="fh-guia-card-flecha" aria-hidden="true">&rarr;</span>
+</a>
 <nav class="fh-otros" aria-label="Otros juegos de FutbolHUB">
   <h2 class="fh-otros-titulo">Otros juegos de FutbolHUB</h2>
   <ul class="fh-otros-lista">

@@ -1,27 +1,69 @@
 /* ==========================================================================
-   intro-texto.css — el párrafo de presentación (80-150 palabras) que cada
-   uno de los juegos enseña en su pantalla de menú, ANTES de darle a Jugar.
+   intro-texto.css — la tarjeta "Cómo se juega a X" del menú de cada juego.
 
-   Por qué existe: hasta ahora el HTML servido de los 13 juegos apenas tenía
-   texto propio (mediana de ~110 palabras, y El Crucigrama solo 3 antes de su
-   propio arreglo — ver CLAUDE.md, "Páginas de contenido"). Este párrafo es
-   contenido real y explicativo, visible en el HTML antes de cargar el juego
-   y para quien navega sin JavaScript; el propio juego lo sustituye u oculta
-   al arrancar la partida, que no es cloaking sino la misma técnica que ya
-   usaba El Crucigrama con `.cruc-intro`.
+   Historia, para que no se repita: al principio esto era un párrafo suelto de
+   80-150 palabras (.fh-intro-texto) colgado justo debajo del botón Jugar. Era
+   contenido real y visible en el HTML servido, sí, pero como pieza de diseño
+   era un muro de texto gris que partía la tarjeta del menú en dos.
 
-   `font-family: inherit` a propósito: no impone una tipografía nueva sobre
-   los 12 diseños distintos de los juegos, hereda la que ya esté en uso en
-   ese punto de la página. Colores con respaldo en currentColor, mismo
-   patrón que guia-link.css y otros-juegos.css.
+   Sustituido el 2026-09-02 por una tarjeta enlazada, siguiendo el patrón de
+   playfootball.games ("How to Play Missing 11"): título, una o dos frases y
+   una flecha. El texto largo no desaparece — vive en /como-jugar/<juego>/,
+   que es donde tiene sentido y donde ya estaba escrito. Esta tarjeta también
+   sustituye al enlace suelto .guia-link, que quedaba redundante al lado.
+
+   `font-family: inherit` a propósito: no impone tipografía sobre los 13
+   diseños distintos de los juegos. Colores con respaldo en currentColor, y
+   radio/borde con el patrón de variables con respaldo del proyecto — sin
+   --r-md/--bd-c (tema clásico) sale cuadrada y con filete de tinta.
    ========================================================================== */
 
-.fh-intro-texto {
-  margin: 14px auto 0;
+.fh-guia-card {
+  display: block;
+  position: relative;
+  margin: 18px auto 0;
   max-width: 58ch;
+  padding: 16px 44px 16px 18px;
+  border: 1px solid var(--bd-c, rgba(var(--np-ink-rgb, 15, 18, 14), .22));
+  border-radius: var(--r-md, 0);
   text-align: left;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.fh-guia-card:hover,
+.fh-guia-card:focus-visible {
+  border-color: var(--ac, var(--np-red, currentColor));
+  background: rgba(var(--np-ink-rgb, 15, 18, 14), .03);
+}
+
+.fh-guia-card-titulo {
+  margin: 0 0 6px;
   font-family: inherit;
-  font-size: 0.8rem;
-  line-height: 1.6;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--np-ink, currentColor);
+}
+
+.fh-guia-card-texto {
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.55;
   color: var(--np-ink-mid, currentColor);
 }
+
+/* La flecha va absoluta y centrada en vertical: con el texto en una o en tres
+   líneas queda siempre a la misma altura que el bloque, como en la referencia. */
+.fh-guia-card-flecha {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--ac, var(--np-red, currentColor));
+}
+
