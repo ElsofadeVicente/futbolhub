@@ -393,6 +393,31 @@ a      { text-decoration: none; }
   font-size: clamp(1.6rem,5vw,2.6rem);
   color: var(--np-ink); line-height: 1;
 }
+/* Club(s) dueños del estadio, con escudo. Fila propia porque puede haber
+   más de uno (San Siro: A.C. Milan + Inter de Milán). Se lee como un pie de
+   foto de periódico, no como una etiqueta de formulario: serif itálica a
+   juego con el titular de arriba (más pequeña y en tinta media, para no
+   competir con él), sin caja ni borde. Varios clubes se separan con un
+   punto medio en rojo, no con cajas repetidas. */
+.result-clubs {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 0 14px; margin-top: 8px;
+}
+.club-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.club-badge + .club-badge::before {
+  content: '·'; color: var(--np-red); margin-right: 14px;
+  font-family: 'DM Mono', monospace; font-weight: 700;
+}
+.club-badge-crest {
+  width: 28px; height: 28px; object-fit: contain; flex-shrink: 0;
+  filter: drop-shadow(1px 1px 1px rgba(var(--np-ink-rgb, 15,18,14), .35));
+}
+.club-badge-name {
+  font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;
+  font-size: 1rem; color: var(--np-ink-mid); white-space: nowrap;
+}
 
 /* Mapa resultado */
 #res-map {
@@ -512,6 +537,13 @@ a      { text-decoration: none; }
   font-family: 'Playfair Display', serif; font-style: italic;
   font-size: 0.95rem; font-weight: 700; color: var(--np-ink);
   flex: 1;
+}
+.end-round-clubs { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; margin-top: 3px; }
+.end-round-clubs .club-badge { gap: 4px; }
+.end-round-clubs .club-badge + .club-badge::before { margin-right: 8px; }
+.end-round-clubs .club-badge-crest { width: 15px; height: 15px; filter: none; }
+.end-round-clubs .club-badge-name {
+  font-size: 0.7rem; font-weight: 400; white-space: normal; color: var(--np-ink-mid);
 }
 .end-round-dist {
   font-family: 'DM Mono', monospace; font-size: 0.65rem;

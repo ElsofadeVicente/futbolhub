@@ -345,6 +345,34 @@ function confirmarGuess() {
 }
 
 /* ══════════════════════════════════════════════
+   CLUBES + ESCUDO DEL ESTADIO
+   estadios.json trae 'clubs' (lista de nombres) cuando admin/generar_estadios.py
+   --rellenar-clubes lo rellenó vía Wikidata (P115 al revés: qué club tiene
+   este estadio como campo). El escudo NO viaja en el JSON: se resuelve en
+   runtime contra el bucket team-logos, igual que Blackjack/Coche/En el Once
+   (_getLogoUrl en blackjack-game.js) — el archivo local se guardó con el
+   nombre EXACTO del club (espacios → guion bajo) y sbStorageSafeKey ya quita
+   los acentos al construir la clave, así que no hace falta ningún mapa de
+   nombre→URL aparte. Si el estadio aún no tiene 'clubs', o el escudo
+   concreto no se pudo descargar (no todos los clubes tienen imagen en
+   Wikidata), no se pinta nada: degradado silencioso, igual que en el resto
+   de la web. */
+function crestUrlForClub(name) {
+  const fname = String(name).trim().replace(/[\/:*?"<>|]/g, '_').replace(/\s+/g, '_') + '.png';
+  return sbStorageUrl('team-logos', fname);
+}
+
+function clubBadgesHTML(clubs) {
+  if (!Array.isArray(clubs) || !clubs.length) return '';
+  return clubs.map(name => `
+    <span class="club-badge">
+      <img class="club-badge-crest" src="${crestUrlForClub(name)}" alt=""
+           loading="lazy" onerror="this.remove()">
+      <span class="club-badge-name">${ligaEsc(name)}</span>
+    </span>`).join('');
+}
+
+/* ══════════════════════════════════════════════
    PANTALLA RESULTADO RONDA
    ══════════════════════════════════════════════ */
 let resMap = null;
@@ -354,6 +382,7 @@ function showResult(estadio, distKm, puntos) {
 
   document.getElementById('res-ronda').textContent   = idx + 1;
   document.getElementById('res-stadium').textContent = estadio.name;
+  document.getElementById('res-clubs').innerHTML     = clubBadgesHTML(estadio.clubs);
   document.getElementById('res-score').textContent   = puntos.toLocaleString('es-ES');
   document.getElementById('res-dist').textContent    = fmtDist(distKm);
 
@@ -435,7 +464,10 @@ function mostrarFin(alreadyPlayed = false) {
     row.className = 'end-round-row';
     row.innerHTML = `
       <span class="end-round-num">Ronda ${i + 1}</span>
-      <span class="end-round-name">${est.name}</span>
+      <span class="end-round-name">${est.name}${
+        Array.isArray(est.clubs) && est.clubs.length
+          ? `<span class="end-round-clubs">${clubBadgesHTML(est.clubs)}</span>` : ''
+      }</span>
       <span class="end-round-dist">${fmtDist(dist)}</span>
       <span class="end-round-score">${sc.toLocaleString('es-ES')}</span>
     `;

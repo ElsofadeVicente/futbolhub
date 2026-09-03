@@ -568,7 +568,7 @@ const BlackjackGame = (() => {
 
     const imgHtml = card.img
       ? `<div class="card-face-img">
-           <img src="${escapeHtml(fhImgUrl(card.img))}" alt="${safeName}" loading="lazy"
+           <img src="${escapeHtml(fhImgUrl(card.img))}" alt="${safeName}"
                 onerror="this.parentElement.classList.add('img-error')">
          </div>`
       : `<div class="card-face-img card-face-img--empty">
@@ -579,7 +579,7 @@ const BlackjackGame = (() => {
     const badgeUrl = _getLogoUrl(card.club);
     const badgeHtml = badgeUrl
       ? `<div class="card-badge-wrap">
-           <img src="${escapeHtml(badgeUrl)}" alt="${safeClub}" loading="lazy"
+           <img src="${escapeHtml(badgeUrl)}" alt="${safeClub}"
                 onerror="this.style.visibility='hidden'">
          </div>`
       : `<div class="card-badge-wrap"></div>`;
@@ -588,7 +588,7 @@ const BlackjackGame = (() => {
     const flagUrl = _getFlagUrl(card.nat);
     const flagHtml = flagUrl
       ? `<div class="card-header-flag">
-           <img src="${escapeHtml(flagUrl)}" alt="${safeNat}" loading="lazy" class="card-header-flag-img"
+           <img src="${escapeHtml(flagUrl)}" alt="${safeNat}" class="card-header-flag-img"
                 onerror="this.nextElementSibling && (this.nextElementSibling.style.display='inline'); this.style.display='none'">
            <span class="card-header-flag-nat" style="display:none">${safeNat}</span>
          </div>`
