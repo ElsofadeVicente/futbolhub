@@ -522,6 +522,11 @@ function _onRoomUpdate(room){
 function _renderLobby(room){
   showScreen('#screen-lobby');
   $('#lobby-code').textContent=_roomCode||'——————';
+  /* El enlace completo debajo del codigo, como en las otras cinco salas: aqui
+     el boton copiaba el enlace desde hace tiempo, pero no se ensenaba en
+     ningun sitio y el rotulo decia "COPIAR CODIGO". */
+  const _linkEl=$('#lobby-link-display');
+  if(_linkEl)_linkEl.textContent=_roomCode?_enlaceSala():'';
   $('#lobby-mode-pill').textContent=room.mode==='easy'?'FACIL':'DIFICIL';
 
   const players=Object.entries(room.players||{});
@@ -529,11 +534,15 @@ function _renderLobby(room){
   const list=$('#lobby-players');list.innerHTML='';
   players.forEach(([pid,p])=>{
     const d=document.createElement('div');
-    d.className=`lobby-player-row${pid===_playerId?' me':''}`;
+    d.className='lobby-player-row';
+    /* ANFITRION y "← TU" con las mismas etiquetas que las otras cinco salas
+       (css/sala.css). Antes ponia "HOST" y metia un "(tu)" dentro del propio
+       nombre, que ademas se colaba en el texto del jugador. */
     d.innerHTML=`<span class="lobby-player-avatar">${_avatarInner(p)}</span>`+
-      `<span class="lobby-player-name">${escapeHtml(p.name)}${pid===_playerId?' (tu)':''}</span>`+
+      `<span class="lobby-player-name">${escapeHtml(p.name)}</span>`+
       `<span class="lobby-player-lives">${_hearts(p.lives??room.startLives??3)}</span>`+
-      (p.isHost?'<span class="lobby-player-host">HOST</span>':'');
+      (p.isHost?'<span class="lobby-player-host">ANFITRIÓN</span>':'')+
+      (pid===_playerId?'<span class="lobby-player-you">← TÚ</span>':'');
     list.appendChild(d);
   });
 
@@ -1478,7 +1487,7 @@ function boot(){
   $('#btn-leave-game')?.addEventListener('click',()=>{
     if(confirm('¿Seguro que quieres abandonar la partida?'))_leaveRoom();
   });
-  $('#btn-copy-code')?.addEventListener('click',()=>{
+  $('#btn-copy-link')?.addEventListener('click',()=>{
     /* Se copia el ENLACE, no el codigo suelto: quien lo recibe entra de
        un toque en vez de tener que abrir el juego y teclear seis letras. */
     navigator.clipboard?.writeText(_enlaceSala())

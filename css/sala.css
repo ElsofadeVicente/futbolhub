@@ -98,3 +98,170 @@
   transition: background 0.12s, color 0.12s;
 }
 #btn-copy-link:hover { background: var(--np-ink); color: var(--np-paper); }
+
+
+/* =============================================================================
+   ESTRUCTURA DE LA SALA — una sola definición para los seis juegos
+   (2026-09-03)
+
+   Hasta ahora esta hoja solo unificaba el VOCABULARIO (quién es el anfitrión,
+   cuál eres tú, el botón de copiar). La caja en sí la escribía cada juego, y
+   por eso no había dos salas iguales:
+
+     · En la Cadena no usaba ninguna de las clases comunes: .lobby-container en
+       vez de .lobby-wrap, .lobby-share-card en vez de .lobby-code-card,
+       .lobby-players en vez de .lobby-players-list y .lobby-player-item en vez
+       de .lobby-player-row. O sea, la misma pantalla escrita otra vez entera.
+     · El Mentiroso no enseñaba el enlace ni tenía #btn-copy-link: tenía un
+       "COPIAR CODIGO" con la clase genérica .btn-tiny (aunque por dentro sí
+       copiaba el enlace), así que quien entraba no veía la URL por ningún lado.
+     · Bingo y Tres en Raya tampoco enseñaban el enlace debajo del código.
+     · Y los tamaños bailaban: .lobby-wrap a 500px en Coche y 460 en Blackjack,
+       el código con letter-spacing 12px o 0.28em o 0.12em según el juego, la
+       fila de jugador en Inter 0.95rem (Coche) o en DM Mono 0.72rem en
+       mayúsculas (Blackjack, Cadena, Mentiroso).
+
+   El modelo es COCHE, por decisión del usuario. Estas reglas reproducen las
+   suyas; los demás juegos las heredan porque esta hoja se carga DESPUÉS del
+   CSS de cada juego y gana por orden a igual especificidad.
+
+   Al añadir una sala nueva no hace falta escribir ni una línea de esto: basta
+   con usar el marcado canónico (ver cualquiera de los seis index.html).
+   ============================================================================= */
+
+#screen-lobby { justify-content: center; padding: 24px 20px 32px; gap: 14px; }
+
+/* La sala trae su propio modelo de caja y no lo da por supuesto. Se descubrió
+   con Blackjack, cuya hoja no tenía el reset global que sí traen las otras: allí
+   el marco medía 540px en vez de 500 — los 500 de max-width MÁS los 18 de
+   padding y los 2 de borde de cada lado — y la sala salía más ancha que en los
+   otros cinco juegos. A Blackjack se le puso el reset global después, pero esta
+   línea se queda: es lo que hace que la sala se vea igual en un juego futuro
+   que tampoco lo traiga. */
+.lobby-wrap, .lobby-wrap *, #screen-lobby { box-sizing: border-box; }
+
+/* El marco de periódico que contiene toda la sala. */
+.lobby-wrap {
+  width: 100%; max-width: 500px;
+  display: flex; flex-direction: column; gap: 12px; align-items: center;
+  margin: 0 auto; padding: 18px;
+  border: 2px solid var(--bd-c, var(--np-ink));
+  background: var(--np-paper2);
+  border-radius: var(--r-md, 0);
+  box-shadow: var(--sh-x, 5px) var(--sh-y, 5px) var(--sh-b, 0) var(--sh-c, var(--np-ink));
+}
+
+/* Tarjeta del código + enlace de invitación. */
+.lobby-code-card {
+  width: 100%;
+  background: var(--np-paper);
+  border: 1.5px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0);
+  padding: 18px 22px; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: var(--sh-x, 3px) var(--sh-y, 3px) var(--sh-b, 0) var(--sh-c, var(--np-ink));
+}
+.lobby-code-label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.28em; color: var(--np-ink-mid);
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.lobby-code-big {
+  font-family: 'Anton', sans-serif; font-size: 2.8rem; letter-spacing: 12px;
+  line-height: 1; color: var(--np-red);
+}
+
+/* La URL completa, debajo del código. Es la mitad que faltaba en cuatro de los
+   seis juegos: sin ella el botón de copiar no dice QUÉ copia, y quien lee el
+   código en voz alta por teléfono no tiene nada que dictar. */
+.lobby-link-display {
+  font-family: 'DM Mono', monospace; font-size: 0.62rem;
+  color: var(--np-ink-mid); margin-top: 5px;
+  word-break: break-all; padding: 0 8px;
+  text-align: center; line-height: 1.4;
+}
+
+.lobby-section { width: 100%; }
+.lobby-section-kicker {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.22em; color: var(--np-red);
+  text-transform: uppercase; margin-bottom: 8px;
+}
+
+.lobby-players-list { width: 100%; display: flex; flex-direction: column; gap: 5px; }
+.lobby-player-row {
+  background: var(--np-paper);
+  border: 1px solid var(--np-ink-soft);
+  border-left: 3px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 600;
+}
+.lobby-player-avatar {
+  width: 28px; height: 28px; flex-shrink: 0;
+  background: var(--np-paper3);
+  border: 1.5px solid var(--bd-c, var(--np-ink));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem; font-weight: 700; color: var(--np-ink);
+  /* Círculo con la foto recortada al centro. */
+  border-radius: 50%; overflow: hidden;
+}
+.lobby-player-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block; border-radius: 50%;
+}
+.lobby-player-name {
+  flex: 1; min-width: 0;
+  /* Explicita y no heredada: el nombre heredaba la fuente base de cada juego y
+     no todas coinciden — Rajdhani en Coche, En la Cadena y El Mentiroso, y en
+     Blackjack ninguna, o sea el Times New Roman del navegador. Rajdhani es la
+     de Coche, que es el modelo, y las seis paginas ya la cargan. */
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem; color: var(--np-ink);
+  overflow-wrap: anywhere;
+}
+
+/* Nota bajo la lista: "🌐 Sala Pública", "🏆 Clasificatoria", el modo… */
+.lobby-mode-badge,
+.lobby-public-badge {
+  font-family: 'DM Mono', monospace; font-size: 0.65rem;
+  color: var(--np-ink-mid); text-align: center;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+.lobby-hint {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem; color: var(--np-ink-mid);
+  text-align: center; letter-spacing: 0.1em; line-height: 1.5;
+}
+
+/* Cuenta atrás de arranque automático de las salas públicas. */
+.lobby-autotimer {
+  width: 100%; margin-top: 4px; padding: 10px 12px;
+  background: var(--np-paper3);
+  border: 1px solid var(--np-ink-soft);
+  border-radius: var(--r-md, 0);
+}
+.lobby-autotimer.hidden { display: none; }
+.lobby-autotimer-bar-wrap { width: 100%; height: 2px; background: var(--np-ink-soft); overflow: hidden; margin-bottom: 8px; }
+.lobby-autotimer-bar { height: 100%; width: 100%; background: var(--np-red); transition: width 1s linear; }
+.lobby-autotimer-bar.urgent { background: var(--np-ink); }
+.lobby-autotimer-text { display: flex; justify-content: space-between; align-items: center; font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; color: var(--np-ink-mid); text-transform: uppercase; }
+.lobby-autotimer-count { font-family: 'Anton', sans-serif; font-size: 1.2rem; letter-spacing: 3px; color: var(--np-red); transition: color 0.8s; }
+.lobby-autotimer-count.urgent { color: var(--np-ink); }
+
+/* El código a 2.8rem con 12px de separación mide 240px: en un móvil de 360
+   se sale de la tarjeta. Aquí y no en la hoja de cada juego, porque una media
+   query del juego (que carga antes) la pisaría la regla sin media de esta. */
+@media (max-width: 480px) {
+  .lobby-wrap { padding: 14px; }
+  .lobby-code-card { padding: 14px 12px; }
+  .lobby-code-big { font-size: 2.2rem; letter-spacing: 8px; }
+  .lobby-player-row { padding: 9px 11px; gap: 8px; }
+  .lobby-player-name { font-size: 0.88rem; }
+}

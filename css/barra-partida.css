@@ -1,0 +1,130 @@
+/* =============================================================================
+   BARRA-PARTIDA.CSS — la barra superior de una partida
+   FutbolHUB · 2026-09-03
+
+   Coche y Blackjack enseñan lo mismo mientras se juega —dónde vas, cuánto
+   tiempo queda y cómo va el marcador— y cada uno lo tenía escrito por su
+   cuenta y con distinto aspecto:
+
+     · Coche: barra OSCURA pegajosa con RONDA n a la izquierda, el cronómetro
+       en el centro (número grande + barra fina) y el marcador a la derecha.
+     · Blackjack: barra CLARA con los rivales a la izquierda, OBJETIVO en el
+       centro y el marcador a la derecha… y el cronómetro NO estaba aquí, sino
+       suelto dentro del cuerpo de la pantalla, encima de la carta. En un móvil
+       eso repartía la misma información en dos sitios y dejaba la pantalla
+       descolocada.
+
+   Aquí vive UNA definición, con el aspecto de Coche, igual que ads.css,
+   guia-link.css, volver.css y sala.css. La hoja se carga después del CSS del
+   juego, así que gana por orden a igual especificidad.
+
+   El bloque de la izquierda puede ser un rótulo (.round-label, "RONDA 2") o
+   una cifra destacada (.topbar-objective, el objetivo de Blackjack): las dos
+   ocupan la misma zona de la rejilla en móvil.
+   ============================================================================= */
+
+.round-topbar, .round-topbar * { box-sizing: border-box; }
+
+.round-topbar {
+  width: 100%;
+  background: var(--np-ink);
+  border-bottom: 2px solid rgba(var(--np-ink-rgb, 15, 18, 14), 0.9);
+  padding: 10px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-shrink: 0; position: sticky; top: 0; z-index: 10;
+  /* El círculo de la cuenta puede quedar fijo arriba a la derecha (42px + 14
+     de margen). Se le reserva el hueco para que no tape el cronómetro, que en
+     móvil se coloca justo ahí. Mismo criterio que .masthead-edition. */
+  padding-right: 62px;
+}
+
+/* ── Zona izquierda: rótulo o cifra ── */
+.round-label {
+  font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.22em;
+  color: rgba(var(--np-paper-rgb, 244, 234, 210), 0.65);
+  white-space: nowrap; text-transform: uppercase;
+}
+.topbar-objective {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+  min-width: 0;
+}
+.topbar-obj-label {
+  font-family: 'DM Mono', monospace; font-size: 0.55rem; letter-spacing: 0.28em;
+  color: rgba(var(--np-paper-rgb, 244, 234, 210), 0.6); text-transform: uppercase;
+}
+.topbar-obj-value {
+  font-family: 'Anton', sans-serif; font-size: clamp(1.1rem, 2.6vw, 1.7rem);
+  letter-spacing: 2px; line-height: 1; color: var(--np-paper);
+  white-space: nowrap;
+}
+
+/* ── Zona central: el cronómetro ── */
+.round-timer-block { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.round-timer {
+  font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 2px;
+  line-height: 1; color: var(--np-paper); transition: color 0.3s;
+}
+.round-timer.urgent { color: var(--np-red); animation: tPulse 0.6s infinite alternate; }
+@keyframes tPulse { from { opacity: 1; } to { opacity: 0.4; } }
+.round-timer-bar-wrap { width: 54px; height: 2px; background: rgba(var(--np-paper-rgb, 244, 234, 210), 0.15); overflow: hidden; }
+.round-timer-bar { height: 100%; width: 100%; background: var(--np-paper); transition: width 1s linear, background 0.4s; }
+/* .urgent lo pone Coche y .warning Blackjack: significan lo mismo. */
+.round-timer-bar.urgent,
+.round-timer-bar.warning { background: var(--np-red); }
+
+/* ── Zona derecha: el marcador ── */
+.round-scoreboard { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.sb-player { display: flex; flex-direction: column; align-items: center; }
+/* width:3ch se queda corto para 3 caracteres: el letter-spacing añade espacio
+   DESPUÉS de cada uno (también del último, que cuenta para overflow:hidden
+   aunque visualmente sea aire), así que "VIC" se recortaba a "VI" y una uña de
+   "C". Medido: scrollWidth 20px contra clientWidth 17px a este tamaño. */
+.sb-name {
+  font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 1px;
+  color: rgba(var(--np-paper-rgb, 244, 234, 210), 0.52); text-transform: uppercase;
+  width: calc(3ch + 3px); max-width: calc(3ch + 3px);
+  overflow: hidden; white-space: nowrap; text-overflow: clip;
+}
+.sb-score { font-family: 'Anton', sans-serif; font-size: 1.4rem; letter-spacing: 1px; color: var(--np-paper); line-height: 1; }
+.sb-player.me .sb-name  { color: rgba(var(--np-paper-rgb, 244, 234, 210), 0.9); }
+.sb-player.me .sb-score { color: var(--np-paper); }
+
+/* Quién ha terminado ya su jugada y quién sigue pensando. En Blackjack esto
+   vivía en una fila aparte de avatares (.opponent-activity) que repetía los
+   mismos jugadores que el marcador: dos representaciones de lo mismo en una
+   barra que en un móvil ya iba justa. Ahora es un estado del marcador. */
+.sb-player.pensando .sb-score { animation: sbPulse 1.2s ease-in-out infinite; }
+.sb-player.listo    .sb-score { color: var(--np-red); }
+@keyframes sbPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+@media (max-width: 700px) {
+  .round-topbar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "izq timer" "score score";
+    align-items: center; gap: 8px 10px;
+    padding: 10px 14px; padding-right: 56px;
+  }
+  .round-label,
+  .topbar-objective { grid-area: izq; }
+  .round-timer-block { grid-area: timer; justify-self: end; }
+  .round-scoreboard {
+    grid-area: score; justify-content: flex-start; gap: 8px;
+    overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: none;
+  }
+  .round-scoreboard::-webkit-scrollbar { display: none; }
+  .sb-player {
+    min-width: 42px; padding: 4px 6px;
+    background: rgba(var(--np-paper-rgb, 244, 234, 210), 0.07);
+    border: 1px solid rgba(var(--np-paper-rgb, 244, 234, 210), 0.14);
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 480px) {
+  .round-timer { font-size: 1.8rem; }
+  .sb-name { font-size: 0.52rem; }
+  .sb-score { font-size: 1.2rem; }
+}
+@media (max-width: 420px) {
+  .round-topbar { padding: 8px 10px; padding-right: 52px; }
+}

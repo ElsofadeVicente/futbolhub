@@ -35,11 +35,12 @@
        tres idas y vueltas en el camino critico que en un movil se notan. -->
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/cadena.css?v=20260827a" />
+  <link rel="stylesheet" href="css/cadena.css?v=20260903c" />
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
-  <link rel="stylesheet" href="../css/sala.css?v=20260819a">
+  <link rel="stylesheet" href="../css/sala.css?v=20260903a">
+  <link rel="stylesheet" href="../css/cuenta-atras.css?v=20260903a">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -50,7 +51,7 @@
 <!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
      :root[data-theme="v2"]: sin ese atributo no pinta nada.
      Va la ultima para poder ganar a igual especificidad. -->
-<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260824a">
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260903c">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -380,21 +381,22 @@
 <!-- ══════════════ PANTALLA 4: SALA DE ESPERA ══════════════ -->
 <div id="screen-lobby" class="screen">
   <button class="fh-volver" onclick="App.leaveLobby()">← Salir</button>
-  <div class="lobby-container">
+  <div class="lobby-wrap">
     <h2 class="lobby-title">Sala de espera</h2>
 
-    <!-- Código + enlace compartible -->
-    <div class="lobby-share-card">
+    <div class="lobby-code-card" id="lobby-code-card">
       <div class="lobby-code-label">Código de sala</div>
       <div class="lobby-code-big" id="room-code-display">------</div>
-      <div class="lobby-share-link-wrap">
-        <span class="lobby-share-link" id="lobby-share-url">—</span>
-      </div>
+      <div class="lobby-link-display" id="lobby-share-url"></div>
       <button id="btn-copy-link" onclick="App.copyRoomCode()">🔗 Copiar enlace de invitación</button>
     </div>
 
-    <div class="lobby-players" id="lobby-players-list"></div>
-    <div class="lobby-mode" id="lobby-mode-display"></div>
+    <div class="lobby-section">
+      <p class="lobby-section-kicker" id="lobby-count-kicker">Jugadores</p>
+      <div class="lobby-players-list" id="lobby-players-list"></div>
+    </div>
+
+    <div class="lobby-mode-badge" id="lobby-mode-display"></div>
 
     <button class="btn-primary" id="btn-start-online" onclick="App.startOnlineGame()" style="display:none" disabled>
       EMPEZAR PARTIDA ▶
@@ -490,7 +492,7 @@
 <!-- ══════════════ OVERLAY CUENTA ATRÁS ══════════════ -->
 <div id="countdown-overlay" class="countdown-overlay hidden fh-sin-cabecera">
   <div class="countdown-inner">
-    <div class="countdown-label">EMPIEZA EN</div>
+    <div class="countdown-label">¡EMPIEZA EN!</div>
     <div class="countdown-number" id="countdown-number">10</div>
   </div>
 </div>
@@ -562,7 +564,7 @@
   // Cargar el resto del juego
   const s1 = document.createElement('script'); s1.src = 'js/cadena-data.js?v=20260902a';  document.body.appendChild(s1);
   s1.onload = () => {
-    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js?v=20260902b'; document.body.appendChild(s2);
+    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js?v=20260903c'; document.body.appendChild(s2);
   };
 </script>
 

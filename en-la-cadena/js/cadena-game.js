@@ -473,13 +473,19 @@ const App = (() => {
     const list = document.getElementById('lobby-players-list');
     list.innerHTML = normalized.map((p, i) => {
       const pid = p.id !== null ? p.id : i;
-      return `<div class="lobby-player-item">
+      return `<div class="lobby-player-row">
         <div class="lobby-player-avatar">${_avatarInner(p)}</div>
         <span class="lobby-player-name">${escapeHtml(p.name)}</span>
         ${pid === 0 ? '<span class="lobby-player-host">ANFITRIÓN</span>' : ''}
         ${pid === myId ? '<span class="lobby-player-you">← TÚ</span>' : ''}
       </div>`;
     }).join('');
+
+    /* El contador de jugadores lo tenian ya las otras cinco salas; aqui no
+       estaba y era la unica pantalla donde no se sabia cuantos habia sin
+       contarlos a ojo. */
+    const kicker = document.getElementById('lobby-count-kicker');
+    if (kicker) kicker.textContent = `Jugadores (${normalized.length})`;
 
     const btnStart = document.getElementById('btn-start-online');
     const hintEl   = document.getElementById('lobby-hint-players');

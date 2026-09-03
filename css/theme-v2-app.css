@@ -193,7 +193,6 @@
 :root[data-theme="v2"] .hol-back-btn,
 :root[data-theme="v2"] .liga-tab,
 :root[data-theme="v2"] .remove-player-btn,
-:root[data-theme="v2"] .lobby-copy-btn,
 :root[data-theme="v2"] .cruc-reveal-option {
   font-family: 'Inter', system-ui, sans-serif;
   font-weight: 600;
@@ -465,13 +464,11 @@
 :root[data-theme="v2"] .mode-btn,
 :root[data-theme="v2"] .mode-opt,
 :root[data-theme="v2"] .round-panel,
-:root[data-theme="v2"] .lobby-share-card,
 :root[data-theme="v2"] .lobby-code-card,
 :root[data-theme="v2"] .hol-mode-card,
 :root[data-theme="v2"] .cruc-clues-section,
 :root[data-theme="v2"] .cruc-clue-bar,
 :root[data-theme="v2"] .completion-stat,
-:root[data-theme="v2"] .lobby-player-item,
 :root[data-theme="v2"] .lobby-player-row,
 :root[data-theme="v2"] .player-life-card,
 :root[data-theme="v2"] .chain-entry,

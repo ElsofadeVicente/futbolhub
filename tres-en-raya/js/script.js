@@ -1249,6 +1249,8 @@ window._AppReal = (function () {
       if (isPublicRoom) { showScreen('screen-searching'); renderWait(); return; }
       showScreen('screen-lobby');
       $('lobby-code-display').textContent = code;
+      const linkEl = $('lobby-link-display');
+      if (linkEl) linkEl.textContent = `${location.origin}${location.pathname}?sala=${code}`;
       renderWait();
     }
     function renderWait() {

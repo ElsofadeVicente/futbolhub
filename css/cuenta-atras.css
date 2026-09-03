@@ -1,0 +1,66 @@
+/* =============================================================================
+   CUENTA-ATRAS.CSS — los 10 segundos antes de empezar
+   FutbolHUB · 2026-09-03
+
+   Coche, Blackjack y En la Cadena tapan la pantalla con el mismo cartel antes
+   de arrancar una partida online, y cada uno lo tenía escrito por su cuenta
+   con una tipografía distinta:
+
+     · Coche:        Bebas Neue, 14rem, rótulo Bebas 1.8rem con 6px de aire.
+     · Blackjack:    Anton, clamp(7rem,26vw,14rem), rótulo DM Mono minúsculo.
+     · En la Cadena: Bebas Neue 14rem pero con el rótulo en gris.
+
+   El modelo es COCHE, por decisión del usuario. La hoja se carga después del
+   CSS de cada juego, así que gana por orden a igual especificidad.
+
+   El tamaño del número es lo único que NO se copia literal: Coche lo tenía a
+   14rem fijos, y al llegar a cero escribe "¡YA!" — tres caracteres a ese
+   tamaño se salen de un móvil de 375px. Con el clamp, en escritorio sale
+   exactamente igual que antes (26vw ya pasa de 14rem a partir de 862px de
+   ancho) y en un móvil cabe.
+   ============================================================================= */
+
+.countdown-overlay {
+  position: fixed; inset: 0; height: 100dvh; z-index: 9999;
+  background: var(--np-paper);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.countdown-overlay.hidden { display: none; }
+
+.countdown-inner { text-align: center; }
+
+.countdown-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.2rem, 5vw, 1.8rem); letter-spacing: 6px;
+  color: var(--np-ink-flip, #000000);
+  margin-bottom: 16px;
+}
+
+.countdown-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(7rem, 26vw, 14rem); line-height: 1;
+  color: var(--np-ink); text-shadow: none;
+  animation: cPulse 1s ease-in-out infinite;
+}
+@keyframes cPulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%      { transform: scale(1.06); opacity: 0.85; }
+}
+
+/* Barra bajo el número. Solo la usa Blackjack (se vacía en los 10 segundos);
+   Coche tiene el marcado en su index.html pero lo reemplaza al abrirla. */
+.countdown-progress-wrap {
+  width: min(220px, 70vw); height: 2px; background: var(--np-ink-soft);
+  overflow: hidden; margin: 18px auto 0;
+}
+.countdown-progress-bar {
+  height: 100%; width: 100%; background: var(--np-red);
+  transition: width 0.4s ease, background 0.4s;
+}
+.countdown-loading-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem; letter-spacing: 2px; color: var(--np-ink-mid);
+  text-transform: uppercase; margin-top: 12px; transition: opacity 0.3s;
+}
+.countdown-loading-text.ready { color: var(--np-red); }

@@ -921,6 +921,10 @@
 
       if (room.status === 'waiting') {
         $('lobby-code-display').textContent = code;
+        /* El enlace completo debajo del codigo: lo tenian Coche y Blackjack y
+           aqui no, asi que el boton de copiar no decia QUE copiaba. */
+        const linkEl = $('lobby-link-display');
+        if (linkEl) linkEl.textContent = `${location.origin}${location.pathname}?sala=${code}`;
         $('lobby-count-kicker').textContent = `Jugadores (${list.length})`;
         $('lobby-players').innerHTML = list.map(([id, p]) => `
           <div class="lobby-player-row">

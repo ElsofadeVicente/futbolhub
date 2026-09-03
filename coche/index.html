@@ -35,11 +35,13 @@
        tres idas y vueltas en el camino critico que en un movil se notan. -->
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260903b">
+  <link rel="stylesheet" href="css/style.css?v=20260903c">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
-  <link rel="stylesheet" href="../css/sala.css?v=20260819a">
+  <link rel="stylesheet" href="../css/sala.css?v=20260903a">
+  <link rel="stylesheet" href="../css/cuenta-atras.css?v=20260903a">
+  <link rel="stylesheet" href="../css/barra-partida.css?v=20260903a">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -50,7 +52,7 @@
 <!-- Hoja del diseno "Estadio" para los juegos. Todo cuelga de
      :root[data-theme="v2"]: sin ese atributo no pinta nada.
      Va la ultima para poder ganar a igual especificidad. -->
-<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260824a">
+<link rel="stylesheet" href="../css/theme-v2-app.css?v=20260903c">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -314,14 +316,13 @@
 <div id="screen-lobby" class="screen">
   <button class="fh-volver" onclick="App.leaveRoom()">← Salir</button>
 
-  <div class="lobby-wrap" style="justify-content:center;min-height:80vh;margin-top:20px;">
+  <div class="lobby-wrap">
     <h2 class="lobby-title">Sala de espera</h2>
 
     <div class="lobby-code-card" id="lobby-code-card">
       <div class="lobby-code-label">Código de sala</div>
       <div class="lobby-code-big" id="lobby-code-display">------</div>
-      <div id="lobby-link-display"
-           style="font-size:.68rem;color:var(--np-ink-mid);margin-top:5px;word-break:break-all;padding:0 8px;text-align:center;line-height:1.4;font-family:'DM Mono',monospace;"></div>
+      <div class="lobby-link-display" id="lobby-link-display"></div>
       <button id="btn-copy-link" onclick="App.copyLink()">
         🔗 Copiar enlace de invitación
       </button>
@@ -345,7 +346,7 @@
       <div class="lobby-players-list" id="lobby-players-list"></div>
     </div>
 
-    <div id="lobby-mode-badge" style="display:none;font-family:'DM Mono',monospace;font-size:.65rem;color:var(--np-ink-mid);text-align:center;letter-spacing:0.12em;text-transform:uppercase;"></div>
+    <div class="lobby-mode-badge" id="lobby-mode-badge" style="display:none;"></div>
 
     <!-- Panel ajustes partida privada -->
     <div id="lobby-settings" style="display:none;">

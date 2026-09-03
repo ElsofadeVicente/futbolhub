@@ -26,7 +26,6 @@ const BlackjackGame = (() => {
   const CARD_TIMER_SECS  = 8;
   const REVEAL_CARD_MS   = 1800;   // ms entre cada carta en el reveal
   const REVEAL_DELAY_MS  = 600;    // pausa antes de empezar el reveal
-  const BUST_PAUSE_MS    = 1100;   // pausa al pasarte del objetivo antes de mostrar la siguiente carta
 
   /* ═══════════════════════════════════════════
      ESTADO GLOBAL
@@ -142,8 +141,6 @@ const BlackjackGame = (() => {
     state.currentCardIdx = 0;
 
     // Limpiar UI de la ronda anterior
-    const bustEl = document.getElementById('bust-indicator');
-    if (bustEl) bustEl.classList.add('hidden');
     const nextBtn = document.getElementById('btn-next-round');
     if (nextBtn) nextBtn.classList.add('hidden');
 
@@ -168,25 +165,15 @@ const BlackjackGame = (() => {
     h.picked.push(h.cardOrder[state.currentCardIdx]);
     h.total += card._value;
 
-    const justBusted = h.total > state.objective && !h.bust;
-    if (justBusted) {
-      h.bust = true;
-      _showBustIndicator(h.total);
-    }
-
-    if (justBusted) {
-      // Pausa para que se vea el aviso de "te has pasado" en vez de saltar
-      // a la siguiente carta en el mismo instante en que aparece.
-      const btnAdd     = document.getElementById('btn-add');
-      const btnDiscard = document.getElementById('btn-discard');
-      const btnStand   = document.getElementById('btn-stand');
-      if (btnAdd)     btnAdd.disabled     = true;
-      if (btnDiscard) btnDiscard.disabled = true;
-      if (btnStand)   btnStand.disabled   = true;
-      _setTimeout(() => _advanceCard(h), BUST_PAUSE_MS);
-    } else {
-      _advanceCard(h);
-    }
+    /* Pasarse se apunta en h.bust (lo necesita el recuento del reveal) pero NO
+       se dice en pantalla, por decision del usuario (2026-09-03): aqui la
+       gracia es que el valor real de las cartas no se ve hasta plantarse, y
+       un cartel de "TE HAS PASADO" en cuanto ocurria destripaba la ronda entera
+       y quitaba toda la tension. Antes ademas se congelaban los tres botones
+       1,1 s solo para que diera tiempo a leerlo; ahora la partida sigue sin
+       interrupcion y cada uno se entera al revelar, como los demas. */
+    if (h.total > state.objective) h.bust = true;
+    _advanceCard(h);
   }
 
   /* ── Descartar carta ── */
@@ -484,8 +471,9 @@ const BlackjackGame = (() => {
 
     if (btnAdd)    btnAdd.disabled    = false;
     if (btnDiscard) btnDiscard.disabled = false;
-    // Stand solo disponible si no bust y tiene algo acumulado
-    // Stand disponible si tiene algo acumulado (aunque se haya pasado)
+    /* Plantarse sigue disponible aunque te hayas pasado, y es importante que
+       siga asi: si el boton se apagara al pasarte, apagarlo YA SERIA el aviso
+       que se acaba de quitar. Solo se bloquea con la mano vacia. */
     if (btnStand)  btnStand.disabled = h.total === 0;
   }
 
@@ -627,16 +615,6 @@ const BlackjackGame = (() => {
     `;
   }
 
-  function _showBustIndicator(total) {
-    const el = document.getElementById('bust-indicator');
-    if (!el) return;
-    const shown = (typeof BlackjackSets !== 'undefined' && BlackjackSets.formatValue)
-      ? BlackjackSets.formatValue(total, state.mode)
-      : total;
-    el.textContent = `¡TE HAS PASADO! (${shown})`;
-    el.classList.remove('hidden');
-  }
-
   /* ═══════════════════════════════════════════
      UI — REVEAL
      ═══════════════════════════════════════════ */
@@ -748,33 +726,31 @@ const BlackjackGame = (() => {
     if (objEl) objEl.textContent = BlackjackSets.formatObjective(state.objective, state.mode);
   }
 
+  /* El marcador lleva ademas quien ha terminado ya su jugada y quien sigue
+     eligiendo. Eso lo decia antes una fila aparte de avatares
+     (#opponent-activity) que repetia exactamente los mismos jugadores que este
+     marcador: dos representaciones de lo mismo en una barra que en un movil ya
+     iba justa. Ahora es un estado de la propia columna (css/barra-partida.css:
+     .pensando parpadea, .listo se pone en rojo). */
   function _updateScoreboard() {
     const sb = document.getElementById('scoreboard');
     if (!sb) return;
-    sb.innerHTML = state.players.map(p =>
-      `<div class="sb-player">
+    const enJuego = state.phase === 'selecting';
+    sb.innerHTML = state.players.map(p => {
+      const h = state.hands[p.id];
+      const yo = p.id === state.myPlayerId;
+      let estado = '';
+      if (enJuego && !yo) estado = (h && (h.standing || h.doneAt)) ? ' listo' : ' pensando';
+      return `<div class="sb-player${yo ? ' me' : ''}${estado}" title="${escapeHtml(p.name)}">
         <span class="sb-name">${escapeHtml(p.name)}</span>
         <span class="sb-score">${p.score}</span>
-      </div>`
-    ).join('');
+      </div>`;
+    }).join('');
   }
 
-  function _updateOpponentActivity() {
-    const container = document.getElementById('opponent-activity');
-    if (!container) return;
-    container.innerHTML = state.players
-      .filter(p => p.id !== state.myPlayerId)
-      .map(p => {
-        const h = state.hands[p.id];
-        const done = h && (h.standing || h.doneAt);
-        const inner = (window.FHAuth && FHAuth.avatarInner)
-          ? FHAuth.avatarInner(p.name, p.avatar)
-          : escapeHtml(p.name.charAt(0).toUpperCase());
-        return `<div class="opp-avatar ${done ? 'opp-done' : 'opp-thinking'}" title="${escapeHtml(p.name)}">
-          ${inner}
-        </div>`;
-      }).join('');
-  }
+  /* Se conserva el nombre porque lo llaman varios sitios del ciclo de ronda:
+     ahora solo repinta el marcador, que es donde vive ese estado. */
+  function _updateOpponentActivity() { _updateScoreboard(); }
 
   /* ── Cambiar pantalla activa ── */
   function _showPhase(phase) {

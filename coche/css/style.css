@@ -250,82 +250,10 @@ a      { text-decoration: none; }
 /* ═══════════════════════════════════════════
    LOBBY
    ═══════════════════════════════════════════ */
-#screen-lobby {
-  justify-content: center; padding: 60px 20px 24px; gap: 14px;
-}
-.lobby-wrap {
-  width: 100%; max-width: 500px;
-  display: flex; flex-direction: column; gap: 12px; align-items: center;
-  padding: 18px;
-  border: 2px solid var(--bd-c, var(--np-ink));
-  background: var(--np-paper2);
-  box-shadow: var(--shadow);
-}
-.lobby-code-card {
-  width: 100%;
-  background: var(--np-paper);
-  border: 1.5px solid var(--bd-c, var(--np-ink));
-  padding: 18px 22px; text-align: center;
-  display: flex; flex-direction: column; align-items: center;
-  box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-}
-.lobby-code-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.62rem; letter-spacing: 0.28em; color: var(--np-ink-mid);
-  text-transform: uppercase; margin-bottom: 6px;
-}
-.lobby-code-big {
-  font-family: 'Anton', sans-serif; font-size: 2.8rem; letter-spacing: 12px;
-  color: var(--np-red);
-}
-.lobby-players-list { width:100%; display:flex; flex-direction:column; gap:5px; }
-.lobby-player-row {
-  background: var(--np-paper);
-  border: 1px solid var(--np-ink-soft);
-  border-left: 3px solid var(--bd-c, var(--np-ink));
-  padding: 10px 14px;
-  display: flex; align-items: center; gap: 10px; font-weight: 600;
-}
-.lobby-player-avatar {
-  width:28px; height:28px;
-  background: var(--np-paper3); border: 1.5px solid var(--bd-c, var(--np-ink));
-  display:flex; align-items:center; justify-content:center;
-  font-family: 'DM Mono', monospace;
-  font-size:.75rem; font-weight:700; color: var(--np-ink); flex-shrink:0;
-  /* Círculo con la foto recortada al centro: overflow oculto para que la
-     imagen no se salga del círculo, y object-fit:cover en el <img> para
-     que llene sin deformarse (mismo criterio que las redes sociales). */
-  border-radius:50%;
-  overflow:hidden;
-}
-.lobby-player-avatar img {
-  width:100%; height:100%;
-  object-fit:cover; object-position:center;
-  display:block; border-radius:50%;
-}
-.lobby-player-name { flex:1; font-size:0.95rem; color: var(--np-ink); }
-/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
-.lobby-section { width:100%; }
-.lobby-section-kicker {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.62rem; letter-spacing: 0.22em; color: var(--np-red);
-  text-transform: uppercase; margin-bottom: 8px;
-}
-.lobby-hint {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.68rem; color: var(--np-ink-mid);
-  text-align: center; letter-spacing: 0.1em; line-height: 1.5;
-}
-
-/* Timer lobby público */
-.lobby-autotimer { width:100%; margin-top:4px; padding:10px 12px; background:var(--np-paper3); border:1px solid var(--np-ink-soft); }
-.lobby-autotimer.hidden { display:none; }
-.lobby-autotimer-bar-wrap { width:100%; height:2px; background:var(--np-ink-soft); overflow:hidden; margin-bottom:8px; }
-.lobby-autotimer-bar { height:100%; width:100%; background:var(--np-red); transition:width 1s linear; }
-.lobby-autotimer-bar.urgent { background:var(--np-ink); }
-.lobby-autotimer-text { display:flex; justify-content:space-between; align-items:center; font-family:'DM Mono',monospace; font-size:0.62rem; letter-spacing:0.14em; color:var(--np-ink-mid); text-transform:uppercase; }
-.lobby-autotimer-count { font-family:'Anton',sans-serif; font-size:1.2rem; letter-spacing:3px; color:var(--np-red); transition:color 0.8s; }
-.lobby-autotimer-count.urgent { color:var(--np-ink); }
+/* La caja de la sala (marco, tarjeta del codigo, enlace, filas de jugador,
+   pista y cuenta atras de la sala publica) vive ahora en css/sala.css, una
+   sola vez para los seis juegos con sala. Aqui se queda solo lo que es de
+   Coche: el panel de ajustes de partida. */
 
 /* Ajustes lobby */
 .lobby-settings {
@@ -360,38 +288,19 @@ a      { text-decoration: none; }
    impedía al tema Moderno convertirlo en píldora de cristal como al resto de
    botones secundarios. */
 
-#lobby-link-display { font-family:'DM Mono',monospace !important; font-size:0.58rem !important; color:var(--np-ink-mid) !important; opacity:1 !important; }
-#lobby-mode-badge   { font-family:'DM Mono',monospace !important; font-size:0.62rem !important; color:var(--np-ink-mid) !important; opacity:1 !important; letter-spacing:0.12em !important; text-transform:uppercase !important; }
+/* #lobby-link-display y #lobby-mode-badge estaban aqui como reglas de ID con
+   !important, o sea que le habrian ganado a la definicion compartida de
+   css/sala.css y Coche habria seguido siendo el unico distinto. Ahora usan
+   .lobby-link-display / .lobby-mode-badge como los otros cinco. */
 
 /* ═══════════════════════════════════════════
    PANTALLA DE RONDA
    ═══════════════════════════════════════════ */
 #screen-round { padding: 0; }
 
-.round-topbar {
-  width:100%; background: var(--np-ink);
-  border-bottom: 2px solid rgba(var(--np-ink-rgb, 15,18,14), 0.9);
-  padding: 10px 18px; display:flex; align-items:center; justify-content:space-between; gap:10px;
-  flex-shrink:0; position:sticky; top:0; z-index:10;
-  /* El círculo de la cuenta flota fijo arriba a la derecha (42px + 14px de
-     margen). Le reservamos ese hueco para que no tape el temporizador, que
-     en móvil se coloca justo ahí. Mismo criterio que .masthead-edition. */
-  padding-right: 62px;
-}
-.round-label {
-  font-family: 'DM Mono', monospace; font-size:0.68rem; letter-spacing:0.22em;
-  color: rgba(var(--np-paper-rgb, 244,234,210), 0.65); white-space:nowrap; text-transform:uppercase;
-}
-.round-timer-block { display:flex; flex-direction:column; align-items:center; gap:3px; }
-.round-timer {
-  font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:2px; line-height:1;
-  color: var(--np-paper); transition:color .3s;
-}
-.round-timer.urgent { color: var(--np-red); animation:tPulse .6s infinite alternate; }
-@keyframes tPulse { from{opacity:1}to{opacity:.4} }
-.round-timer-bar-wrap { width:54px; height:2px; background:rgba(var(--np-paper-rgb, 244,234,210), 0.15); overflow:hidden; }
-.round-timer-bar { height:100%; background:var(--np-paper); width:100%; transition:width 1s linear, background .4s; }
-.round-timer-bar.urgent { background:var(--np-red); }
+/* La barra de partida (fondo oscuro, rotulo, cronometro y marcador) vive en
+   css/barra-partida.css, compartida con Blackjack. Aqui solo se queda lo
+   que es de Coche: donde se ancla el circulo de perfil. */
 
 /* #screen-round no tiene .fh-volver (no se sale de una ronda a mitad
    partida): js/cabecera.js le crea una fila suelta (.fh-cabecera--suelta)
@@ -408,17 +317,6 @@ a      { text-decoration: none; }
   z-index: 20;
 }
 
-.round-scoreboard { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
-.sb-player { display:flex; flex-direction:column; align-items:center; }
-/* width:3ch se queda corto para 3 caracteres: el letter-spacing añade
-   espacio DESPUÉS de cada uno (también el último, que cuenta para
-   overflow:hidden aunque visualmente sea aire vacío), así que "VIC" se
-   recortaba a "VI" y una uña de "C". Medido: scrollWidth 20px contra
-   clientWidth 17px con 3 caracteres a este tamaño — de ahí el +3px. */
-.sb-name { font-family:'DM Mono',monospace; font-size:.58rem; letter-spacing:1px; color:rgba(var(--np-paper-rgb, 244,234,210), 0.52); text-transform:uppercase; width:calc(3ch + 3px); max-width:calc(3ch + 3px); overflow:hidden; white-space:nowrap; text-overflow:clip; }
-.sb-score { font-family:'Anton',sans-serif; font-size:1.4rem; letter-spacing:1px; color:var(--np-paper); line-height:1; }
-.sb-player.me .sb-name  { color:rgba(var(--np-paper-rgb, 244,234,210), 0.9); }
-.sb-player.me .sb-score { color:var(--np-paper); }
 
 .round-main { width:100%; display:flex; flex-direction:column; gap:14px; padding:16px; flex:1; background:var(--np-paper); }
 
@@ -656,23 +554,14 @@ a      { text-decoration: none; }
 /* ═══════════════════════════════════════════
    CUENTA ATRÁS — solo colores, resto intacto
    ═══════════════════════════════════════════ */
-.countdown-overlay { position:fixed; inset:0; height:100dvh; z-index:9999; background:var(--np-paper); display:flex; align-items:center; justify-content:center; }
-.countdown-overlay.hidden { display:none; }
-/* Bug móvil: además del overlay, ocultamos por completo el área de
-   enviar/input mientras la cuenta atrás está activa. Así, aunque en algún
-   navegador móvil el overlay no cubra el 100% del viewport visible (barra
-   de direcciones dinámica, etc.), el botón de enviar nunca queda visible
-   ni pulsable por debajo de la pantalla de carga. */
+/* La cuenta atras de los 10 segundos vive en css/cuenta-atras.css, una sola
+   definicion para Coche, Blackjack y En la Cadena. */
+
+/* Bug movil: ademas del overlay, se oculta por completo el area de enviar
+   mientras la cuenta atras esta activa. Asi, aunque en algun navegador movil
+   el overlay no cubra el 100% del viewport visible (barra de direcciones
+   dinamica), el boton de enviar nunca queda visible ni pulsable debajo. */
 body.countdown-active .input-section { display:none !important; }
-.countdown-inner { text-align:center; }
-.countdown-label { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:6px; color: var(--np-ink-flip, #000000); margin-bottom:16px; }
-.countdown-number { font-family:'Bebas Neue',sans-serif; font-size:14rem; line-height:1; color:var(--np-ink); text-shadow:none; animation:cPulse 1s ease-in-out infinite; }
-@keyframes cPulse { 0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.85} }
-.countdown-progress-wrap { width:220px; height:2px; background:var(--np-ink-soft); overflow:hidden; margin:18px auto 0; }
-.countdown-progress-bar { height:100%; width:0%; background:var(--np-red); transition:width .4s ease, background .4s; }
-.countdown-progress-bar.done { background:var(--np-ink); width:100%; }
-.countdown-loading-text { font-size:.8rem; letter-spacing:2px; color:var(--np-ink-mid); opacity:.7; text-transform:uppercase; margin-top:12px; transition:opacity .3s; }
-.countdown-loading-text.ready { color:var(--np-red); opacity:1; }
 
 /* ═══════════════════════════════════════════
    TOAST
@@ -694,12 +583,6 @@ body.countdown-active .input-section { display:none !important; }
    RESPONSIVE
    ═══════════════════════════════════════════ */
 @media(max-width:700px){
-  .round-topbar{ display:grid; grid-template-columns:auto 1fr; grid-template-areas:"round timer" "score score"; align-items:center; gap:8px 10px; padding:10px 14px; padding-right:56px; }
-  .round-label{grid-area:round}
-  .round-timer-block{grid-area:timer;justify-self:end}
-  .round-scoreboard{ grid-area:score; justify-content:flex-start; gap:8px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; scrollbar-width:none; }
-  .round-scoreboard::-webkit-scrollbar{display:none}
-  .sb-player{ min-width:42px; padding:4px 6px; background:rgba(var(--np-paper-rgb, 244,234,210), 0.07); border:1px solid rgba(var(--np-paper-rgb, 244,234,210), 0.14); flex-shrink:0; }
   .round-main{gap:10px;padding:12px}
   .round-panel{padding:12px;}
   .round-panel.compact{padding:8px}
@@ -727,15 +610,11 @@ body.countdown-active .input-section { display:none !important; }
   .btn-submit{height:44px;padding:0 12px;font-size:.72rem;letter-spacing:0.12em;}
 }
 @media(max-width:480px){
-  .round-timer{font-size:1.8rem}
-  .sb-name{width:calc(3ch + 3px);max-width:calc(3ch + 3px);font-size:.52rem}
-  .sb-score{font-size:1.2rem}
   .result-footballer-row{flex-direction:column}
   .result-main-block{width:100%}
   .result-restrictions{min-width:0;max-width:none;width:100%}
 }
 @media(max-width:420px){
-  .round-topbar{padding:8px 10px; padding-right:52px}   /* hueco del círculo de cuenta */
   .round-main{padding:10px}
   .restrictions-grid{gap:5px}
   .restriction-card{padding:8px 4px;}

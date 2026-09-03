@@ -258,41 +258,14 @@ a      { text-decoration: none; }
 .error-msg { color: var(--np-red); font-family: 'DM Mono', monospace; font-size: 0.78rem; text-align: center; letter-spacing: 0.04em; }
 
 /* ── LOBBY ────────────────────────────────── */
-.lobby-container {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; gap: 24px; max-width: 480px; width: 100%; margin: 0 auto;
-  padding-top: 40px;
-}
-.room-code-display {
-  background: var(--np-paper2); border: 2px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0); padding: 20px 32px; text-align: center; width: 100%;
-  box-shadow: var(--shadow);
-}
-.room-label { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.2em; color: var(--np-ink-mid); margin-bottom: 8px; text-transform: uppercase; }
-.room-code { font-family: 'Anton', sans-serif; font-size: 3rem; letter-spacing: 0.2em; color: var(--np-red); }
-.copy-btn {
-  margin-top: 10px; background: transparent; border: 1px solid var(--bd-c, var(--np-ink));
-  color: var(--np-ink); border-radius: var(--r-md, 0); padding: 6px 16px;
-  cursor: pointer; font-family: 'DM Mono', monospace; font-weight: 500;
-  font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; transition: background 0.15s, color 0.15s;
-}
-.copy-btn:hover { background: var(--np-ink); color: var(--np-paper); }
-.lobby-players { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-.lobby-player-item {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--np-paper2); border-radius: var(--r-md, 0); padding: 9px 12px;
-  border: 1px solid var(--np-ink-soft);
-}
-.lobby-player-avatar {
-  width: 26px; height: 26px; border-radius: var(--r-md, 0);
-  background: var(--np-ink); color: var(--np-paper);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Anton', sans-serif; font-size: 0.8rem; flex-shrink: 0;
-}
-.lobby-player-name { flex: 1; font-family: 'DM Mono', monospace; font-weight: 500; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--np-ink); text-transform: uppercase; }
-/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
-.lobby-mode { font-size: 0.78rem; font-family: 'DM Mono', monospace; color: var(--np-ink-mid); }
-.lobby-hint { font-size: 0.7rem; font-family: 'DM Mono', monospace; color: var(--np-ink-mid); text-align: center; max-width: 280px; letter-spacing: 0.04em; }
+/* En la Cadena era la unica sala que no usaba NINGUNA de las clases comunes:
+   .lobby-container en vez de .lobby-wrap, .lobby-share-card en vez de
+   .lobby-code-card, .lobby-players en vez de .lobby-players-list y
+   .lobby-player-item en vez de .lobby-player-row. O sea, la misma pantalla
+   escrita otra vez entera, y por eso no se parecia a las otras cinco. Ahora
+   usa el marcado canonico y su estilo sale entero de css/sala.css.
+   .room-code-display / .room-label / .room-code / .copy-btn eran de una
+   version anterior de esta pantalla: ya no los usaba ningun elemento. */
 
 /* ── PANTALLA DE JUEGO ────────────────────── */
 
@@ -507,38 +480,13 @@ a      { text-decoration: none; }
 .toast.success { background: var(--np-ink); box-shadow: 3px 3px 0 var(--correct); }
 .toast.warning { background: var(--np-paper3); color: var(--np-ink); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
 
-/* ── OVERLAY CUENTA ATRÁS — solo colores, tipografía intacta ── */
-.countdown-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: var(--np-paper);
-  display: flex; align-items: center; justify-content: center;
-}
-.countdown-overlay.hidden { display: none; }
-.countdown-inner { text-align: center; }
-.countdown-label {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.8rem; letter-spacing: 6px;
-  color: var(--np-ink-mid);
-  margin-bottom: 16px;
-}
-.countdown-number {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 14rem; line-height: 1;
-  color: var(--np-ink);
-  text-shadow: none;
-  animation: countPulse 1s ease-in-out infinite;
-}
-@keyframes countPulse {
-  0%   { transform: scale(1);    opacity: 1; }
-  50%  { transform: scale(1.06); opacity: 0.85; }
-  100% { transform: scale(1);    opacity: 1; }
-}
+/* La cuenta atras de los 10 segundos vive en css/cuenta-atras.css, una sola
+   definicion para Coche, Blackjack y En la Cadena. */
 
 /* ── RESPONSIVE ───────────────────────────── */
 @media (max-width: 400px) {
   .mode-cards { flex-direction: column; }
   .logo-title { font-size: 2.4rem; }
-  .room-code { font-size: 2.4rem; letter-spacing: 0.15em; }
 }
 
 /* ── ONLINE INLINE JOIN ───────────────────── */
@@ -670,59 +618,7 @@ a      { text-decoration: none; }
 }
 
 /* ── LOBBY MEJORADO — usa componentes compartidos (patrón blackjack/coche) ── */
-.lobby-share-card,
-.lobby-code-card {
-  background: var(--np-paper2);
-  border: 2px solid var(--bd-c, var(--np-ink));
-  border-radius: var(--r-md, 0); padding: 16px 20px 14px;
-  text-align: center; margin-bottom: 0;
-  box-shadow: var(--sh-x,5px) var(--sh-y,5px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  width: 100%;
-}
-.lobby-code-label {
-  font-family: 'DM Mono', monospace; font-weight: 500; font-size: 0.6rem;
-  color: var(--np-ink-mid); letter-spacing: 0.34em; opacity: 1; margin-bottom: 8px;
-  text-transform: uppercase; display: block;
-}
-.lobby-code-big {
-  font-family: 'Anton', sans-serif; font-size: 3rem;
-  color: var(--np-red); letter-spacing: 0.24em;
-  line-height: 1;
-}
-.lobby-share-link-wrap {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--np-paper); border: 1px solid var(--np-ink-soft); border-radius: var(--r-md, 0);
-  padding: 8px 12px; margin-top: 14px;
-}
-.lobby-share-link {
-  flex: 1; font-family: 'DM Mono', monospace; font-size: 0.68rem;
-  color: var(--np-ink-mid); opacity: 1;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  text-align: left;
-}
-/* El icono 📋 suelto (.lobby-copy-btn) se sustituyó por el mismo
-   #btn-copy-link que usan las otras cinco salas; ver css/sala.css. */
-
-/* Lista de jugadores del lobby (patrón compartido lobby-players-list) */
-.lobby-players-list,
-.lobby-players {
-  width: 100%; display: flex; flex-direction: column; gap: 5px;
-}
-.lobby-player-row {
-  background: var(--np-paper2); border: 1px solid var(--np-ink-soft);
-  border-left: 3px solid var(--bd-c, var(--np-ink));
-  padding: 9px 12px; display: flex; align-items: center; gap: 10px;
-  font-family: 'DM Mono', monospace; font-size: 0.72rem;
-  letter-spacing: 0.05em; color: var(--np-ink); text-transform: uppercase;
-}
-
-/* Autotimer (patrón compartido) */
-.lobby-autotimer { width: 100%; margin-top: 4px; padding: 10px 12px; background: var(--np-paper3); border: 1px solid var(--np-ink-soft); }
-.lobby-autotimer.hidden { display: none; }
-.lobby-autotimer-bar-wrap { width: 100%; height: 2px; background: var(--np-ink-soft); overflow: hidden; margin-bottom: 8px; }
-.lobby-autotimer-bar { height: 100%; width: 100%; background: var(--np-red); transition: width 1s linear; }
-.lobby-autotimer-bar.urgent { background: var(--np-ink); }
-.lobby-autotimer-text { display: flex; justify-content: space-between; align-items: center; font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; color: var(--np-ink-mid); text-transform: uppercase; }
-.lobby-autotimer-count { font-family: 'Anton', sans-serif; font-size: 1.2rem; letter-spacing: 3px; color: var(--np-red); transition: color 0.8s; }
-.lobby-autotimer-count.urgent { color: var(--np-ink); }
+/* La caja de la sala (marco, codigo, enlace, filas de jugador y cuenta atras
+   de la sala publica) vive en css/sala.css, una sola vez para los seis
+   juegos con sala. */
 

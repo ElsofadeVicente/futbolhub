@@ -581,7 +581,7 @@ const App = (() => {
     }
 
     // Mostrar enlace completo a la sala (solo privadas)
-    const linkEl = document.getElementById('lobby-code-link-display');
+    const linkEl = document.getElementById('lobby-link-display');
     if (linkEl) {
       const base = window.location.origin + window.location.pathname;
       linkEl.textContent = _isPublic ? '' : `${base}?sala=${_roomCode}`;
@@ -789,7 +789,7 @@ const App = (() => {
     if (!activeScreen || activeScreen.id !== 'screen-lobby') {
       _showScreen('screen-lobby');
       document.getElementById('lobby-code-display').textContent = _roomCode;
-      const linkEl = document.getElementById('lobby-code-link-display');
+      const linkEl = document.getElementById('lobby-link-display');
       if (linkEl) {
         const base = window.location.origin + window.location.pathname;
         linkEl.textContent = _isPublic ? '' : `${base}?sala=${_roomCode}`;

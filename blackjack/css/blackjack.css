@@ -18,6 +18,17 @@
 }
 
 /* ── Fondo: papel + grano + líneas de columna ── */
+/* Reset de modelo de caja, el mismo que traen las otras 12 hojas de juego.
+   Blackjack era la unica sin el, y no era cosmetico: con `content-box`,
+   `.selecting-body` (width:100% + max-width:420 + 16px de padding) medía 407px
+   dentro de un movil de 375 y, como #screen-selecting es overflow:hidden, se
+   comia 32px por la derecha SIN barra de scroll que lo delatara — el circulo
+   de perfil salia cortado por la mitad y el boton ANADIR sin su borde. Lo
+   mismo en .reveal-header. Medido antes y despues en 375 y en 1400: 12
+   desbordes a 0, y en escritorio solo cambian los tres contenedores que ahora
+   meten su padding dentro del ancho declarado, que es lo correcto. */
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -176,9 +187,8 @@ body {
 .menu-panel.active { display: flex; flex-direction: column; gap: 9px; }
 
 .menu-input {
-  /* Sin esto el campo mide 100% MAS los 24px de padding y los 3 de borde, y
-     se sale 7px de la pantalla en un movil: blackjack.css no trae un
-     box-sizing global como el resto de hojas del proyecto. */
+  /* Redundante desde que la hoja trae el reset global de arriba; se deja por
+     si algun dia se acota ese reset. */
   box-sizing: border-box;
   background: var(--np-paper2); border: 1.5px solid var(--bd-c, var(--np-ink));
   border-radius: var(--r-md, 0); padding: 10px 12px; color: var(--np-ink);
@@ -231,179 +241,35 @@ body {
 /* ══════════════════════════════════════════════
    LOBBY
    ══════════════════════════════════════════════ */
-#screen-lobby { justify-content: center; padding: 24px 20px; gap: 14px; }
-
-/* Lobby con el mismo tratamiento que Coche: todo dentro de un marco de
-   periódico (borde + sombra dura), para que los dos juegos se lean igual. */
-.lobby-wrap {
-  width: 100%; max-width: 460px;
-  display: flex; flex-direction: column; gap: 12px;
-  align-items: center; justify-content: center;
-  margin: 20px auto; padding: 18px;
-  border: 2px solid var(--bd-c, var(--np-ink));
-  background: var(--np-paper2);
-  box-shadow: var(--sh-x,5px) var(--sh-y,5px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-}
-
-.lobby-code-card {
-  width: 100%; background: var(--np-paper);
-  border: 1.5px solid var(--bd-c, var(--np-ink)); padding: 18px 22px;
-  text-align: center; box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-  display: flex; flex-direction: column; align-items: center;
-}
-
-.lobby-code-label {
-  font-family: 'DM Mono', monospace; font-size: 0.62rem;
-  letter-spacing: 0.28em; color: var(--np-ink-mid);
-  text-transform: uppercase; margin-bottom: 6px; display: block;
-}
-
-.lobby-code-big {
-  font-family: 'Anton', sans-serif; font-size: 2.8rem;
-  letter-spacing: 0.28em; color: var(--np-red); line-height: 1;
-}
-
-.lobby-link-display {
-  font-family: 'DM Mono', monospace; font-size: 0.68rem;
-  color: var(--np-ink-mid); margin-top: 5px; word-break: break-all;
-  padding: 0 8px; text-align: center; line-height: 1.4;
-}
-
-/* #btn-copy-link vive ahora en css/sala.css, una sola vez para las seis salas. */
-
-.lobby-section { width: 100%; }
-.lobby-section-kicker {
-  font-family: 'DM Mono', monospace; font-size: 0.62rem;
-  letter-spacing: 0.22em; color: var(--np-red);
-  text-transform: uppercase; margin-bottom: 8px;
-}
-
-.lobby-players-list {
-  width: 100%; display: flex; flex-direction: column; gap: 5px;
-}
-
-.lobby-player-row {
-  background: var(--np-paper);
-  border: 1px solid var(--np-ink-soft);
-  border-left: 3px solid var(--bd-c, var(--np-ink));
-  padding: 10px 14px; display: flex; align-items: center; gap: 10px;
-  font-family: 'DM Mono', monospace; font-size: 0.72rem;
-  letter-spacing: 0.07em; color: var(--np-ink); text-transform: uppercase;
-}
-
-.lobby-player-avatar {
-  width: 28px; height: 28px;
-  background: var(--np-paper3); border: 1.5px solid var(--bd-c, var(--np-ink));
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Anton', sans-serif; font-size: 0.8rem;
-  color: var(--np-ink); flex-shrink: 0;
-  /* Círculo con la foto recortada al centro: overflow oculto para que la
-     imagen no se salga del círculo, y object-fit:cover en el <img> para
-     que llene sin deformarse (mismo criterio que las redes sociales). */
-  border-radius: 50%;
-  overflow: hidden;
-}
-.lobby-player-avatar img {
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center;
-  display: block; border-radius: 50%;
-}
-
-.lobby-player-name { flex: 1; color: var(--np-ink); }
-/* .lobby-player-host y .lobby-player-you: definición única en css/sala.css. */
-
-.lobby-mode-badge {
-  font-family: 'DM Mono', monospace; font-size: 0.65rem;
-  color: var(--np-ink-mid); text-align: center;
-  letter-spacing: 0.12em; text-transform: uppercase;
-}
-
-/* Badge de sala pública: texto pequeño debajo de los jugadores, idéntico al
-   de Coche (lobby-mode-badge). */
-.lobby-public-badge {
-  font-family: 'DM Mono', monospace; font-size: 0.65rem;
-  color: var(--np-ink-mid); text-align: center;
-  letter-spacing: 0.12em; text-transform: uppercase;
-}
-
-.lobby-hint {
-  font-family: 'DM Mono', monospace; font-size: 0.68rem;
-  color: var(--np-ink-mid); text-align: center;
-  letter-spacing: 0.1em; line-height: 1.5;
-}
+/* Toda la caja de la sala vive en css/sala.css, una sola definicion para los
+   seis juegos con sala. Blackjack ya la tenia casi igual que Coche, pero con
+   el marco a 460px, el codigo con otra separacion de letra y el nombre del
+   jugador en DM Mono en mayusculas donde Coche lo pone en texto normal. */
 
 /* ══════════════════════════════════════════════
    BARRA SUPERIOR DE PARTIDA
+   Toda la barra (fondo oscuro, objetivo, cronómetro y marcador) vive ahora en
+   css/barra-partida.css, compartida con Coche: la misma pieza se pinta igual
+   en los dos juegos. Antes esta era clara, tenía a los rivales en una fila de
+   avatares aparte que repetía los mismos jugadores que el marcador, y el
+   cronómetro NO estaba aquí — estaba suelto encima de la carta, así que en un
+   móvil la misma información salía repartida en dos sitios.
    ══════════════════════════════════════════════ */
-.game-topbar {
-  width: 100%; background: var(--np-paper2);
-  border-bottom: 2px solid var(--bd-c, var(--np-ink));
-  padding: 5px 16px;
-  /* Grid de 3 columnas: rivales | OBJETIVO | puntuación */
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  position: sticky; top: 0; z-index: 10;
-}
-/* Sin esta regla, la barra "Objetivo" se veía siempre (incl. en el menú),
-   porque la clase .hidden que añade/quita blackjack-app.js no tenía
-   ningún efecto sobre .game-topbar. */
+
+/* Sin esta regla, la barra se veía siempre (incl. en el menú), porque la clase
+   .hidden que añade/quita blackjack-app.js no tenía ningún efecto sobre ella. */
 .game-topbar.hidden { display: none; }
 
-/* Objetivo centrado — columna 2 */
-.topbar-objective {
-  grid-column: 2; grid-row: 1;
-  display: flex; flex-direction: column; align-items: center; gap: 0;
-  text-align: center;
-}
+/* En Coche el círculo de perfil se queda fijo arriba a la derecha y la barra le
+   reserva 62px. Aquí no hace falta: estas pantallas sí tienen botón de Salir,
+   así que js/cabecera.js monta su fila (Salir + círculo) dentro de la pantalla,
+   en el flujo y debajo de la barra. Sin quitar la reserva quedarían 62px de
+   aire muerto a la derecha del marcador. Va por #id para ganarle a la clase. */
+#game-topbar { padding-right: 18px; }
+@media (max-width: 700px) { #game-topbar { padding-right: 14px; } }
+@media (max-width: 420px) { #game-topbar { padding-right: 10px; } }
 
-.topbar-obj-label {
-  font-family: 'DM Mono', monospace; font-size: 0.55rem;
-  letter-spacing: 0.30em; color: var(--np-ink-mid); text-transform: uppercase;
-}
-
-/* OBJETIVO grande y prominente */
-.topbar-obj-value {
-  font-family: 'Anton', sans-serif;
-  font-size: clamp(1.2rem, 2.8vw, 2rem);
-  letter-spacing: 2px; color: var(--np-red); line-height: 1;
-}
-
-/* Scoreboard a la derecha — columna 3 */
-.topbar-scoreboard {
-  grid-column: 3; grid-row: 1;
-  display: flex; gap: 10px; flex-wrap: wrap;
-  justify-content: flex-end; align-items: center;
-}
-
-.sb-player { display: flex; flex-direction: column; align-items: center; }
-.sb-name {
-  font-family: 'DM Mono', monospace; font-size: 0.52rem;
-  letter-spacing: 0.06em; color: var(--np-ink-mid); text-transform: uppercase;
-  max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.sb-score {
-  font-family: 'Anton', sans-serif; font-size: 1.4rem;
-  letter-spacing: 1px; color: var(--np-red); line-height: 1;
-}
-
-.opponent-activity {
-  grid-column: 1; grid-row: 1;
-  display: flex; gap: 5px; align-items: center;
-}
-.opp-avatar {
-  width: 26px; height: 26px; display: flex; align-items: center;
-  justify-content: center; font-family: 'Anton', sans-serif;
-  font-size: 0.7rem; border: 1.5px solid; transition: all 0.3s;
-}
-.opp-thinking {
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.05); border-color: var(--np-ink-soft); color: var(--np-ink);
-  animation: avatarPulse 1.2s ease-in-out infinite;
-}
-.opp-done { background: rgba(181,34,30,0.10); border-color: var(--np-red); color: var(--np-red); }
-
+/* avatarPulse lo sigue usando el punto de .waiting-player-chip. */
 @keyframes avatarPulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.35; }
@@ -452,25 +318,27 @@ body {
   width: 100%; max-width: 420px; margin: 0 auto;
 }
 
-.card-timer-wrap {
-  width: 100%; height: 5px; background: var(--np-ink-soft); overflow: hidden;
-}
-.card-timer-bar {
-  height: 100%; width: 100%; background: var(--np-red);
-  transition: width 0.1s linear, background 0.3s;
-}
-.card-timer-bar.warning { background: var(--np-ink); }
+/* El boton de Salir y el circulo de perfil (la fila que monta js/cabecera.js)
+   son el PRIMER hijo de .selecting-body, y como esta centraba verticalmente su
+   contenido acababan flotando a media pantalla, encima de la carta y lejos del
+   borde de arriba. Ahora la pantalla se apila desde arriba y lo que se centra
+   en el hueco que queda es el bloque de juego, no la cabecera.
 
-.card-counter-row {
-  display: flex; align-items: center; justify-content: space-between; width: 100%;
-}
+   Se hace con margenes automaticos y NO sacando la fila del flujo: cabecera.js
+   le escribe margin-top/left/right y width en linea (cancela el padding del
+   contenedor, ver sacarDelPadding()), asi que un position:absolute con top/left
+   propios pelearia contra esos valores en linea y perderia. */
+.selecting-body { justify-content: flex-start; }
+.selecting-body > #card-counter  { margin-top: auto; }
+.selecting-body > .action-buttons { margin-bottom: auto; }
+
+/* El cronómetro (barra + segundos) se fue a la barra superior, con el resto de
+   lo que hay que mirar mientras juegas. Aquí solo queda el contador de carta,
+   que no es tiempo sino contexto de la carta que tienes delante. */
 .card-counter {
   font-family: 'DM Mono', monospace; font-size: 0.72rem;
   letter-spacing: 0.2em; color: var(--np-ink-mid); text-transform: uppercase;
-}
-.card-timer-text {
-  font-family: 'Anton', sans-serif; font-size: 1.5rem;
-  letter-spacing: 2px; color: var(--np-red);
+  text-align: center; width: 100%;
 }
 
 /* ═══════════════════════════════════════════
@@ -591,21 +459,12 @@ body {
 .card-nat { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.08em; color: var(--np-ink-mid); }
 .card-face-value-hidden { font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 3px; color: var(--np-ink-mid); }
 .card-remaining { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.14em; color: var(--np-ink-mid); text-transform: uppercase; }
-.card-bust-tag { font-family: 'Anton', sans-serif; font-size: 0.78rem; letter-spacing: 1px; color: var(--np-red); animation: bustPulse 0.8s ease-in-out infinite; }
-
-@keyframes bustPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.32; } }
 
 
-/* ── BUST indicator ── */
-.bust-indicator {
-  position: relative; display: inline-block; width: 100%; text-align: center;
-  font-family: 'Anton', sans-serif; font-size: clamp(1.6rem,5vw,2.2rem);
-  letter-spacing: 5px; color: var(--np-red); text-transform: uppercase;
-  border: 3px solid var(--np-red); padding: 6px 20px;
-  transform: rotate(-1.5deg); background: rgba(181,34,30,0.05);
-}
-.bust-indicator::before { content: ''; position: absolute; inset: 4px; border: 1px solid rgba(181,34,30,0.40); }
-.bust-indicator.hidden { display: none; }
+/* El cartel de "¡TE HAS PASADO!" se retiró el 2026-09-03: en este juego el
+   valor real de las cartas no se ve hasta plantarse, y avisar en el momento
+   destripaba la ronda. Con él se fue también .card-bust-tag, que ya no lo
+   pintaba nadie. */
 
 /* ══════════════════════════════════════════════
    BOTONES DE ACCIÓN
@@ -855,28 +714,10 @@ body {
 
 #screen-selecting, #screen-waiting, #screen-reveal { position: relative; }
 
-.lobby-autotimer { width: 100%; margin-top: 4px; padding: 10px 12px; background: var(--np-paper3); border: 1px solid var(--np-ink-soft); }
-.lobby-autotimer.hidden { display: none; }
-.lobby-autotimer-bar-wrap { width: 100%; height: 2px; background: var(--np-ink-soft); overflow: hidden; margin-bottom: 8px; }
-.lobby-autotimer-bar { height: 100%; width: 100%; background: var(--np-red); transition: width 1s linear; }
-.lobby-autotimer-bar.urgent { background: var(--np-ink); }
-.lobby-autotimer-text { display: flex; justify-content: space-between; align-items: center; font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; color: var(--np-ink-mid); text-transform: uppercase; }
-.lobby-autotimer-count { font-family: 'Anton', sans-serif; font-size: 1.2rem; letter-spacing: 3px; color: var(--np-red); transition: color 0.8s; }
-.lobby-autotimer-count.urgent { color: var(--np-ink); }
+/* .lobby-autotimer*: definicion unica en css/sala.css. */
 
-/* Cuenta atrás previa a la partida: mismo tratamiento limpio que Coche
-   (número grande centrado sin caja), pero con la tipografía de Blackjack
-   (Anton, la misma del código de sala y el marcador). */
-.countdown-overlay { position: fixed; inset: 0; height: 100dvh; z-index: 9999; background: var(--np-paper); display: flex; align-items: center; justify-content: center; }
-.countdown-overlay.hidden { display: none; }
-.countdown-inner { text-align: center; }
-.countdown-label { font-family: 'DM Mono', monospace; font-size: 0.8rem; letter-spacing: 0.4em; color: var(--np-ink-mid); text-transform: uppercase; margin-bottom: 14px; }
-.countdown-number { font-family: 'Anton', sans-serif; font-size: clamp(7rem,26vw,14rem); line-height: 0.9; color: var(--np-ink); animation: countPulse 1s ease-in-out infinite; }
-.countdown-progress-wrap { width: 220px; height: 2px; background: var(--np-ink-soft); overflow: hidden; margin: 22px auto 0; }
-.countdown-progress-bar { height: 100%; width: 100%; background: var(--np-red); transition: width 0.25s linear, background 0.4s; }
-.countdown-progress-bar.done { background: var(--np-ink); width: 0%; }
-
-@keyframes countPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.60; } }
+/* La cuenta atras de los 10 segundos vive en css/cuenta-atras.css, una sola
+   definicion para Coche, Blackjack y En la Cadena. */
 
 /* ══════════════════════════════════════════════
    RESPONSIVE
@@ -886,9 +727,7 @@ body {
   .reveal-players.players-3, .reveal-players.players-5, .reveal-players.players-6 { grid-template-columns: 1fr 1fr; }
   .action-buttons { gap: 6px; }
   .btn-action { padding: 12px 6px; font-size: 1rem; }
-  .sb-name { max-width: 40px; font-size: 0.5rem; }
-  .sb-score { font-size: 1.2rem; }
-  .countdown-inner { padding: 24px 32px; }
+  /* .sb-name / .sb-score responden en css/barra-partida.css. */
 }
 @media (max-width: 360px) {
   .reveal-cards-list { gap: 3px; }

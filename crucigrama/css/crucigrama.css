@@ -950,29 +950,9 @@ body.cruc-sheet-abierto { overflow: hidden; }
 .toast.error   { background: var(--np-red); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
 .toast.warning { background: var(--np-paper3); color: var(--np-ink); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
 
-/* ══════════════════════════════════════════════
-   CUENTA ATRÁS
-   ══════════════════════════════════════════════ */
-.countdown-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: var(--np-paper); display: flex; align-items: center; justify-content: center;
-}
-.countdown-overlay.hidden { display: none; }
-.countdown-inner { text-align: center; }
-.countdown-label {
-  font-family: 'DM Mono', monospace; font-size: 0.72rem;
-  letter-spacing: 0.44em; color: var(--np-ink-mid);
-  text-transform: uppercase; margin-bottom: 8px;
-}
-.countdown-number {
-  font-family: 'Playfair Display', serif; font-style: italic; font-weight: 900;
-  font-size: clamp(7rem,22vw,13rem); line-height: 0.9; color: var(--np-ink);
-  animation: countPulse 1s ease-in-out infinite;
-}
-@keyframes countPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.05); opacity: 0.60; }
-}
+/* El Crucigrama no tiene cuenta atras: no hay ningun #countdown-overlay ni en
+   su HTML ni en su JS. Estas reglas (.countdown-overlay/-inner/-label/-number
+   y su @keyframes) eran CSS muerto, copiado de otro juego. */
 
 /* Animaciones modal */
 @keyframes fadeIn {
