@@ -364,10 +364,16 @@ function crestUrlForClub(name) {
 
 function clubBadgesHTML(clubs) {
   if (!Array.isArray(clubs) || !clubs.length) return '';
+  // Sin loading="lazy": este escudo va siempre dentro de la pantalla de
+  // resultado, ya visible en pantalla en el momento en que se inserta este
+  // HTML — no hay nada "por debajo del pliegue" que difiera. Con lazy, el
+  // navegador casi nunca llegaba a dispararlo (mismo bug que en las cartas
+  // de Blackjack) y el escudo se quedaba sin cargar nunca, aunque la URL
+  // fuera perfectamente válida.
   return clubs.map(name => `
     <span class="club-badge">
       <img class="club-badge-crest" src="${crestUrlForClub(name)}" alt=""
-           loading="lazy" onerror="this.remove()">
+           onerror="this.remove()">
       <span class="club-badge-name">${ligaEsc(name)}</span>
     </span>`).join('');
 }
