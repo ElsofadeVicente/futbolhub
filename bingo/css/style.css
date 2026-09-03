@@ -148,6 +148,20 @@
 .cat-media.broken img { display: none; }
 .cat-emoji { font-size: 1.25rem; line-height: 1; }
 
+/* "JUGÓ EN" / "GANADOR" / "CAMPEÓN": separa haber jugado en un sitio de
+   haberlo ganado. Sin esto, "Ha jugado en la Premier League" y "Ganador de
+   la Premier League" se leían igual en la casilla ("PREMIER LEAGUE") — el
+   icono (⚽ contra 🏆) no basta a este tamaño. Mismo criterio que
+   tres-en-raya/css/style.css .hdr-kicker, más pequeño porque la casilla lo
+   es. */
+.bcell-qualifier {
+  font-family: 'DM Mono', monospace; font-size: .34rem; line-height: 1;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--np-red);
+}
+.bcell.filled .bcell-qualifier,
+.bcell.ok .bcell-qualifier, .bcell.bad .bcell-qualifier { opacity: .7; color: inherit; }
+.bcell.bingo .bcell-qualifier { color: var(--np-ink); }
+
 .bcell-cat {
   font-family: 'DM Mono', monospace; font-weight: 500;
   font-size: clamp(.5rem, 2.2vw, .54rem); line-height: 1.15; letter-spacing: .02em;

@@ -153,6 +153,21 @@
    "Intento 1 / 7". */
 .fh-volver-hueco { margin-top: 0; }
 
+/* #loading-screen (La Carrera, En el Top): el spinner se centra con
+   #loading-body{margin:auto} dentro de un flex EN COLUMNA. La fila de
+   cabecera vive dentro de ese mismo contenedor (el botón Volver está
+   ahí para poder salir si la carga falla) y, en el flujo normal, ocupa
+   una línea más arriba: el margin:auto ya no centra en el viewport
+   entero, sino en el hueco que queda DEBAJO de esa línea, y el spinner
+   se ve desplazado hacia abajo. Se saca del flujo (position:absolute,
+   #loading-screen ya es position:relative) para que no reste alto: el
+   botón se queda arriba a la izquierda, en el mismo sitio de siempre, y
+   el spinner vuelve a centrarse en toda la pantalla. */
+#loading-screen > .fh-cabecera {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    LO QUE HUBO AQUÍ, Y POR QUÉ YA NO ESTÁ
    ══════════════════════════════════════════════════════════════════

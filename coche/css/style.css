@@ -393,9 +393,29 @@ a      { text-decoration: none; }
 .round-timer-bar { height:100%; background:var(--np-paper); width:100%; transition:width 1s linear, background .4s; }
 .round-timer-bar.urgent { background:var(--np-red); }
 
+/* #screen-round no tiene .fh-volver (no se sale de una ronda a mitad
+   partida): js/cabecera.js le crea una fila suelta (.fh-cabecera--suelta)
+   delante de .round-topbar, empujando el marcador hacia abajo. round-topbar
+   ya reserva un hueco a la derecha del cronómetro para el widget
+   (padding-right, ver arriba) desde que el círculo flotaba fijo — se le
+   devuelve fijo ahí en vez de dejarle abrir una fila nueva. */
+#screen-round > .fh-cabecera--suelta {
+  position: fixed;
+  top: 10px;
+  right: 14px;
+  width: auto;
+  padding: 0;
+  z-index: 20;
+}
+
 .round-scoreboard { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 .sb-player { display:flex; flex-direction:column; align-items:center; }
-.sb-name { font-family:'DM Mono',monospace; font-size:.58rem; letter-spacing:1px; color:rgba(var(--np-paper-rgb, 244,234,210), 0.52); text-transform:uppercase; width:3ch; max-width:3ch; overflow:hidden; white-space:nowrap; text-overflow:clip; }
+/* width:3ch se queda corto para 3 caracteres: el letter-spacing añade
+   espacio DESPUÉS de cada uno (también el último, que cuenta para
+   overflow:hidden aunque visualmente sea aire vacío), así que "VIC" se
+   recortaba a "VI" y una uña de "C". Medido: scrollWidth 20px contra
+   clientWidth 17px con 3 caracteres a este tamaño — de ahí el +3px. */
+.sb-name { font-family:'DM Mono',monospace; font-size:.58rem; letter-spacing:1px; color:rgba(var(--np-paper-rgb, 244,234,210), 0.52); text-transform:uppercase; width:calc(3ch + 3px); max-width:calc(3ch + 3px); overflow:hidden; white-space:nowrap; text-overflow:clip; }
 .sb-score { font-family:'Anton',sans-serif; font-size:1.4rem; letter-spacing:1px; color:var(--np-paper); line-height:1; }
 .sb-player.me .sb-name  { color:rgba(var(--np-paper-rgb, 244,234,210), 0.9); }
 .sb-player.me .sb-score { color:var(--np-paper); }
@@ -708,7 +728,7 @@ body.countdown-active .input-section { display:none !important; }
 }
 @media(max-width:480px){
   .round-timer{font-size:1.8rem}
-  .sb-name{width:3ch;max-width:3ch;font-size:.52rem}
+  .sb-name{width:calc(3ch + 3px);max-width:calc(3ch + 3px);font-size:.52rem}
   .sb-score{font-size:1.2rem}
   .result-footballer-row{flex-direction:column}
   .result-main-block{width:100%}

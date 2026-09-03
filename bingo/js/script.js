@@ -149,6 +149,29 @@
     }
   }
 
+  /* Prefijo que separa "haber jugado ahí" de "haberlo ganado" — mismo
+     criterio que ya usa Tres en Raya (tres-en-raya/js/script.js). Sin él,
+     "Ha jugado en la Premier League" y "Ganador de la Premier League"
+     quedaban con el MISMO texto de casilla ("PREMIER LEAGUE"): shortLabel()
+     pela el verbo a propósito para caber en dos líneas, y las dos frases
+     pelan al mismo sitio. El icono (⚽ contra 🏆) no basta para distinguirlo
+     de un vistazo en una casilla de 70px. */
+  function qualifier(r) {
+    if (r.type === 'trophy' || r.type === 'trophy_any') {
+      return r.family === 'trophy_individual' ? 'Ganador' : 'Campeón';
+    }
+    if (r.type === 'league' || r.type === 'league_any' || r.type === 'club') return 'Jugó en';
+    return null;
+  }
+
+  /* shortLabel() + qualifier() en una sola cadena, para donde no hay sitio
+     (ni falta) para separarlos en dos líneas — el detalle del cartón al
+     final de la partida. */
+  function fullLabel(r) {
+    const q = qualifier(r);
+    return (q ? q + ' ' : '') + shortLabel(r);
+  }
+
   /* Entrenadores y companeros son FOTOS (avatar circular); logos, banderas y
      trofeos son imagenes sueltas. Mismo criterio que Tres en Raya. */
   function mediaHtml(r) {
@@ -329,16 +352,20 @@
   /* ═══════════════ RENDER DEL CARTON ═══════════════ */
   function renderBoard() {
     const board = $('board');
-    board.innerHTML = G.cats.map((r, i) => `
+    board.innerHTML = G.cats.map((r, i) => {
+      const q = qualifier(r);
+      return `
       <button class="bcell" id="cell-${i}" data-i="${i}" onclick="App.place(${i})"
-              style="--d:${i * 22}ms" aria-label="${esc(shortLabel(r))}">
+              style="--d:${i * 22}ms" aria-label="${esc((q ? q + ' ' : '') + shortLabel(r))}">
         <span class="bcell-inner">
           ${mediaHtml(r)}
+          ${q ? `<span class="bcell-qualifier">${esc(q)}</span>` : ''}
           <span class="bcell-cat">${esc(shortLabel(r))}</span>
           <span class="bcell-name"></span>
           <span class="bcell-stamp"></span>
         </span>
-      </button>`).join('');
+      </button>`;
+    }).join('');
     /* 'in' se queda pegada de la partida anterior, y con ella puesta las casillas
        nacen ya visibles: la entrada en cascada solo se veia en la primera.
        El reflow (offsetWidth) es lo que hace que el navegador se quede con la
@@ -731,21 +758,21 @@
           const slot = G.board[i];
           if (!slot) {
             return `<div class="detail-row detail-row--empty">
-                      <span class="detail-cat">${esc(shortLabel(cat))}</span>
+                      <span class="detail-cat">${esc(fullLabel(cat))}</span>
                       <span class="detail-msg">sin rellenar</span>
                     </div>`;
           }
           if (slot.ok) {
             return `<div class="detail-row detail-row--ok">
-                      <span class="detail-cat">${esc(shortLabel(cat))}</span>
+                      <span class="detail-cat">${esc(fullLabel(cat))}</span>
                       <span class="detail-msg">${esc(slot.player.name)}</span>
                     </div>`;
           }
           const alt = G.cats
-            .map((c, j) => (j !== i && FR.validate(slot.player, c)) ? shortLabel(c) : null)
+            .map((c, j) => (j !== i && FR.validate(slot.player, c)) ? fullLabel(c) : null)
             .filter(Boolean);
           return `<div class="detail-row detail-row--bad">
-                    <span class="detail-cat">${esc(shortLabel(cat))}</span>
+                    <span class="detail-cat">${esc(fullLabel(cat))}</span>
                     <span class="detail-msg">${esc(slot.player.name)}
                       <em>${alt.length ? 'sí valía para ' + esc(alt.slice(0, 2).join(' · ')) : 'no valía para ninguna casilla'}</em>
                     </span>

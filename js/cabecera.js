@@ -151,6 +151,17 @@
     return /loading|cargando|loader/i.test(id);
   }
 
+  /* Overlays a pantalla completa que no son una pantalla del juego (la
+     cuenta atrás de Coche/Blackjack/En la Cadena antes de empezar una
+     ronda): son `display:flex` centrando su contenido, y colarles una fila
+     de cabecera como hijo más rompe ese centrado — la fila coge
+     `flex-basis:100%` (ver ajustar()) y empuja el número grande fuera del
+     centro. Se marcan con `.fh-sin-cabecera` en el HTML del juego para que
+     cabecera.js no intente montar nada dentro. */
+  function tieneCabeceraProhibida(el) {
+    return !!(el.closest && el.closest('.fh-sin-cabecera'));
+  }
+
   /* Crea (o reutiliza) la fila al principio de un contenedor. Se usa para
      las pantallas que NO traen boton Volver: la fila lleva solo el circulo. */
   function filaDe(padre) {
@@ -226,7 +237,7 @@
     if (suFila && visible(suFila)) { mostrar(pw, true); return; }
 
     const pantalla = pantallaVisible();
-    if (pantalla && !esPantallaDeCarga(pantalla)) {
+    if (pantalla && !esPantallaDeCarga(pantalla) && !tieneCabeceraProhibida(pantalla)) {
       const fila = filaDe(pantalla);
       if (!pw.contains(fila)) {
         fila.appendChild(pw);

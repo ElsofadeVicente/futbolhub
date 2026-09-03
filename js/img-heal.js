@@ -31,6 +31,23 @@
    entrada de su cache: sw.js ya no cachea nada ni tiene manejador de
    'message', asi que ese postMessage era un no-op.
 
+   ── CORREGIDO EL 2026-09-03: SE RENDIA AL INSTANTE AL VOLVER A LA PAGINA ──
+   MAX_TRIES se agotaba para siempre: una vez gastados los reintentos de una
+   foto, esa <img> quedaba marcada como perdida y nunca se volvia a mirar,
+   ni aunque la red volviera dos segundos despues. Es justo el caso normal
+   de salir de la app y volver a entrar (la red se corta mientras esta en
+   segundo plano, ver js/red.js): la tanda de fotos que fallan justo en ese
+   momento se queda rota para siempre en vez de reintentarse cuando ya hay
+   cobertura de sobra.
+
+   Ahora las fotos que agotan sus reintentos se guardan en `agotadas`, y se
+   les da una tanda nueva (contador a cero) cada vez que la pagina vuelve al
+   primer plano, se restaura (bfcache incluido) o recupera la conexion —
+   mismos tres momentos que ya usa FHRed.alRecuperar, pero escuchados aqui
+   directamente: img-heal.js va ANTES que red.js en el <head> de las 15
+   paginas y para cuando este archivo arranca FHRed todavia no existe, asi
+   que depender de el aqui no dispararia nunca.
+
    Se engancha solo: basta con incluir este archivo en la pagina. Escucha el
    evento 'error' en fase de CAPTURA, que es la unica en la que los errores
    de recurso llegan hasta document.
@@ -44,12 +61,17 @@
   /* Donde el proxy deja las imagenes ya cacheadas: /api/img redirige aqui. */
   const SUPABASE_IMG = /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/img-cache\//;
 
-  const MAX_TRIES  = 2;      // reintentos por imagen (además del original)
+  const MAX_TRIES  = 2;      // reintentos por imagen (además del original) antes de esperar a "volver"
   const RETRY_BASE = 600;    // ms; el segundo intento espera el doble
   const PARAM      = '_fhr'; // marca de reintento en la URL
 
-  const tries = new WeakMap();   // <img> → nº de reintentos gastados
-  const undo  = new WeakMap();   // <img> → cómo estaba la pantalla antes del fallo
+  /* Map y no WeakMap: hace falta poder RECORRER las que se han quedado sin
+     reintentos (ver reintentarAgotadas). Se podan solas: se borran al tener
+     éxito y, si ya no están en el documento, al pasar por reintentarAgotadas
+     o por un fallo nuevo. */
+  const tries = new Map();   // <img> → nº de reintentos gastados
+  const undo  = new Map();   // <img> → cómo estaba la pantalla antes del fallo
+  const agotadas = new Set();   // <img> → agotó sus reintentos, esperando a que "vuelva" la página
 
   /* Una foto reintentable es: la que pasa por nuestro proxy, la que ya vive
      en el bucket de imagenes, o un hotlink directo a Transfermarkt. Lo que
@@ -83,7 +105,7 @@
     if (!isExternalPhoto(img.src)) return;
 
     const used = tries.get(img) || 0;
-    if (used >= MAX_TRIES) return;      // ya lo hemos intentado bastante
+    if (used >= MAX_TRIES) { agotadas.add(img); return; }   // a esperar a que "vuelva" la página
     tries.set(img, used + 1);
 
     /* Los juegos tienen su propio onerror en la etiqueta: esconden la foto
@@ -104,7 +126,7 @@
     /* Espera creciente: si el fallo es por pedir muchas fotos a la vez,
        darle un respiro a la CDN antes de volver a la carga. */
     setTimeout(() => {
-      if (!img.isConnected) return;     // la pantalla ya ha cambiado
+      if (!img.isConnected) { tries.delete(img); undo.delete(img); return; }     // la pantalla ya ha cambiado
       const sep = url.includes('?') ? '&' : '?';
       img.src = `${url}${sep}${PARAM}=${used + 1}`;
     }, RETRY_BASE * (used + 1));
@@ -115,12 +137,45 @@
   function onLoad(e) {
     const img = e.target;
     if (!img || img.tagName !== 'IMG') return;
+    tries.delete(img);
+    agotadas.delete(img);
     const prev = undo.get(img);
     if (!prev) return;
     undo.delete(img);
     img.style.display = prev.display || '';
     if (prev.sib && prev.sib.isConnected) prev.sib.style.display = prev.sibDisplay || '';
   }
+
+  /* Le da una tanda nueva de reintentos a las fotos que la agotaron. Se
+     limpian aquí también las que ya no están en el documento (se cambió de
+     pantalla mientras esperaban), para no ir acumulando <img> muertas. */
+  function reintentarAgotadas() {
+    if (!agotadas.size) return;
+    agotadas.forEach((img) => {
+      agotadas.delete(img);
+      if (!img.isConnected) { tries.delete(img); undo.delete(img); return; }
+      tries.set(img, 0);
+      const url = cleanUrl(img.src);
+      const sep = url.includes('?') ? '&' : '?';
+      img.src = `${url}${sep}${PARAM}=v${Date.now()}`;
+    });
+  }
+
+  /* Los mismos tres momentos que FHRed.alRecuperar (volver al primer plano,
+     restaurarse —bfcache incluido—, recuperar conexión), pero escuchados
+     directamente: img-heal.js carga ANTES que red.js, así que depender de
+     `window.FHRed` aquí no dispararía nunca. Como mucho una vez cada 1,5 s,
+     porque los tres eventos llegan juntos al volver de segundo plano. */
+  let ultimoAviso = 0;
+  function avisar() {
+    const ahora = Date.now();
+    if (ahora - ultimoAviso < 1500) return;
+    ultimoAviso = ahora;
+    reintentarAgotadas();
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) avisar(); });
+  window.addEventListener('pageshow', avisar);
+  window.addEventListener('online', avisar);
 
   /* Captura: los eventos 'error' y 'load' de recursos no burbujean, así
      que esta es la única fase en la que llegan hasta aquí. */
