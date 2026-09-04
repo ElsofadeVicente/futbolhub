@@ -260,14 +260,28 @@ body {
    .hidden que añade/quita blackjack-app.js no tenía ningún efecto sobre ella. */
 .game-topbar.hidden { display: none; }
 
-/* En Coche el círculo de perfil se queda fijo arriba a la derecha y la barra le
-   reserva 62px. Aquí no hace falta: estas pantallas sí tienen botón de Salir,
-   así que js/cabecera.js monta su fila (Salir + círculo) dentro de la pantalla,
-   en el flujo y debajo de la barra. Sin quitar la reserva quedarían 62px de
-   aire muerto a la derecha del marcador. Va por #id para ganarle a la clase. */
-#game-topbar { padding-right: 18px; }
-@media (max-width: 700px) { #game-topbar { padding-right: 14px; } }
-@media (max-width: 420px) { #game-topbar { padding-right: 10px; } }
+/* En Coche el círculo de perfil se queda fijo ENCIMA de la barra y por eso
+   allí se le reservan 62px por la derecha. Aquí el círculo va DENTRO, en su
+   propio hueco (.fh-widget-slot), así que esa reserva sobraría: dejaría 62px
+   de aire muerto detrás del propio círculo. Va por #id para ganarle a la
+   clase de css/barra-partida.css.
+
+   Y la barra es BAJA: desde que el objetivo se fue al hueco de encima de la
+   carta, aquí solo quedan marcador, cronómetro y círculo, que caben en una
+   fila. */
+#game-topbar { padding: 6px 14px; }
+
+/* La rejilla de dos filas ("izq timer" / "score score") que barra-partida.css
+   monta en móvil es para Coche, que además del marcador lleva el rótulo de
+   ronda. Blackjack no: se queda en flex, en una sola fila. */
+@media (max-width: 700px) {
+  #game-topbar { display: flex; padding: 6px 10px; gap: 10px; }
+  /* `0 1 auto` y no `1 1 auto`: si el marcador CRECE se come el hueco libre y
+     empuja el cronómetro contra el círculo, descentrándolo. Encoger sí (con
+     min-width:0 se activa su scroll horizontal cuando hay 6 jugadores). */
+  #game-topbar .round-scoreboard { flex: 0 1 auto; min-width: 0; }
+}
+@media (max-width: 420px) { #game-topbar { padding: 5px 8px; } }
 
 /* avatarPulse lo sigue usando el punto de .waiting-player-chip. */
 @keyframes avatarPulse {
@@ -306,6 +320,16 @@ body {
 .game-topbar,
 .selecting-body { position: relative; z-index: 1; }
 
+/* El botón de Salir, MÁS PEGADO A LA ESQUINA en las tres pantallas de
+   partida. La fila común (css/volver.css) reserva 14px por arriba y por los
+   lados, que es lo correcto cuando esa fila ABRE la página; aquí va justo
+   debajo de la barra de partida y con ese aire quedaba flotando en medio.
+   Gana por especificidad (#id .clase), no por orden de carga.
+   El menú no se toca: allí la fila sí abre la página. */
+#screen-selecting .fh-cabecera,
+#screen-waiting   .fh-cabecera,
+#screen-reveal    .fh-cabecera { padding: 5px 8px 4px; }
+
 /* ══════════════════════════════════════════════
    SELECCIONANDO
    ══════════════════════════════════════════════ */
@@ -328,9 +352,63 @@ body {
    le escribe margin-top/left/right y width en linea (cancela el padding del
    contenedor, ver sacarDelPadding()), asi que un position:absolute con top/left
    propios pelearia contra esos valores en linea y perderia. */
-.selecting-body { justify-content: flex-start; }
-.selecting-body > #card-counter  { margin-top: auto; }
-.selecting-body > .action-buttons { margin-bottom: auto; }
+.selecting-body { justify-content: flex-start; padding-bottom: 14px; }
+
+/* EL HUECO LIBRE SE LO QUEDA LA CARTA, no los márgenes.
+   Antes la columna se centraba con `margin-top/bottom: auto` y la carta
+   tenía un tamaño fijo (clamp + max-height:44vh), así que todo lo que
+   sobraba se convertía en AIRE: en un móvil de 667px la carta se quedaba en
+   293px con 119px repartidos arriba y abajo. Ahora #current-card es el único
+   elemento flexible de la columna: se lleva lo que sobra y la carta crece
+   dentro. Y no puede solaparse con los botones por construcción — lo que le
+   toca sale de restar lo que ocupan los demás, no de un cálculo a ojo. */
+#current-card {
+  /* `flex: 1 1 0` y no `1 1 auto`: con basis auto el alto de esta caja lo
+     decidiría su contenido, que es la propia carta — circular, y la carta
+     acababa midiendo 0. Con basis 0 crece hasta llenar el hueco y su alto
+     pasa a ser definido, que es contra lo que la carta calcula el suyo. */
+  flex: 1 1 0; min-height: 0;
+  width: 100%;
+  /* En COLUMNA: así el eje principal de la carta es el vertical y puede
+     encogerse (flex-shrink) cuando el hueco es más pequeño que su tamaño
+     ideal, en vez de desbordar sobre los botones. */
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  /* La pila lleva dos cartas traseras desplazadas -8px y una sombra de 6px:
+     sin este aire se recortarían contra el overflow:hidden de la pantalla. */
+  padding: 10px 10px 8px;
+}
+
+/* ── EL OBJETIVO ──────────────────────────────────────────────────────────
+   Vivía en la barra negra, en letra pequeña y compartiendo sitio con el
+   cronómetro y el marcador. Es el número contra el que juegas toda la ronda
+   —lo consultas antes de cada carta—, así que ahora ocupa el hueco de encima
+   de la carta, en rojo y en grande.
+
+   `--np-red` es el acento del tema: rojo de periódico en Clásico y turquesa
+   en Moderno. Nada de #hex a fuego. */
+.bj-objective {
+  width: 100%; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  line-height: 1;
+}
+/* Tipografía IDÉNTICA a la que tenía en la barra clara (hasta el 2026-09-03):
+   rótulo pequeño en DM Mono como antetítulo y la CIFRA grande en Anton rojo.
+   Es lo que pidió el usuario al verlo — copiado tal cual de .topbar-obj-label
+   / .topbar-obj-value, solo que ahora encima de la carta en vez de en la
+   barra. Lo único que cambia de posición, no de aspecto. */
+.bj-objective-label {
+  font-family: 'DM Mono', monospace; font-size: 0.55rem;
+  letter-spacing: 0.30em; color: var(--np-ink-mid); text-transform: uppercase;
+}
+.bj-objective-value {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(1.2rem, 2.8vw, 2rem);
+  letter-spacing: 2px; color: var(--np-red); line-height: 1;
+  /* Los objetivos largos ("1.250 partidos") no pueden empujar la carta hacia
+     los lados: la pantalla es overflow:hidden y no habría barra que lo
+     delatara. */
+  max-width: 100%; overflow-wrap: anywhere;
+}
 
 /* El cronómetro (barra + segundos) se fue a la barra superior, con el resto de
    lo que hay que mirar mientras juegas. Aquí solo queda el contador de carta,
@@ -346,9 +424,16 @@ body {
    ═══════════════════════════════════════════ */
 .card-stack {
   position: relative;
-  width: clamp(170px, 25vw, 270px);
-  height: clamp(240px, 35vw, 380px);
-  max-height: 44vh; /* nunca mayor del 44% del alto de ventana */
+  /* El ALTO manda (lo que le deje #current-card) y el ancho sale de la
+     proporción. El tope de alto se deriva del ancho máximo (x1.4, que es la
+     proporción de la carta) y NO al revés: con aspect-ratio, toparse con un
+     max-width no encoge la carta, la DEFORMA. Así el ancho nunca llega a
+     topar. */
+  flex: 0 1 auto; min-height: 0;
+  width: auto;
+  aspect-ratio: 240 / 336;
+  height: calc(min(72vw, 340px) * 1.4);
+  max-height: 100%;
 }
 
 /* Cartas traseras — height:100% del propio .card-stack (no un px fijo):
@@ -480,27 +565,53 @@ body {
   transition: background 0.12s, color 0.12s, box-shadow 0.12s;
   user-select: none; -webkit-user-select: none;
 }
-.btn-action:active:not(:disabled) { transform: translate(2px,2px); }
 .btn-action .btn-label {
   font-family: 'DM Mono', monospace; font-size: 0.58rem;
   letter-spacing: 0.16em; opacity: 0.90; display: block; text-transform: uppercase;
 }
 
 .btn-discard { background: var(--np-paper); border: 2px solid var(--np-red); color: var(--np-red); box-shadow: 3px 3px 0 rgba(181,34,30,0.35); }
-.btn-discard:hover:not(:disabled) { background: var(--np-red); color: var(--np-paper); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
-
 .btn-stand { flex: 1.25; background: var(--np-paper); border: 2px solid var(--bd-c, var(--np-ink)); color: var(--np-ink); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c-soft,var(--np-ink-soft)); }
-.btn-stand:hover:not(:disabled), .btn-stand.my-standing { background: var(--np-ink); color: var(--np-paper); box-shadow: none; }
-
 .btn-add { background: var(--np-ink); border: 2px solid var(--bd-c, var(--np-ink)); color: var(--np-paper); box-shadow: var(--sh-x,4px) var(--sh-y,4px) var(--sh-b,0) var(--sh-c-red,var(--np-red)); }
-.btn-add:hover:not(:disabled) { background: var(--np-red); border-color: var(--np-red); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
+
+/* Plantarse ya elegido: es un ESTADO, no un puntero encima. Por eso vive
+   fuera del bloque de :hover de abajo. */
+.btn-stand.my-standing { background: var(--np-ink); color: var(--np-paper); box-shadow: none; }
+
+/* ── EL :hover, SOLO donde hay puntero de verdad ──────────────────────────
+   En un móvil el navegador deja el :hover PEGADO al último botón tocado
+   hasta que tocas otra cosa: DESCARTAR se quedaba rojo entero y PLANTARSE
+   en negro después de pulsarlos, o sea con la pinta de estar activados
+   cuando la ronda ya había pasado a otra carta. Con (hover: hover) el
+   táctil no entra aquí y el único aspecto que ve al tocar es el de
+   :active, que dura lo que dura el dedo. */
+@media (hover: hover) and (pointer: fine) {
+  .btn-discard:hover:not(:disabled) { background: var(--np-red); color: var(--np-paper); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
+  .btn-stand:hover:not(:disabled)   { background: var(--np-ink); color: var(--np-paper); box-shadow: none; }
+  .btn-add:hover:not(:disabled)     { background: var(--np-red); border-color: var(--np-red); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c-red,var(--np-red)); }
+}
+
+/* Pulsado: el botón se HUNDE en su sombra — se mueve los mismos píxeles que
+   la sombra tenía, así que el conjunto no se descoloca. Antes solo se movía
+   el botón y la sombra se quedaba quieta detrás, que es lo que hacía que
+   pareciera que se salía de su sitio al tocarlo.
+
+   Va DESPUÉS de las variantes a propósito: `.btn-add:hover:not(:disabled)`
+   tiene su misma especificidad (0,3,0) y le ganaría por orden. */
+.btn-action:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: none; }
 
 .btn-action:disabled { opacity: 0.28; cursor: not-allowed; pointer-events: none; box-shadow: none; }
 
 /* ══════════════════════════════════════════════
    ESPERA
    ══════════════════════════════════════════════ */
-#screen-waiting { justify-content: center; gap: 18px; padding: 32px 20px; position: relative; }
+/* `flex-start` y no `center`: la fila del botón Salir es el PRIMER hijo, así
+   que al centrar la columna se iba con ella y acababa flotando a media
+   pantalla en vez de en su esquina. Lo que se centra es el bloque de espera,
+   con márgenes automáticos — mismo arreglo que ya llevaba .selecting-body. */
+#screen-waiting { justify-content: flex-start; gap: 18px; padding: 32px 20px; position: relative; }
+#screen-waiting > .waiting-icon    { margin-top: auto; }
+#screen-waiting > .waiting-players { margin-bottom: auto; }
 .waiting-icon { font-size: 2.8rem; opacity: 0.35; filter: grayscale(100%); }
 .waiting-title { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 900; font-size: clamp(1.6rem,5vw,2.2rem); color: var(--np-ink); text-align: center; }
 .waiting-subtitle { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-align: center; color: var(--np-ink-mid); text-transform: uppercase; }
@@ -588,7 +699,7 @@ body {
 
 /* ── Mini-carta reveal — más grande, foto + nombre + valor claros ── */
 .reveal-card {
-  width: clamp(100px, 11vw, 140px);
+  width: clamp(120px, 14vw, 170px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -618,15 +729,19 @@ body {
 /* Posición oculta — no hace falta */
 .reveal-card-pos { display: none; }
 
-/* Foto — grande y clara */
+/* Foto — es lo que se mira en esta pantalla, así que manda ella.
+   El alto sale de la PROPORCIÓN de la foto (139x181 en origen) y no de un
+   número fijo: así crece con la carta y, con object-fit:cover, no recorta
+   prácticamente nada — la cara entra entera. Con 140px fijos, una carta de
+   170 de ancho recortaba la foto por arriba y por abajo. */
 .reveal-card-img {
-  width: 100%; height: 140px;
+  width: 100%; aspect-ratio: 139 / 181;
   object-fit: cover; object-position: center 8%;
   display: block; flex-shrink: 0;
   filter: sepia(12%) contrast(1.05);
 }
 .reveal-card-img--empty {
-  width: 100%; height: 120px;
+  width: 100%; aspect-ratio: 139 / 181;
   background: var(--np-paper3);
   display: flex; align-items: center; justify-content: center;
   font-family: 'Anton', sans-serif; font-size: 1.1rem; color: rgba(var(--np-ink-rgb, 15,18,14), 0.14); flex-shrink: 0;
@@ -722,8 +837,21 @@ body {
 /* ══════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════ */
+/* PANTALLA BAJA (móvil apaisado, ventana de escritorio corta). Aquí el alto
+   es el recurso escaso y todo el cromo se lo quita a la carta, así que se
+   recortan los aires y la botonera. La carta no puede alcanzar a los botones
+   —se lo impide el flex, ver #current-card— pero sin esto se quedaba en
+   65px de alto en un 740x380. */
+@media (max-height: 560px) {
+  .selecting-body { gap: 4px; padding-top: 4px; padding-bottom: 8px; }
+  #current-card { padding: 4px 6px; }
+  .card-counter { font-size: 0.62rem; }
+  /* Icono y rótulo en la MISMA línea: 69px de botonera pasan a ~42, y esos
+     27px se los queda la carta. */
+  .btn-action { flex-direction: row; gap: 8px; padding: 8px 10px; font-size: 1rem; }
+}
+
 @media (max-width: 480px) {
-  .card-stack { width: clamp(170px,72vw,240px); height: clamp(238px,101vw,336px); }
   .reveal-players.players-3, .reveal-players.players-5, .reveal-players.players-6 { grid-template-columns: 1fr 1fr; }
   .action-buttons { gap: 6px; }
   .btn-action { padding: 12px 6px; font-size: 1rem; }

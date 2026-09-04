@@ -35,13 +35,13 @@
        tres idas y vueltas en el camino critico que en un movil se notan. -->
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/blackjack.css?v=20260903c" />
+  <link rel="stylesheet" href="css/blackjack.css?v=20260904b" />
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
   <link rel="stylesheet" href="../css/sala.css?v=20260903a">
   <link rel="stylesheet" href="../css/cuenta-atras.css?v=20260903a">
-  <link rel="stylesheet" href="../css/barra-partida.css?v=20260903a">
+  <link rel="stylesheet" href="../css/barra-partida.css?v=20260903b">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -321,19 +321,19 @@
 <!-- ═══════════════════════════════════════════════
      BARRA SUPERIOR (visible durante el juego)
      ═══════════════════════════════════════════════ -->
+<!-- Marcador a un lado, círculo de perfil al otro y el cronómetro en medio,
+     todo en UNA fila baja. El OBJETIVO ya no vive aquí: se fue al hueco de
+     encima de la carta (ver #screen-selecting), en grande, que es donde se
+     mira de verdad mientras decides si añades una carta más. -->
 <div id="game-topbar" class="round-topbar game-topbar hidden">
-  <div class="topbar-objective">
-    <span class="topbar-obj-label">Objetivo</span>
-    <span class="topbar-obj-value" id="objective-display">—</span>
-  </div>
-  <!-- El cronómetro sube aquí, con el objetivo y el marcador: es la misma
-       barra que la de Coche (css/barra-partida.css). Antes vivía dentro de
-       la pantalla, encima de la carta. -->
+  <div class="round-scoreboard" id="scoreboard"></div>
   <div class="round-timer-block">
     <div class="round-timer" id="card-timer-text">8</div>
     <div class="round-timer-bar-wrap"><div class="round-timer-bar" id="card-timer-bar"></div></div>
   </div>
-  <div class="round-scoreboard" id="scoreboard"></div>
+  <!-- js/cabecera.js mete aquí el círculo de perfil en cuanto esta barra se
+       ve, en vez de abrirle una fila propia debajo. -->
+  <div class="fh-widget-slot"></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════
@@ -344,6 +344,14 @@
 
     <!-- Botón salir (solo modo local) -->
     <button class="fh-volver" id="btn-local-exit-selecting" onclick="App.leaveRoom()">← Salir</button>
+
+    <!-- EL OBJETIVO, que antes iba de reojo en la barra negra. Es el número
+         contra el que juega toda la ronda, así que va aquí: grande, en rojo
+         y justo encima de la carta que tienes que decidir. -->
+    <div class="bj-objective">
+      <span class="bj-objective-label">Objetivo</span>
+      <span class="bj-objective-value" id="objective-display">—</span>
+    </div>
 
     <!-- Qué carta de la ronda es esta. El tiempo ya no está aquí: está arriba. -->
     <div class="card-counter" id="card-counter">1 / 10</div>
@@ -506,7 +514,7 @@
     '../js/hub-streaks.js?v=20260901a',
     '../js/img-heal.js?v=20260903a',
     '../js/profile-widget.js?v=20260831e',
-    '../js/cabecera.js?v=20260903a',
+    '../js/cabecera.js?v=20260903b',
     '../js/pantalla-viva.js?v=20260901i',
     '../js/red.js?v=20260901d',
     '../js/ruta.js?v=20260820a',

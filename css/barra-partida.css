@@ -18,9 +18,10 @@
    guia-link.css, volver.css y sala.css. La hoja se carga después del CSS del
    juego, así que gana por orden a igual especificidad.
 
-   El bloque de la izquierda puede ser un rótulo (.round-label, "RONDA 2") o
-   una cifra destacada (.topbar-objective, el objetivo de Blackjack): las dos
-   ocupan la misma zona de la rejilla en móvil.
+   La zona izquierda es un rótulo (.round-label, "RONDA 2") en Coche y el
+   marcador en Blackjack, que desde el 2026-09-03 ya no lleva aquí el
+   objetivo: se fue a su pantalla, en grande y encima de la carta. Por eso
+   .topbar-objective ya no existe.
    ============================================================================= */
 
 .round-topbar, .round-topbar * { box-sizing: border-box; }
@@ -44,19 +45,6 @@
   color: rgba(var(--np-paper-rgb, 244, 234, 210), 0.65);
   white-space: nowrap; text-transform: uppercase;
 }
-.topbar-objective {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 0;
-  min-width: 0;
-}
-.topbar-obj-label {
-  font-family: 'DM Mono', monospace; font-size: 0.55rem; letter-spacing: 0.28em;
-  color: rgba(var(--np-paper-rgb, 244, 234, 210), 0.6); text-transform: uppercase;
-}
-.topbar-obj-value {
-  font-family: 'Anton', sans-serif; font-size: clamp(1.1rem, 2.6vw, 1.7rem);
-  letter-spacing: 2px; line-height: 1; color: var(--np-paper);
-  white-space: nowrap;
-}
 
 /* ── Zona central: el cronómetro ── */
 .round-timer-block { display: flex; flex-direction: column; align-items: center; gap: 3px; }
@@ -71,6 +59,17 @@
 /* .urgent lo pone Coche y .warning Blackjack: significan lo mismo. */
 .round-timer-bar.urgent,
 .round-timer-bar.warning { background: var(--np-red); }
+
+/* ── El hueco del círculo de perfil, cuando vive DENTRO de la barra ──
+   Un juego puede reservarle sitio con un <div class="fh-widget-slot"> y
+   js/cabecera.js mete ahí el círculo en vez de abrirle una fila propia
+   debajo. Lo usa Blackjack; Coche no lo lleva (ver el padding-right de
+   arriba: allí el círculo queda fijo encima de la barra). */
+.round-topbar .fh-widget-slot { display: flex; align-items: center; flex-shrink: 0; }
+/* .pw-root trae margin-left:auto de serie, para empujarse a la derecha dentro
+   de la fila de cabecera. Aquí lo coloca la barra, así que se anula: si no, el
+   hueco mide más que el círculo y el cronómetro se descentra. */
+.round-topbar .fh-widget-slot .pw-root { margin-left: 0; }
 
 /* ── Zona derecha: el marcador ── */
 .round-scoreboard { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
@@ -105,8 +104,7 @@
     align-items: center; gap: 8px 10px;
     padding: 10px 14px; padding-right: 56px;
   }
-  .round-label,
-  .topbar-objective { grid-area: izq; }
+  .round-label { grid-area: izq; }
   .round-timer-block { grid-area: timer; justify-self: end; }
   .round-scoreboard {
     grid-area: score; justify-content: flex-start; gap: 8px;

@@ -196,6 +196,21 @@
     pw.style.display = si ? '' : 'none';
   }
 
+  /* Un juego puede reservarle al círculo un hueco PROPIO en su maqueta con
+     .fh-widget-slot, y mientras ese hueco se vea manda sobre todo lo demás:
+     el botón Volver se queda donde está, en su fila, y el círculo se va al
+     hueco. Lo usa Blackjack, que lo mete en la barra de partida junto al
+     marcador — antes el círculo abría una fila propia DEBAJO de la barra y
+     eran dos bandas de cabecera seguidas comiéndose la pantalla.
+
+     Es la salida limpia para "quiero el círculo AQUÍ": sin esto, la única
+     forma era devolverlo a position:fixed, que es justo de lo que se salió
+     el 2026-08-31 (ver la cabecera de este archivo). */
+  function huecoPropio() {
+    const hueco = document.querySelector('.fh-widget-slot');
+    return visible(hueco) ? hueco : null;
+  }
+
   function colocarAhora() {
     const pw = elCirculo();
 
@@ -203,6 +218,11 @@
     const botones = document.querySelectorAll('.fh-volver');
     for (let i = 0; i < botones.length; i++) {
       if (visible(botones[i])) { btn = botones[i]; break; }
+    }
+
+    const hueco = pw ? huecoPropio() : null;
+    if (hueco && pw.parentElement !== hueco && !pw.contains(hueco)) {
+      hueco.appendChild(pw);
     }
 
     if (btn) {
@@ -215,12 +235,14 @@
         fila.appendChild(btn);
         ajustar(fila, padre);
       }
-      if (pw && pw.parentElement !== fila && !pw.contains(fila)) fila.appendChild(pw);
+      if (!hueco && pw && pw.parentElement !== fila && !pw.contains(fila)) fila.appendChild(pw);
       if (pw) mostrar(pw, true);
       return;
     }
 
     if (!pw) return;
+
+    if (hueco) { mostrar(pw, true); return; }
 
     /* Sin botón Volver: la portada mete el círculo en la cabecera del
        periódico, que es donde estaba flotando antes. */
