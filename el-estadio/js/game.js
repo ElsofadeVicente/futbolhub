@@ -171,6 +171,17 @@ function initMenu() {
     (s.partidas && s.acum)
       ? Math.round(s.acum / s.partidas).toLocaleString('es-ES')
       : '—';
+
+  /* Si hay una partida de hoy a medias, el botón lo dice: pulsarlo no
+     empieza otra, continúa por la ronda que tocaba. */
+  const btnJugar = document.getElementById('btn-jugar');
+  const guardado = loadDaily();
+  if (btnJugar && dailyEnCurso(guardado)) {
+    const hechas = guardado.scores.length;
+    btnJugar.textContent = (hechas >= TOTAL_RONDAS)
+      ? 'Ver tu resultado →'
+      : `Continuar · ronda ${hechas + 1} de ${TOTAL_RONDAS} →`;
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -178,17 +189,34 @@ function initMenu() {
    ══════════════════════════════════════════════ */
 function estadioDailyKey() { return `estadio_daily_${todayStr()}`; }
 
-function loadDailyPlayed() {
+function loadDaily() {
   try {
     const raw = localStorage.getItem(estadioDailyKey());
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
-function saveDailyPlayed(total) {
+/* Un registro es una partida TERMINADA salvo que diga lo contrario: los
+   guardados anteriores a que existiera el progreso a medias no llevan
+   'completed' y siempre eran finales. */
+function dailyCompleto(d) {
+  return !!d && d.completed !== false
+      && Array.isArray(d.scores)  && d.scores.length  === TOTAL_RONDAS
+      && Array.isArray(d.guesses) && d.guesses.length === TOTAL_RONDAS;
+}
+
+/* Partida de hoy a medias: rondas ya contestadas sin llegar al final. */
+function dailyEnCurso(d) {
+  return !!d && d.completed === false
+      && Array.isArray(d.scores) && Array.isArray(d.guesses)
+      && d.scores.length === d.guesses.length
+      && d.scores.length > 0;
+}
+
+function escribirDaily(extra) {
   try {
     localStorage.setItem(estadioDailyKey(), JSON.stringify({
-      total,
+      ...extra,
       scores:  state.scores,
       guesses: state.guesses,
       // Guardamos también qué estadios fueron las rondas reales: si
@@ -200,6 +228,24 @@ function saveDailyPlayed(total) {
       ts: Date.now(),
     }));
   } catch {}
+}
+
+/* Progreso a medias, tras CADA ronda confirmada. Sin esto, salirse a mitad de
+   partida no dejaba ningún rastro: al volver a entrar el juego empezaba de
+   cero y, como las 5 rondas del día son fijas (misma semilla), se repetían
+   las que ya habías visto resueltas. */
+function saveDailyProgress() {
+  // Nunca degradar una partida ya terminada: progress-sync puede haber traído
+  // entre medias el resultado final de otro dispositivo.
+  if (dailyCompleto(loadDaily())) return;
+  escribirDaily({
+    completed: false,
+    total: state.scores.reduce((a, b) => a + b, 0),
+  });
+}
+
+function saveDailyPlayed(total) {
+  escribirDaily({ completed: true, total });
 }
 
 /* ══════════════════════════════════════════════
@@ -214,21 +260,35 @@ function startGame() {
   state.guesses     = [];
   state.guess       = null;
 
+  const guardado = loadDaily();
+  // Preferir los estadios realmente jugados (guardados junto al progreso)
+  // sobre el pool recién barajado: si el dataset se editó entre medias,
+  // recalcular con la semilla de hoy ya no da las mismas rondas.
+  const rondasGuardadas =
+    (guardado && Array.isArray(guardado.rondas) && guardado.rondas.length === TOTAL_RONDAS)
+      ? guardado.rondas : null;
+
   /* Modo diario: si ya jugaste hoy, restaurar y mostrar el resultado */
-  const played = loadDailyPlayed();
-  if (played && Array.isArray(played.scores) && Array.isArray(played.guesses)
-      && played.scores.length === TOTAL_RONDAS && played.guesses.length === TOTAL_RONDAS) {
-    state.scores      = played.scores;
-    state.guesses     = played.guesses;
-    // Preferir los estadios realmente jugados (guardados junto al resultado)
-    // sobre el pool recién barajado: si el dataset se editó entre medias,
-    // recalcular con la semilla de hoy ya no da las mismas rondas.
-    if (Array.isArray(played.rondas) && played.rondas.length === TOTAL_RONDAS) {
-      state.rondas = played.rondas;
-    }
+  if (dailyCompleto(guardado)) {
+    state.scores      = guardado.scores;
+    state.guesses     = guardado.guesses;
+    if (rondasGuardadas) state.rondas = rondasGuardadas;
     state.rondaActual = TOTAL_RONDAS;
     mostrarFin(true);
     return;
+  }
+
+  /* Partida de hoy a medias: se sigue por donde se dejó. Las rondas ya
+     contestadas NO se vuelven a jugar — de esas ya conoces el estadio. */
+  if (dailyEnCurso(guardado)) {
+    state.scores  = guardado.scores.slice(0, TOTAL_RONDAS);
+    state.guesses = guardado.guesses.slice(0, TOTAL_RONDAS);
+    if (rondasGuardadas) state.rondas = rondasGuardadas;
+    state.rondaActual = state.scores.length;
+
+    // Contestaste las 5 pero te fuiste antes de pulsar "Ver resultado final":
+    // la partida está hecha, se cierra ahora (stats, racha, Firebase y liga).
+    if (state.rondaActual >= TOTAL_RONDAS) { mostrarFin(); return; }
   }
 
   /* El mapa (Leaflet + teselas de OpenStreetMap) se creaba en el init() de la
@@ -240,7 +300,7 @@ function startGame() {
      mirar el menú. */
   initGameMap();
   showScreen('screen-game');
-  loadRonda(0);
+  loadRonda(state.rondaActual);
   // El mapa se creó con la pantalla oculta (tamaño 0) — recalcular ahora
   refreshGameMapSize();
 }
@@ -340,6 +400,10 @@ function confirmarGuess() {
 
   state.scores.push(puntos);
   state.guesses.push({ ...state.guess });
+
+  // Guardar YA, no al terminar: si te sales aquí, al volver se reanuda en la
+  // ronda siguiente en vez de repetir las que ya has visto resueltas.
+  saveDailyProgress();
 
   showResult(estadio, distKm, puntos);
 }

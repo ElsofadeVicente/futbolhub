@@ -142,11 +142,17 @@
       today: madridToday,
       stateFor(day) {
         const s = readJSON(`estadio_daily_${day}`);
-        return s ? 'win' : null;   // racha de días jugados
+        // Una partida a medias (completed:false) aún no cuenta como día
+        // jugado — mismo criterio que En el Once.
+        return (s && s.completed !== false) ? 'win' : null;   // racha de días jugados
       },
       detailFor(day) {
         const s = readJSON(`estadio_daily_${day}`);
         if (!s) return null;
+        if (s.completed === false) {
+          const n = Array.isArray(s.scores) ? s.scores.length : 0;
+          return `${n} de 5 rondas (en curso)`;
+        }
         return typeof s.total === 'number' ? `${s.total.toLocaleString('es-ES')} puntos` : 'Jugado';
       },
     },
