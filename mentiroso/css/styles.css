@@ -358,6 +358,14 @@ input { outline: none; font-family: 'Rajdhani', sans-serif; }
 
 
 .lobby-player-lives { font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
+/* Un jugador sin conexion se ve como lo que es: no cuenta para empezar y
+   el anfitrion lo barre a los dos minutos. Antes no se distinguia de uno
+   presente y una sala de fantasmas parecia llena. */
+.lobby-player-row.is-off { opacity: 0.5; }
+.lobby-player-off {
+  font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.08em;
+  color: var(--np-red); white-space: nowrap;
+}
 
 
 /* ══════════════════════════════════════════════
@@ -568,6 +576,35 @@ input { outline: none; font-family: 'Rajdhani', sans-serif; }
 }
 .felt .hand-row .tcard { --cw: var(--center-cw); }
 .block-count { color: var(--np-red); }
+
+/* ── Escalada de la puja ──────────────────────────────────────
+   Tira compacta bajo el panel de apuesta con quien subio y a cuanto.
+   Cabe en una linea y se desplaza sola si la ronda se alarga. */
+.bid-history {
+  display: flex; align-items: center; gap: 4px;
+  flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
+  padding: 3px 10px 4px;
+  border-bottom: 1px solid var(--np-ink-soft);
+  scrollbar-width: none;
+}
+.bid-history::-webkit-scrollbar { display: none; }
+.bh-item {
+  flex: 0 0 auto;
+  font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.04em;
+  color: var(--np-ink-mid); white-space: nowrap;
+}
+.bh-item b { font-weight: 700; color: var(--np-ink); }
+.bh-item i { font-style: normal; opacity: 0.55; margin-left: 2px; }
+.bh-item.is-me b { color: var(--np-red); }
+.bh-item.is-last { color: var(--np-ink); font-weight: 700; }
+.bh-sep { flex: 0 0 auto; color: var(--np-ink-mid); opacity: 0.45; font-size: 0.6rem; }
+/* En movil con varios rivales la mesa entra en d3 casi siempre, asi que
+   esconder la tira ahi era esconderla en el sitio donde mas falta hace:
+   una partida con gente. Se aprieta en vez de quitarse, y solo desaparece
+   en el ultimo escalon, donde ya se estan recortando hasta las fotos. */
+#screen-game.d3 .bid-history { padding: 2px 8px 3px; }
+#screen-game.d3 .bh-item, #screen-game.d3 .bh-sep { font-size: 0.55rem; }
+#screen-game.d4 .bid-history { display: none; }
 .felt-label {
   font-family: 'DM Mono', monospace;
   font-size: 0.6rem; letter-spacing: 0.2em;
@@ -913,10 +950,18 @@ input { outline: none; font-family: 'Rajdhani', sans-serif; }
 }
 .reveal-verdict.win  { color: var(--green-ok); background: rgba(47,125,50,0.08); border: 1px solid var(--green-ok); }
 .reveal-verdict.lose { color: var(--np-red);   background: rgba(181,34,30,0.07); border: 1px solid var(--np-red); }
+/* Sin color cuando la jugada no te ha tocado una vida: antes el panel
+   salia en rojo o en verde segun le hubiera ido al que desafio, asi que
+   como espectador te daba un susto por algo que no iba contigo. */
+.reveal-verdict.neutral { color: var(--np-ink); background: rgba(15,18,14,0.05); border: 1px solid var(--np-ink-soft); }
 
 .reveal-lives {
   display: grid; gap: 5px; margin-bottom: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  /* 140px daba dos columnas ya en un movil de 375, y entre los corazones
+     y la columna de +1/-1 al nombre le quedaban 20px: la lista de vidas
+     decia "V", "B" y "B..." en vez de quien era cada uno. Con 200px en un
+     movil sale una sola columna y el nombre entero. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 .life-row {
   display: flex; align-items: center; gap: 10px;
@@ -938,7 +983,7 @@ input { outline: none; font-family: 'Rajdhani', sans-serif; }
 .life-delta {
   font-family: 'DM Mono', monospace; font-size: 0.58rem;
   letter-spacing: 0.04em; color: var(--np-ink-mid);
-  min-width: 56px; text-align: right; white-space: nowrap;
+  min-width: 48px; text-align: right; white-space: nowrap;
 }
 
 .reveal-cond {

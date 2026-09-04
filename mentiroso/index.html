@@ -37,7 +37,7 @@
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-  <link rel="stylesheet" href="./css/styles.css?v=20260903c" />
+  <link rel="stylesheet" href="./css/styles.css?v=20260904b" />
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
@@ -278,12 +278,15 @@
       <summary>Como se juega</summary>
       <ol>
         <li>Cada ronda sale una <em>condicion</em>: por ejemplo <em>han jugado en el Milan</em> o <em>han marcado mas de 120 goles</em>.</li>
-        <li>Se reparten cartas a cada jugador y unas cuantas al centro. <em>Todos los nombres son visibles</em>: lo que no sabes es cuantas cumplen de verdad.</li>
-        <li>Por turnos hay una <em>unica apuesta comun</em> que solo puede subir. En tu turno eliges: <em>subir</em>, <em>desafiar</em> o <em>llamar mentiroso</em>.</li>
-        <li><em>Desafiar</em> = duelo con el que puso la apuesta: tu apuestas por <em>un numero menos</em> y el por la apuesta que hay. Uno de los dos acierta siempre, asi que no hay empate: el ganador suma una vida y el perdedor la pierde.</li>
+        <li>Se reparten cartas a cada jugador y unas cuantas al centro. <em>Todos los nombres son visibles</em>: lo que no sabes es cuantas cumplen de verdad. <em>Siempre cumple al menos una carta y nunca todas</em>, asi que la apuesta va de 1 a una menos que las cartas de la mesa.</li>
+        <li>Por turnos hay una <em>unica apuesta comun</em> que solo puede subir. En tu turno eliges: <em>subir</em>, <em>desafiar</em> o <em>llamar mentiroso</em>. Con la apuesta en 1 solo se puede subir: cerrar ahi seria una perdida segura.</li>
+        <li><em>Desafiar</em> = duelo con el que puso la apuesta: tu apuestas por <em>un numero menos</em> y el por la apuesta que hay. Uno de los dos acierta siempre, asi que no hay empate. Se juega <em>a dos vidas</em>: el ganador suma una y el perdedor se deja dos.</li>
         <li><em>Llamar mentiroso</em> = dices que el ultimo que subio se ha pasado, sin poner numero propio. Si se paso, pierde una vida y tu no arriesgas nada. Si se quedo corto, la pierdes tu. Si habia clavado el numero, se lleva una vida de regalo.</li>
+        <li>Las dos formas de cerrar dicen lo mismo ("ahi no llegas") y se diferencian en lo que arriesgas: el <em>duelo</em> te da una vida si aciertas pero te cuesta <em>dos</em> si fallas; <em>mentiroso</em> no da vida, y solo te cuesta una si la apuesta se habia quedado corta. <em>Se desafia cuando estas convencido y se llama mentiroso cuando solo lo sospechas.</em></li>
+        <li><em>Clavar el numero exacto es la mejor jugada del juego</em>: al siguiente le cuesta una vida haga lo que haga, porque desafiar y llamar mentiroso pierden los dos y subir le deja pasado.</li>
         <li>Al abrirse cada ronda hay <em>30 segundos</em> para estudiar la mesa sin que nadie pueda apostar todavia. Con el boton <em>ESTOY LISTO</em> se corta esa espera en cuanto lo pulsan todos.</li>
         <li>Cuando empieza la puja tienes <em>15 segundos</em> por turno. Si se agotan, subes la apuesta al minimo y pasa el turno; solo cuando ya no se puede subir mas el reloj cierra la ronda con un duelo.</li>
+        <li>Si a alguien <em>se le cae la conexion</em>, su turno se pasa sin tocar la apuesta: nadie pierde una vida por quedarse sin cobertura. Puede volver a entrar por el mismo enlace y sigue en su sitio.</li>
         <li>Quien llega a <em>0 vidas</em> queda eliminado. Gana el ultimo jugador con vidas.</li>
       </ol>
     </details>
@@ -383,6 +386,11 @@
             <div class="timer-num" id="timer-num">15s</div>
           </div>
         </div>
+        <!-- Escalada de la puja. En un juego de farol saber COMO se ha
+             llegado al numero que hay (quien subio, de cuanto en cuanto,
+             quien se limito a sumar uno) es la mitad de la informacion;
+             antes solo se veia la cifra final. -->
+        <div class="bid-history hidden" id="bid-history" aria-live="polite"></div>
         <div class="felt-label">MESA · CARTAS COMUNES <span class="block-count" id="center-count"></span></div>
         <div class="hand-row" id="center-cards"></div>
       </div>
@@ -495,7 +503,7 @@
     .then(cred => { window._FBAuthUid = cred.user.uid; return cred.user.uid; })
     .catch(e => { console.warn('⚠️ Firebase Auth anónima:', e); return null; });
 
-  const V = '?v=20260903c';
+  const V = '?v=20260904b';
   // deck.js construye la baraja con la base de datos real de la web
   // (chunks de player-db + lista de fama de Coche) y define las
   // condiciones de cada ronda. game.js depende de window.MDeck.

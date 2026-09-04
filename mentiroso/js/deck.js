@@ -239,14 +239,24 @@ const MDeck = (function () {
   ];
 
   /* Condiciones numéricas. step = redondeo del umbral para que
-     salga un número "de titular" (120 goles, no 117). */
+     salga un número "de titular" (120 goles, no 117).
+     ───────────────────────────────────────────────────────────
+     NO valen todas: una condición solo hace juego si el jugador puede
+     razonarla mirando 21 nombres. Medido sobre 500 rondas reales, dos
+     no lo cumplían y se retiraron:
+       · ALTURA — el umbral salía entre 176 y 188 cm, mediana 182, o sea
+         clavado en la mediana humana: era tirar 21 monedas. No hay ni un
+         atajo mental, y la carta tampoco enseña la posición.
+       · Nº DE CLUBES — umbral 4-8, mediana 6. Recordar un RECUENTO es
+         mucho más débil que recordar un HECHO ("¿jugó en el Liverpool?"),
+         y la carta no trae ningún dato de carrera.
+     Las cuatro que quedan sí tienen atajo: delantero (goles),
+     internacional fijo (internacionalidades), veterano (partidos). */
   const NUMERIC = [
     { id: 'goals',    label: n => `Han marcado más de ${n} goles oficiales`,        emoji: '⚽',  step: 10 },
     { id: 'apps',     label: n => `Han jugado más de ${n} partidos oficiales`,      emoji: '📋',  step: 25 },
     { id: 'caps',     label: n => `Tienen más de ${n} internacionalidades`,         emoji: '🏳️',  step: 5  },
     { id: 'natGoals', label: n => `Han marcado más de ${n} goles con su selección`, emoji: '🏆',  step: 2  },
-    { id: 'height',   label: n => `Miden más de ${n} cm`,                            emoji: '📏',  step: 1  },
-    { id: 'clubs',    label: n => `Han jugado en más de ${n} clubes`,                emoji: '🧳',  step: 1  },
   ];
   const NUMERIC_BY_ID = {};
   NUMERIC.forEach(n => { NUMERIC_BY_ID[n.id] = n; });
