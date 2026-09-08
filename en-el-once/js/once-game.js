@@ -708,7 +708,11 @@ async function loadDailyMatch(offsetDays, sinTocarUrl) {
     // barra se actualiza en cuanto está lista, el partido no la espera.
     document.getElementById('game').style.display = 'block';
 
-    const saved = loadDailyResult(offsetDays);
+    // El bloqueo diario ("ya jugaste hoy") y el retomar una partida a medias
+    // SOLO aplican al día de HOY. Un día pasado se enseña siempre vacío, para
+    // poder volver a completarlo sin que salte el aviso de victoria de una
+    // partida que ya se ganó (openGuessModal tiene la misma condición).
+    const saved = offsetDays === 0 ? loadDailyResult(offsetDays) : null;
     if (saved && saved.completed !== false) {
         // Partida terminada (o guardada antes de que existiera el campo
         // completed, que solo se escribía al terminar): pantalla de "ya jugaste".
@@ -1324,10 +1328,12 @@ function renderFormation() {
 
 function openGuessModal(playerIndex) {
     if (revealedPlayers.has(playerIndex) && !failedPlayers.has(playerIndex)) return;
-    if (currentMode === 'diario') {
+    if (currentMode === 'diario' && dailyOffset === 0) {
         const saved = loadDailyResult(dailyOffset);
         // Solo bloquea si el día ya está TERMINADO — una partida a medias
-        // (completed:false) tiene que poder seguir jugándose.
+        // (completed:false) tiene que poder seguir jugándose. Y solo para
+        // HOY: los días pasados siempre se pueden volver a jugar (ver
+        // loadDailyMatch, que ya no precarga ni bloquea nada ahí).
         if (saved && saved.completed !== false) return;
     }
 
