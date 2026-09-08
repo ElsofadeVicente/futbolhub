@@ -63,7 +63,7 @@
 
   /* ─────────── Estado ─────────── */
   const G = {
-    mode: 'solo',        // 'solo' | 'online'
+    mode: 'diario',       // 'diario' | 'online'
     phase: 'idle',       // 'idle' | 'playing' | 'reveal' | 'over'
     seed: 0,
     cats: [],            // 16 restricciones (objetos de FR.buildCandidates)
@@ -78,7 +78,7 @@
 
   let POOL      = [];        // futbolistas curados (objetos completos de FR)
   let POOL_CATS = [];        // claves de categoria curadas ([] = catalogo entero)
-  let currentTab = 'solo';
+  let currentTab = 'diario';
 
   /* Cache de "quien cumple que": clave de categoria -> array de indices de POOL.
      Se llena bajo demanda; una categoria se recorre una sola vez por sesion. */
@@ -770,17 +770,6 @@
         date: new Date().toISOString().slice(0, 10),
       }));
     } catch { /* modo incognito: sin récord, el juego sigue igual */ }
-    renderBestBox();
-  }
-
-  function renderBestBox() {
-    const b = readBest();
-    const box = $('best-box');
-    if (!b) { box.classList.add('hidden'); return; }
-    box.classList.remove('hidden');
-    $('best-value').textContent = b.bingos
-      ? `${b.hits}/16 · ${b.bingos} bingo${b.bingos > 1 ? 's' : ''}`
-      : `${b.hits}/16`;
   }
 
   function showResult() {
@@ -798,6 +787,10 @@
       r.bingo ? 'Has cerrado el cartón entero'
       : (!prev || r.hits > prev.hits) ? `Tu mejor cartón hasta ahora: ${r.hits}/16`
       : `Tu récord sigue en ${prev.hits}/16`;
+
+    /* El diario es de un intento: no hay "otra partida" que ofrecer, solo
+       volver al menú (el online sí puede salir de la sala y buscar otra). */
+    $('btn-again').classList.toggle('hidden', G.mode === 'diario');
 
     /* Detalle casilla a casilla: en los fallos se dice que SI cumplia ese
        futbolista dentro del carton, que es lo que mas escuece y mas ensena. */
@@ -1122,11 +1115,6 @@
   /* ═══════════════ ACCIONES DEL MENU ═══════════════ */
   function setTab(t) { currentTab = t; }
 
-  function startSolo() {
-    G.phase = 'idle';
-    startGame(Math.floor(Math.random() * 2147483647), 'solo');
-  }
-
   /* Carton del dia. Si ya se jugo hoy no se puede repetir: se rehace la
      partida desde la semilla y el carton guardado y se enseña el resultado,
      que es lo que hacen el resto de diarios de la web. */
@@ -1234,13 +1222,13 @@
       .catch(() => showToast(url));
   }
 
+  /* El diario es de un intento: el botón "Otra partida" no se ofrece en ese
+     modo (showResult() lo esconde). Solo queda vivo para el online, donde
+     "otra partida" es salir de la sala y volver al menú a crear/buscar otra. */
   function playAgain() {
-    /* El diario es de un intento: repetirlo dejaria la racha sin significar
-       nada. Se ofrece una partida suelta en su lugar. */
-    if (G.mode === 'diario') { G.mode = 'solo'; startSolo(); return; }
     $('ranking').classList.add('hidden');
     if (G.mode === 'online') { Sync.leave(); return; }
-    startSolo();
+    showMenu();
   }
 
   function showMenu() {
@@ -1252,9 +1240,6 @@
     $('ranking').classList.add('hidden');
     showScreen('screen-menu');
   }
-
-  function showRules()  { $('rules-overlay').classList.remove('hidden'); }
-  function closeRules() { $('rules-overlay').classList.add('hidden'); }
 
   /* ═══════════════ CARGA DEL POOL ═══════════════
      Bingo ya NO tiene pool propio. Antes leia data/bingo/pool.json, que era una
@@ -1350,7 +1335,6 @@
   }
 
   async function init() {
-    renderBestBox();
     try {
       $('loading-text').textContent = 'Cargando base de datos…';
       await FR.init();
@@ -1398,7 +1382,7 @@
   }
 
   window._AppReal = {
-    init, setTab, startSolo, startDiario, showRules, closeRules,
+    init, setTab, startDiario,
     createRoom, joinRoom, findPublicRoom, leaveRoom, startRoom, copyLink,
     skip, place, playAgain, showMenu, showToast,
   };

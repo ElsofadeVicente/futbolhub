@@ -17,14 +17,6 @@
 .hidden { display: none !important; }
 
 /* ═══════════ MENÚ: piezas propias ═══════════ */
-.best-box {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 12px; background: var(--np-paper3);
-  border: 1.5px solid var(--bd-c, var(--np-ink)); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
-}
-.best-label { font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--np-ink-mid); }
-.best-value { font-family: 'Anton', sans-serif; font-size: 1.05rem; color: var(--np-red); letter-spacing: .04em; }
-
 .join-row { display: flex; gap: 8px; }
 .join-row .menu-input:first-child { flex: 1; }
 .join-row .menu-code-input { max-width: 130px; }
@@ -313,13 +305,6 @@
 .rank-name { flex: 1; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-detail { font-family: 'DM Mono', monospace; font-size: .54rem; letter-spacing: .06em; color: var(--np-ink-mid); text-transform: uppercase; }
 .rank-points { font-family: 'Anton', sans-serif; font-size: 1.15rem; color: var(--np-ink); min-width: 38px; text-align: right; }
-
-/* ═══════════ REGLAS ═══════════ */
-.rules-card { max-width: 420px; }
-.rules-title { font-family: 'Anton', sans-serif; font-size: 1.3rem; letter-spacing: .02em; margin-bottom: 12px; color: var(--np-ink); }
-.rules-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 9px; }
-.rules-list li { font-size: .84rem; line-height: 1.35; color: var(--np-ink); }
-.rules-list b { font-weight: 700; color: var(--np-red); }
 
 /* ═══════════ CARGA ═══════════ */
 .loading-overlay { position: fixed; inset: 0; z-index: 500; background: var(--np-paper); display: flex; align-items: center; justify-content: center; }

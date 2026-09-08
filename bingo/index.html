@@ -37,7 +37,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que Coche/Tres en Raya) -->
   <link rel="stylesheet" href="../coche/css/style.css?v=20260906a">
-  <link rel="stylesheet" href="css/style.css?v=20260903a">
+  <link rel="stylesheet" href="css/style.css?v=20260908a">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
@@ -192,13 +192,13 @@
 
   <div class="menu-wrap">
     <div class="menu-tabs">
-      <button class="menu-tab active" id="tab-solo">🎯 Solo</button>
+      <button class="menu-tab active" id="tab-diario">📅 Diario</button>
       <button class="menu-tab"        id="tab-private">🔒 Privada</button>
       <button class="menu-tab"        id="tab-public">🌐 Pública</button>
     </div>
     <script>
       (function () {
-        var tabs = ['solo', 'private', 'public'];
+        var tabs = ['diario', 'private', 'public'];
         tabs.forEach(function (tab) {
           var btn = document.getElementById('tab-' + tab);
           if (!btn) return;
@@ -218,17 +218,11 @@
       })();
     </script>
 
-    <!-- Solo -->
-    <div id="panel-solo" class="menu-panel active">
-      <p class="panel-hint">Llena el cartón tú solo y bate tu récord</p>
-      <div id="best-box" class="best-box hidden">
-        <span class="best-label">Tu récord</span>
-        <span class="best-value" id="best-value">—</span>
-      </div>
+    <!-- Diario -->
+    <div id="panel-diario" class="menu-panel active">
+      <p class="panel-hint">Un cartón nuevo cada día, un único intento</p>
       <button class="btn-primary" onclick="App.startDiario()">CARTÓN DEL DÍA ▶</button>
-      <button class="btn-secondary" onclick="App.startSolo()">PARTIDA SUELTA ▶</button>
-      <button class="btn-secondary" onclick="App.showRules()">CÓMO SE JUEGA</button>
-      <p class="menu-error hidden" id="error-solo"></p>
+      <p class="menu-error hidden" id="error-diario"></p>
     </div>
 
     <!-- Privada -->
@@ -367,20 +361,6 @@
   </div>
 </div>
 
-<!-- ═══════════ REGLAS ═══════════ -->
-<div id="rules-overlay" class="pick-overlay hidden">
-  <div class="pick-card rules-card">
-    <button class="pick-close" onclick="App.closeRules()" aria-label="Cerrar">✕</button>
-    <h3 class="rules-title">CÓMO SE JUEGA</h3>
-    <ol class="rules-list">
-      <li>El cartón tiene <b>16 categorías</b>: clubes, países, ligas, títulos, entrenadores, compañeros…</li>
-      <li>Cada <b>10 segundos</b> cae un futbolista. Colócalo en la casilla que creas que cumple, o pulsa <b>SALTAR</b>.</li>
-      <li>Nadie te dice si aciertas: <b>los fallos se revelan al final</b>, cuando se cierra el cartón.</li>
-      <li>O están las <b>16 bien y cantas bingo</b>, o no hay bingo. Aquí no hay medias tintas.</li>
-      <li>Siempre hay una forma de cerrarlo entero, pero de cada casilla caen <b>solo dos nombres válidos</b> en toda la partida: si gastas uno donde no debes, esa casilla se muere.</li>
-    </ol>
-  </div>
-</div>
 
 <!-- Carga -->
 <div id="loading-overlay" class="loading-overlay">
@@ -398,7 +378,7 @@
   (function () {
     var _queue = [], _real = null;
     var methods = [
-      'setTab','startSolo','startDiario','showRules','closeRules','createRoom','joinRoom','findPublicRoom',
+      'setTab','startDiario','createRoom','joinRoom','findPublicRoom',
       'leaveRoom','startRoom','copyLink','skip','place','playAgain','showMenu','showToast'
     ];
     var proxy = {};
@@ -470,7 +450,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260906a';
+  s.src = 'js/script.js?v=20260908a';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }
