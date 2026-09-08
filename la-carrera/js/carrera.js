@@ -925,7 +925,12 @@ async function _prepareAndPlay(date, saved) {
 
   elIntro.classList.add('hidden');
   elLoading.classList.remove('hidden');
-  elLoading.innerHTML = '<div class="spin"></div><p>Cargando carrera…</p>';
+  /* En #loading-body, NO en #loading-screen: ese contenedor lleva el botón
+     Volver y es el que centra con margin:auto (ver fail()). Sobrescribir
+     elLoading entero se llevaba los dos por delante y el spinner quedaba
+     pegado arriba, sin el wrapper que lo centraba. */
+  (document.getElementById('loading-body') || elLoading).innerHTML =
+    '<div class="spin"></div><p>Cargando carrera…</p>';
 
   /* Reconstruir la carrera SI necesita el manifest de performances. Si no
      llego en el arranque se pide aqui, que es su primer uso real. */
