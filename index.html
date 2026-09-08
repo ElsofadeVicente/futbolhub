@@ -222,12 +222,7 @@
   <header class="masthead">
     <div class="masthead-top">
       <div class="masthead-meta" id="masthead-date-meta">
-        No. 1 · DOM 03 MAY · 2026<br>MADRID · PRIMERA EDICIÓN
-      </div>
-      <div class="masthead-edition">
-        <strong>EDICIÓN DIGITAL</strong>
-        <div>14 JUEGOS EN PORTADA</div>
-        <div>ACCESO LIBRE</div>
+        No. 1 · DOM 03 MAY · 2026
       </div>
     </div>
     <div class="logotype-wrap">
@@ -753,7 +748,7 @@
     const todayUTC = Date.UTC(y, m - 1, d);
     const edition = Math.max(1, Math.floor((todayUTC - LAUNCH_DATE_UTC) / 86400000) + 1);
     if (el) el.innerHTML =
-      `No. ${edition} · ${dias[weekdayIdx] || ''} ${String(d).padStart(2,'0')} ${meses[m - 1]} · ${y}<br>MADRID · PRIMERA EDICIÓN`;
+      `No. ${edition} · ${dias[weekdayIdx] || ''} ${String(d).padStart(2,'0')} ${meses[m - 1]} · ${y}`;
   })();
 </script>
 <script src="./js/supabase-config.js?v=20260902a"></script>
