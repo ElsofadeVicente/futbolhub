@@ -380,9 +380,10 @@ const App = (() => {
         lives:    lives
       };
     }
+    const startIndex = mode === 'online' ? 0 : Math.floor(Math.random() * names.length);
     const state = {
       players: names.map((name, i) => ({ id: i, name, lives, eliminated: false })),
-      currentIndex: 0,
+      currentIndex: startIndex,
       chain: [],
       chainLength: 0,
       reto: null,
@@ -408,13 +409,16 @@ const App = (() => {
           CadenaGame.applyRemoteState(remote);
         });
         if (myId === 0) {
-          // Host: marcar 'playing' en Firebase y arrancar turno
+          // Host: marcar 'playing' en Firebase y arrancar turno (aleatorio)
           const FB = window._FB;
+          const randomIndex = Math.floor(Math.random() * names.length);
+          const s0 = CadenaGame.getState();
+          if (s0) { s0.currentIndex = randomIndex; s0._lastAppliedTurn = randomIndex; }
           if (FB?.configured && roomCode) {
             const { db, ref, update, serverTimestamp } = FB;
             update(ref(db, 'rooms/' + roomCode), {
               status: 'playing',
-              turnIndex: 0,
+              turnIndex: randomIndex,
               turnStartTime: serverTimestamp()
             });
           }
