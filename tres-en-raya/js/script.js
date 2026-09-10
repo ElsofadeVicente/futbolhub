@@ -1506,7 +1506,7 @@ window._AppReal = (function () {
       input.addEventListener('keydown', onKeyDown);
     }
     try {
-      await FR.init();
+      await FR.init({ juego: 'tresenraya' });
       dataReady = true;
       console.log('✅ [TresEnRaya] datos listos');
     } catch (e) {

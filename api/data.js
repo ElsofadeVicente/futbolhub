@@ -43,6 +43,7 @@ const SUPABASE_URL = 'https://rssvejgdekwysiseqzkd.supabase.co';
 const BUCKETS_PERMITIDOS = [
   'player-db', 'game-data',
   'team-logos', 'team-flags', 'league-logos', 'coach-photos', 'trophy-icons',
+  'cruc-fotos',
 ];
 
 /* max-age=300  : el navegador no vuelve a pedirlo en 5 minutos. Esto solo ya
@@ -68,7 +69,8 @@ const CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidat
  * tras re-subir un escudo puede verse el viejo un día. Si algún día molesta,
  * la salida es versionar el nombre del archivo, no bajar esto. */
 const CACHE_CONTROL_IMG = 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800';
-const BUCKETS_IMAGEN = ['team-logos', 'team-flags', 'league-logos', 'coach-photos', 'trophy-icons'];
+const BUCKETS_IMAGEN = ['team-logos', 'team-flags', 'league-logos', 'coach-photos',
+                        'trophy-icons', 'cruc-fotos'];
 
 /** Sanea la clave. Los buckets son públicos, así que aquí no se protege un
  *  secreto: se trata de que no se pueda construir una URL que signifique otra

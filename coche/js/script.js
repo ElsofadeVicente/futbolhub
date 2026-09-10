@@ -303,6 +303,10 @@ async function _loadData() {
     _fetchLeaguesFromSupabase(),
     _fetchCocheJsonFile('perf_stats.json'),
     _fetchCocheJsonFile('gen_pool.json'),
+    /* gen_pool.json es la BASE compartida; gen_pool_coche.json es esa misma
+       base con las excepciones propias de Coche encima (admin/generar_pool.py
+       → capa "Coche"). Si no existe o llega vacío, se cae a la base. */
+    _fetchCocheJsonFile('gen_pool_coche.json'),
   ];
 
   const chunkPromises = CHUNK_NAMES.map(c => {
@@ -319,7 +323,7 @@ async function _loadData() {
     Promise.all(chunkPromises),
   ]);
 
-  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData, perfStats, genPool] = metaResults;
+  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData, perfStats, genPool, genPoolCoche] = metaResults;
 
   /* Stats precomputadas de performances (ligas 1ª div por cid, goles Champions,
      mejor temporada) — expuestas para validar jugadores fuera de PLAYERS_DB. */
@@ -503,10 +507,15 @@ async function _loadData() {
   /* GEN_POOL: pool aparte de ~1500 jugadores reconocibles (gen_pool.json,
      precomputado por fama con admin/build_coche_perf.py), usado SOLO para
      generar restricciones. Si gen_pool.json no cargó, cae a companeros_principal
-     (el comportamiento de antes) — nunca se queda vacío. */
-  const poolIds = (Array.isArray(genPool) && genPool.length)
+     (el comportamiento de antes) — nunca se queda vacío. gen_pool_coche.json,
+     si existe, manda por encima: es la misma base con las excepciones propias
+     de Coche (admin/generar_pool.py). */
+  const poolIdsBase = (Array.isArray(genPool) && genPool.length)
     ? genPool.map(String)
     : Object.keys(companeros);
+  const poolIds = (Array.isArray(genPoolCoche) && genPoolCoche.length)
+    ? genPoolCoche.map(String)
+    : poolIdsBase;
   GEN_POOL = poolIds.filter(id => allChunkData[id]).map(id => {
     const chunk = allChunkData[id];
     const ps    = _PERF_MAP[id] || {};

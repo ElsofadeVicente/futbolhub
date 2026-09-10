@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/crucigrama/archivo",
+      "destination": "/crucigrama/",
+      "permanent": true
+    },
+    {
+      "source": "/crucigrama/archivo/:resto*",
+      "destination": "/crucigrama/",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -88,7 +100,7 @@
       ]
     },
     {
-      "source": "/(crucigrama|en-el-top)/archivo",
+      "source": "/en-el-top/archivo",
       "headers": [
         {
           "key": "Cache-Control",
@@ -97,7 +109,7 @@
       ]
     },
     {
-      "source": "/(crucigrama|en-el-top)/archivo/(.*)",
+      "source": "/en-el-top/archivo/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

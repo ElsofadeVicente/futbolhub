@@ -79,28 +79,19 @@
     {
       href: 'crucigrama',
       label: 'Crucigrama',
-      today: madridToday,
-      /* El reloj autoguarda cada 10s SOLO por tener la pestaña abierta,
-         aunque no hayas escrito una letra — eso no es un intento y no debe
-         romper la racha (regla: "si solo entro no la pierdo"). Se distingue
-         mirando si hay algo real hecho: letras escritas, o Comprobar/Revelar
-         usados. Con eso sí, completar mal (con ayudas) o dejarlo a medias
-         cuenta como fallo, igual que el resto de diarios. */
-      stateFor(day) {
-        const s = readJSON(`cruc_${day.replace(/-/g, '')}`);
-        if (!s) return null;
-        const attempted = s.completed || s.checked || Object.keys(s.userGrid || {}).length > 0;
-        if (!attempted) return null;
-        if (!s.completed) return 'loss';
-        return s.clean === false ? 'loss' : 'win';   // con ayudas no cuenta como victoria
-      },
-      detailFor(day) {
-        const s = readJSON(`cruc_${day.replace(/-/g, '')}`);
-        if (!s) return null;
-        const attempted = s.completed || s.checked || Object.keys(s.userGrid || {}).length > 0;
-        if (!attempted) return null;
-        if (!s.completed) return 'En curso';
-        return s.clean === false ? 'Completado con ayudas' : 'Completado sin ayudas';
+      /* Dejó de ser diario el 2026-09-09: ahora son 190 niveles, así que no
+         hay racha que contar. En su sitio va el total de estrellas, que es el
+         número que sube y que da pena dejar parado — la misma función que
+         cumplía la racha, con el mismo círculo y en el mismo sitio. */
+      contador() {
+        let t = 0;
+        for (let n = 1; n <= 190; n++) {
+          const v = parseInt(localStorage.getItem('crucniv_' + n), 10);
+          if (Number.isFinite(v)) t += Math.max(0, Math.min(3, v));
+        }
+        if (!t) return null;
+        return { valor: t, icono: '⭐',
+                 titulo: t + ' estrella' + (t !== 1 ? 's' : '') + ' de 570' };
       },
     },
     {
@@ -292,20 +283,30 @@
     for (const game of GAMES) {
       const card = document.querySelector(`a.np-card[href*="${game.href}"]`);
       if (!card) continue;
-      const streak = computeStreak(game);
+      /* Dos tipos de insignia en el mismo círculo: la racha de los diarios y
+         el contador de los que van por niveles. */
+      const dato = game.contador
+        ? game.contador()
+        : (() => {
+            const n = computeStreak(game);
+            return n < 1 ? null : {
+              valor: n, icono: '🔥',
+              titulo: 'Racha: ' + n + ' partida' + (n !== 1 ? 's' : '')
+                    + ' seguida' + (n !== 1 ? 's' : '') + ' sin fallar'
+                    + ' (no jugar un día no la rompe)' };
+          })();
       let badge = card.querySelector('.hub-streak-badge');
-      /* Sin racha, fuera el círculo: al bajar el progreso de la cuenta
-         (js/progress-sync.js) esto se repinta, y una racha que ya no
+      /* Sin nada que enseñar, fuera el círculo: al bajar el progreso de la
+         cuenta (js/progress-sync.js) esto se repinta, y una racha que ya no
          existe no puede quedarse pegada de la pasada anterior. */
-      if (streak < 1) { if (badge) badge.remove(); continue; }
+      if (!dato) { if (badge) badge.remove(); continue; }
       if (!badge) {
         badge = document.createElement('div');
         badge.className = 'hub-streak-badge';
         card.appendChild(badge);
       }
-      badge.title = `Racha: ${streak} partida${streak !== 1 ? 's' : ''} seguida${streak !== 1 ? 's' : ''} sin fallar `
-                  + `(no jugar un día no la rompe)`;
-      badge.innerHTML = `<span>${streak}</span><span class="hs-fire">🔥</span>`;
+      badge.title = dato.titulo;
+      badge.innerHTML = '<span>' + dato.valor + '</span><span class="hs-fire">' + dato.icono + '</span>';
     }
   }
 

@@ -62,7 +62,8 @@ function sbStorageSafeKey(name) {
  * Los buckets de DATOS (player-db, game-data) NO estan aqui a proposito: sus
  * lecturas ya se enrutan una a una con fhDataUrl/fhFetchData, porque ahi hay
  * que distinguir lo estatico (se cachea) de la edicion del dia (no). */
-const FH_BUCKETS_IMAGEN = ['team-logos', 'team-flags', 'league-logos', 'coach-photos', 'trophy-icons'];
+const FH_BUCKETS_IMAGEN = ['team-logos', 'team-flags', 'league-logos', 'coach-photos',
+                           'trophy-icons', 'cruc-fotos'];
 
 /** URL pública de un archivo en Supabase Storage (buckets creados como públicos).
  *  Admite rutas con subcarpetas ("juego/archivo.json"): cada segmento se

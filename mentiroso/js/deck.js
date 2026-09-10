@@ -9,9 +9,12 @@
 
    Ahora la baraja se construye con la base de datos real de la
    web (bucket "player-db", los mismos chunks que usan Coche y
-   En la Cadena) filtrada por la lista de fama de Coche
-   (game-data/coche/gen_pool.json, ~1.500 futbolistas
-   reconocibles). De ahí salen:
+   En la Cadena) filtrada por el pool de reconocibles propio de
+   El Mentiroso (game-data/general/gen_pool_mentiroso.json, base
+   compartida + las excepciones propias de este juego — quien se
+   saca aquí desaparece de la baraja aunque siga en Bingo o en
+   Coche; se cura en admin/generar_pool.py, capa "El Mentiroso").
+   De ahí salen:
      · la FOTO real de cada jugador  (campo img del chunk)
      · el ESCUDO de su último club   (bucket team-logos)
      · datos verificables para las condiciones de cada ronda
@@ -380,13 +383,20 @@ const MDeck = (function () {
       const ranges = (meta.ranges || []).filter(r => r.min < MAX_POOL_ID);
       if (!ranges.length) throw new Error('meta.json sin rangos utilizables');
 
-      /* La lista de fama es opcional: si falla, el pool se ordena
-         por un baremo propio y el juego sigue funcionando. */
+      /* La lista de fama es opcional: si falla, el pool se ordena por un
+         baremo propio y el juego sigue funcionando. Se prueba primero la
+         capa propia de El Mentiroso (base + sus excepciones, resuelto en
+         admin/generar_pool.py: quien está fuera aquí no sale nunca en la
+         baraja, aunque siga en el pool de Bingo o de Coche) y si no existe
+         o llega vacía se cae a la base compartida. */
       let fame = null;
       try {
-        const raw = await _fetchJson(fhDataUrl('game-data', 'coche/gen_pool.json'));
+        let raw = await _fetchJson(fhDataUrl('game-data', 'general/gen_pool_mentiroso.json'));
+        if (!Array.isArray(raw) || !raw.length) {
+          raw = await _fetchJson(fhDataUrl('game-data', 'general/gen_pool.json'));
+        }
         if (Array.isArray(raw) && raw.length) fame = raw.map(String);
-      } catch (e) { console.warn('[Mentiroso] gen_pool.json no disponible, se usa baremo propio', e); }
+      } catch (e) { console.warn('[Mentiroso] gen_pool no disponible, se usa baremo propio', e); }
 
       let done = 0;
       const total = ranges.length;

@@ -47,7 +47,14 @@
     const TRACKED = [
         /* Resultado de cada día — es lo que da la racha del hub */
         { prefix: 'carrera_day_',  merge: 'newest', daily: true },
+        /* El Crucigrama dejo de ser diario el 2026-09-09: 'cruc_<fecha>' son
+           los resultados del modo viejo, que se siguen fusionando para no
+           borrarle a nadie su historial, y 'crucniv_<n>' son las estrellas
+           de cada nivel. Van con 'max' y no con 'newest': repetir un nivel
+           solo puede mejorarlo, asi que entre dos dispositivos gana el
+           numero mas alto, nunca el ultimo en guardarse. */
         { prefix: 'cruc_',         merge: 'newest', daily: true },
+        { prefix: 'crucniv_',      merge: 'max' },
         { prefix: 'enteltop_day_', merge: 'newest', daily: true },
         { prefix: 'oncediario_',   merge: 'newest', daily: true },
         { prefix: 'estadio_daily_',merge: 'newest', daily: true },

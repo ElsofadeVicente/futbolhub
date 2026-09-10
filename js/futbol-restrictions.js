@@ -4,7 +4,11 @@
    Extraido de coche/js/script.js para poder reutilizarlo en Coche y en
    Tres en Raya (y futuros juegos). Expone window.FR con:
 
-     FR.init()                      -> Promise, carga datos (chunks + mapas)
+     FR.init(opts)                  -> Promise, carga datos (chunks + mapas)
+                                        opts.juego = 'bingo'|'tresenraya'|... para
+                                        que FR.genPool sea el pool de ESE juego
+                                        (base + sus excepciones propias); sin
+                                        juego, FR.genPool es la pool base.
      FR.ready                       -> Promise que resuelve tras init()
      FR.validate(player, r)         -> bool: el jugador cumple la restriccion r
      FR.isRedundant(rA, rB)         -> bool: rA hace redundante/imposible a rB
@@ -691,7 +695,7 @@
   }
 
   /* ═══════════════════ CARGA ═══════════════════ */
-  async function _loadData() {
+  async function _loadData(juego) {
     const metaPromises = [
       _fetchGeneralJsonFile('companeros_principal.json'),
       _fetchGeneralJsonFile('entrenados_por.json'),
@@ -702,6 +706,13 @@
       _fetchLeagues(),
       _fetchGeneralJsonFile('perf_stats.json'),
       _fetchGeneralJsonFile('gen_pool.json'),
+      /* gen_pool.json es la BASE (compartida). Si quien llama a FR.init()
+         dice quién es (juego), se pide ADEMÁS su propio gen_pool_<juego>.json
+         —base + sus excepciones, ya resuelto en admin/generar_pool.py— y ese
+         manda; si no existe o llega vacío, GEN_POOL cae a la base tal cual.
+         Así un mismo futbolista puede entrar en el pool de Bingo y no en el
+         de El Mentiroso sin mantener dos listas completas por separado. */
+      juego ? _fetchGeneralJsonFile(`gen_pool_${juego}.json`) : Promise.resolve(null),
     ];
     const chunkPromises = _CHUNK_NAMES.map(c =>
       _fetchChunkRange(c).then(data => ({ name:c, data })).catch(() => ({ name:c, data:null }))
@@ -709,7 +720,7 @@
     const [metaResults, chunkResults] = await Promise.all([
       Promise.all(metaPromises), Promise.all(chunkPromises),
     ]);
-    const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData, perfStats, genPool] = metaResults;
+    const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData, perfStats, genPool, genPoolJuego] = metaResults;
 
     _PERF_MAP = perfStats && !Array.isArray(perfStats) ? perfStats : {};
 
@@ -822,13 +833,18 @@
        sacan sus cabeceras y sus casillas. */
     _fillTeammates(companeros);
 
-    const poolIds = (Array.isArray(genPool) && genPool.length)
+    const poolIdsBase = (Array.isArray(genPool) && genPool.length)
       ? genPool.map(String) : Object.keys(companeros);
+    const poolIds = (Array.isArray(genPoolJuego) && genPoolJuego.length)
+      ? genPoolJuego.map(String) : poolIdsBase;
     GEN_POOL = poolIds.filter(id => allChunkData[id]).map(id => _mkPlayer(id, nameMap[id]));
   }
 
-  function init() {
-    if (!_readyPromise) _readyPromise = _loadData();
+  /* opts.juego (opcional): 'coche' | 'tresenraya' | 'bingo' | 'mentiroso' |
+     'superdraft'. Sin él, FR.genPool es la pool BASE de siempre. Memoizado por
+     la PRIMERA llamada (una página sólo necesita un juego), como ya hacía. */
+  function init(opts) {
+    if (!_readyPromise) _readyPromise = _loadData(opts && opts.juego);
     return _readyPromise;
   }
 

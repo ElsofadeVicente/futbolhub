@@ -72,7 +72,7 @@ function eloUpdate(ra, rb, sa, ka, kb) {
 let _engineReady = null;
 function ensureEngine() {
   if (!_engineReady) {
-    _engineReady = FR.init().then(() => {
+    _engineReady = FR.init({ juego: 'coche' }).then(() => {
       RankedEngine.setTeammateData(FR.TEAMMATES_LIST, FR.reverseTeammate, FR.reverseTeammateIds);
     }).catch(e => {
       // Si FR.init() falla (p.ej. un hipo de Storage), no dejar la promesa

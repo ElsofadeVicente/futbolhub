@@ -1337,7 +1337,7 @@
   async function init() {
     try {
       $('loading-text').textContent = 'Cargando base de datos…';
-      await FR.init();
+      await FR.init({ juego: 'bingo' });
 
       POOL_CATS = [];                    /* catalogo entero de restricciones */
       POOL = poolDeFR();

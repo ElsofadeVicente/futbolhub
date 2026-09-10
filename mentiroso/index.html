@@ -459,10 +459,10 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="../js/supabase-config.js?v=20260902a"></script>
+<script src="../js/supabase-config.js?v=20260909a"></script>
 <script src="../js/auth.js?v=20260902a"></script>
-<script src="../js/progress-sync.js?v=20260906a"></script>
-<script src="../js/hub-streaks.js?v=20260906a"></script>
+<script src="../js/progress-sync.js?v=20260909a"></script>
+<script src="../js/hub-streaks.js?v=20260909a"></script>
 <script src="../js/img-heal.js?v=20260903a"></script>
 <script src="../js/profile-widget.js?v=20260831e"></script>
 <script src="../js/cabecera.js?v=20260903b"></script>
@@ -503,7 +503,7 @@
     .then(cred => { window._FBAuthUid = cred.user.uid; return cred.user.uid; })
     .catch(e => { console.warn('⚠️ Firebase Auth anónima:', e); return null; });
 
-  const V = '?v=20260904b';
+  const V = '?v=20260908a';
   // deck.js construye la baraja con la base de datos real de la web
   // (chunks de player-db + lista de fama de Coche) y define las
   // condiciones de cada ronda. game.js depende de window.MDeck.

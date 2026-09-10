@@ -1,91 +1,147 @@
-/* =============================================
-   CRUCIGRAMA-GAME.JS — Lógica del crucigrama diario
-   QUIÉN COÑO FALTA
-   ============================================= */
+/* ═══════════════════════════════════════════════════════════════
+   EL CRUCIGRAMA — 190 niveles repartidos en 10 divisiones
+   ═══════════════════════════════════════════════════════════════
 
-// ── ESTADO ──────────────────────────────────
+   Hasta 2026-09-09 esto era un juego DIARIO: un crucigrama por fecha,
+   calendario de meses en Storage, navegación por ediciones y racha en el
+   hub. Ya no. Ahora es una carrera de 190 niveles y el banco entero de
+   1.900 palabras se reparte entre ellos, cada una en un único nivel.
 
-let crucData        = null;   // entrada del crucigrama actual
-let crucOffset      = 0;      // 0 = la edición de hoy, >0 = ediciones anteriores
-let crucEdition     = 1;      // nº de edición = posición en la lista de días publicados
-let crucIndex       = null;   // { months:[...], days:[...] } del índice de Storage
-/* El arranque llego a fallar por RED: se puede reintentar solo. Antes el
-   mensaje de error se quedaba muerto en pantalla para siempre — nadie
-   reintentaba— y decia "prueba a recargar la pagina", que en la PWA de iOS,
-   sin barra de direcciones, es un consejo imposible de seguir. */
+   Lo que eso cambia:
+     · Los datos son 10 archivos, uno por división (~31 KB), y solo se baja
+       la división que se juega.
+     · No hay progreso a medias: al entrar en un nivel la rejilla está
+       SIEMPRE vacía, también si ya lo tenías con estrellas. Para mejorar la
+       marca hay que volver a hacerlo entero.
+     · Lo único que se guarda es cuántas estrellas tiene cada nivel
+       (crucniv_<n>), y nunca baja.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Las divisiones ──
+   `entrada` = estrellas que hacen falta EN LA DIVISIÓN ANTERIOR para pasar a
+   esta. Cada división da 60 (20 niveles x 3), así que 30 es la mitad: los 20
+   niveles pasados raspando dan 20, o sea que la puerta obliga a volver a por
+   algunos. Sube hasta 45 en las últimas, donde ya sabes jugar. */
+const CRUC_DIVISIONES = [
+    { nombre: 'Fútbol Base',       niveles: 20, entrada: 0  },
+    { nombre: 'Tercera División',  niveles: 20, entrada: 30 },
+    { nombre: 'Segunda B',         niveles: 20, entrada: 32 },
+    { nombre: 'Segunda División',  niveles: 20, entrada: 34 },
+    { nombre: 'Primera División',  niveles: 20, entrada: 36 },
+    { nombre: 'Conference League', niveles: 20, entrada: 38 },
+    { nombre: 'Europa League',     niveles: 20, entrada: 40 },
+    { nombre: 'Champions League',  niveles: 20, entrada: 42 },
+    { nombre: 'Mundial',           niveles: 20, entrada: 44 },
+    { nombre: 'Leyenda',           niveles: 10, entrada: 45 }
+];
+const CRUC_TOTAL_NIVELES = CRUC_DIVISIONES.reduce((s, d) => s + d.niveles, 0);
+const CRUC_PALABRAS_NIVEL = 10;
+
+// ── Estado ───────────────────────────────────
+let crucData        = null;   // el nivel que se está jugando
+let crucNivel       = 0;      // su número, 1..190
+let crucCells       = null;   // Set de "r,c" jugables
+let crucSegundos    = 0;
+let crucRelojTimer  = null;
+let crucMalas       = new Set();
+let crucUserGrid    = {};
+let crucSolvedWords = new Set();
+let crucSelectedWord = null;
+let crucSelectedCell = null;
+let crucHidden      = false;
 let crucArranqueIncompleto = false;
 let crucReintentando       = false;
-let crucEditions    = [];     // días publicados y jugables (<= hoy), ASCENDENTE
-let crucIdx         = 0;      // índice de la edición actual dentro de crucEditions
-const crucMonthCache = {};    // "AAAA-MM" -> { fecha: entrada }, meses ya descargados
-let crucCells       = null;   // Set de "r,c" jugables, derivado de las palabras
-let crucSegundos    = 0;      // tiempo jugado en este puzzle
-let crucRelojTimer  = null;
-let crucUsedCheck   = false;  // se pulsó "Comprobar" en este puzzle
-let crucMalas       = new Set(); // "r,c" marcadas como error por Comprobar
-let crucAtrasado    = false;  // hoy no tiene edición y se sirve la anterior
-let crucUserGrid    = {};     // (r,c) -> letra introducida por el usuario
-let crucSolvedWords = new Set();  // ids de palabras resueltas
-let crucSelectedWord = null;  // { word, direction }
-let crucSelectedCell = null;  // { row, col }
-let crucCountdownInterval = null;
-let crucHidden      = false;  // input nativo móvil
-let crucUsedReveal  = false;  // se usó "Revelar" (letra/palabra/todo) en este puzzle
+const crucDivCache  = {};     // nº de división -> [niveles]
 
-// ── NAVEGACIÓN ──────────────────────────────
+/* Cuando se vuelve al mapa tras SUPERAR un nivel, se guarda aquí para que el
+   mapa lo celebre (el nodo se vuelve oro, las estrellas saltan, y si la
+   partida abrió una división nueva sale el cartel de ascenso). Se CONSUME al
+   celebrarlo — crucPintarMapa lo lee una vez y lo pone a null. */
+let crucCelebrar  = null;
+let crucContando  = false;    // el contador de estrellas está en pleno recuento
 
-function goToHub() {
-    window.location.href = '../';
+/* Un solo sitio para saber si hay que quitar las animaciones. */
+function crucSuave() {
+    return !!(window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
 
-function openCrucigrama() {
-    // Ya estamos en la página del crucigrama, solo cargamos
-    crucStart();
+function goToHub() { window.location.href = '../'; }
+
+// ── Progreso: solo las estrellas de cada nivel ───────────────
+function crucEstrellas(n) {
+    const v = parseInt(localStorage.getItem(`crucniv_${n}`), 10);
+    return Number.isFinite(v) ? Math.max(0, Math.min(3, v)) : 0;
+}
+function crucApuntarEstrellas(n, est) {
+    /* Nunca baja: repetir un nivel solo puede mejorarlo. */
+    if (est <= crucEstrellas(n)) return false;
+    try { localStorage.setItem(`crucniv_${n}`, String(est)); } catch {}
+    if (window.FHProgress && FHProgress.push) FHProgress.push();
+    return true;
+}
+function crucEstrellasDe(aciertos) {
+    const fallos = CRUC_PALABRAS_NIVEL - aciertos;
+    if (fallos === 0) return 3;
+    if (fallos === 1) return 2;
+    if (fallos === 2) return 1;
+    return 0;                      // tres o más sin acertar: no se pasa
+}
+function crucPrimeroDe(idx) {
+    return CRUC_DIVISIONES.slice(0, idx).reduce((s, d) => s + d.niveles, 0) + 1;
+}
+function crucDivisionDe(nivel) {
+    let acc = 0;
+    for (let i = 0; i < CRUC_DIVISIONES.length; i++) {
+        if (nivel <= acc + CRUC_DIVISIONES[i].niveles) {
+            return { idx: i, primero: acc + 1, ...CRUC_DIVISIONES[i] };
+        }
+        acc += CRUC_DIVISIONES[i].niveles;
+    }
+    const u = CRUC_DIVISIONES.length - 1;
+    return { idx: u, primero: acc - CRUC_DIVISIONES[u].niveles + 1, ...CRUC_DIVISIONES[u] };
+}
+function crucEstrellasDivision(idx) {
+    const p = crucPrimeroDe(idx);
+    let t = 0;
+    for (let n = p; n < p + CRUC_DIVISIONES[idx].niveles; n++) t += crucEstrellas(n);
+    return t;
+}
+function crucDivisionAbierta(idx) {
+    return idx === 0 || crucEstrellasDivision(idx - 1) >= CRUC_DIVISIONES[idx].entrada;
+}
+function crucEstrellasTotales() {
+    let t = 0;
+    for (let n = 1; n <= CRUC_TOTAL_NIVELES; n++) t += crucEstrellas(n);
+    return t;
+}
+/* Los niveles van EN ORDEN de principio a fin: para abrir el n hace falta el
+   n-1 hecho (con al menos una estrella), no basta con ser el primero de una
+   división. Sólo el 1 arranca abierto. Encima está la puerta de división
+   (estrellas de entrada), que puede tener cerrada la división aunque el n-1
+   esté hecho — así que se piden las dos cosas. */
+function crucNivelAbierto(n) {
+    const d = crucDivisionDe(n);
+    if (!crucDivisionAbierta(d.idx)) return false;
+    return n === 1 || crucEstrellas(n - 1) > 0;
+}
+/* Dónde está el jugador: el primer nivel abierto sin estrellas. Si ya tiene
+   todos los abiertos y la puerta siguiente está cerrada, el último abierto. */
+function crucNivelActual() {
+    let ultimo = 1;
+    for (let n = 1; n <= CRUC_TOTAL_NIVELES; n++) {
+        if (!crucNivelAbierto(n)) continue;
+        ultimo = n;
+        if (crucEstrellas(n) === 0) return n;
+    }
+    return ultimo;
 }
 
-// ── GUARDAR / CARGAR ESTADO ──────────────────
-
-/* FIX: la clave se deriva de la fecha REAL del crucigrama cargado (crucData.date),
-   no de la fecha calculada con el offset. Con el fallback al último disponible,
-   el offset no corresponde al puzzle real y el progreso se guardaba en otra clave. */
-function crucKeyFor(dateStr) {
-    return `cruc_${String(dateStr).replace(/-/g, '')}`;
-}
-
-function crucSave() {
-    if (!crucData || !crucData.date) return;
-    const state = {
-        userGrid: Object.fromEntries(
-            Object.entries(crucUserGrid).map(([k, v]) => [k, v])
-        ),
-        solvedWords: Array.from(crucSolvedWords),
-        completed: crucIsComplete(),
-        clean: !crucUsedReveal,  // sin usar "Revelar" — cuenta para la racha del hub
-        segundos: crucSegundos,
-        checked: crucUsedCheck
-    };
-    try {
-        localStorage.setItem(crucKeyFor(crucData.date), JSON.stringify(state));
-    } catch {}
-}
-
-function crucLoad() {
-    if (!crucData || !crucData.date) return null;
-    try {
-        const raw = localStorage.getItem(crucKeyFor(crucData.date));
-        return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-}
-
-// ── CRONÓMETRO ───────────────────────────────
-// Cuenta solo mientras la pestaña está a la vista: dejarlo abierto de fondo
-// media mañana no debería arruinar la marca del día.
-
+// ── Reloj y comprobar (se conservan del juego diario) ────────
 function crucFormatoTiempo(seg) {
     const m = Math.floor(seg / 60), s = seg % 60;
     return `${m}:${String(s).padStart(2, '0')}`;
 }
-
 function crucRelojArranca() {
     crucRelojPara();
     if (crucIsComplete()) return;
@@ -94,338 +150,1106 @@ function crucRelojArranca() {
         crucSegundos++;
         const el = document.getElementById('cruc-reloj');
         if (el) el.textContent = crucFormatoTiempo(crucSegundos);
-        if (crucSegundos % 10 === 0) crucSave();
     }, 1000);
 }
-
 function crucRelojPara() {
     if (crucRelojTimer) { clearInterval(crucRelojTimer); crucRelojTimer = null; }
 }
 
-// ── COMPROBAR ────────────────────────────────
+/* Ya no se guarda la partida a medias: al entrar en un nivel la rejilla
+   está vacía SIEMPRE, que es la regla del modo por niveles. Se deja la
+   función porque el motor la llama en cinco sitios y así no hay que ir
+   quitando llamadas de dentro del teclado. */
+function crucSave() {}
 
-/* Marca en rojo las letras equivocadas. Cuenta como ayuda y se dice en el
-   resultado, pero NO rompe la racha del hub: esa sigue mirando solo si se
-   usó "Revelar" (clave 'clean'), que es lo que hubo siempre — cambiarlo
-   ahora invalidaría rachas que la gente ya tiene. */
-function crucComprobar() {
-    if (!crucData) return;
-    // Con el crucigrama ya resuelto no hay nada que comprobar, y marcarlo como
-    // "con ayudas" a toro pasado ROMPE la racha del hub de forma retroactiva:
-    // lo resolviste limpio, pulsaste el botón por curiosidad y ese día dejaba
-    // de contar. Lo mismo vale para los tres Revelar.
-    if (crucIsComplete()) return;
-    crucMalas = new Set();
-    // Se cuentan CASILLAS, no pasadas: las de cruce pertenecen a dos palabras
-    // y sumando por palabra el mensaje decía "5 letras mal" con 4 en rojo.
-    const puestas = new Set();
-    for (const w of crucData.words) {
-        crucGetWordCells(w).forEach(({ row, col }, i) => {
-            const escrita = crucUserGrid[`${row},${col}`];
-            if (!escrita) return;
-            puestas.add(`${row},${col}`);
-            if (escrita !== crucNormalize(w.answer[i])) crucMalas.add(`${row},${col}`);
-        });
+/* FINALIZAR: cierra el nivel con las palabras que llevas. Sustituye a
+   Comprobar y a Revelar — no se revela nada. Sirve para acabar con una o dos
+   estrellas sin resolverlo entero: fallar una palabra da 2 estrellas y fallar
+   dos da 1, y en ambos casos SE PASA al siguiente nivel. El aviso lo dice
+   antes de cerrar. */
+function crucFinalizar() {
+    if (!crucData || crucIsComplete()) return;
+    /* Sin diálogo: finaliza directo. El aviso permanente de la barra ya dice
+       que puedes acabar a falta de una o dos, y el resultado se ve en el modal. */
+    crucRelojPara();
+    crucShowCompletion(false);
+}
+
+/* ── DONDE VIVE EL TEXTO DE LA PAGINA ──────────────────────────────────
+   `.cruc-info` (la descripcion + los enlaces a otros juegos) es contenido de
+   la pagina y tiene que poder LEERSE, no solo estar en el HTML. Como en el
+   mapa la pagina no scrollea, ahi se mete al final del scroll DEL MAPA: bajas
+   pasado el nivel 1 y lo encuentras, con una sola barra y sin que el campo
+   deje de llenar la ventana. En la pantalla de un nivel vuelve a su sitio,
+   debajo de la rejilla, que es donde scrollea la pagina.
+
+   Se guarda la REFERENCIA al nodo: `crucPintarMapa` reemplaza el innerHTML de
+   la pantalla entera, asi que si estaba dentro se queda fuera del documento y
+   un querySelector ya no lo encuentra nunca mas. Es lo mismo que le pasa al
+   circulo de perfil en js/cabecera.js. */
+let crucInfo = null;
+function crucInfoNodo() {
+    if (!crucInfo || !crucInfo.nodeType) crucInfo = document.querySelector('.cruc-info');
+    return crucInfo;
+}
+function crucInfoAlCuerpo() {
+    const info = crucInfoNodo(), pantalla = document.getElementById('crucigrama-screen');
+    if (!info || !pantalla || !pantalla.parentNode) return;
+    if (info.parentNode !== pantalla.parentNode) {
+        pantalla.parentNode.insertBefore(info, pantalla.nextSibling);
     }
-    // Solo cuenta como ayuda si de verdad había algo que comprobar: pulsarlo
-    // con la rejilla vacía no te dice nada, y te costaba el "sin ayudas".
-    if (puestas.size) crucUsedCheck = true;
-
-    refreshAllCells();
-    crucSave();
-
-    const mal = crucMalas.size;
-    const bar = document.getElementById('cruc-clue-bar');
-    if (bar) {
-        const texto = !puestas.size ? 'Todavía no has escrito nada.'
-            : mal ? `${mal} ${mal === 1 ? 'letra mal' : 'letras mal'} (en rojo)`
-                  : 'Todo lo que llevas está bien';
-        bar.innerHTML = `<div class="cruc-clue-direction">COMPROBAR</div>
-                         <div class="cruc-clue-text">${crucEsc(texto)}</div>`;
-    }
-    // La marca se va en cuanto toques algo, para no dejar el rojo pegado.
-    setTimeout(() => { if (crucMalas.size) { crucMalas = new Set(); refreshAllCells(); } }, 4000);
+    info.classList.remove('cruc-info--en-mapa');
+}
+function crucInfoAlMapa(wrap) {
+    const info = crucInfoNodo();
+    if (!info || !wrap) return;
+    info.classList.add('cruc-info--en-mapa');
+    wrap.appendChild(info);
 }
 
-// ── ESTADÍSTICAS ─────────────────────────────
-
-const CRUC_STATS_KEY = 'cruc-stats';
-
-function crucStatsLeer() {
-    try {
-        return JSON.parse(localStorage.getItem(CRUC_STATS_KEY)) || {};
-    } catch { return {}; }
+/* Fija la pagina al mapa (ver el comentario de .cruc-mapa-fija en el CSS).
+   Se apaga en CUALQUIER otra pantalla: la rejilla de un nivel, la espera y el
+   error necesitan poder desplazarse. */
+function crucPaginaFija(si) {
+    document.documentElement.classList.toggle('cruc-mapa-fija', !!si);
 }
 
-function crucStatsGuardar(s) {
-    try { localStorage.setItem(CRUC_STATS_KEY, JSON.stringify(s)); } catch {}
-}
-
-/* Se apunta una sola vez por puzzle (marca 'hechos' por fecha), así que
-   volver a abrir uno resuelto no infla los contadores. */
-function crucStatsApuntar() {
-    if (!crucData || !crucData.date) return;
-    const s = crucStatsLeer();
-    s.hechos = s.hechos || {};
-    if (s.hechos[crucData.date]) return;
-    s.hechos[crucData.date] = 1;
-    s.jugados    = (s.jugados || 0) + 1;
-    s.completados = (s.completados || 0) + 1;
-    if (!crucUsedReveal && !crucUsedCheck) s.limpios = (s.limpios || 0) + 1;
-    // Un 0 no es un tiempo: las partidas guardadas antes de que existiera el
-    // cronómetro se restauran sin 'segundos', y al abrirlas hundían el tiempo
-    // medio y podían colarse como récord.
-    if (crucSegundos > 0) {
-        if (!crucUsedReveal && (!s.mejorTiempo || crucSegundos < s.mejorTiempo)) {
-            s.mejorTiempo = crucSegundos;
-        }
-        s.tiempoTotal = (s.tiempoTotal || 0) + crucSegundos;
-        s.cronometrados = (s.cronometrados || 0) + 1;
-    }
-    crucStatsGuardar(s);
-}
-
-function crucStatsHTML() {
-    const s = crucStatsLeer();
-    const conTiempo = s.cronometrados || 0;
-    const media = conTiempo ? Math.round((s.tiempoTotal || 0) / conTiempo) : 0;
-    const filas = [
-        ['Resueltos', s.completados || 0],
-        ['Mejor tiempo', s.mejorTiempo ? crucFormatoTiempo(s.mejorTiempo) : '—'],
-        ['Tiempo medio', media ? crucFormatoTiempo(media) : '—'],
-    ];
-    return filas.map(([k, v]) => `
-        <div class="cruc-comp-stat">
-            <div class="cruc-comp-stat-value">${v}</div>
-            <div class="cruc-comp-stat-label">${k}</div>
-        </div>`).join('');
-}
-
-// ── CARGAR CRUCIGRAMA ────────────────────────
-
-/* Hoy en hora de MADRID, no en la del dispositivo.
-   Los crucigramas se generan y se nombran con el calendario español; con la
-   fecha local, quien jugara desde otro huso pedía el archivo de otro día y
-   además su racha del hub cambiaba a una hora distinta que la de La Carrera,
-   En el Top o En el Once (que sí iban por Madrid desde el principio). */
-function crucTodayMadrid() {
-    return new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Europe/Madrid'
-    }).format(new Date()); // "YYYY-MM-DD"
-}
-
-/* Resta días a un "YYYY-MM-DD" con aritmética de calendario (nada de restar
-   milisegundos a un Date, que en el cambio de hora se va un día). */
-const CRUC_MESES = ['enero','febrero','marzo','abril','mayo','junio',
-                    'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-
-/* "2026-03-09" -> "9 de marzo". Se formatea a mano y no con toLocaleDateString
-   para no construir un Date, que interpretaría la fecha en UTC y en husos al
-   oeste de Greenwich mostraría el día anterior. */
-function crucFechaLarga(dateStr) {
-    const [, m, d] = String(dateStr).split('-').map(Number);
-    return `${d} de ${CRUC_MESES[m - 1] || ''}`;
-}
-
-function crucShiftDays(dateStr, delta) {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const dt = new Date(Date.UTC(y, m - 1, d));
-    dt.setUTCDate(dt.getUTCDate() + delta);
-    return dt.toISOString().slice(0, 10);
-}
-
+// ── Pantallas de espera y error ──────────────
 function crucLoading(msg) {
     const screen = document.getElementById('crucigrama-screen');
     if (!screen) return;
+    crucPaginaFija(false);
+    crucInfoAlCuerpo();
     screen.innerHTML = `
         <button class="fh-volver" onclick="goToHub()">← Volver</button>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;color:var(--neon-green);animation:pulse 1s infinite;">${msg}</div>
-            <div style="font-size:2rem;">📰</div>
-        </div>`;
+        <div class="cruc-espera"><div class="cruc-espera-txt">${crucEsc(msg)}</div></div>`;
 }
-
 function crucFatal(texto) {
     const screen = document.getElementById('crucigrama-screen');
     if (!screen) return;
+    crucPaginaFija(false);
+    crucInfoAlCuerpo();
     screen.innerHTML = `
         <button class="fh-volver" onclick="goToHub()">← Volver</button>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:20px;">
-            <div style="font-size:3rem;">😓</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:3px;color:var(--neon-yellow);text-align:center;">
-                CRUCIGRAMA NO DISPONIBLE
-            </div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:var(--text-light);opacity:0.7;text-align:center;max-width:320px;">
-                ${texto}
-            </div>
+        <div class="cruc-espera">
+            <div class="cruc-espera-tit">CRUCIGRAMA NO DISPONIBLE</div>
+            <div class="cruc-espera-txt">${crucEsc(texto)}</div>
         </div>`;
 }
 
-/* Descarga (y cachea) el mes que contiene esa fecha. Los datos van en un JSON
-   por MES, como La Carrera y En el Top: crucigrama/AAAA-MM.json con la forma
-   { month, days: { "AAAA-MM-DD": entrada } }. */
-async function crucLoadMonth(mes) {
-    if (crucMonthCache[mes]) return crucMonthCache[mes];
+// ── Datos: una división por archivo ──────────
+async function crucCargarDivision(idx) {
+    if (crucDivCache[idx]) return crucDivCache[idx];
+    const ruta = `crucigrama/niveles/${String(idx + 1).padStart(2, '0')}.json`;
+    const url = sbStorageUrl('game-data', ruta);
     /* Con reintento y espera de red (js/red.js): el momento en que esto se
        caía era volver a la app tras tenerla en segundo plano, con iOS aún
        levantando la conexión. */
     const j = window.FHRed
-        ? await FHRed.json(sbStorageUrl('game-data', `crucigrama/${mes}.json`))
+        ? await FHRed.json(url)
         : await (async () => {
-            const res = await fetch(sbStorageUrl('game-data', `crucigrama/${mes}.json`), { cache: 'no-cache' });
-            if (!res.ok) throw new Error(`mes ${mes} no disponible`);
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('división no disponible');
             return res.json();
         })();
-    crucMonthCache[mes] = j.days || {};
-    return crucMonthCache[mes];
+    crucDivCache[idx] = j.niveles || [];
+    return crucDivCache[idx];
 }
 
-/* Arranque: se lee el índice UNA vez y de ahí sale todo — qué ediciones hay,
-   cómo se numeran y qué mes hay que pedir. Antes se pedía el archivo del día
-   y, si faltaba, se tanteaba con el índice; con un JSON por mes ese baile
-   sobra. Los meses se descargan solo cuando se navega a ellos: un mes de
-   crucigramas densos pesa lo suyo y no tiene sentido bajarse el año entero
-   para jugar el de hoy. */
-async function crucStart() {
-    crucLoading('CARGANDO...');
+/* ══════════════════ EL MAPA ══════════════════
+   Diez campos apilados, uno por división, separados por la banda que anuncia
+   la siguiente. Dentro de cada campo el recorrido va de una portería a la
+   otra: el primer nivel de la división cae en un área y el último en la
+   contraria — eso manda sobre todo lo demás y de ahí sale el alto del campo. */
+const CRUC_PASO_BASE = 88, CRUC_ANCHO_BASE = 375;
 
-    try {
-        if (window.FHRed) {
-            crucIndex = await FHRed.json(sbStorageUrl('game-data', 'crucigrama/index.json'));
+/* En un ordenador el mapa no se queda en una columna estrecha: coge hasta
+   1.000 px, o sea todo el hueco entre las dos columnas de anuncio. Pero
+   ensanchar SOLO el campo lo achata -los niveles se separan a lo ancho y el
+   recorrido pierde la forma-, así que lo que sube con el ancho es TODO: la
+   altura por nivel, el nodo, las estrellas y el grosor del trazo. El
+   resultado es el mismo mapa, más grande.
+
+   El tope de 2,70 es el ancho máximo (1.000) partido por el de móvil (375):
+   está para que un monitor enorme no siga escalando cuando el campo ya no
+   crece, no para recortar el escritorio normal. */
+/* EL CAMPO Y EL PASILLO SON DOS ANCHOS DISTINTOS, y esto es la clave del
+   aspecto en escritorio. Escalarlo todo con el ancho del campo dejaba el mapa
+   con aire de zoom x10: nodos de 88 px y solo cuatro niveles en pantalla.
+
+   Ahora el CAMPO se estira a lo ancho todo lo que dé el hueco -y ese sobrante
+   es fuera de banda, que es lo que hace que parezca un campo enorme- mientras
+   el RECORRIDO se queda en un pasillo central de 560 px como mucho. Lo que
+   crece con el ancho es el césped; los niveles, el trazo y las fotos se
+   escalan con el pasillo, o sea muy poco. */
+const CRUC_PASILLO_MAX = 560;
+function crucPasillo(ancho) { return Math.min(ancho, CRUC_PASILLO_MAX); }
+function crucEscala(ancho) {
+    return Math.max(1, Math.min(1.50, crucPasillo(ancho) / CRUC_ANCHO_BASE));
+}
+/* El paso vertical NO crece a la misma escala que el ancho: con la escala
+   completa, en un campo ancho solo entraban cuatro niveles por pantalla.
+   A 0,35 del camino se ven seis, que es lo que se quiere ver. */
+function crucPaso(ancho) {
+    return Math.round(CRUC_PASO_BASE * (1 + (crucEscala(ancho) - 1) * 0.35));
+}
+function crucBanda(ancho) { return Math.round(104 * (1 + (crucEscala(ancho) - 1) * 0.5)); }
+
+function crucCentroArea(ancho) { return 14 + (0.243 * ancho * 1.60) / 2; }
+function crucAltoCampo(niveles, ancho) {
+    return Math.round(2 * crucCentroArea(ancho) + (niveles - 1) * crucPaso(ancho));
+}
+function crucRnd(i, sal) {
+    const x = Math.sin(i * 127.1 + sal * 311.7) * 43758.5453;
+    return x - Math.floor(x);
+}
+
+/* Los niveles NO van sobre una onda regular: van a un lado y a otro con
+   amplitud y separación variables, y a veces DOS quedan a la misma altura,
+   uno a cada banda. Como mucho dos: con tres seguidos, el primero y el
+   tercero acaban pisándose por mucho que alternen de lado. */
+function crucPosiciones(n, ancho, alto, sal) {
+    const cA = crucCentroArea(ancho);
+    const yIni = alto - cA, yFin = cA;
+    const paso = crucPaso(ancho);
+    /* Las x se calculan DENTRO DEL PASILLO y luego se llevan a su sitio: lo
+       que sobra a los lados es banda, y ahí no entra ningún nivel. */
+    const P = crucPasillo(ancho), dx = (ancho - P) / 2;
+    const pesos = [];
+    let anteriorPlano = false;
+    for (let i = 0; i < n - 1; i++) {
+        const plano = !anteriorPlano && crucRnd(i, sal) < 0.26;
+        pesos.push(plano ? 0.10 + crucRnd(i + 3, sal) * 0.12
+                         : 0.78 + crucRnd(i + 5, sal) * 0.55);
+        anteriorPlano = plano;
+    }
+    const escala = (yIni - yFin) / pesos.reduce((a, b) => a + b, 0);
+
+    const pts = [];
+    let y = yIni, lado = crucRnd(99, sal) < 0.5 ? 1 : -1, seguidos = 0;
+    for (let i = 0; i < n; i++) {
+        if (i > 0) y -= pesos[i - 1] * escala;
+        if (i === n - 1) y = yFin;
+        let x;
+        if (i === 0 || i === n - 1) {
+            x = P / 2 + (crucRnd(i + 11, sal) - 0.5) * P * 0.12;   // frente a portería
+        } else if (pesos[i - 1] * escala < paso * 0.52) {
+            lado = -lado; seguidos = 0;
+            x = P / 2 + lado * (0.27 + crucRnd(i + 17, sal) * 0.07) * P;
         } else {
-            const res = await fetch(sbStorageUrl('game-data', 'crucigrama/index.json'), { cache: 'no-cache' });
-            if (!res.ok) throw new Error('sin índice');
-            crucIndex = await res.json();
+            if (seguidos >= (crucRnd(i + 90, sal) < 0.30 ? 2 : 1)) { lado = -lado; seguidos = 0; }
+            else seguidos++;
+            x = P / 2 + lado * (0.14 + crucRnd(i, sal) * 0.20) * P;
         }
-    } catch {
-        crucArranqueIncompleto = true;
-        crucFatal('No he podido cargar la lista de crucigramas.<br>Se reintentará solo.');
-        return;
+        for (let k = pts.length - 1; k >= 0; k--) {
+            const q = pts[k];
+            if (Math.abs(q.y - y) > paso * 0.89) break;
+            if (Math.abs(q.x - (x + dx)) < 96 * crucEscala(ancho)) {
+                x = P / 2 - Math.sign(q.x - dx - P / 2 || 1) * 0.29 * P;
+            }
+        }
+        pts.push({ x: x + dx, y });
+    }
+    return pts;
+}
+
+/* Cada tramo entre dos niveles es un ARCO que se abomba hacia fuera, y el
+   abombamiento alterna de lado: de ahí el rodeo. Una onda continua, por
+   mucha amplitud que se le ponga, no da esa sensación.
+
+   PERO alternar a ciegas hace que dos tramos se crucen: pasa cuando hay
+   niveles a la misma altura y el arco se abomba justo hacia donde viene el
+   siguiente. Así que no se elige el abombamiento a ojo: se prueban las
+   opciones (los dos lados, de más curvo a más recto) y se coge la primera
+   que no corte ningún tramo anterior ni pase por encima de un nivel ajeno. */
+/* `f` abomba el arco perpendicular a la cuerda y `g` corre el punto de
+   control A LO LARGO de ella. Ese segundo mando parecía un adorno y no lo es:
+   con solo el abombamiento hay tramos —dos de los 190— donde NINGUNA opción
+   queda limpia y había que quedarse con el menos malo, o sea con un cruce. */
+function crucPuntoControl(a, b, signo, f, g) {
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+    const curva = len * f * signo, corre = len * (g || 0);
+    return { x: (a.x + b.x) / 2 - (dy / len) * curva + (dx / len) * corre,
+             y: (a.y + b.y) / 2 + (dx / len) * curva + (dy / len) * corre };
+}
+/* 22 muestras, no 14. Con 14 se colaban cruces poco profundos: el corte
+   ocurría dentro de un tramo recto y la comprobación no lo veía. Lo que hace
+   que 22 no cueste tiempo es la caja de más abajo. */
+const CRUC_MUESTRAS = 44;
+function crucMuestrasArco(a, c, b, n) {
+    const out = [];
+    for (let k = 0; k <= n; k++) {
+        const t = k / n, u = 1 - t;
+        out.push({ x: u * u * a.x + 2 * u * t * c.x + t * t * b.x,
+                   y: u * u * a.y + 2 * u * t * c.y + t * t * b.y });
+    }
+    return out;
+}
+/* Caja envolvente: dos tramos que no se solapan ni siquiera de lejos no
+   pueden cortarse, y en un campo de 19 tramos la mayoría de parejas están a
+   media pantalla. Descartarlas de un vistazo es lo que permite subir las
+   muestras y el número de opciones sin que la carga se note. */
+function crucCaja(m) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const p of m) {
+        if (p.x < x0) x0 = p.x;
+        if (p.x > x1) x1 = p.x;
+        if (p.y < y0) y0 = p.y;
+        if (p.y > y1) y1 = p.y;
+    }
+    return { x0, y0, x1, y1 };
+}
+function crucCajasLejos(c1, c2) {
+    return c1.x1 < c2.x0 || c2.x1 < c1.x0 || c1.y1 < c2.y0 || c2.y1 < c1.y0;
+}
+function crucSeCortan(p1, p2, p3, p4) {
+    const d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x);
+    if (Math.abs(d) < 1e-9) return false;
+    const t = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;
+    const u = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d;
+    return t > 0.02 && t < 0.98 && u > 0.02 && u < 0.98;
+}
+
+/* Devuelve los arcos ya resueltos: el path para dibujar y las muestras, que
+   sirven también para colocar las fotos sin pisar la línea. */
+function crucRecorrido(pts, sal, ancho) {
+    /* Las opciones de cada tramo, de la más curva a la más recta y probando
+       los dos lados. `g` (correr el control por la cuerda) va después de `f`
+       en el orden a propósito: primero se busca el rodeo simétrico, que es el
+       que se ve bien, y solo si ninguno vale se recurre al asimétrico. */
+    const opcionesDe = (i) => {
+        const base = (i % 2 === 0 ? 1 : -1) * (crucRnd(i + 7, sal) < 0.22 ? -1 : 1);
+        const rizo = 0.28 + crucRnd(i + 13, sal) * 0.20;
+        const ops = [];
+        for (const g of [0, 0.22, -0.22, 0.42, -0.42]) {
+            for (const signo of [base, -base]) {
+                for (const f of [rizo * 1.25, rizo, rizo * 0.66, rizo * 0.4, rizo * 0.2, 0]) {
+                    ops.push({ signo, f, g });
+                }
+            }
+        }
+        return ops;
+    };
+    /* Dos tramos PEGADOS no se cruzan limpiamente: se ROZAN. Donde el
+       recorrido dobla hacia atrás —hay giros de 105° a 155° entre niveles— el
+       arco que sale del nodo se pega al que llegaba y se solapan en una uña
+       finísima. Preguntar "¿se cortan?" ahí es una lotería del muestreo: con
+       22 muestras salían 3 cruces, con 44 salían 6, y con 140 más. La
+       pregunta buena no es si se cortan sino CUÁNTO SE ACERCAN, que no
+       depende de la resolución.
+
+       Cerca del nodo compartido se tocan por definición, así que ese entorno
+       (el propio disco del nivel, que además lo tapa) no cuenta. */
+    /* El radio de exclusión es EL DEL NODO, y el nodo crece con el mapa
+       (--cruc-n en el CSS): 26 px en un móvil y 44 en un escritorio ancho.
+       Dejarlo fijo en 44 tapaba de más en móvil y escondía un cruce real. */
+    const NODO_R = 26 * (1 + (crucEscala(ancho || CRUC_ANCHO_BASE) - 1) * 0.42);
+    const ROCE = 12;
+    const chocan = (mA, mB, seguidos, nodo) => {
+        if (seguidos !== 0 && nodo) {
+            for (const p of mA) {
+                if (Math.hypot(p.x - nodo.x, p.y - nodo.y) < NODO_R) continue;
+                for (const q of mB) {
+                    if (Math.hypot(q.x - nodo.x, q.y - nodo.y) < NODO_R) continue;
+                    if (Math.hypot(p.x - q.x, p.y - q.y) < ROCE) return true;
+                }
+            }
+            return false;
+        }
+        for (let x = 0; x < mA.length - 1; x++) {
+            for (let y = 0; y < mB.length - 1; y++) {
+                if (crucSeCortan(mA[x], mA[x + 1], mB[y], mB[y + 1])) return true;
+            }
+        }
+        return false;
+    };
+    const vecino = (i, j) => (j === i + 1 ? 1 : j === i - 1 ? -1 : 0);
+    const evaluar = (i, op, arcos, hasta) => {
+        const c = crucPuntoControl(pts[i], pts[i + 1], op.signo, op.f, op.g);
+        const m = crucMuestrasArco(pts[i], c, pts[i + 1], CRUC_MUESTRAS);
+        const caja = crucCaja(m);
+        let coste = 0;
+        for (let j = 0; j < hasta; j++) {
+            if (j === i || !arcos[j]) continue;
+            if (crucCajasLejos(caja, arcos[j].caja)) continue;
+            const v = vecino(i, j);
+            if (chocan(m, arcos[j].muestras, v, v === 1 ? pts[i + 1] : v === -1 ? pts[i] : null)) coste++;
+        }
+        /* Y que no pase por encima de un nivel que no sea de este tramo. */
+        for (let k = 0; k < pts.length; k++) {
+            if (k === i || k === i + 1) continue;
+            if (pts[k].x < caja.x0 - 36 || pts[k].x > caja.x1 + 36) continue;
+            if (pts[k].y < caja.y0 - 36 || pts[k].y > caja.y1 + 36) continue;
+            if (m.some(q => Math.hypot(q.x - pts[k].x, q.y - pts[k].y) < 36)) { coste += 3; break; }
+        }
+        return { c, muestras: m, caja, coste };
+    };
+    const mejorDe = (i, arcos, hasta) => {
+        let mejor = null;
+        for (const op of opcionesDe(i)) {
+            const cand = evaluar(i, op, arcos, hasta);
+            if (!mejor || cand.coste < mejor.coste) mejor = cand;
+            if (mejor.coste === 0) break;
+        }
+        return mejor;
+    };
+
+    const arcos = [];
+    for (let i = 0; i < pts.length - 1; i++) arcos.push(mejorDe(i, arcos, i));
+
+    /* Segunda pasada. En la primera, cada tramo solo puede mirar a los que ya
+       están puestos, así que un cruce con uno POSTERIOR no se ve venir. Aquí
+       ya están todos: se rehace el que cruce, mirando a los dos lados. Se
+       repite hasta que no queda ninguno sucio (tres vueltas como mucho: si en
+       tres no ha convergido, es que no va a converger). */
+    for (let vuelta = 0; vuelta < 3; vuelta++) {
+        let quedan = 0;
+        for (let i = 0; i < arcos.length; i++) {
+            const sucio = arcos.some((otro, j) => {
+                if (j === i || crucCajasLejos(arcos[i].caja, otro.caja)) return false;
+                const v = vecino(i, j);
+                return chocan(arcos[i].muestras, otro.muestras, v,
+                              v === 1 ? pts[i + 1] : v === -1 ? pts[i] : null);
+            });
+            if (!sucio) continue;
+            arcos[i] = mejorDe(i, arcos, arcos.length);
+            if (arcos[i].coste > 0) quedan++;
+        }
+        if (!quedan) break;
     }
 
-    const hoy = crucTodayMadrid();
-    // El índice trae los días publicados; sin ellos (índice viejo) se deducen
-    // de los meses, aunque entonces no se puede numerar sin descargarlos.
-    const dias = Array.isArray(crucIndex.days) ? crucIndex.days : [];
-    crucEditions = dias.filter(d => d <= hoy).sort();
-
-    if (!crucEditions.length) {
-        // Esto NO es la red: el indice llego y viene vacio. No hay nada que reintentar.
-        crucFatal('Todavía no hay ningún crucigrama publicado.');
-        return;
-    }
-    crucArranqueIncompleto = false;
-
-    // Se abre por el de hoy; si hoy no tiene, por el último publicado.
-    const i = crucEditions.indexOf(hoy);
-    // Y si hoy no tiene, se DICE. Antes se caía al último disponible en
-    // silencio: el juego estuvo 102 días sirviendo el crucigrama del 7 de mayo
-    // y en pantalla no se notaba nada raro.
-    crucAtrasado = i < 0;
-
-    /* Y si la URL pide una edición concreta, manda ella. Ojo: eso NO es estar
-       atrasado — el aviso de "la de hoy no está lista" es para cuando el juego
-       se desvía solo, no para cuando el desvío lo has pedido tú. */
-    const pedido  = window.FHRuta && FHRuta.fecha('dia');
-    const iPedido = pedido ? crucEditions.indexOf(pedido) : -1;
-
-    // El Atrás del móvil deshace la navegación por ediciones.
-    if (window.FHRuta) FHRuta.alVolver(() => {
-        const d = FHRuta.fecha('dia') || hoy;
-        const k = crucEditions.indexOf(d);
-        if (k >= 0 && k !== crucIdx) crucGoEdition(k, true);
+    let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    arcos.forEach((arco, i) => {
+        const b = pts[i + 1];
+        d += ` Q ${arco.c.x.toFixed(1)} ${arco.c.y.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
     });
+    return { d, muestras: arcos.flatMap(a => a.muestras) };
+}
 
-    await crucGoEdition(iPedido >= 0 ? iPedido : (i >= 0 ? i : crucEditions.length - 1),
-                        true);
-    /* Que la URL no mienta: el día que no existe (o el de hoy, que va sin
-       parámetro) se quita, para que recargar no repita el mismo desvío. */
-    if (window.FHRuta) {
-        const real = crucEditions[crucIdx];
-        FHRuta.set({ dia: real === hoy ? null : real });
+/* El campo: mucho más ancho que la pantalla, así que solo se ve su franja
+   central y el área entra y se corta por los lados. Medidas reglamentarias
+   en proporción (68 x 105 m) tomadas del ANCHO, no del alto. */
+function crucDibujoCampo(W, H) {
+    const CW = W * 1.60, X0 = (W - CW) / 2;
+    const cx = W / 2, cy = H / 2, m = 14;
+    const aG = { w: 0.593 * CW, h: 0.243 * CW };
+    const aP = { w: 0.269 * CW, h: 0.089 * CW };
+    const rC = 0.134 * CW, penal = 0.162 * CW;
+    const port = { w: 0.108 * CW, h: 0.026 * CW };
+    const red = (y, arriba) => {
+        const x1 = cx - port.w / 2, y0 = arriba ? y - port.h : y;
+        let b = '';
+        for (let i = 1; i < 6; i++) {
+            const x = x1 + port.w * i / 6;
+            b += `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + port.h}"/>`;
+        }
+        return `<rect x="${x1}" y="${y0}" width="${port.w}" height="${port.h}"/>${b}`;
+    };
+    return `<svg class="cruc-lineas" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+        <g fill="none" stroke="var(--cruc-cal)" stroke-width="3" stroke-linejoin="round">
+          <line x1="${X0}" y1="${m}" x2="${X0 + CW}" y2="${m}"/>
+          <line x1="${X0}" y1="${H - m}" x2="${X0 + CW}" y2="${H - m}"/>
+          <line x1="${X0}" y1="${cy}" x2="${X0 + CW}" y2="${cy}"/>
+          <circle cx="${cx}" cy="${cy}" r="${rC}"/>
+          <circle cx="${cx}" cy="${cy}" r="4" fill="var(--cruc-cal)" stroke="none"/>
+          <rect x="${cx - aG.w / 2}" y="${m}" width="${aG.w}" height="${aG.h}"/>
+          <rect x="${cx - aP.w / 2}" y="${m}" width="${aP.w}" height="${aP.h}"/>
+          <circle cx="${cx}" cy="${m + penal}" r="3.5" fill="var(--cruc-cal)" stroke="none"/>
+          <path d="M ${cx - rC * 0.8} ${m + aG.h} A ${rC} ${rC} 0 0 0 ${cx + rC * 0.8} ${m + aG.h}"/>
+          ${red(m, true)}
+          <rect x="${cx - aG.w / 2}" y="${H - m - aG.h}" width="${aG.w}" height="${aG.h}"/>
+          <rect x="${cx - aP.w / 2}" y="${H - m - aP.h}" width="${aP.w}" height="${aP.h}"/>
+          <circle cx="${cx}" cy="${H - m - penal}" r="3.5" fill="var(--cruc-cal)" stroke="none"/>
+          <path d="M ${cx - rC * 0.8} ${H - m - aG.h} A ${rC} ${rC} 0 0 1 ${cx + rC * 0.8} ${H - m - aG.h}"/>
+          ${red(H - m, false)}
+        </g></svg>`;
+}
+
+function crucEstrellaSVG(llena) {
+    return `<svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2.4l2.95 6.0 6.6.96-4.78 4.66 1.13 6.58L12 17.45 6.1 20.6l1.13-6.58L2.45 9.36l6.6-.96z"
+        fill="${llena ? 'var(--cruc-oro)' : 'var(--cruc-oro-off)'}"
+        stroke="${llena ? 'var(--cruc-oro-bd)' : 'var(--cruc-oro-off-bd)'}"
+        stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+}
+function crucFilaEstrellas(n) {
+    let h = '';
+    for (let i = 0; i < 3; i++) h += crucEstrellaSVG(i < n);
+    return h;
+}
+function crucCandado() {
+    return `<svg class="cruc-candado" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 10V7a5 5 0 0110 0v3" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.4"/>
+      <rect x="4" y="10" width="16" height="11" rx="2" fill="rgba(255,255,255,.55)"/></svg>`;
+}
+
+/* ── EFECTOS REUTILIZABLES (chispas, confeti, anillo) ─────────────────────
+   Se generan por JS y no en el marcado porque necesitan direcciones al azar y
+   se limpian solos. Cada uno se autodestruye al terminar la animación, así que
+   no dejan basura en el DOM ni sobreviven a un repintado del mapa. Todos
+   comprueban crucSuave(): con "reduzca el movimiento" no se dibuja nada. */
+function crucChispas(host, n, oro) {
+    if (!host || crucSuave()) return;
+    const capa = document.createElement('div');
+    capa.className = 'cruc-chispas';
+    for (let i = 0; i < n; i++) {
+        const s = document.createElement('i');
+        s.className = 'cruc-chispa';
+        const ang = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.7;
+        const dist = 34 + Math.random() * 52;
+        s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+        s.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(1) + 'px');
+        s.style.setProperty('--d', (Math.random() * 0.12).toFixed(3) + 's');
+        if (!oro) s.style.background = ['#e0a326', '#4f7d3a', '#b5221e', '#f4ead2'][i % 4];
+        capa.appendChild(s);
+    }
+    host.appendChild(capa);
+    setTimeout(() => capa.remove(), 1400);
+}
+
+
+/* ══════════ LO QUE LLENA LOS HUECOS DEL CAMPO ══════════
+   Dos piezas: la foto icónica y el recorte de prensa. El recorte no es
+   adorno: api/titulares.js ya trae titulares reales de Marca, AS, Mundo
+   Deportivo y Sport para el ticker de la portada, así que puede alimentar
+   esto sin datos nuevos. Las fotos habría que curarlas a mano. */
+const CRUC_ICONOS = {
+    balon: `<svg viewBox="0 0 24 24" fill="none" stroke="#e8e4d6" stroke-width="1.5">
+      <circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4.2h-4.4L8.5 9.5z"/>
+      <path d="M12 3v4M4.2 9.6l4.3-.1M19.8 9.6l-4.3-.1M7.2 20l2.6-6M16.8 20l-2.6-6"/></svg>`,
+    copa: `<svg viewBox="0 0 24 24" fill="none" stroke="#e8e4d6" stroke-width="1.5">
+      <path d="M7 3h10v5a5 5 0 01-10 0z"/><path d="M7 5H4v2a3 3 0 003 3M17 5h3v2a3 3 0 01-3 3"/>
+      <path d="M12 13v4M9 21h6M10 17h4l.6 4h-5.2z"/></svg>`,
+    estadio: `<svg viewBox="0 0 24 24" fill="none" stroke="#e8e4d6" stroke-width="1.5">
+      <ellipse cx="12" cy="12" rx="9" ry="6"/><ellipse cx="12" cy="12" rx="4.5" ry="3"/>
+      <path d="M3 12v3c0 3.3 4 6 9 6s9-2.7 9-6v-3"/></svg>`,
+    bota: `<svg viewBox="0 0 24 24" fill="none" stroke="#e8e4d6" stroke-width="1.5">
+      <path d="M3 9h6l6 3h5a2 2 0 012 2v3H4a1 1 0 01-1-1z"/><path d="M6 17v2M11 17v2M16 17v2"/></svg>`
+};
+const CRUC_HITOS = [
+    { tipo: 'foto',    icono: 'copa',    pie: 'La Décima · Lisboa, 2014' },
+    { tipo: 'recorte', medio: 'Marca',   tit: 'Iniesta de mi vida',
+      pie: "El gol del 116' que dio el Mundial" },
+    { tipo: 'foto',    icono: 'balon',   pie: 'La Mano de Dios · México 86' },
+    { tipo: 'recorte', medio: 'Sport',   tit: '6-1: la noche del Camp Nou',
+      pie: 'La remontada al PSG, marzo de 2017' },
+    { tipo: 'foto',    icono: 'estadio', pie: 'Maracanazo · Río, 1950' },
+    { tipo: 'recorte', medio: 'As',      tit: 'Volea de Zidane en Glasgow',
+      pie: 'La Novena, mayo de 2002' },
+    { tipo: 'foto',    icono: 'bota',    pie: 'El Camp Nou de Ronaldinho' },
+    { tipo: 'recorte', medio: 'Mundo Deportivo', tit: 'España, campeona del mundo',
+      pie: 'Sudáfrica, 11 de julio de 2010' }
+];
+
+/* ── LAS TARJETAS CURADAS ──────────────────────────────────────────────
+   Si hay `crucigrama/tarjetas.json` en Storage, MANDA ÉL: cada tarjeta va
+   exactamente donde se la ha puesto con admin/colocar_tarjetas.py. Solo las
+   divisiones que no tengan ninguna curada caen al reparto automático de más
+   abajo, para que el mapa nunca salga pelado mientras se colocan.
+
+   La posición se guarda en FRACCIONES del campo (0..1), no en píxeles: el
+   campo mide 375 px en un móvil y 1.000 en un escritorio, así que en píxeles
+   la foto se saldría o se plantaría encima del recorrido según la pantalla. */
+let crucFotos = null;
+
+function crucValidarTarjeta(t) {
+    if (!t || typeof t !== 'object') return null;
+    const div = Number(t.div), x = Number(t.x), y = Number(t.y);
+    if (!Number.isInteger(div) || div < 1 || div > CRUC_DIVISIONES.length) return null;
+    if (!(x >= 0 && x <= 1) || !(y >= 0 && y <= 1)) return null;
+    const img = typeof t.img === 'string' ? t.img.trim() : '';
+    const icono = CRUC_ICONOS[t.icono] ? t.icono : 'copa';
+    /* `nivel` es el que la DESTAPA, y lo elige quien la coloca. 0 (o fuera de
+       rango) = automatico: el nivel cuyo nodo cae mas cerca de la tarjeta. */
+    const nivel = Number(t.nivel);
+    return {
+        div, x, y, img, icono,
+        pie: typeof t.pie === 'string' ? t.pie : '',
+        ancho: Math.max(80, Math.min(320, Number(t.ancho) || 132)),
+        giro: Math.max(-15, Math.min(15, Number(t.giro) || 0)),
+        nivel: (Number.isInteger(nivel) && nivel >= 1 && nivel <= CRUC_TOTAL_NIVELES) ? nivel : 0,
+    };
+}
+
+/* ── QUE TARJETAS SE HAN VISTO YA ──────────────────────────────────────
+   La animacion es de UNA vez: al volver al mapa, una tarjeta ya destapada
+   tiene que estar puesta, no volver a revelarse cada vez que entras. La clave
+   es `division|imagen` (o el pie si no hay imagen): sobrevive a que las
+   reordenes o las muevas de sitio, que es lo que pasa al curarlas. */
+const CRUC_TARJ_VISTAS = 'cruc_tarj_vistas';
+function crucTarjClave(t) { return t.div + '|' + (t.img || t.pie); }
+function crucTarjVistas() {
+    try { return new Set(JSON.parse(localStorage.getItem(CRUC_TARJ_VISTAS) || '[]')); }
+    catch (e) { return new Set(); }
+}
+function crucTarjApuntar(clave) {
+    try {
+        const s = crucTarjVistas();
+        s.add(clave);
+        localStorage.setItem(CRUC_TARJ_VISTAS, JSON.stringify([...s]));
+    } catch (e) { /* sin localStorage se anima cada vez, y no pasa nada */ }
+}
+
+/* El nivel mas cercano a la tarjeta, para cuando no se ha elegido uno. */
+function crucNivelMasCerca(t, ancho, alto, pts, primero) {
+    const x = t.x * ancho, y = t.y * alto;
+    let mejor = 0, dm = Infinity;
+    pts.forEach((p, i) => {
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < dm) { dm = d; mejor = i; }
+    });
+    return primero + mejor;
+}
+
+/* NO bloquea el arranque, y es a propósito: una petición más en el camino
+   crítico es una forma más de que el mapa no salga (la lección de En el Top
+   del 2026-09-01). Si llega, se repinta; si no llega, reparto automático. */
+async function crucCargarFotos() {
+    if (crucFotos) return;
+    try {
+        /* Por el proxy (fhFetchData), no directo a Storage: asi lo cachea la
+           CDN -son las mismas tarjetas para todo el mundo y cambian cuando se
+           curan, no cada dia- y ademas la herramienta de colocarlas puede
+           interceptarlo para ensenar en local lo que acabas de mover. El
+           respaldo a Supabase ya viene dentro. */
+        const res = window.fhFetchData
+            ? await fhFetchData('game-data', 'crucigrama/tarjetas.json')
+            : await fetch(sbStorageUrl('game-data', 'crucigrama/tarjetas.json'));
+        if (!res.ok) throw new Error('sin tarjetas');
+        const j = await res.json();
+        const lista = (Array.isArray(j) ? j : j.tarjetas || [])
+            .map(crucValidarTarjeta).filter(Boolean);
+        if (!lista.length) return;
+        crucFotos = lista;
+        if (document.getElementById('cruc-mapa')) crucPintarMapa();
+    } catch (e) { /* sin curar: manda el reparto automático */ }
+}
+
+function crucTarjetasCuradas(idxDiv, ancho, alto, k, pts) {
+    const n = 1 + (k - 1) * 0.42;
+    const primero = (crucBloques[idxDiv] || {}).primero || 1;
+    const vistas = crucTarjVistas();
+    return (crucFotos || []).filter(t => t.div === idxDiv + 1).map(t => {
+        const sitio = `left:${(t.x * ancho).toFixed(1)}px;top:${(t.y * alto).toFixed(1)}px;`
+                    + `--rot:${t.giro}deg;--cruc-tarj-w:${(t.ancho * n).toFixed(1)}px`;
+        const nv = t.nivel || crucNivelMasCerca(t, ancho, alto, pts, primero);
+
+        /* Hasta que no se pasa SU nivel la tarjeta es una interrogacion: se ve
+           que ahi hay algo, pero no que es. */
+        if (crucEstrellas(nv) === 0) {
+            return `<div class="cruc-tarjeta cruc-foto cruc-tarj-bloq" aria-hidden="true"
+              data-tarjeta="${idxDiv + 1}" style="${sitio}">
+                <div class="cruc-foto-img"></div><div class="cruc-foto-pie"></div></div>`;
+        }
+
+        const clave = crucTarjClave(t);
+        const nueva = !vistas.has(clave);
+        const dentro = t.img
+            ? `<div class="cruc-foto-img"><img src="${crucEsc(sbStorageUrl('cruc-fotos', t.img))}"
+                 alt="" loading="lazy" decoding="async"></div>`
+            : `<div class="cruc-foto-img">${CRUC_ICONOS[t.icono]}</div>`;
+        /* Si es nueva el pie sale VACIO: lo escribe a maquina crucRevelarTarjetas(). */
+        return `<div class="cruc-tarjeta cruc-foto${nueva ? ' cruc-tarj-nueva' : ''}"
+          aria-hidden="true" data-tarjeta="${idxDiv + 1}"
+          ${nueva ? `data-clave="${crucEsc(clave)}" data-pie="${crucEsc(t.pie)}"` : ''}
+          style="${sitio}">${dentro}
+            <div class="cruc-foto-pie">${nueva ? '' : crucEsc(t.pie)}</div></div>`;
+    }).join('');
+}
+
+/* ── EL REVELADO ───────────────────────────────────────────────────────
+   La tarjeta entra recta y a escala corta, y la foto se revela como una
+   Polaroid: de borrosa y sin color a nitida. Cuando ya esta quieta, el pie se
+   escribe a maquina. Van una detras de otra y no todas a la vez: con tres en
+   la misma division revelandose a la vez no se mira ninguna. */
+function crucRevelarTarjetas() {
+    const nuevas = document.querySelectorAll('.cruc-tarj-nueva');
+    if (!nuevas.length) return;
+    const suave = window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    nuevas.forEach((el, i) => {
+        if (el.dataset.revelando) return;     // se la llama por dos vias, ver abajo
+        el.dataset.revelando = '1';
+        const pie = el.querySelector('.cruc-foto-pie');
+        const texto = el.dataset.pie || '';
+        crucTarjApuntar(el.dataset.clave);
+        if (suave) {
+            if (pie) pie.textContent = texto;
+            el.classList.remove('cruc-tarj-nueva');
+            return;
+        }
+        setTimeout(() => {
+            if (!el.isConnected) return;
+            el.classList.add('cruc-tarj-revela');
+            setTimeout(() => crucEscribirPie(pie, texto), 780);
+            /* Las clases se quitan A MANO, no se deja que las sostenga el
+               fill-mode: si la animacion no llega a correr (pestana en segundo
+               plano, o un navegador que no compone) lo que se ve tiene que ser
+               el estado FINAL, no el de partida — o la foto se queda borrosa y
+               a medio revelar para siempre. */
+            setTimeout(() => {
+                el.classList.remove('cruc-tarj-nueva', 'cruc-tarj-revela');
+                if (pie && !pie.textContent) pie.textContent = texto;
+            }, 1900);
+        }, 180 + i * 300);
+    });
+}
+
+function crucEscribirPie(el, texto) {
+    if (!el) return;
+    const cursor = document.createElement('i');
+    cursor.className = 'cruc-cursor';
+    el.textContent = '';
+    el.appendChild(cursor);
+    let i = 0;
+    const paso = () => {
+        if (!el.isConnected) return;          // el mapa se repinto por el camino
+        i++;
+        cursor.remove();
+        el.textContent = texto.slice(0, i);
+        if (i < texto.length) { el.appendChild(cursor); setTimeout(paso, 26); }
+    };
+    setTimeout(paso, 0);
+}
+
+/* Dos o tres por división, SIEMPRE en hueco limpio: se comprueba contra el
+   trazo de verdad (las muestras de las bézier) y contra los niveles, no
+   contra la recta entre nodos — con arcos que se abomban, la línea pasa por
+   otro sitio y las fotos acababan encima. */
+function crucTarjetas(pts, traza, ancho, idxDiv, k, alto) {
+    if ((crucFotos || []).some(t => t.div === idxDiv + 1)) {
+        return crucTarjetasCuradas(idxDiv, ancho, alto, k, pts);
+    }
+    /* La tarjeta crece MENOS que el campo (igual que el nodo): a escala
+       completa la caja mide 268x300 y casi nunca encuentra hueco limpio —
+       salían 7 en todo el mapa en vez de las ~30 que tocan. */
+    const n = 1 + (k - 1) * 0.42;
+    const CAJA_W = 132 * n, CAJA_H = 148 * n, RADIO = 46 * n;
+    const libre = (x, y) => {
+        const hw = CAJA_W / 2, hh = CAJA_H / 2;
+        if (x - hw < 4 || x + hw > ancho - 4) return -1;
+        let holgura = 1e9;
+        for (const p of traza) {
+            const dx = Math.abs(p.x - x) - hw, dy = Math.abs(p.y - y) - hh;
+            if (dx < 0 && dy < 0) return -1;
+            holgura = Math.min(holgura, Math.max(dx, dy));
+        }
+        for (const p of pts) {
+            const dx = Math.abs(p.x - x) - hw - RADIO, dy = Math.abs(p.y - y) - hh - RADIO;
+            if (dx < 0 && dy < 0) return -1;
+            holgura = Math.min(holgura, Math.max(dx, dy));
+        }
+        return holgura;
+    };
+    const sitios = [];
+    const yTop = pts[pts.length - 1].y + 90 * n, yBot = pts[0].y - 90 * n;
+    for (let y = yTop; y <= yBot; y += 26 * n) {
+        for (let f = 0; f <= 4; f++) {
+            const x = CAJA_W / 2 + 6 + f * (ancho - CAJA_W - 12) / 4;
+            const h = libre(x, y);
+            if (h > 0) sitios.push({ x, y, h });
+        }
+    }
+    sitios.sort((a, b) => b.h - a.h);
+    const puestas = [];
+    for (const s of sitios) {
+        if (puestas.length >= 3) break;
+        if (puestas.some(p => Math.abs(p.y - s.y) < 230 * n)) continue;
+        puestas.push(s);
+    }
+    return puestas.sort((a, b) => b.y - a.y).map((s, orden) => {
+        const h = CRUC_HITOS[(idxDiv * 3 + orden) % CRUC_HITOS.length];
+        const rot = (orden % 2 ? 1 : -1) * (2.5 + orden);
+        const dentro = h.tipo === 'foto'
+            ? `<div class="cruc-foto-img">${CRUC_ICONOS[h.icono]}</div>
+               <div class="cruc-foto-pie">${crucEsc(h.pie)}</div>`
+            : `<div class="cruc-recorte-medio">${crucEsc(h.medio)}</div>
+               <div class="cruc-recorte-tit">${crucEsc(h.tit)}</div>
+               <div class="cruc-recorte-pie">${crucEsc(h.pie)}</div>`;
+        return `<div class="cruc-tarjeta cruc-${h.tipo}" aria-hidden="true"
+          style="left:${s.x.toFixed(1)}px;top:${s.y.toFixed(1)}px;--rot:${rot}deg">${dentro}</div>`;
+    }).join('');
+}
+
+let crucBloques = [];
+
+/* `fundido` = entrar al mapa con un fundido, para que el salto de scroll a la
+   posición del jugador (o la celebración) no se vea: el mapa se coloca oculto
+   y aparece ya en su sitio. Solo al ENTRAR (crucStart / crucVolverAlMapa); los
+   repintados internos (redimensionar, llegada de tarjetas) no funden. */
+function crucPintarMapa(fundido) {
+    const screen = document.getElementById('crucigrama-screen');
+    if (!screen) return;
+    crucRelojPara();
+    crucPaginaFija(true);
+
+    const marcado = `
+      <button class="fh-volver" onclick="goToHub()">← Volver</button>
+      <div class="cruc-mapa-barra">
+        <div class="cruc-mapa-donde">
+          <span class="cruc-mapa-eyebrow" id="cruc-div-num">División 1 de 10</span>
+          <span class="cruc-mapa-nombre" id="cruc-div-nombre">Fútbol Base</span>
+        </div>
+        <div class="cruc-contador" id="cruc-contador"></div>
+        <a class="cruc-mapa-guia" href="/como-jugar/crucigrama/">Cómo se juega</a>
+      </div>
+      <div class="cruc-mapa-wrap" id="cruc-mapa-wrap"><div class="cruc-mapa${fundido ? ' cruc-mapa-cargando' : ''}" id="cruc-mapa"></div></div>`;
+    screen.innerHTML = marcado;
+
+    const mapa = document.getElementById('cruc-mapa');
+    const ancho = mapa.clientWidth || 375;
+    const k = crucEscala(ancho);
+    const banda = crucBanda(ancho);
+    mapa.style.setProperty('--cruc-k', k.toFixed(3));
+    const altos = CRUC_DIVISIONES.map(d => crucAltoCampo(d.niveles, ancho));
+    const total = altos.reduce((a, b) => a + b, 0) + banda * (CRUC_DIVISIONES.length - 1);
+    mapa.style.height = total + 'px';
+
+    /* La división 1 abajo del todo y la última arriba: se sube por el mapa. */
+    crucBloques = [];
+    let y = 0, primero = 1;
+    for (let i = CRUC_DIVISIONES.length - 1; i >= 0; i--) {
+        crucBloques[i] = { idx: i, nombre: CRUC_DIVISIONES[i].nombre,
+                           niveles: CRUC_DIVISIONES[i].niveles, top: y, alto: altos[i] };
+        y += altos[i];
+        if (i > 0) y += banda;
+    }
+    for (let i = 0; i < CRUC_DIVISIONES.length; i++) {
+        crucBloques[i].primero = primero;
+        primero += CRUC_DIVISIONES[i].niveles;
+    }
+
+    const actual = crucNivelActual();
+    let html = '';
+    crucBloques.forEach(b => {
+        const pts = crucPosiciones(b.niveles, ancho, b.alto, b.idx + 1);
+        const recorrido = crucRecorrido(pts, b.idx + 1, ancho);
+        const camino = recorrido.d;
+        let nodos = '';
+        pts.forEach((p, i) => {
+            const nivel = b.primero + i;
+            const est = crucEstrellas(nivel);
+            const abierto = crucNivelAbierto(nivel);
+            const festeja = crucCelebrar && crucCelebrar.nivel === nivel;
+            /* El color del círculo dice cuántas estrellas: 3 oro, 2 azul,
+               1 verde (clase cruc-est-N). */
+            nodos += `<button class="cruc-nodo${abierto ? '' : ' bloq'}${est > 0 ? ' hecho cruc-est-' + est : ''}${nivel === actual ? ' actual' : ''}${festeja ? ' cruc-nodo-festeja' : ''}"
+                data-nivel="${nivel}" style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px"
+                aria-label="Nivel ${nivel}${abierto ? `, ${est} de 3 estrellas` : ', bloqueado'}">
+                <span class="cruc-nodo-estrellas">${crucFilaEstrellas(est)}</span>
+                <span class="cruc-nodo-caja">${nivel}${abierto ? '' : crucCandado()}</span>
+                ${nivel === actual ? '<span class="cruc-nodo-aqui">Estás aquí</span>' : ''}
+              </button>`;
+        });
+        html += `<div class="cruc-campo" style="top:${b.top}px;height:${b.alto}px">
+            ${crucDibujoCampo(ancho, b.alto)}
+            <svg class="cruc-lineas" viewBox="0 0 ${ancho} ${b.alto}" aria-hidden="true">
+              <path d="${camino}" fill="none" stroke="rgba(0,0,0,.20)"
+                    stroke-width="${(12 * k).toFixed(1)}" stroke-linecap="round"/>
+              <path d="${camino}" fill="none" stroke="var(--cruc-cal)"
+                    stroke-width="${(8.5 * k).toFixed(1)}" stroke-linecap="round"
+                    stroke-dasharray="0.5 ${(21 * k).toFixed(1)}"/>
+            </svg>
+            ${crucTarjetas(pts, recorrido.muestras, ancho, b.idx, k, b.alto)}
+            ${nodos}
+          </div>`;
+        /* La banda anuncia la división de arriba: un cartel de ascenso de
+           categoría (emblema + nombre). NO lleva el rango de niveles — eso ya
+           se ve en el mapa. El requisito de estrellas solo se canta cuando ya
+           has pasado el último nivel de esta y te topas con la puerta cerrada;
+           antes no se avisa de nada. */
+        if (b.idx < CRUC_DIVISIONES.length - 1) {
+            const sig = CRUC_DIVISIONES[b.idx + 1];
+            const nSig = b.idx + 2;                       // nº de la división de arriba
+            const abierta = crucDivisionAbierta(b.idx + 1);
+            const acabada = crucEstrellas(b.primero + b.niveles - 1) > 0;
+            const frenado = !abierta && acabada;
+            html += `<div class="cruc-banda${frenado ? ' cerrada' : ' abierta'}"
+                  style="top:${b.top - banda}px;height:${banda}px">
+                <span class="cruc-banda-flechas" aria-hidden="true"></span>
+                <div class="cruc-banda-inner">
+                  <div class="cruc-banda-emblema">${nSig}${frenado ? crucCandado() : ''}</div>
+                  <div class="cruc-banda-txt">
+                    <div class="cruc-banda-kicker">División ${nSig} de ${CRUC_DIVISIONES.length}</div>
+                    <div class="cruc-banda-tit">${crucEsc(sig.nombre)}</div>
+                    ${frenado
+                        ? `<div class="cruc-banda-sub">${crucEstrellaSVG(true)}<span>${sig.entrada} estrellas para entrar</span></div>`
+                        : `<div class="cruc-banda-sub cruc-banda-sub--ascenso"><span>Ascenso</span></div>`}
+                  </div>
+                </div>
+                <span class="cruc-banda-flechas cruc-banda-flechas--der" aria-hidden="true"></span>
+              </div>`;
+        }
+    });
+    mapa.innerHTML = html;
+
+    mapa.querySelectorAll('.cruc-nodo:not(.bloq)').forEach(b => {
+        b.addEventListener('click', () => crucAbrirNivel(+b.dataset.nivel));
+    });
+    const wrap = document.getElementById('cruc-mapa-wrap');
+    crucInfoAlMapa(wrap);
+    wrap.addEventListener('scroll', () => {
+        clearTimeout(crucActualizarBarra._t);
+        crucActualizarBarra._t = setTimeout(crucActualizarBarra, 90);
+    }, { passive: true });
+
+    /* Si venimos de superar un nivel, el mapa celebra ese nodo (y no el
+       "actual", que ya es el SIGUIENTE). La celebración coloca su propio
+       scroll y consume crucCelebrar. Si no, el scroll de siempre al nodo
+       donde está el jugador. */
+    const celebra = crucCelebrar
+        && mapa.querySelector(`.cruc-nodo[data-nivel="${crucCelebrar.nivel}"]`);
+    requestAnimationFrame(() => {
+        /* El scroll VA PRIMERO: crucActualizarBarra mira el centro del scroll
+           para decir en qué división estás, así que con scrollTop aún a 0
+           mostraría la división de arriba (Leyenda). */
+        if (celebra) {
+            crucFestejarEnMapa();
+        } else {
+            const nodo = mapa.querySelector(`.cruc-nodo[data-nivel="${actual}"]`);
+            if (nodo) wrap.scrollTop = nodo.offsetTop + nodo.parentElement.offsetTop - wrap.clientHeight * 0.58;
+        }
+        crucActualizarBarra();
+        crucVigilarAnchoMapa();
+        /* Ya colocado el scroll: se descubre el mapa (el fundido oculta el
+           salto a la posición del jugador / la celebración). */
+        mapa.classList.remove('cruc-mapa-cargando');
+        /* Despues de colocar el scroll: si se lanza antes, la tarjeta se
+           revela mientras el mapa todavia se esta situando y te la pierdes. */
+        crucRevelarTarjetas();
+    });
+    /* Y una segunda via por temporizador, que NO es por si acaso:
+       requestAnimationFrame no corre con la pestana oculta, asi que un mapa
+       pintado en segundo plano (vuelves de otra app justo despues de pasar un
+       nivel) dejaria la tarjeta nueva en opacidad 0 PARA SIEMPRE. Es el mismo
+       tropiezo que ya documenta Bingo con la entrada en cascada del carton.
+       `crucRevelarTarjetas` se marca cada tarjeta, asi que llamarla dos veces
+       no encadena dos revelados. */
+    setTimeout(crucRevelarTarjetas, 400);
+    /* Reveal GARANTIZADO del mapa: setTimeout sí corre en segundo plano (el rAF
+       no), así que aunque el rAF no llegue a quitar la clase, el mapa nunca se
+       queda invisible. */
+    if (fundido) setTimeout(() => {
+        const m = document.getElementById('cruc-mapa');
+        if (m) m.classList.remove('cruc-mapa-cargando');
+    }, 400);
+    /* Misma red para la celebración: si el rAF no corrió (pestaña oculta), el
+       nodo festejado se quedaría con las estrellas invisibles. crucFestejarEnMapa
+       consume crucCelebrar, así que este respaldo no la repite si ya se hizo. */
+    if (crucCelebrar) setTimeout(() => {
+        if (crucCelebrar && document.querySelector(`.cruc-nodo[data-nivel="${crucCelebrar.nivel}"]`)) {
+            crucFestejarEnMapa();
+        }
+    }, 450);
+}
+
+function crucActualizarBarra() {
+    if (!crucBloques.length) return;
+    const wrap = document.getElementById('cruc-mapa-wrap');
+    if (!wrap) return;
+    const centro = wrap.scrollTop + wrap.clientHeight / 2;
+    let b = crucBloques[0];
+    for (const x of crucBloques) if (centro >= x.top && centro < x.top + x.alto) b = x;
+    const num = document.getElementById('cruc-div-num');
+    const nom = document.getElementById('cruc-div-nombre');
+    const cont = document.getElementById('cruc-contador');
+    if (num) num.textContent = `División ${b.idx + 1} de ${CRUC_DIVISIONES.length}`;
+    if (nom) nom.textContent = b.nombre;
+    /* Mientras el contador está contando hacia arriba (celebración), no se
+       pisa: un evento de scroll llegaría a media cuenta y lo dejaría en el
+       total de golpe. */
+    if (cont && !crucContando) {
+        cont.innerHTML = crucEstrellaSVG(true) + `<span>${crucEstrellasTotales()}</span>`;
     }
 }
 
-/* Navega a la edición idx de crucEditions y la deja lista para jugar. */
-async function crucGoEdition(idx, sinTocarUrl) {
-    // Se para ANTES de cambiar de puzzle: si no, el reloj de la edición que
-    // dejas atrás sigue corriendo y le suma segundos a la que abres.
-    crucRelojPara();
-    idx = Math.max(0, Math.min(crucEditions.length - 1, idx));
-    const fecha = crucEditions[idx];
-    const mes   = fecha.slice(0, 7);
+/* ══════════════════ LA CELEBRACIÓN EN EL MAPA ══════════════════
+   Se llama tras volver al mapa habiendo superado un nivel. El nodo recién
+   ganado se vuelve oro con sus estrellas saltando una a una, un anillo se
+   expande y saltan chispas; el contador total cuenta hacia arriba; y luego el
+   mapa se desliza suave al siguiente nivel, que te invita con un halo. Si la
+   partida abrió una división nueva, sale además el cartel de ascenso. */
+function crucFestejarEnMapa() {
+    const cel = crucCelebrar;
+    crucCelebrar = null;                       // se consume: no se repite al repintar
+    if (!cel) return;
+    const mapa = document.getElementById('cruc-mapa');
+    const wrap = document.getElementById('cruc-mapa-wrap');
+    if (!mapa || !wrap) return;
+    const nodo = mapa.querySelector(`.cruc-nodo[data-nivel="${cel.nivel}"]`);
+    if (!nodo) return;
 
-    /* push: cambiar de edición SÍ es moverse a otro sitio y el Atrás debe
-       deshacerlo. Se salta en el arranque y cuando la llamada viene del propio
-       Atrás (la URL ya la ha cambiado el navegador). */
-    if (window.FHRuta && !sinTocarUrl) {
-        FHRuta.set({ dia: fecha === crucTodayMadrid() ? null : fecha }, { push: true });
+    const centrar = (el, suave) => {
+        const top = el.offsetTop + el.parentElement.offsetTop - wrap.clientHeight * 0.5;
+        if (suave && wrap.scrollTo) wrap.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        else wrap.scrollTop = Math.max(0, top);
+    };
+
+    centrar(nodo, false);                      // primero, el nodo que se acaba de ganar
+    crucCuentaEstrellas(cel.est);
+
+    if (crucSuave()) return;
+
+    /* Se añade directamente, no en un rAF: el nodo ya está pintado y el
+       keyframe corre igual. Colgarlo de un rAF anidado lo dejaría sin
+       disparar con la pestaña oculta, y como festeja arranca las estrellas en
+       opacidad 0, se quedarían invisibles para siempre — el mismo tropiezo de
+       la cascada del cartón de Bingo. */
+    nodo.classList.add('cruc-festeja-go');
+    const caja = nodo.querySelector('.cruc-nodo-caja');
+    if (caja) {
+        const anillo = document.createElement('span');
+        anillo.className = 'cruc-anillo';
+        caja.appendChild(anillo);
+        setTimeout(() => anillo.remove(), 900);
+        crucChispas(caja, cel.est >= 3 ? 16 : 10, true);
     }
 
-    if (!crucMonthCache[mes]) crucLoading('CARGANDO...');
+    /* Tras la fiesta del nodo, pan al siguiente nivel (que ahora es el actual)
+       para dejar claro adónde ir. Solo si es OTRO nodo: al final del juego, o
+       con la puerta cerrada, el actual puede ser este mismo. */
+    const actual = mapa.querySelector('.cruc-nodo.actual');
+    if (actual && actual !== nodo) {
+        setTimeout(() => {
+            if (!document.body.contains(actual)) return;
+            centrar(actual, true);
+            const c2 = actual.querySelector('.cruc-nodo-caja');
+            if (c2) {
+                const halo = document.createElement('span');
+                halo.className = 'cruc-halo';
+                c2.appendChild(halo);
+                setTimeout(() => halo.remove(), 2100);
+            }
+        }, 1500);
+    }
+}
 
-    let dias;
+/* El contador total cuenta desde (total − ganadas) hasta total. */
+function crucCuentaEstrellas(gana) {
+    const cont = document.getElementById('cruc-contador');
+    if (!cont) return;
+    const total = crucEstrellasTotales();
+    if (crucSuave() || !gana || gana <= 0) {
+        cont.innerHTML = crucEstrellaSVG(true) + `<span>${total}</span>`;
+        return;
+    }
+    crucContando = true;
+    cont.innerHTML = crucEstrellaSVG(true) + `<span>${total - gana}</span>`;
+    const span = cont.querySelector('span');
+    let val = total - gana;
+    const paso = () => {
+        if (!span.isConnected) { crucContando = false; return; }
+        val++;
+        span.textContent = val;
+        cont.classList.remove('cruc-contador-tic');
+        void cont.offsetWidth;
+        cont.classList.add('cruc-contador-tic');
+        if (val < total) setTimeout(paso, 200);
+        else crucContando = false;
+    };
+    setTimeout(paso, 420);
+}
+
+// ── Abrir un nivel ───────────────────────────
+async function crucAbrirNivel(nivel) {
+    if (!crucNivelAbierto(nivel)) return;
+    const d = crucDivisionDe(nivel);
+    crucLoading('CARGANDO NIVEL ' + nivel);
+    let lista;
     try {
-        dias = await crucLoadMonth(mes);
-    } catch {
+        lista = await crucCargarDivision(d.idx);
+    } catch (e) {
         crucArranqueIncompleto = true;
-        crucFatal('No he podido cargar ese crucigrama.<br>Se reintentará solo.');
+        crucFatal('No se ha podido cargar la división. Comprueba la conexión.');
         return;
     }
-    const entrada = dias[fecha];
-    if (!entrada) {
-        crucFatal('Ese crucigrama no está donde debería.<br>Prueba con otra edición.');
-        return;
-    }
+    const nivelDatos = lista.find(l => l.n === nivel);
+    if (!nivelDatos) { crucFatal('Ese nivel no está disponible.'); return; }
 
-    crucIdx     = idx;
-    crucData    = crucNormalizeEntry(entrada, fecha);
-    // La edición es la POSICIÓN en la lista de días publicados, no los días de
-    // calendario desde el lanzamiento: con huecos (marzo no tuvo fines de
-    // semana) esa cuenta inflaba el número y el #47 no era el 47º crucigrama.
-    crucEdition = idx + 1;
-    crucOffset  = fecha === crucTodayMadrid() ? 0 : 1;
-    crucCells   = null;
-
-    // Reset state
-    crucUserGrid     = {};
-    crucSolvedWords  = new Set();
+    /* La rejilla empieza SIEMPRE vacía, también si el nivel ya tenía
+       estrellas: para mejorarlas hay que hacerlo entero otra vez. */
+    crucNivel = nivel;
+    crucData = {
+        nivel,
+        size: [nivelDatos.f, nivelDatos.c],
+        /* El id es PROPIO de cada palabra, no su número de casilla: dos
+           palabras que arrancan en la misma casilla comparten número, así
+           que usarlo de id dejaba 7 identificadores para 10 palabras y el
+           crucigrama no se daba nunca por terminado. El número lo recalcula
+           crucNormalizeEntry en orden de lectura. */
+        words: nivelDatos.w.map((w, i) => ({
+            answer: w.a, clue: w.c, row: w.r, col: w.co,
+            direction: w.d, number: w.n, id: i + 1
+        }))
+    };
+    crucCells = null;
+    crucUserGrid = {};
+    crucSolvedWords = new Set();
     crucSelectedWord = null;
     crucSelectedCell = null;
-    crucUsedReveal   = false;
-    crucUsedCheck    = false;
-    crucMalas        = new Set();
-    crucSegundos     = 0;
+    crucMalas = new Set();
+    crucSegundos = 0;
+    crucNormalizeEntry(crucData);
 
-    // Restore saved state if any (clave por fecha real del puzzle cargado)
-    const saved = crucLoad();
-    if (saved) {
-        crucUserGrid    = saved.userGrid    || {};
-        crucSolvedWords = new Set(saved.solvedWords || []);
-        crucUsedReveal  = saved.clean === false;
-        crucUsedCheck   = saved.checked === true;
-        crucSegundos    = saved.segundos || 0;
-    }
-
+    if (window.FHRuta) FHRuta.set({ nivel: String(nivel) });
     buildCrucigramaScreen();
+    crucRelojArranca();
+}
 
-    if (crucIsComplete()) {
-        setTimeout(() => crucShowCompletion(), 400);
-    } else {
-        crucRelojArranca();
+/* Las posiciones del recorrido se calculan en PÍXELES sobre el ancho real,
+   así que al cambiar el tamaño de la ventana hay que rehacerlo. Se guarda el
+   nivel que se estaba mirando para volver a él. */
+let crucResizeMapa = null;
+function crucVigilarAnchoMapa() {
+    if (crucResizeMapa) window.removeEventListener('resize', crucResizeMapa);
+    let ancho = document.getElementById('cruc-mapa')?.clientWidth || 0;
+    crucResizeMapa = () => {
+        const mapa = document.getElementById('cruc-mapa');
+        if (!mapa) return;
+        if (mapa.clientWidth === ancho) return;      // solo importa el ancho
+        ancho = mapa.clientWidth;
+        clearTimeout(crucVigilarAnchoMapa._t);
+        crucVigilarAnchoMapa._t = setTimeout(crucPintarMapa, 150);
+    };
+    window.addEventListener('resize', crucResizeMapa);
+}
+
+function crucVolverAlMapa() {
+    crucRelojPara();
+    if (window.FHRuta) FHRuta.borrar('nivel');
+    crucPintarMapa(true);
+}
+
+// ── Arranque ─────────────────────────────────
+async function crucStart() {
+    crucArranqueIncompleto = false;
+    crucPintarMapa(true);
+    crucCargarFotos();          // sin await: repinta solo cuando llegue
+    /* Si se llega con ?nivel=N y está abierto, se entra directo. */
+    const pedido = window.FHRuta ? parseInt(FHRuta.get('nivel'), 10) : NaN;
+    if (Number.isFinite(pedido) && pedido >= 1 && pedido <= CRUC_TOTAL_NIVELES
+        && crucNivelAbierto(pedido)) {
+        await crucAbrirNivel(pedido);
+    } else if (window.FHRuta) {
+        FHRuta.borrar('nivel');
     }
 }
 
-// ── GEOMETRÍA DERIVADA DE LAS PALABRAS ──────
-// El JSON ya no guarda la rejilla: es redundante (se deduce entera de dónde
-// va cada palabra) y ocupaba el 58% del archivo, con una línea por casilla.
-// Tampoco guarda 'length' (= answer.length) ni 'number' cuando coincide con
-// el id. Se rellenan aquí, una vez, para que el resto del juego siga leyendo
-// w.length y w.number como toda la vida.
+function openCrucigrama() { crucStart(); }
 
-function crucNormalizeEntry(entrada, fecha) {
+/* Un arranque fallido no se queda muerto: al volver la conexión se reintenta
+   solo (js/red.js), que es lo que salvó a En el Top y La Carrera. */
+function crucReintentarArranque() {
+    if (!crucArranqueIncompleto || crucReintentando) return;
+    crucReintentando = true;
+    crucLoading('REINTENTANDO…');
+    crucStart().finally(() => { crucReintentando = false; });
+}
+if (window.FHRed && FHRed.alRecuperar) FHRed.alRecuperar(crucReintentarArranque);
+
+
+function crucNormalizeEntry(entrada) {
     if (entrada._listo) return entrada;
-    entrada.date = entrada.date || fecha;
     for (const w of entrada.words) {
         w.length = w.answer.length;
         if (w.number == null) w.number = w.id;
@@ -479,6 +1303,8 @@ function crucEsc(s) {
 // ── CONSTRUIR PANTALLA ───────────────────────
 
 function buildCrucigramaScreen() {
+    crucPaginaFija(false);
+    crucInfoAlCuerpo();
     const screen = document.getElementById('crucigrama-screen');
     /* NO se vacía antes de tener el marcado nuevo. Vaciar y luego construir
        significa que cualquier tropiezo al construir (una fecha con otra
@@ -487,41 +1313,20 @@ function buildCrucigramaScreen() {
        blanco entera, sin siquiera el botón Volver. Se monta la cadena
        completa primero y se asigna de una sola vez. */
 
-    const alPrincipio = crucIdx <= 0;
-    const alFinal     = crucIdx >= crucEditions.length - 1;
+    const d = crucDivisionDe(crucNivel);
+    const est = crucEstrellas(crucNivel);
 
     const marcado = `
         <!-- HEADER -->
         <div class="cruc-header">
             <div class="cruc-nav-row">
-                <button class="fh-volver" onclick="goToHub()">← Volver</button>
+                <button class="fh-volver" onclick="crucVolverAlMapa()">← Mapa</button>
                 <div class="cruc-title-block">
-                    <!-- h1: este render sustituye el innerHTML del contenedor y se
-                         llevaba por delante el único encabezado de la página, así
-                         que la versión renderizada se quedaba sin H1. -->
-                    <h1 class="cruc-title">EN EL CRUCIGRAMA</h1>
-                    <div class="cruc-edition">Crucigrama diario de fútbol</div>
+                    <h1 class="cruc-title">NIVEL ${crucNivel}</h1>
+                    <div class="cruc-edition">${crucEsc(d.nombre)}</div>
                 </div>
+                <div class="cruc-estrellas-cab" title="${est} de 3 estrellas">${crucFilaEstrellas(est)}</div>
             </div>
-            <div class="cruc-daily-nav">
-                <button class="cruc-nav-btn cruc-nav-btn--edge" ${alPrincipio ? 'disabled' : ''}
-                        title="Primera edición" onclick="crucGoEdition(0)">«</button>
-                <button class="cruc-nav-btn" id="cruc-prev-btn" ${alPrincipio ? 'disabled' : ''}
-                        onclick="crucGoEdition(${crucIdx - 1})">‹ Anterior</button>
-                <div class="cruc-edition-center">
-                    <div class="cruc-edition-num">#${crucEdition}</div>
-                </div>
-                <button class="cruc-nav-btn" id="cruc-next-btn" ${alFinal ? 'disabled' : ''}
-                        onclick="crucGoEdition(${crucIdx + 1})">Siguiente ›</button>
-                <button class="cruc-nav-btn cruc-nav-btn--edge" ${alFinal ? 'disabled' : ''}
-                        title="Última edición" onclick="crucGoEdition(${crucEditions.length - 1})">»</button>
-            </div>
-            ${crucAtrasado && crucIdx === crucEditions.length - 1
-               ? `<p class="fh-atrasado">El crucigrama de hoy todavía no
-               está listo. Mientras tanto, aquí tienes el del ${crucFechaLarga(crucData.date)}.</p>` : ''}
-            <!-- Enlace a la guía del juego. Va aquí y no solo en el HTML porque
-                 este render sustituye el innerHTML del contenedor entero. -->
-            <p class="guia-link"><a href="/como-jugar/crucigrama/">Cómo se juega &rarr;</a></p>
         </div>
 
         <!-- BODY -->
@@ -577,6 +1382,10 @@ function buildCrucigramaScreen() {
 
         <!-- BOTTOM BAR -->
         <div class="cruc-bottom-bar">
+            <!-- Aviso pequeño y permanente sobre Finalizar (línea superior). -->
+            <div class="cruc-finalizar-nota">
+                Puedes <b>finalizar</b> aunque te falten 1 o 2 palabras: pasas de nivel igual.
+            </div>
             <div class="cruc-progress">
                 <span id="cruc-solved-count">${crucSolvedWords.size}</span>/${crucData.words.length} palabras
                 <span class="cruc-reloj" id="cruc-reloj">${crucFormatoTiempo(crucSegundos)}</span>
@@ -585,15 +1394,10 @@ function buildCrucigramaScreen() {
                 <!-- Solo se ve en movil: en escritorio las pistas ya estan en las
                      dos columnas laterales, asi que el boton sobra. -->
                 <button class="cruc-btn-reveal cruc-btn-clues" onclick="crucToggleCluesSheet()">Pistas</button>
-                <button class="cruc-btn-reveal" onclick="crucComprobar()">Comprobar</button>
-                <div class="cruc-reveal-wrapper" id="cruc-reveal-wrapper">
-                    <button class="cruc-btn-reveal" onclick="crucToggleRevealMenu(event)">Revelar ▾</button>
-                    <div class="cruc-reveal-menu" id="cruc-reveal-menu">
-                        <button class="cruc-reveal-option" onclick="crucRevealLetter()">🔡 Letra</button>
-                        <button class="cruc-reveal-option" onclick="crucRevealWord()">📝 Palabra</button>
-                        <button class="cruc-reveal-option cruc-reveal-option--danger" onclick="crucRevealAll()">🔲 Cuadrícula</button>
-                    </div>
-                </div>
+                <!-- Finalizar: cierra el nivel con las palabras que llevas, por si
+                     te vale con una o dos estrellas. No hay revelar. -->
+                <button class="cruc-btn-reveal cruc-btn-finalizar" onclick="crucFinalizar()"
+                        title="Puedes finalizar aunque te falten 1 o 2 palabras: pasas de nivel igual.">Finalizar</button>
             </div>
         </div>
 
@@ -608,14 +1412,15 @@ function buildCrucigramaScreen() {
             </div>
         </div>
 
-        <!-- COMPLETION MODAL -->
+        <!-- RESULTADO DEL NIVEL -->
         <div class="cruc-completion-modal" id="cruc-completion-modal">
             <div class="cruc-completion-content">
-                <div class="cruc-completion-title" id="cruc-comp-title">🏆 ¡COMPLETADO!</div>
+                <div class="cruc-comp-estrellas" id="cruc-comp-estrellas"></div>
+                <div class="cruc-completion-title" id="cruc-comp-title">NIVEL SUPERADO</div>
                 <div class="cruc-completion-sub" id="cruc-comp-sub"></div>
                 <div class="cruc-completion-stats">
                     <div class="cruc-comp-stat">
-                        <div class="cruc-comp-stat-value" id="cruc-comp-words">${crucData.words.length}</div>
+                        <div class="cruc-comp-stat-value" id="cruc-comp-words">—</div>
                         <div class="cruc-comp-stat-label">Palabras</div>
                     </div>
                     <div class="cruc-comp-stat">
@@ -623,12 +1428,11 @@ function buildCrucigramaScreen() {
                         <div class="cruc-comp-stat-label">Tiempo</div>
                     </div>
                 </div>
-                <div class="cruc-completion-heading">Tus estadísticas</div>
-                <div class="cruc-completion-stats" id="cruc-comp-global"></div>
-                <div class="cruc-countdown" id="cruc-countdown" style="display:none;"></div>
+                <p class="cruc-comp-texto" id="cruc-comp-texto"></p>
                 <div class="cruc-completion-btns">
-                    <button class="next-btn" id="cruc-share-btn" onclick="crucShare()">📤 Compartir</button>
-                    <button class="give-up-btn" onclick="crucCloseCompletion()">Ver crucigrama</button>
+                    <button class="next-btn" id="cruc-comp-seguir">Continuar →</button>
+                    <button class="give-up-btn" id="cruc-share-btn" onclick="crucShare()">📤 Compartir</button>
+                    <button class="give-up-btn" id="cruc-comp-mapa" onclick="crucVolverAlMapa()">Ir al mapa</button>
                 </div>
             </div>
         </div>
@@ -642,11 +1446,103 @@ function buildCrucigramaScreen() {
 
     // Recalcular tamaño si cambia el viewport
     window._crucResizeHandler && window.removeEventListener('resize', window._crucResizeHandler);
-    window._crucResizeHandler = () => renderGrid();
+    window._crucResizeHandler = () => {
+        crucCeldaForzada = 0;
+        const t = document.getElementById('cruc-keyboard');
+        if (t) t.style.display = '';       // se le vuelve a dar la oportunidad
+        renderGrid();
+        crucAjustarAlto();
+    };
     window.addEventListener('resize', window._crucResizeHandler);
+    if (!crucCeldaForzada) {
+        crucAjustarAlto();
+        /* Y otra vez con las fuentes ya cargadas: al primer render los textos
+           miden menos de lo que van a medir (fuente de respaldo), así que
+           entonces "cabe" y un segundo después ya no. */
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                if (document.getElementById('cruc-grid')) crucAjustarAlto();
+            });
+        }
+        setTimeout(() => { if (document.getElementById('cruc-grid')) crucAjustarAlto(); }, 400);
+    }
+}
+
+/* Una sola pasada de correccion: se mide lo que sobresale y se recorta la
+   celda lo justo. Solo achica, nunca agranda, y no se encadena. */
+function crucAjustarAlto(vuelta) {
+    vuelta = vuelta || 0;
+    const barra = document.querySelector('.cruc-bottom-bar');
+    const celda = document.querySelector('.cruc-cell');
+    if (!barra || !celda || vuelta > 3) return;
+
+    /* LO PRIMERO: que las columnas de pistas no estiren la página. Si son
+       ELLAS las que se salen, lo que sobra no lo arregla encoger la rejilla
+       —el bucle de abajo la hunde hasta el suelo y no sirve de nada—. Medido
+       en un portátil de 1.366x768, que es lo normal: la columna de
+       HORIZONTALES media 576 px, la rejilla acababa con casillas de 20 px y
+       la página seguía igual de larga. El `max-height` que tenían en el CSS
+       (100vh - 160) se quedaba corto porque no descuenta ni la cabecera ni la
+       barra de abajo; aquí se miden de verdad y las columnas se desplazan por
+       dentro, que es lo que tiene que pasar cuando hay diez pistas largas. */
+    const columnas = document.querySelectorAll('.cruc-clues-desktop');
+    if (columnas.length && columnas[0].offsetParent !== null) {
+        /* Se mide desde donde empieza la COLUMNA, no desde el cuerpo: entre
+           uno y otra hay 20 px de relleno, y contarlos de menos dejaba el
+           tope justo 20 px largo — o sea el desbordamiento seguía ahí. */
+        const arriba = columnas[0].getBoundingClientRect().top;
+        /* Sólo 10 px de aire hasta la barra: así las columnas LLEGAN a la
+           línea del temporizador en vez de quedarse cortas con un hueco. */
+        const hueco = window.innerHeight - arriba
+                    - barra.getBoundingClientRect().height - 10;
+        /* Se fija la ALTURA, no un max-height: con altura la columna llega a la
+           línea aunque tenga pocas pistas (el fondo del panel rellena hasta
+           abajo por el `flex:1` de la sección), y al ser fija no da el salto de
+           "se ve entera y luego se recorta" cuando las fuentes cargan y el
+           texto crece — la caja no cambia de tamaño, sólo aparece el scroll. */
+        const alto = Math.max(220, hueco);
+        columnas.forEach(c => { c.style.height = alto + 'px'; c.style.maxHeight = 'none'; });
+    }
+
+    const sobra = barra.getBoundingClientRect().bottom - window.innerHeight;
+    if (sobra <= 0) return;
+
+    /* En escritorio, antes de achicar la rejilla hasta lo ridículo, que ceda
+       el teclado en pantalla: ahí hay teclado de verdad y son 158 px que le
+       vienen mucho mejor a las casillas. Solo cuando la celda se quedaría por
+       debajo de 38 px. */
+    const tec = document.getElementById('cruc-keyboard');
+    if (window.innerWidth > 600 && tec && tec.offsetParent !== null
+        && celda.getBoundingClientRect().width < 38) {
+        tec.style.display = 'none';
+        crucCeldaForzada = 0;
+        renderGrid();
+        crucAjustarAlto(vuelta + 1);
+        return;
+    }
+    /* Lo que sobra no baja en proporcion exacta al tamano de celda -hay
+       margenes y bordes por medio-, asi que converge en dos o tres pasadas
+       en vez de intentar acertar de una. */
+    const { rows } = crucSize();
+    const actual = celda.getBoundingClientRect().width;
+    /* Suelo de 30 px, no de 20. Una casilla de 20 px no es un crucigrama
+       pequeno: es un crucigrama que no se ve. Si con 30 sigue sin caber,
+       mejor que la pagina se desplace un poco. */
+    const nuevo = Math.max(30, Math.floor(actual - Math.max(1, Math.ceil(sobra / rows))));
+    if (nuevo >= actual) return;
+    crucCeldaForzada = nuevo;
+    renderGrid();
+    crucCeldaForzada = 0;
+    crucAjustarAlto(vuelta + 1);
 }
 
 // ── RENDER GRID ──────────────────────────────
+
+/* Si tras pintar la barra de acciones se sale de la ventana, se repinta una
+   vez con la celda mas pequena. Estimar el "cromo" (cabecera, pista, teclado,
+   acciones) con constantes nunca acierta del todo: las fuentes cargan tarde y
+   los textos ocupan lo que ocupan. Medir y corregir una vez si acierta. */
+let crucCeldaForzada = 0;
 
 function renderGrid() {
     const container = document.getElementById('cruc-grid');
@@ -655,18 +1551,34 @@ function renderGrid() {
     const { rows, cols } = crucSize();
 
     // Calcular tamaño de celda dinámicamente según el ancho disponible
-    const isDesktop = window.innerWidth > 600;
-    // En desktop, la columna central ocupa aprox. el ancho total menos dos columnas laterales (210px c/u) y gaps
-    const availableWidth  = isDesktop
-        ? Math.min(window.innerWidth - 32 - 2 * 230, 480)
-        : Math.min(window.innerWidth - 32, 640);
-    // En móvil el chrome (header ~90px, clue bar ~80px, tap bar ~60px, bottom bar ~58px, paddings ~36px) ocupa ~324px
-    // Usamos 0.38 para dejar espacio suficiente al chrome y que el crucigrama quepa sin scroll
-    const availableHeight = window.innerHeight * (isDesktop ? 0.65 : 0.38);
+    /* Tres tamaños de pantalla, no dos: las columnas de pistas solo salen a
+       partir de 1180 (ver crucigrama.css), asi que entre 601 y 1179 el ancho
+       util es TODO el contenedor, no el de la columna central. */
+    const conColumnas = window.innerWidth >= 1180;
+    const anchoAmplio = window.innerWidth > 600;
+    const availableWidth = conColumnas
+        ? Math.min(window.innerWidth - 32 - 2 * 260, 520)
+        : Math.min(window.innerWidth - 32, 560);
+
+    /* El alto se descuenta de verdad, no por un porcentaje a ojo: cabecera,
+       barra de pista, teclado y barra de acciones son piezas fijas y si no se
+       restan la pagina crece y los botones quedan fuera de la ventana (a
+       1000x900 la pagina medía 1.421 px y las acciones acababan en 957). */
+    const cabecera = document.querySelector('.cruc-header');
+    const teclado  = document.getElementById('cruc-keyboard');
+    const acciones = document.querySelector('.cruc-bottom-bar');
+    const alto = e => (e ? e.getBoundingClientRect().height : 0);
+    const chrome = alto(cabecera) + alto(acciones)
+                 + (anchoAmplio ? alto(teclado) : 0)
+                 + 104                                 // barra de pista + huecos
+                 + (anchoAmplio ? 40 : 96);            // en movil, la tap-bar
+    const availableHeight = Math.max(200, window.innerHeight - chrome);
+
     const cellByWidth  = Math.floor((availableWidth  - 10) / cols);
     const cellByHeight = Math.floor((availableHeight - 10) / rows);
-    // En móvil bajamos el mínimo a 20px para que crucígramas grandes quepan en pantalla
-    const cellSize = Math.max(isDesktop ? 28 : 20, Math.min(52, cellByWidth, cellByHeight));
+    // En móvil bajamos el mínimo a 20px para que crucigramas grandes quepan en pantalla
+    const cellSize = crucCeldaForzada
+        || Math.max(anchoAmplio ? 26 : 20, Math.min(52, cellByWidth, cellByHeight));
 
     container.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
     container.innerHTML = '';
@@ -1029,6 +1941,16 @@ function crucHandleKey(key) {
     }
 }
 
+/* Compara dos letras YA normalizadas aceptando N donde la respuesta es Ñ:
+   quien ve una Ñ en pantalla puede teclear N y cuenta como acierto. Es
+   simétrico (también N↔Ñ), lo cual es inofensivo — cada casilla tiene una
+   sola letra correcta. */
+function crucLetrasIguales(a, b) {
+    if (a === b) return true;
+    const sinTilde = x => (x === 'Ñ' ? 'N' : x);
+    return sinTilde(a) === sinTilde(b);
+}
+
 function crucNormalize(letter) {
     // La \u00d1 es una letra distinta de la N: si se le quitan los acentos con
     // normalize('NFD'), su virgulilla se descompone en un car\u00e1cter combinante
@@ -1114,12 +2036,13 @@ function crucCheckWordSolved(word) {
         const { row, col } = cells[i];
         const entered = crucUserGrid[`${row},${col}`] || '';
         const correct = crucNormalize(word.answer[i]);
-        if (entered !== correct) {
+        if (!crucLetrasIguales(entered, correct)) {
             crucSolvedWords.delete(word.id);
             updateCluesPanel();
             return false;
         }
     }
+    const eraNueva = !crucSolvedWords.has(word.id);
     crucSolvedWords.add(word.id);
     // Update progress
     const countEl = document.getElementById('cruc-solved-count');
@@ -1127,7 +2050,26 @@ function crucCheckWordSolved(word) {
     updateCluesPanel();
     // Flash solved word cells
     cells.forEach(({ row, col }) => updateCellVisual(row, col));
+    // Solo al PASAR de no-resuelta a resuelta se anima la onda: si no, cada
+    // tecla de una palabra ya buena la relanzaría.
+    if (eraNueva) crucOndaPalabra(cells);
     return true;
+}
+
+/* Onda en cascada por las casillas de una palabra recién resuelta. Cada
+   casilla salta con un retardo según su posición; refresca el estado al
+   terminar para que quede el verde de "correcta" limpio. */
+function crucOndaPalabra(cells) {
+    if (crucSuave()) return;
+    cells.forEach((p, i) => {
+        const cell = document.querySelector(`.cruc-cell[data-row="${p.row}"][data-col="${p.col}"]`);
+        if (!cell) return;
+        cell.style.setProperty('--onda-i', i);
+        cell.classList.remove('cruc-cell-onda');
+        void cell.offsetWidth;                 // reinicia la animación
+        cell.classList.add('cruc-cell-onda');
+        setTimeout(() => cell.classList.remove('cruc-cell-onda'), 620 + i * 55);
+    });
 }
 
 function crucIsCellCorrect(r, c) {
@@ -1142,143 +2084,92 @@ function crucIsComplete() {
     return crucData.words.every(w => crucSolvedWords.has(w.id));
 }
 
-// ── MENÚ REVELAR ─────────────────────────────
-
-function crucToggleRevealMenu(e) {
-    e.stopPropagation();
-    const menu = document.getElementById('cruc-reveal-menu');
-    if (!menu) return;
-    const isOpen = menu.classList.contains('open');
-    menu.classList.toggle('open', !isOpen);
-    if (!isOpen) {
-        // Cerrar al hacer click fuera
-        setTimeout(() => {
-            document.addEventListener('click', crucCloseRevealMenu, { once: true });
-        }, 0);
-    }
-}
-
-function crucCloseRevealMenu() {
-    const menu = document.getElementById('cruc-reveal-menu');
-    if (menu) menu.classList.remove('open');
-}
-
-function crucRevealLetter() {
-    crucCloseRevealMenu();
-    if (!crucSelectedCell || !crucData || crucIsComplete()) return;
-    crucUsedReveal = true;
-    const { row, col } = crucSelectedCell;
-
-    // Encontrar la respuesta correcta para esta celda
-    const words = crucGetWordsAtCell(row, col);
-    if (words.length === 0) return;
-    const word = words[0];
-    const cells = crucGetWordCells(word);
-    const idx = cells.findIndex(p => p.row === row && p.col === col);
-    if (idx === -1) return;
-
-    const correct = crucNormalize(word.answer[idx]);
-    crucUserGrid[`${row},${col}`] = correct;
-    updateCellVisual(row, col);
-
-    // Comprobar si alguna palabra queda resuelta
-    crucGetWordsAtCell(row, col).forEach(w => crucCheckWordSolved(w));
-
-    crucSave();
-    if (crucIsComplete()) setTimeout(() => crucShowCompletion(true), 500);
-}
-
-function crucRevealWord() {
-    crucCloseRevealMenu();
-    if (!crucSelectedWord || !crucData || crucIsComplete()) return;
-    crucUsedReveal = true;
-    const w = crucSelectedWord;
-    const cells = crucGetWordCells(w);
-    cells.forEach(({ row, col }, i) => {
-        crucUserGrid[`${row},${col}`] = crucNormalize(w.answer[i]);
-    });
-    // Comprobar también las palabras cruzadas que comparten celda con la
-    // revelada: rellenar sus letras puede completarlas "de rebote" y hay
-    // que marcarlas resueltas igual que hace crucHandleKey/crucRevealLetter.
-    const checked = new Set();
-    cells.forEach(({ row, col }) => {
-        crucGetWordsAtCell(row, col).forEach(ww => {
-            if (checked.has(ww.id)) return;
-            checked.add(ww.id);
-            crucCheckWordSolved(ww);
-        });
-    });
-    const countEl = document.getElementById('cruc-solved-count');
-    if (countEl) countEl.textContent = crucSolvedWords.size;
-    refreshAllCells();
-    updateCluesPanel();
-    crucSave();
-    if (crucIsComplete()) setTimeout(() => crucShowCompletion(true), 500);
-}
-
-// ── REVELAR TODO ─────────────────────────────
-
-function crucRevealAll() {
-    crucCloseRevealMenu();
-    if (!crucData || crucIsComplete()) return;
-    if (!confirm('¿Seguro que quieres revelar toda la cuadrícula?')) return;
-    crucUsedReveal = true;
-    crucData.words.forEach(w => {
-        crucGetWordCells(w).forEach(({ row, col }, i) => {
-            crucUserGrid[`${row},${col}`] = crucNormalize(w.answer[i]);
-        });
-        crucSolvedWords.add(w.id);
-    });
-    const countEl = document.getElementById('cruc-solved-count');
-    if (countEl) countEl.textContent = crucData.words.length;
-    refreshAllCells();
-    updateCluesPanel();
-    crucSave();
-    setTimeout(() => crucShowCompletion(true), 500);
-}
-
 // ── COMPLETION MODAL ─────────────────────────
 
 function crucShowCompletion(revealed = false) {
-    if (crucCountdownInterval) clearInterval(crucCountdownInterval);
     crucRelojPara();
-
     const modal = document.getElementById('cruc-completion-modal');
     if (!modal) return;
 
-    const total   = crucData.words.length;
-    const solved  = crucSolvedWords.size;
-    const perfect = solved === total && !revealed && !crucUsedReveal && !crucUsedCheck;
+    const total  = crucData.words.length;
+    const solved = crucSolvedWords.size;
+    const est    = crucEstrellasDe(solved);
+    const paso   = est > 0;
+    const mejora = paso && crucApuntarEstrellas(crucNivel, est);
+    const d      = crucDivisionDe(crucNivel);
 
-    if (solved === total) crucStatsApuntar();
-
-    const ayuda = crucUsedReveal ? ' · con revelados'
-                : crucUsedCheck  ? ' · con comprobaciones' : '';
-    document.getElementById('cruc-comp-title').textContent = perfect ? '🏆 ¡PERFECTO!' : '✅ CRUCIGRAMA COMPLETADO';
-    document.getElementById('cruc-comp-sub').textContent   =
-        `Crucigrama #${crucEdition} · ${crucFechaLarga(crucData.date)}${ayuda}`;
-    document.getElementById('cruc-comp-words').textContent = solved;
+    document.getElementById('cruc-comp-title').textContent =
+        paso ? (est === 3 ? '¡LAS TRES ESTRELLAS!' : 'NIVEL SUPERADO') : 'NO HAS PASADO';
+    document.getElementById('cruc-comp-sub').textContent =
+        `Nivel ${crucNivel} · ${d.nombre}`;
+    document.getElementById('cruc-comp-words').textContent = `${solved}/${total}`;
     document.getElementById('cruc-comp-time').textContent  = crucFormatoTiempo(crucSegundos);
-    const global = document.getElementById('cruc-comp-global');
-    if (global) global.innerHTML = crucStatsHTML();
 
-    if (crucOffset === 0) {
-        const cd = document.getElementById('cruc-countdown');
-        if (cd) {
-            cd.style.display = 'block';
-            const tick = () => { cd.textContent = `⏱ Nuevo crucigrama en ${crucTimeUntilMidnight()}`; };
-            tick();
-            crucCountdownInterval = setInterval(tick, 1000);
+    const estr = document.getElementById('cruc-comp-estrellas');
+    if (estr) crucRevelarEstrellasResultado(estr, est);
+
+    const contenido = modal.querySelector('.cruc-completion-content');
+    if (contenido) contenido.classList.toggle('cruc-comp-pleno', est === 3);
+
+    const texto = document.getElementById('cruc-comp-texto');
+    if (texto) {
+        texto.textContent = paso
+            ? (est === 3 ? 'Las diez palabras. Pleno.'
+             : est === 2 ? 'Una fallada. Te falta una estrella.'
+             : 'Dos falladas. Repítelo si quieres las tres estrellas.')
+            : `Con ${total - solved} sin acertar no se pasa de nivel. Se pasa fallando dos como mucho.`;
+        if (mejora) texto.textContent += ' Marca mejorada.';
+    }
+
+    /* SIEMPRE se vuelve por el mapa: al superar, "Continuar" lleva al mapa y
+       ahí se celebra el nodo (crucCelebrar). Desde el mapa el jugador pulsa el
+       siguiente nivel — el mapa es la navegación. Si no ha pasado, "Reintentar"
+       rehace el mismo nivel. */
+    const seguir = document.getElementById('cruc-comp-seguir');
+    const mapaBtn = document.getElementById('cruc-comp-mapa');
+    if (seguir) {
+        if (!paso) {
+            seguir.textContent = 'Reintentar nivel';
+            seguir.onclick = () => { crucCloseCompletion(); crucAbrirNivel(crucNivel); };
+        } else {
+            seguir.textContent = 'Continuar →';
+            seguir.onclick = () => {
+                crucCelebrar = { nivel: crucNivel, est };
+                crucCloseCompletion();
+                crucVolverAlMapa();
+            };
         }
+    }
+    /* El botón secundario "Ir al mapa" solo tiene sentido cuando NO se ha
+       pasado (ahí el principal es Reintentar). Al superar es redundante con
+       Continuar, así que se esconde. */
+    if (mapaBtn) {
+        mapaBtn.hidden = paso;
+        mapaBtn.onclick = () => { crucCloseCompletion(); crucVolverAlMapa(); };
     }
 
     modal.classList.add('active');
 }
 
+/* Las estrellas del resultado entran una a una con rebote; las ganadas con un
+   destello dorado, y con las tres un estallido de chispas. */
+function crucRevelarEstrellasResultado(cont, est) {
+    cont.innerHTML = crucFilaEstrellas(est);
+    const svgs = cont.querySelectorAll('svg');
+    if (crucSuave()) return;
+    svgs.forEach((s, i) => {
+        s.classList.add('cruc-star-in');
+        if (i < est) s.classList.add('cruc-star-gana');
+        s.style.animationDelay = (0.12 + i * 0.24).toFixed(2) + 's';
+    });
+    if (est >= 3) {
+        setTimeout(() => crucChispas(cont, 16, true), Math.round((0.12 + 2 * 0.24) * 1000) + 120);
+    }
+}
+
 function crucCloseCompletion() {
     const modal = document.getElementById('cruc-completion-modal');
     if (modal) modal.classList.remove('active');
-    if (crucCountdownInterval) { clearInterval(crucCountdownInterval); crucCountdownInterval = null; }
 }
 
 /* ── COMPARTIR RESULTADO (estilo Wordle) ────── */
@@ -1287,23 +2178,19 @@ function crucShare() {
     if (!crucData) return;
     const total  = crucData.words.length;
     const solved = crucSolvedWords.size;
-    const limpio = !crucUsedReveal && !crucUsedCheck;
-    // En cuadrícula y no en una tira: con 19 palabras la fila de emojis se
-    // partía sola en WhatsApp y el resultado quedaba ilegible.
-    const casillas = [];
-    for (let i = 0; i < total; i += 5) {
-        casillas.push(Array.from({ length: Math.min(5, total - i) },
-            (_, j) => (i + j < solved ? '🟩' : '⬛')).join(''));
-    }
+    const est    = crucEstrellasDe(solved);
+    const d      = crucDivisionDe(crucNivel);
     const text =
-        `El Crucigrama FutbolHUB #${crucEdition}\n` +
-        `${solved}/${total} palabras en ${crucFormatoTiempo(crucSegundos)}${limpio ? ' ✅' : ' 🔍'}\n` +
-        `${casillas.join('\n')}\n` +
+        `El Crucigrama FutbolHUB · Nivel ${crucNivel} (${d.nombre})
+` +
+        `${'★'.repeat(est)}${'☆'.repeat(3 - est)}  ${solved}/${total} en ${crucFormatoTiempo(crucSegundos)}
+` +
+        `${crucEstrellasTotales()} estrellas en total
+` +
         window.location.origin + window.location.pathname;
     crucDoShare(text, document.getElementById('cruc-share-btn'));
 }
 
-/* Comparte con la hoja nativa del móvil si existe; si no, copia al portapapeles */
 function crucDoShare(text, btn) {
     const feedback = () => {
         if (!btn) return;
@@ -1331,17 +2218,6 @@ function crucDoShare(text, btn) {
    crucigrama (crucTodayMadrid manda). Con la medianoche del dispositivo, a
    quien jugara desde otro huso la cuenta atrás le llegaba a cero y seguía
    viendo el mismo crucigrama, o cambiaba con horas de adelanto. */
-function crucTimeUntilMidnight() {
-    const ahora = new Date();
-    const enMadrid = new Date(ahora.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
-    const finDeDia = new Date(enMadrid);
-    finDeDia.setHours(24, 0, 0, 0);
-    const diff = finDeDia - enMadrid;
-    const h = Math.floor(diff / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
 
 // ── FOCO MÓVIL ───────────────────────────────
 // El input oculto global se crea en DOMContentLoaded (al final del archivo).
