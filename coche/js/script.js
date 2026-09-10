@@ -3233,64 +3233,81 @@ const App = (() => {
       console.warn('[App] No se pudo leer sala fresca, usando datos locales:', e);
     }
 
-    const submissions  = freshRoom?.submissions||{};
-    const rawTR = freshRoom?.restrictions;
-    const restrictions = Array.isArray(rawTR) ? rawTR
-      : rawTR && typeof rawTR === 'object' ? Object.values(rawTR)
-      : _restrictions;
-    console.log('[App] _triggerReveal submissions:', JSON.stringify(submissions));
+    /* Red de seguridad: TODO lo de aquí abajo (calcular resultados, aplicar
+       puntos, decidir si alguien gana) vivía SIN try/catch propio. Un fallo
+       cualquiera -- un jugador con datos raros, `restrictions` corrupto,
+       lo que sea -- dejaba `_revealTriggered` en `true` para SIEMPRE: el
+       vigilante de ronda mira ese flag antes de nada (`if (... ||
+       _revealTriggered) return;`) y con él en `true` no vuelve a intentarlo
+       jamás. Como el rescate de los 12s lo dispara TODO el mundo con los
+       mismos datos de sala, un fallo determinista se repetía en cada
+       cliente y la partida se quedaba clavada para los 5 sin ninguna salida
+       -- justo lo reportado: "contestamos 4 y se petó". Ahora cualquier
+       excepción de este bloque suelta el cerrojo para que el vigilante
+       pueda reintentarlo en la siguiente pasada. */
+    try {
+      const submissions  = freshRoom?.submissions||{};
+      const rawTR = freshRoom?.restrictions;
+      const restrictions = Array.isArray(rawTR) ? rawTR
+        : rawTR && typeof rawTR === 'object' ? Object.values(rawTR)
+        : _restrictions;
+      console.log('[App] _triggerReveal submissions:', JSON.stringify(submissions));
 
-    /* En muerte súbita: solo evaluar jugadores participantes */
-    const evalPlayers = _isSuddenDeath
-      ? _players.filter(p => _suddenDeathPlayers.includes(p.id))
-      : _players;
-    const results      = await _computeResults(submissions, restrictions, evalPlayers);
-    /* Asegurar que no-participantes tienen resultado vacío */
-    if (_isSuddenDeath) {
-      for (const p of _players) {
-        if (!_suddenDeathPlayers.includes(p.id)) {
-          results[p.id] = {playerName:null,valid:false,matchCount:0,matches:restrictions.map(()=>false),footballer:null,points:0,isWinner:false};
+      /* En muerte súbita: solo evaluar jugadores participantes */
+      const evalPlayers = _isSuddenDeath
+        ? _players.filter(p => _suddenDeathPlayers.includes(p.id))
+        : _players;
+      const results      = await _computeResults(submissions, restrictions, evalPlayers);
+      /* Asegurar que no-participantes tienen resultado vacío */
+      if (_isSuddenDeath) {
+        for (const p of _players) {
+          if (!_suddenDeathPlayers.includes(p.id)) {
+            results[p.id] = {playerName:null,valid:false,matchCount:0,matches:restrictions.map(()=>false),footballer:null,points:0,isWinner:false};
+          }
         }
       }
-    }
-    const updated      = _applyPoints(_players, results);
-    _players = updated;
+      const updated      = _applyPoints(_players, results);
+      _players = updated;
 
-    /* Muerte súbita: el primero que gana la ronda gana la partida */
-    if (_isSuddenDeath) {
-      const sdWinner = updated
-        .filter(p => _suddenDeathPlayers.includes(p.id))
-        .find(p => results[p.id]?.isWinner);
-      if (sdWinner) {
-        _isSuddenDeath = false; _suddenDeathPlayers = [];
-        if (!_live()) { _revealTriggered=false; return; }
-        try {
-          await Sync.startReveal(_room, results, updated);
+      /* Muerte súbita: el primero que gana la ronda gana la partida */
+      if (_isSuddenDeath) {
+        const sdWinner = updated
+          .filter(p => _suddenDeathPlayers.includes(p.id))
+          .find(p => results[p.id]?.isWinner);
+        if (sdWinner) {
+          _isSuddenDeath = false; _suddenDeathPlayers = [];
           if (!_live()) { _revealTriggered=false; return; }
-          await Sync.setFinished(_room, sdWinner.id, updated);
-        } catch(e) { console.error('[App] sudden death finish error:', e); _revealTriggered=false; }
-        return;
-      }
-    } else {
-      /* Modo normal: comprobar si alguien alcanza pointsToWin */
-      const ptw = _onlinePointsToWin || POINTS_WIN;
-      const reached = updated.filter(p => p.score >= ptw);
-      if (reached.length === 1) {
-        if (!_live()) { _revealTriggered=false; return; }
-        try {
-          await Sync.startReveal(_room, results, updated);
+          try {
+            await Sync.startReveal(_room, results, updated);
+            if (!_live()) { _revealTriggered=false; return; }
+            await Sync.setFinished(_room, sdWinner.id, updated);
+          } catch(e) { console.error('[App] sudden death finish error:', e); _revealTriggered=false; }
+          return;
+        }
+      } else {
+        /* Modo normal: comprobar si alguien alcanza pointsToWin */
+        const ptw = _onlinePointsToWin || POINTS_WIN;
+        const reached = updated.filter(p => p.score >= ptw);
+        if (reached.length === 1) {
           if (!_live()) { _revealTriggered=false; return; }
-          await Sync.setFinished(_room, reached[0].id, updated);
-        } catch(e) { console.error('[App] finish error:', e); _revealTriggered=false; }
-        return;
+          try {
+            await Sync.startReveal(_room, results, updated);
+            if (!_live()) { _revealTriggered=false; return; }
+            await Sync.setFinished(_room, reached[0].id, updated);
+          } catch(e) { console.error('[App] finish error:', e); _revealTriggered=false; }
+          return;
+        }
       }
-    }
 
-    if (!_live()) { _revealTriggered=false; return; }
-    try {
-      await Sync.startReveal(_room, results, updated);
+      if (!_live()) { _revealTriggered=false; return; }
+      try {
+        await Sync.startReveal(_room, results, updated);
+      } catch(e) {
+        console.error('[App] startReveal error:', e);
+        _revealTriggered=false;
+      }
     } catch(e) {
-      console.error('[App] startReveal error:', e);
+      console.error('[App] _triggerReveal: fallo calculando resultados, se reintentará:', e);
       _revealTriggered=false;
     }
   }
@@ -3727,10 +3744,18 @@ const App = (() => {
         results[p.id]={playerName:sub.playerName,valid:false,matchCount:0,matches:restrictions.map(()=>false),footballer:null,points:0,isWinner:false};
         continue;
       }
-      const matches    = restrictions.map(r => Restrictions.validate(player, r));
-      const matchCount = matches.filter(Boolean).length;
-      results[p.id]={playerName:sub.playerName, valid:true, matchCount,
-        matches, footballer:player.name, footballerImg:player.img||null, points:0, isWinner:false};
+      /* Aislado por jugador: un dato raro de UNO no puede tumbar el calculo
+         de los otros 4 y dejar la ronda sin cerrar para nadie (ver el try
+         de mas arriba en _triggerReveal). */
+      try {
+        const matches    = restrictions.map(r => Restrictions.validate(player, r));
+        const matchCount = matches.filter(Boolean).length;
+        results[p.id]={playerName:sub.playerName, valid:true, matchCount,
+          matches, footballer:player.name, footballerImg:player.img||null, points:0, isWinner:false};
+      } catch(e) {
+        console.error('[App] _computeResults: fallo validando a', sub.playerName, e);
+        results[p.id]={playerName:sub.playerName,valid:false,matchCount:0,matches:restrictions.map(()=>false),footballer:null,points:0,isWinner:false};
+      }
     }
     const todos = Object.values(results);
     const maxMatches = Math.max(...todos.map(r=>r.matchCount));
