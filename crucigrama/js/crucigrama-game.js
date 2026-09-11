@@ -350,6 +350,37 @@ function crucPosiciones(n, ancho, alto, sal) {
         }
         pts.push({ x: x + dx, y });
     }
+    /* Niveles 187, 188, 189 y 190 (Leyenda, sal===10 -que es idxDiv+1- es la
+       única división de 10 niveles) curados a mano: el 188 y el 189 van al
+       lado IZQUIERDO para dejar libre el derecho del área de arriba, que es
+       donde va la tarjeta de Iniesta (nivel 190, curada en tarjetas.json con
+       x≈0.81); el 187 se reparte a partes iguales entre el 186 y el 188 en
+       vez de dejarlo con la Y al azar -con la original, el 187 caía pegado
+       al 188 (59px) y con un hueco enorme hasta el 186 (146px), apretado por
+       un lado y suelto por el otro-; y el 190 se fija centrado.
+       El 190 YA debía caer centrado sin tocar nada -es el ÚLTIMO nivel de la
+       división, y la rama "frente a portería" de más arriba ya lo fuerza al
+       centro para cualquier división-, pero en esta división concreta el
+       aviso de solape de más arriba lo desviaba: al colocarlo detectaba el
+       189 SIN curar demasiado cerca y lo empujaba fuera del centro -medido:
+       acababa a un 21% del pasillo, no al 50%-.
+       Los cuatro se fijan DESPUÉS del bucle entero, no dentro: cambiar uno
+       sin tocar los demás dentro del bucle vuelve a chocar con ese mismo
+       aviso de solape (justo lo que causaba los dos problemas de arriba) y
+       lo devuelve a una posición que no se quiere. Aquí ya no hace falta
+       pasar por ese aviso: la Y de 187, 188 y 189 se reparte en CUATRO
+       tramos iguales entre el 186 (pts[5], intacto) y el 190 (yFin, el
+       centro del área), así que el hueco entre cada dos queda garantizado
+       por construcción, sin depender de dónde cayera nada al azar. El
+       rodeo automático de crucRecorrido se adapta solo a las posiciones
+       nuevas. */
+    if (sal === 10 && n === 10) {
+        const y5 = pts[5].y, tramo = (y5 - yFin) / 4;
+        pts[6] = { x: pts[6].x,       y: y5 - tramo * 1 };   // nivel 187
+        pts[7] = { x: dx + P * 0.30,  y: y5 - tramo * 2 };   // nivel 188
+        pts[8] = { x: dx + P * 0.17,  y: y5 - tramo * 3 };   // nivel 189
+        pts[9] = { x: dx + P / 2,     y: yFin };              // nivel 190
+    }
     return pts;
 }
 
@@ -662,10 +693,17 @@ function crucValidarTarjeta(t) {
     /* `nivel` es el que la DESTAPA, y lo elige quien la coloca. 0 (o fuera de
        rango) = automatico: el nivel cuyo nodo cae mas cerca de la tarjeta. */
     const nivel = Number(t.nivel);
+    /* anchoMovil es OPCIONAL: 0 (o ausente) significa "el mismo tamaño que en
+       escritorio", que es el comportamiento de siempre. Rango más permisivo
+       por abajo que `ancho` (50 en vez de 80) porque para esto existe: para
+       poder encoger una tarjeta que en el móvil, con un campo de 375px en vez
+       de hasta 1.000, queda desproporcionada aunque en escritorio se vea bien. */
+    const anchoMovil = Number(t.anchoMovil);
     return {
         div, x, y, img, icono,
         pie: typeof t.pie === 'string' ? t.pie : '',
         ancho: Math.max(80, Math.min(320, Number(t.ancho) || 132)),
+        anchoMovil: (anchoMovil >= 50 && anchoMovil <= 320) ? anchoMovil : 0,
         giro: Math.max(-15, Math.min(15, Number(t.giro) || 0)),
         nivel: (Number.isInteger(nivel) && nivel >= 1 && nivel <= CRUC_TOTAL_NIVELES) ? nivel : 0,
     };
@@ -727,11 +765,20 @@ async function crucCargarFotos() {
 
 function crucTarjetasCuradas(idxDiv, ancho, alto, k, pts) {
     const n = 1 + (k - 1) * 0.42;
+    /* El campo solo crece de 375 a 1.000 -un 167%- mientras que `n` (el
+       factor que escala la tarjeta) va de 1 a 1,21 -un 21%-: una tarjeta con
+       el mismo ancho en px ocupa mucha más PROPORCIÓN de campo en el móvil
+       que en escritorio, y es justo ahí donde se ve "gigantesca". Por eso
+       `anchoMovil`, si está puesto, manda tal cual (sin *n) en vez de
+       heredar el de escritorio; el corte en 600 es el mismo que usa el
+       resto de este archivo para distinguir móvil de escritorio/tablet. */
+    const esMovil = ancho <= 600;
     const primero = (crucBloques[idxDiv] || {}).primero || 1;
     const vistas = crucTarjVistas();
     return (crucFotos || []).filter(t => t.div === idxDiv + 1).map(t => {
+        const anchoTarj = (esMovil && t.anchoMovil) ? t.anchoMovil : t.ancho * n;
         const sitio = `left:${(t.x * ancho).toFixed(1)}px;top:${(t.y * alto).toFixed(1)}px;`
-                    + `--rot:${t.giro}deg;--cruc-tarj-w:${(t.ancho * n).toFixed(1)}px`;
+                    + `--rot:${t.giro}deg;--cruc-tarj-w:${anchoTarj.toFixed(1)}px`;
         const nv = t.nivel || crucNivelMasCerca(t, ancho, alto, pts, primero);
 
         /* Hasta que no se pasa SU nivel la tarjeta es una interrogacion: se ve

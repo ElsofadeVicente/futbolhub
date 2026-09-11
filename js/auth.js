@@ -403,6 +403,23 @@
         await client.auth.signOut();
     }
 
+    /* Borrar la cuenta para siempre. La fila de auth.users la borra la RPC
+       `borrar_mi_cuenta` (SECURITY DEFINER, supabase/setup_borrar_cuenta.sql):
+       todo lo que cuelga de profiles(id) con "on delete cascade" (perfil,
+       Liga, Clasificatoria...) se va con ella, y Supabase Auth encadena el
+       borrado de sus propias tablas internas (identities, sessions...) a la
+       vez, así que no hace falta tocar nada más desde aquí. */
+    async function deleteAccount() {
+        const session = await getSession();
+        if (!session) return { ok: false, error: 'No has iniciado sesión.' };
+        const client = await ready();
+        const { error } = await client.rpc('borrar_mi_cuenta');
+        if (error) return { ok: false, error: friendlyError(error) };
+        cachedProfile = null; cachedProfileFor = null;
+        try { await client.auth.signOut(); } catch (e) { /* la cuenta ya no existe: da igual */ }
+        return { ok: true };
+    }
+
     /* ── Avatar por defecto (estilo Instagram: inicial sobre color fijo) ── */
 
     const AVATAR_COLORS = ['#c0392b', '#2980b9', '#27ae60', '#8e44ad', '#d35400', '#16a085', '#7f8c8d', '#2c3e50'];
@@ -527,6 +544,7 @@
         isUsernameFree,
         validateUsername,
         signOut,
+        deleteAccount,
         defaultAvatar,
         identity,
         onIdentity,

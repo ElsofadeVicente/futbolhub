@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Sentry: captura errores JS del navegador. crossorigin hace falta para ver el mensaje real del error, no un "Script error." vacio -->
+<script src="https://js-de.sentry-cdn.com/6fd91929f6d3930e6a8aee5ed64bea69.min.js" crossorigin="anonymous"></script>
 <title>FutbolHUB — 14 juegos de fútbol, diarios y online</title>
 <meta name="description" content="14 juegos de fútbol gratis: retos diarios como el crucigrama o La Carrera, y partidas multijugador como 5 de 5, Bingo o El Mentiroso. Sin instalar nada.">
 <link rel="canonical" href="https://www.futbolhub.es/">
@@ -36,16 +38,7 @@
 <link rel="preload" as="image" href="./img/hub/once.webp" type="image/webp" fetchpriority="high">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./css/hub.css?v=20260901j">
-<link rel="stylesheet" href="./css/profile-widget.css?v=20260902a">
-<!-- Diseño alternativo "Estadio". Se carga siempre, pero TODO cuelga de
-     [data-theme="v2"]: sin ese atributo en el <html> no pinta nada y la
-     portada clásica queda exactamente igual que antes. Va la última para
-     poder recolocar lo que dan por hecho las dos hojas de arriba. -->
-<link rel="stylesheet" href="./css/hub-v2.css?v=20260815a">
-<!-- Pone data-theme en el <html> con el diseño elegido. Sin defer y aquí
-     arriba: si corriera al final del body se vería un fogonazo del otro
-     diseño antes de cambiar. -->
-<script src="./js/theme.js?v=20260809a"></script>
+<link rel="stylesheet" href="./css/profile-widget.css?v=20260911a">
 <!-- Consent Mode v2: por defecto denegado; Funding Choices (CMP de Google) lo actualiza al consentir -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -691,7 +684,7 @@
 </div><!-- /hub -->
 
 <script src="./js/shared.js?v=20260831a"></script>
-<script src="./js/hub-streaks.js?v=20260909a"></script>
+<script src="./js/hub-streaks.js?v=20260911a"></script>
 <script defer src="./js/hub-ticker.js?v=20260808f"></script>
 <script defer src="./js/ads.js?v=20260831a"></script>
 <script>
@@ -752,10 +745,10 @@
   })();
 </script>
 <script src="./js/supabase-config.js?v=20260909a"></script>
-<script src="./js/auth.js?v=20260902a"></script>
+<script src="./js/auth.js?v=20260911a"></script>
 <script src="./js/progress-sync.js?v=20260909a"></script>
 <script src="./js/img-heal.js?v=20260903a"></script>
-<script src="./js/profile-widget.js?v=20260831e"></script>
+<script src="./js/profile-widget.js?v=20260911a"></script>
 <script src="./js/cabecera.js?v=20260903b"></script>
 <script src="./js/pantalla-viva.js?v=20260901i"></script>
 <script src="./js/red.js?v=20260901d"></script>

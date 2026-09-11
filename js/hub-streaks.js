@@ -320,10 +320,21 @@
      baja (o cambia al entrar/salir de la sesión) hay que repintar. */
   window.addEventListener('fh-progress', render);
 
-  /* ── API para el resto de la web (el perfil la usa) ── */
+  /* ── API para el resto de la web (el perfil la usa) ──
+     Dos formas de fila, la misma distinción que ya hace render(): un juego
+     diario devuelve {streak, today}; uno por niveles (hoy solo Crucigrama)
+     no tiene "hoy" que contar ni racha que romper, así que devuelve
+     {contador} en su lugar. Antes list() llamaba a game.today() sin mirar
+     cuál era, y como el Crucigrama ya no lo tiene desde que pasó a 190
+     niveles (2026-09-09), CUALQUIER llamada a list() reventaba —
+     "Perfil" y "Estadísticas" del widget dejaron de abrir nada, en
+     silencio, porque el throw ocurre antes de openModal(). */
   window.FHStreaks = {
     list() {
       return GAMES.map(game => {
+        if (game.contador) {
+          return { href: game.href, label: game.label, contador: game.contador() };
+        }
         const day    = game.today();
         const state  = game.stateFor(day);
         const detail = state ? (game.detailFor ? game.detailFor(day) : null) : null;

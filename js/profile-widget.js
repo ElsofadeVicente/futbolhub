@@ -117,13 +117,9 @@
 
     function renderDropdown() {
         if (!session) {
-            /* Sin sesión no hay "Ajustes" donde meter el diseño, y elegirlo no
-               necesita cuenta (se guarda en el navegador): va suelto aquí. */
             dropdown.innerHTML = `
               <button class="pw-login-cta" type="button" data-action="open-login">Iniciar sesión</button>
-              <div class="pw-drop-note">Guarda tus estadísticas en todos los juegos</div>
-              ${window.FHTheme ? `<div class="pw-drop-line"></div>
-              <button class="pw-item" type="button" data-action="diseno">Diseño de la web</button>` : ''}`;
+              <div class="pw-drop-note">Guarda tus estadísticas en todos los juegos</div>`;
         } else {
             dropdown.innerHTML = `
               <div class="pw-drop-head">
@@ -285,9 +281,14 @@
     ];
 
     function perfilView() {
+        /* FHStreaks.list() devuelve dos formas de fila: juegos diarios
+           ({streak, today}) y juegos por niveles como el Crucigrama
+           ({contador}, sin racha que romper) — de ahí el filtro antes de
+           calcular sobre .streak. */
         const games = (window.FHStreaks && FHStreaks.list()) || [];
-        const conRacha = games.filter(g => g.streak > 0);
-        const mejor = games.reduce((m, g) => Math.max(m, g.streak), 0);
+        const rachaGames = games.filter(g => 'streak' in g);
+        const conRacha = rachaGames.filter(g => g.streak > 0);
+        const mejor = rachaGames.reduce((m, g) => Math.max(m, g.streak), 0);
         const changed = !!(profile && profile.username_changed);
 
         const desde = profile && profile.created_at
@@ -317,9 +318,9 @@
             : 'Toca la foto para cambiarla, o el lápiz para cambiar tu nombre (una sola vez).'}</p>
 
           <div class="pw-field-label">Resumen</div>
-          ${games.length === 0 ? `<p class="pw-text">No se han podido leer las partidas.</p>` : `
+          ${rachaGames.length === 0 ? `<p class="pw-text">No se han podido leer las partidas.</p>` : `
           <ul class="pw-stats-list">
-            <li class="pw-stats-row"><span class="pw-stats-name">Juegos con racha viva</span><span class="pw-stats-val">${esc(conRacha.length)} de ${esc(games.length)}</span></li>
+            <li class="pw-stats-row"><span class="pw-stats-name">Juegos con racha viva</span><span class="pw-stats-val">${esc(conRacha.length)} de ${esc(rachaGames.length)}</span></li>
             <li class="pw-stats-row"><span class="pw-stats-name">Mejor racha</span><span class="pw-stats-val">${esc(mejor)} 🔥</span></li>
           </ul>`}
 
@@ -402,10 +403,16 @@
        dispositivos. Por eso esta pantalla enseña lo mismo entres desde
        donde entres, que era justo lo que faltaba. */
     function estadisticasView() {
+        /* Dos formas de fila, ver el comentario de perfilView(): los juegos
+           diarios llevan 'today'/'streak', los de niveles (Crucigrama) solo
+           'contador'. Contarlos juntos en el "X de Y jugados" infla la Y con
+           un juego que nunca puede aparecer ahí. */
         const games = (window.FHStreaks && FHStreaks.list()) || [];
-        const jugados = games.filter(g => g.today);
+        const diarios = games.filter(g => 'today' in g);
+        const niveles = games.filter(g => g.contador);
+        const jugados = diarios.filter(g => g.today);
 
-        const hoyHTML = games.length === 0
+        const hoyHTML = diarios.length === 0
             ? `<p class="pw-text">No se han podido leer las partidas.</p>`
             : jugados.length === 0
                 ? `<p class="pw-text">Hoy todavía no has jugado a ningún diario.</p>`
@@ -417,7 +424,7 @@
                        </span>
                      </li>`).join('') + `</ul>`;
 
-        const conRacha = games.filter(g => g.streak > 0);
+        const conRacha = diarios.filter(g => g.streak > 0);
         const rachaHTML = conRacha.length === 0
             ? `<p class="pw-text">Aún no tienes ninguna racha viva. Gana un día y empieza a contar.</p>`
             : `<ul class="pw-stats-list">` + conRacha.map(g => `
@@ -426,61 +433,26 @@
                    <span class="pw-stats-val">${g.streak} 🔥</span>
                  </li>`).join('') + `</ul>`;
 
+        const nivelesHTML = niveles.length === 0 ? '' : `
+          <div class="pw-field-label">Progreso por niveles</div>
+          <ul class="pw-stats-list">` + niveles.map(g => `
+                 <li class="pw-stats-row">
+                   <span class="pw-stats-name">${esc(g.label)}</span>
+                   <span class="pw-stats-val">${esc(g.contador.valor)} ${esc(g.contador.icono)}</span>
+                 </li>`).join('') + `</ul>`;
+
         openModal(`
           <div class="pw-brand">Fútbol<span>HUB</span></div>
           <h3 class="pw-title">Estadísticas</h3>
 
-          <div class="pw-field-label">Hoy · ${esc(jugados.length)} de ${esc(games.length)} jugados</div>
+          <div class="pw-field-label">Hoy · ${esc(jugados.length)} de ${esc(diarios.length)} jugados</div>
           ${hoyHTML}
 
           <div class="pw-field-label">Rachas</div>
           ${rachaHTML}
+          ${nivelesHTML}
 
           <p class="pw-hint">Se guardan en tu cuenta: entra desde otro dispositivo y siguen aquí.</p>
-        `);
-    }
-
-    /* ── Selector de diseño ──
-       Dos diseños conviven: el clásico (portada tipo periódico) y el nuevo
-       "Estadio". Lo único que hace elegir uno es escribir data-theme en el
-       <html> (js/theme.js); el cambio se ve al momento, detrás del modal.
-       Se guarda en el navegador, no en la cuenta: es una preferencia de
-       cómo quieres ver la web en ESTA pantalla. */
-    const THEME_INFO = {
-        classic: { name: 'Clásico', tag: 'Papel de periódico' },
-        v2:      { name: 'Moderno', tag: 'Noche de estadio' },
-    };
-
-    function themePickerHTML() {
-        if (!window.FHTheme) return '';
-        const actual = FHTheme.get();
-        return `<div class="pw-themes">` + FHTheme.THEMES.map(t => {
-            const info = THEME_INFO[t.id] || { name: t.name, tag: t.tag };
-            const on = t.id === actual;
-            return `
-              <button class="pw-theme${on ? ' pw-theme--on' : ''}" type="button"
-                      data-action="set-theme" data-theme-id="${esc(t.id)}"
-                      aria-pressed="${on}">
-                <span class="pw-theme-prev pw-theme-prev--${esc(t.id)}">
-                  <i></i><i></i><i></i>
-                </span>
-                <span class="pw-theme-name">${esc(info.name)}</span>
-                <span class="pw-theme-tag">${esc(info.tag)}</span>
-              </button>`;
-        }).join('') + `</div>`;
-    }
-
-    function themeNoteHTML() {
-        return `<p class="pw-hint">Cambia toda la web: la portada y los 14 juegos. Se guarda en este navegador y puedes volver al clásico cuando quieras.</p>`;
-    }
-
-    function disenoView() {
-        openModal(`
-          <div class="pw-brand">Fútbol<span>HUB</span></div>
-          <h3 class="pw-title">Diseño de la web</h3>
-          <p class="pw-text">Elige cómo quieres ver FutbolHUB. Puedes cambiarlo las veces que quieras.</p>
-          ${themePickerHTML()}
-          ${themeNoteHTML()}
         `);
     }
 
@@ -489,15 +461,38 @@
           <div class="pw-brand">Fútbol<span>HUB</span></div>
           <h3 class="pw-title">Ajustes</h3>
 
-          ${window.FHTheme ? `
-            <div class="pw-field-label">Diseño de la web</div>
-            ${themePickerHTML()}
-            ${themeNoteHTML()}` : ''}
-
           <p class="pw-hint">Tu foto y tu nombre de usuario se cambian desde <button class="pw-linkbtn pw-linkbtn--inline" type="button" data-action="perfil">Perfil</button>.</p>
 
           <div class="pw-msg"></div>
           <button class="pw-danger" type="button" data-action="logout">Cerrar sesión</button>
+
+          <button class="pw-linkbtn" type="button" data-action="delete-account">Borrar mi cuenta</button>
+        `);
+    }
+
+    /* ── Borrar cuenta ──
+       Acción irreversible: hace falta teclear el propio nombre de usuario
+       para confirmar (mismo criterio de fricción deliberada que ya usa
+       changeUsernameView para su cambio de una sola vez, pero aquí no hay
+       vuelta atrás posible). El borrado en sí lo hace la RPC
+       `borrar_mi_cuenta` (supabase/setup_borrar_cuenta.sql): con eso se va
+       en cascada todo lo que cuelga de profiles(id) — perfil, Liga,
+       Clasificatoria. */
+    function deleteAccountView() {
+        const uname = profile && profile.username || '';
+        openModal(`
+          <div class="pw-brand">Fútbol<span>HUB</span></div>
+          <h3 class="pw-title">Borrar tu cuenta</h3>
+          <div class="pw-warn">⚠️ Se borra tu cuenta entera <strong>para siempre</strong>: perfil, foto, tu división en la Liga y tu palmarés de la Clasificatoria. No se puede deshacer. (El progreso guardado solo en este navegador, sin cuenta, no se toca.)</div>
+          <form class="pw-form" data-form="delete-account">
+            <label class="pw-label">Escribe tu nombre de usuario para confirmar
+              <input class="pw-input" name="confirm" type="text" autocomplete="off"
+                     placeholder="${esc(uname)}" required>
+            </label>
+            <div class="pw-msg"></div>
+            <button class="pw-danger" type="submit">Borrar mi cuenta para siempre</button>
+          </form>
+          <button class="pw-linkbtn" type="button" data-action="ajustes">← Cancelar</button>
         `);
     }
 
@@ -562,6 +557,13 @@
                 if (!r.ok) return setMsg('error', r.error);
                 setMsg('ok', 'Contraseña guardada. Ya puedes seguir jugando.');
                 setTimeout(closeModal, 1500);
+            } else if (kind === 'delete-account') {
+                const uname = (profile && profile.username || '').toLowerCase();
+                const typed = String(f.get('confirm') || '').trim().toLowerCase();
+                if (!typed || typed !== uname) return setMsg('error', 'El nombre no coincide con tu usuario actual.');
+                const r = await FHAuth.deleteAccount();
+                if (!r.ok) return setMsg('error', r.error);
+                closeModal();
             }
         } finally {
             setBusy(false);
@@ -612,22 +614,8 @@
             case 'perfil':       toggleDropdown(false); perfilView(); break;
             case 'estadisticas': toggleDropdown(false); estadisticasView(); break;
             case 'ajustes':      toggleDropdown(false); ajustesView(); break;
-            case 'diseno':       toggleDropdown(false); disenoView(); break;
-            case 'set-theme': {
-                if (!window.FHTheme) break;
-                const id = btn.dataset.themeId;
-                FHTheme.set(id);
-                /* Se marca el elegido a mano en vez de repintar la vista: si
-                   se repintara, el modal saltaría al principio y en Ajustes
-                   perderías de vista dónde estabas. */
-                modal.querySelectorAll('.pw-theme').forEach(b => {
-                    const on = b.dataset.themeId === id;
-                    b.classList.toggle('pw-theme--on', on);
-                    b.setAttribute('aria-pressed', String(on));
-                });
-                break;
-            }
             case 'change-username': changeUsernameView(); break;
+            case 'delete-account':  deleteAccountView(); break;
             case 'change-photo': {
                 const input = modal.querySelector('.pw-file');
                 if (input) input.click();
