@@ -12,7 +12,7 @@
    bien o no hay bingo; aqui no se cuentan lineas ni se reparten puntos.
 
    Que categorias cumple cada futbolista NO viene precocinado en ningun JSON:
-   se calcula aqui con FR.validate() contra los mismos datos que usan Coche y
+   se calcula aqui con FR.validate() contra los mismos datos que usan 5 de 5 y
    Tres en Raya. Asi el juego no puede desalinearse de la base de datos.
 
    La partida entera (las 16 categorias y el orden de los futbolistas) se
@@ -932,7 +932,7 @@
              partida no se resolvía nunca para los que sí acabaron;
            · cleanup() solo borra la sala "si no queda nadie", y con el
              fantasma dentro nunca quedaba vacía → salas huérfanas eternas.
-         Coche y Blackjack ya lo hacían así (.remove()). */
+         5 de 5 y Blackjack ya lo hacían así (.remove()). */
       if (window._FBOnDisconnect) {
         try {
           window._FBOnDisconnect(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`)).remove();
@@ -964,7 +964,7 @@
 
       if (room.status === 'waiting') {
         $('lobby-code-display').textContent = code;
-        /* El enlace completo debajo del codigo: lo tenian Coche y Blackjack y
+        /* El enlace completo debajo del codigo: lo tenian 5 de 5 y Blackjack y
            aqui no, asi que el boton de copiar no decia QUE copiaba. */
         const linkEl = $('lobby-link-display');
         if (linkEl) linkEl.textContent = `${location.origin}${location.pathname}?sala=${code}`;
@@ -1251,7 +1251,7 @@
 
      El filtro por foto NO es un detalle: en Bingo no escribes nombres, el juego
      te suelta caras, asi que un futbolista sin retrato deja un hueco en la
-     pantalla. En Coche y en Tres en Raya da igual porque ahi se escribe. */
+     pantalla. En 5 de 5 y en Tres en Raya da igual porque ahi se escribe. */
   function poolDeFR() {
     return (FR.genPool || []).filter(p => p && p.img);
   }

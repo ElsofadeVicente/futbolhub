@@ -1018,7 +1018,7 @@ body.cruc-sheet-abierto { overflow: hidden; }
    #crucigrama-screen porque el JS reemplaza el innerHTML de ese contenedor al
    montar la rejilla y se llevaba por delante la descripción: la página
    renderizada se quedaba en 50 palabras. Mismo sitio que ocupa el párrafo
-   descriptivo en los otros 13 juegos (bajo la zona de juego).
+   descriptivo en los otros 14 juegos (bajo la zona de juego).
    Patrón de variables con respaldo: sin --r-md/--bd-c sale cuadrado y con
    filete de tinta, como el resto del tema clásico. */
 .cruc-info {

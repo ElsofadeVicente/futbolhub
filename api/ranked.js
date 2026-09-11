@@ -1,7 +1,7 @@
 /* =============================================================================
-   API/RANKED.JS — Árbitro autoritativo de Coche Clasificatoria (ranked 1v1)
+   API/RANKED.JS — Árbitro autoritativo de 5 de 5 Clasificatoria (ranked 1v1)
    -----------------------------------------------------------------------------
-   PLAN-coche-ranked.md, §5. Función serverless de Vercel (mismo patrón sin
+   PLAN-5-de-5-ranked.md, §5. Función serverless de Vercel (mismo patrón sin
    dependencias que api/titulares.js y api/img.js: module.exports = async
    function handler(req, res), sin framework).
 
@@ -29,7 +29,7 @@ const RankedEngine = require(path.join(__dirname, '..', 'js', 'ranked-engine.js'
 
 const SECRET = process.env.SUPABASE_SECRET_KEY;
 
-/* ── Constantes tunables (PLAN-coche-ranked.md §9) ── */
+/* ── Constantes tunables (PLAN-5-de-5-ranked.md §9) ── */
 const ELO_BASE             = 200;
 const ELO_MIN              = 0;
 const ELO_K_PROVISIONAL    = 40;
@@ -72,7 +72,7 @@ function eloUpdate(ra, rb, sa, ka, kb) {
 let _engineReady = null;
 function ensureEngine() {
   if (!_engineReady) {
-    _engineReady = FR.init({ juego: 'coche' }).then(() => {
+    _engineReady = FR.init({ juego: '5-de-5' }).then(() => {
       RankedEngine.setTeammateData(FR.TEAMMATES_LIST, FR.reverseTeammate, FR.reverseTeammateIds);
     }).catch(e => {
       // Si FR.init() falla (p.ej. un hipo de Storage), no dejar la promesa

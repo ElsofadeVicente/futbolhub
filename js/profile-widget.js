@@ -366,8 +366,8 @@
         });
 
         /* Palmarés de los modos Clasificatoria (ranked 1v1 por ELO,
-           PLAN-coche-ranked.md §7). Una fila por juego con datos reales; hoy
-           solo Coche tiene filas en ranked_rating, así que es lo único que
+           PLAN-5-de-5-ranked.md §7). Una fila por juego con datos reales; hoy
+           solo 5 de 5 tiene filas en ranked_rating, así que es lo único que
            puede salir, pero el bloque ya recorre "juegos" entero para que
            los que se añadan después aparezcan solos sin tocar esta vista.
            Igual que arriba: RPC directo contra el cliente de auth.js, no depende de
@@ -380,7 +380,7 @@
                     rankedSlot.innerHTML = `<p class="pw-text">Aún no has jugado ninguna Clasificatoria.</p>`;
                     return;
                 }
-                const NOMBRE_JUEGO = { coche: 'Coche' };
+                const NOMBRE_JUEGO = { '5-de-5': '5 de 5' };
                 rankedSlot.innerHTML = '<ul class="pw-stats-list">' + data.juegos.map(j => {
                     const nombreJuego = NOMBRE_JUEGO[j.juego] || j.juego;
                     const tramoMax = LIGA_TRAMOS[Math.max(0, Math.min(LIGA_TRAMOS.length - 1, Number(j.tramo_max) || 0))];
@@ -471,7 +471,7 @@
     }
 
     function themeNoteHTML() {
-        return `<p class="pw-hint">Cambia toda la web: la portada y los 13 juegos. Se guarda en este navegador y puedes volver al clásico cuando quieras.</p>`;
+        return `<p class="pw-hint">Cambia toda la web: la portada y los 14 juegos. Se guarda en este navegador y puedes volver al clásico cuando quieras.</p>`;
     }
 
     function disenoView() {

@@ -72,7 +72,7 @@ window._AppReal = (function () {
   function showToast(msg, kind) {
     const t = $('toast'); if (!t) return;
     t.textContent = msg;
-    /* Mismas clases que Coche: base + 'error' | 'warning' (ok = sin variante). */
+    /* Mismas clases que 5 de 5: base + 'error' | 'warning' (ok = sin variante). */
     const variant = kind === 'err' ? ' error' : kind === 'ok' ? '' : (kind ? ' ' + kind : '');
     t.className = 'toast show' + variant;
     clearTimeout(_toastT);
@@ -691,7 +691,7 @@ window._AppReal = (function () {
   const acNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'').trim();
 
   /**
-   * Etiqueta de la derecha de cada sugerencia (misma regla que Coche y La
+   * Etiqueta de la derecha de cada sugerencia (misma regla que 5 de 5 y La
    * Cadena). Siempre sale la posicion, y SOLO cuando hay dos jugadores con
    * el mismo nombre se va anadiendo lo siguiente que los separa:
    * nacionalidad y, si tambien coincide, ano de nacimiento. Sin esto, dos
@@ -741,7 +741,7 @@ window._AppReal = (function () {
        se cae alguna por el camino y si no la lista se queda corta. */
     acItems = acEtiquetar(acDeduplicar(FR.suggest(q, 24), 8));
     if (!acItems.length) { list.classList.add('hidden'); return; }
-    /* El primero viene marcado, como en Coche: escribes y con Enter directo
+    /* El primero viene marcado, como en 5 de 5: escribes y con Enter directo
        envías la sugerencia de arriba sin tener que bajar con la flecha. */
     acIndex = 0;
     list.innerHTML = acItems.map((it, idx) => {
@@ -771,7 +771,7 @@ window._AppReal = (function () {
   }
   function paintAc() {
     /* La clase es 'selected', que es la que estiliza el diseño compartido
-       (igual que Coche y Superdraft). Con 'active' la marca era invisible: ni
+       (igual que 5 de 5 y Superdraft). Con 'active' la marca era invisible: ni
        la preselección ni el movimiento con las flechas se veían. */
     document.querySelectorAll('.autocomplete-item').forEach((el, idx) =>
       el.classList.toggle('selected', idx === acIndex));

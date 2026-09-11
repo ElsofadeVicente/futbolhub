@@ -1,12 +1,12 @@
 /* ==========================================================================
    otros-juegos.css — el bloque "Otros juegos de FutbolHUB" del menú de
-   cada uno de los 13 juegos.
+   cada uno de los 14 juegos.
 
    Igual que ads.css, guia-link.css y volver.css: NO es el design system de
-   los juegos, es UNA pieza compartida para no repetir 13 veces la misma
+   los juegos, es UNA pieza compartida para no repetir 14 veces la misma
    regla. Enlaza a otros 4 juegos hermanos con texto descriptivo (nunca
    "aquí" ni el nombre pelado a secas), en una rotación fija por posición
-   (juego i → i+1..i+4 módulo 13) para que los 13 reciban exactamente 4
+   (juego i → i+1..i+4 módulo 14) para que los 14 reciban exactamente 4
    enlaces entrantes. Ver CLAUDE.md, sección "SEO".
 
    Colores con respaldo (mismo patrón que guia-link.css: el último respaldo

@@ -1,7 +1,7 @@
 /* =============================================================================
    BINGO — estilos ESPECÍFICOS del juego
    El sistema de diseño (fuentes, fondo de papel, menú, botones, lobby, inputs,
-   toast, columnas de anuncios) se hereda de ../coche/css/style.css para que sea
+   toast, columnas de anuncios) se hereda de ../5-de-5/css/style.css para que sea
    la misma web. Aquí solo: el locutor, el cartón y la pantalla de resultado.
    ============================================================================= */
 
@@ -243,7 +243,7 @@
 #screen-result { justify-content: flex-start; padding: 26px 16px 40px; }
 .result-wrap { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
 
-/* .finished-actions es una clase compartida de coche/css/style.css con
+/* .finished-actions es una clase compartida de 5-de-5/css/style.css con
    max-width:320px pero sin align-self propio: sin este centrado, el bloque
    de botones (más estrecho que .result-wrap) se queda pegado al borde
    izquierdo en vez de centrado bajo el cartón — es lo que se veía como

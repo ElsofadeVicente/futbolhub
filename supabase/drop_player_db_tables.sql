@@ -4,7 +4,7 @@
 -- subido con admin/upload_player_db_to_storage.py).
 --
 -- Ejecutar A MANO en el SQL Editor de Supabase, y solo DESPUÉS de haber
--- confirmado que Coche, En el Top, En la Cadena, La Torre e
+-- confirmado que 5 de 5, En el Top, En la Cadena, La Torre e
 -- Higher-or-Lower cargan bien sus datos desde Storage.
 -- =====================================================================
 

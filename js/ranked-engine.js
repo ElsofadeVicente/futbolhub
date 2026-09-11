@@ -1,7 +1,7 @@
 /* =============================================================================
-   RANKED-ENGINE.JS — Generador determinista de rejillas de Coche, compartido
+   RANKED-ENGINE.JS — Generador determinista de rejillas de 5 de 5, compartido
    -----------------------------------------------------------------------------
-   Extraido de coche/js/restrictions-worker.js (PLAN-coche-ranked.md, Fase 0,
+   Extraido de 5-de-5/js/restrictions-worker.js (PLAN-5-de-5-ranked.md, Fase 0,
    "Un solo generador"). Antes existian TRES copias de generate()/validate()/
    constantes (script.js, restrictions-worker.js, y una version parcial en
    js/futbol-restrictions.js sin generate()) que podian divergir. Para el modo
@@ -9,8 +9,8 @@
    misma semilla, asi que ahora hay un solo sitio.
 
    Cargable en los tres entornos que lo necesitan:
-     - Navegador (hilo principal de coche/js/script.js)      <script src=...>
-     - Web Worker (coche/js/restrictions-worker.js)           importScripts(...)
+     - Navegador (hilo principal de 5-de-5/js/script.js)      <script src=...>
+     - Web Worker (5-de-5/js/restrictions-worker.js)           importScripts(...)
      - Node (api/ranked.js, el arbitro serverless)            require(...)
 
    Requiere sbStorageUrl (de js/supabase-config.js) para las URLs de escudos/
@@ -708,7 +708,7 @@
      que mantiene intacta la Clasificatoria: api/ranked.js regenera cada ronda
      desde `seed_base + ronda` para puntuarla, y si el anfitrion generase con
      memoria y el arbitro sin ella, el arbitro puntuaria contra OTRAS cinco
-     restricciones. Por eso Coche solo pasa memoria en las partidas normales.
+     restricciones. Por eso 5 de 5 solo pasa memoria en las partidas normales.
 
      Si algun dia se enciende la Clasificatoria CON memoria, el arbitro tiene
      que reconstruirla igual, recorriendo la serie de semillas:

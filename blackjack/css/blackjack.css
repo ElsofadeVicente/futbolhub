@@ -242,14 +242,14 @@ body {
    LOBBY
    ══════════════════════════════════════════════ */
 /* Toda la caja de la sala vive en css/sala.css, una sola definicion para los
-   seis juegos con sala. Blackjack ya la tenia casi igual que Coche, pero con
+   seis juegos con sala. Blackjack ya la tenia casi igual que 5 de 5, pero con
    el marco a 460px, el codigo con otra separacion de letra y el nombre del
-   jugador en DM Mono en mayusculas donde Coche lo pone en texto normal. */
+   jugador en DM Mono en mayusculas donde 5 de 5 lo pone en texto normal. */
 
 /* ══════════════════════════════════════════════
    BARRA SUPERIOR DE PARTIDA
    Toda la barra (fondo oscuro, objetivo, cronómetro y marcador) vive ahora en
-   css/barra-partida.css, compartida con Coche: la misma pieza se pinta igual
+   css/barra-partida.css, compartida con 5 de 5: la misma pieza se pinta igual
    en los dos juegos. Antes esta era clara, tenía a los rivales en una fila de
    avatares aparte que repetía los mismos jugadores que el marcador, y el
    cronómetro NO estaba aquí — estaba suelto encima de la carta, así que en un
@@ -260,7 +260,7 @@ body {
    .hidden que añade/quita blackjack-app.js no tenía ningún efecto sobre ella. */
 .game-topbar.hidden { display: none; }
 
-/* En Coche el círculo de perfil se queda fijo ENCIMA de la barra y por eso
+/* En 5 de 5 el círculo de perfil se queda fijo ENCIMA de la barra y por eso
    allí se le reservan 62px por la derecha. Aquí el círculo va DENTRO, en su
    propio hueco (.fh-widget-slot), así que esa reserva sobraría: dejaría 62px
    de aire muerto detrás del propio círculo. Va por #id para ganarle a la
@@ -272,7 +272,7 @@ body {
 #game-topbar { padding: 6px 14px; }
 
 /* La rejilla de dos filas ("izq timer" / "score score") que barra-partida.css
-   monta en móvil es para Coche, que además del marcador lleva el rótulo de
+   monta en móvil es para 5 de 5, que además del marcador lleva el rótulo de
    ronda. Blackjack no: se queda en flex, en una sola fila. */
 @media (max-width: 700px) {
   #game-topbar { display: flex; padding: 6px 10px; gap: 10px; }
@@ -832,7 +832,7 @@ body {
 /* .lobby-autotimer*: definicion unica en css/sala.css. */
 
 /* La cuenta atras de los 10 segundos vive en css/cuenta-atras.css, una sola
-   definicion para Coche, Blackjack y En la Cadena. */
+   definicion para 5 de 5, Blackjack y En la Cadena. */
 
 /* ══════════════════════════════════════════════
    RESPONSIVE

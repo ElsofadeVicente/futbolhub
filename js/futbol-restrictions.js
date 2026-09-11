@@ -1,7 +1,7 @@
 /* =============================================================================
    FUTBOL-RESTRICTIONS.JS  —  Motor compartido de restricciones de futbol
    -----------------------------------------------------------------------------
-   Extraido de coche/js/script.js para poder reutilizarlo en Coche y en
+   Extraido de 5-de-5/js/script.js para poder reutilizarlo en 5 de 5 y en
    Tres en Raya (y futuros juegos). Expone window.FR con:
 
      FR.init(opts)                  -> Promise, carga datos (chunks + mapas)
@@ -29,7 +29,7 @@
    Los datos de restriccion (entrenados_por, ganadores, companeros, perf_stats,
    gen_pool) viven en game-data/general/; se lee de ahi con respaldo a
    game-data/coche/ para no romper mientras no se haya subido la copia general.
-   Tambien cargable en Node (api/ranked.js, el arbitro de Coche competitivo):
+   Tambien cargable en Node (api/ranked.js, el arbitro de 5 de 5 competitivo):
    exporta via module.exports igual que js/supabase-config.js, tomando de ahi
    el sbStorageUrl que en navegador viene del global. `fetch` es global en
    Node 18+, asi que _loadData() no necesita cambios entre entornos.
@@ -260,9 +260,9 @@
        jugadores en data/players/chunks (el liston lo marcaba Japon con 49) y
        bandera en el bucket team-flags. Van AL FINAL para no mover el orden de
        las 13 de siempre. Esta lista esta duplicada en tres sitios
-       (js/futbol-restrictions.js, coche/js/script.js y
-       coche/js/restrictions-worker.js): si divergen, dos jugadores de la misma
-       sala de Coche generan rejillas distintas con la misma semilla. */
+       (js/futbol-restrictions.js, 5-de-5/js/script.js y
+       5-de-5/js/restrictions-worker.js): si divergen, dos jugadores de la misma
+       sala de 5 de 5 generan rejillas distintas con la misma semilla. */
     { tmNat:'Portugal', display:'Portugal', adj:'Portugués', flag:'🇵🇹', flagImg:sbStorageUrl('team-flags','pt.png') },
     { tmNat:'Belgium', display:'Bélgica', adj:'Belga', flag:'🇧🇪', flagImg:sbStorageUrl('team-flags','be.png') },
     { tmNat:'Croatia', display:'Croacia', adj:'Croata', flag:'🇭🇷', flagImg:sbStorageUrl('team-flags','hr.png') },
@@ -359,7 +359,7 @@
     { name:'Pep Guardiola',     id:'5672', icon:'🎽' },
     { name:'Luis Enrique',      id:'6499', icon:'🎽' },
     { name:'Zinédine Zidane',   id:'21284',icon:'🎽' },
-    /* Entrenador nuevo: hay que dejar su foto en coche/data/coaches/<id>.png y
+    /* Entrenador nuevo: hay que dejar su foto en 5-de-5/data/coaches/<id>.png y
        subirla con admin/upload_images_to_storage.py coach-photos. Si por lo que
        sea todavia no la tiene, marcalo `photo:false` y saldra con imgUrl null:
        aqui se pinta el emoji y Tres en Raya y Bingo, que filtran por imgUrl, no
@@ -437,7 +437,7 @@
      visitante nuevo, y con el plan Free de Supabase (5 GB/mes) eso es un techo
      de ~3.600 partidas al mes. Se quito ademas el `cache: 'no-cache'` que
      llevaban: obligaba a revalidar cada archivo en cada carga, asi que pasar
-     de Coche a Bingo — que usan EXACTAMENTE los mismos datos — se volvia a
+     de 5 de 5 a Bingo — que usan EXACTAMENTE los mismos datos — se volvia a
      bajar el megabyte y medio entero. */
   async function _fetchChunkRange(name) {
     try {
@@ -516,7 +516,7 @@
   }
 
   /* Resuelve un jugador escrito por el usuario (por name-index, enriquecido
-     con el chunk). Equivalente a findPlayerAsync de Coche. */
+     con el chunk). Equivalente a findPlayerAsync de 5 de 5. */
   async function resolvePlayer(inputName) {
     const n  = acNorm(inputName);
     const nt = acTight(inputName);
@@ -840,7 +840,7 @@
     GEN_POOL = poolIds.filter(id => allChunkData[id]).map(id => _mkPlayer(id, nameMap[id]));
   }
 
-  /* opts.juego (opcional): 'coche' | 'tresenraya' | 'bingo' | 'mentiroso' |
+  /* opts.juego (opcional): '5-de-5' | 'tresenraya' | 'bingo' | 'mentiroso' |
      'superdraft'. Sin él, FR.genPool es la pool BASE de siempre. Memoizado por
      la PRIMERA llamada (una página sólo necesita un juego), como ya hacía. */
   function init(opts) {
@@ -1116,7 +1116,7 @@
     validate, isRedundant, familyUsed, buildCandidates, countMatching, countMatchingPair,
     resolvePlayer, resolvePlayerById, playerMeta, suggest, getAllPlayers,
     normalize, acNorm, acTight,
-    /* Permite a otro juego (p.ej. Coche) inyectar sus mapas inversos de compañeros
+    /* Permite a otro juego (p.ej. 5 de 5) inyectar sus mapas inversos de compañeros
        ya construidos, para que FR.validate('teammate') funcione sin FR.init()
        (sin recargar datos). */
     setTeammateMaps(rev, revIds) { _REVERSE_TEAMMATE = rev || {}; _REVERSE_TEAMMATE_IDS = revIds || {}; },

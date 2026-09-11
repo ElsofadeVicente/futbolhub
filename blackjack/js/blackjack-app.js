@@ -77,7 +77,7 @@ const App = (() => {
   let _roomCode  = null;
   let _playerId  = null;
   let _isHost    = false;
-  let _isPublic  = false;   // sala pública: oculta el código y muestra el badge (como Coche)
+  let _isPublic  = false;   // sala pública: oculta el código y muestra el badge (como 5 de 5)
   let _unsubRoom = null;
   let _localScores = {};
   let _lastRoomPlayers = {};
@@ -551,7 +551,7 @@ const App = (() => {
      LOBBY
      ══════════════════════════════════════════ */
   /* Sala pública: se oculta el código (no hay nada que compartir) y se
-     muestra el badge "Sala Pública", igual que en Coche. Un helper para
+     muestra el badge "Sala Pública", igual que en 5 de 5. Un helper para
      aplicarlo desde _showLobby y _updateLobbyUI sin duplicar. */
   function _applyPublicChrome(isPublic) {
     const card  = document.getElementById('lobby-code-card');
@@ -711,7 +711,7 @@ const App = (() => {
         } else {
           // Watchdog anti-cuelgue: si SOLO faltan bots por reportar (todos los
           // humanos ya jugaron), damos un margen corto y forzamos el reveal.
-          // A diferencia de Coche, Blackjack no tiene reloj de ronda que lo
+          // A diferencia de 5 de 5, Blackjack no tiene reloj de ronda que lo
           // garantice, así que un bot que fallara su reporte dejaría la ronda
           // colgada para siempre. Nunca corta a un humano: solo actúa cuando
           // los únicos pendientes son bots.
@@ -781,7 +781,7 @@ const App = (() => {
 
     // La sala es la fuente de verdad de si es pública (cubre reconexión y
     // cualquier ruta que no pasara por los setters). Aplicar el chrome
-    // (código oculto + badge) en cada actualización, como hace Coche.
+    // (código oculto + badge) en cada actualización, como hace 5 de 5.
     if (typeof room.isPublic === 'boolean') _isPublic = room.isPublic;
     _applyPublicChrome(_isPublic);
 
@@ -797,7 +797,7 @@ const App = (() => {
       document.getElementById('lobby-mode-display').textContent = MODE_LABELS[_mode] || _mode;
       document.getElementById('game-topbar')?.classList.add('hidden');
       // La URL solo refleja el código en salas privadas (en públicas no hay
-      // nada que compartir, igual que en Coche).
+      // nada que compartir, igual que en 5 de 5).
       if (_roomCode && !window.location.search.includes(_roomCode)) {
         if (window.FHRuta) FHRuta.set({ sala: _roomCode });
         else history.replaceState({ sala: _roomCode }, '', window.location.pathname + '?sala=' + _roomCode);
@@ -1136,7 +1136,7 @@ const App = (() => {
     overlay.classList.remove('hidden');
     numEl.textContent = SECS;
 
-    // Barra de progreso que se vacía en 10s (misma idea que Coche). Se anima
+    // Barra de progreso que se vacía en 10s (misma idea que 5 de 5). Se anima
     // con una transición CSS, que avanza por reloj: sigue corriendo aunque la
     // pestaña esté en segundo plano (a diferencia de requestAnimationFrame).
     if (barEl) {

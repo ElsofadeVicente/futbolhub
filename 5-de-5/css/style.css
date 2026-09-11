@@ -1,5 +1,5 @@
 /* =============================================
-   COCHE — Newspaper Edition
+   5 DE 5 — Newspaper Edition
    FutbolHUB
    ============================================= */
 
@@ -169,7 +169,7 @@ a      { text-decoration: none; }
 
 /* ═══════════════════════════════════════════
    CLASIFICATORIA (ranked 1v1 por ELO)
-   PLAN-coche-ranked.md
+   PLAN-5-de-5-ranked.md
    ═══════════════════════════════════════════ */
 .ranked-locked.hidden, .ranked-unlocked.hidden { display: none; }
 .ranked-locked-sub {
@@ -253,7 +253,7 @@ a      { text-decoration: none; }
 /* La caja de la sala (marco, tarjeta del codigo, enlace, filas de jugador,
    pista y cuenta atras de la sala publica) vive ahora en css/sala.css, una
    sola vez para los seis juegos con sala. Aqui se queda solo lo que es de
-   Coche: el panel de ajustes de partida. */
+   5 de 5: el panel de ajustes de partida. */
 
 /* Ajustes lobby */
 .lobby-settings {
@@ -290,7 +290,7 @@ a      { text-decoration: none; }
 
 /* #lobby-link-display y #lobby-mode-badge estaban aqui como reglas de ID con
    !important, o sea que le habrian ganado a la definicion compartida de
-   css/sala.css y Coche habria seguido siendo el unico distinto. Ahora usan
+   css/sala.css y 5 de 5 habria seguido siendo el unico distinto. Ahora usan
    .lobby-link-display / .lobby-mode-badge como los otros cinco. */
 
 /* ═══════════════════════════════════════════
@@ -300,7 +300,7 @@ a      { text-decoration: none; }
 
 /* La barra de partida (fondo oscuro, rotulo, cronometro y marcador) vive en
    css/barra-partida.css, compartida con Blackjack. Aqui solo se queda lo
-   que es de Coche: donde se ancla el circulo de perfil. */
+   que es de 5 de 5: donde se ancla el circulo de perfil. */
 
 /* #screen-round no tiene .fh-volver (no se sale de una ronda a mitad
    partida): js/cabecera.js le crea una fila suelta (.fh-cabecera--suelta)
@@ -508,7 +508,7 @@ a      { text-decoration: none; }
 
 /* ═══════════════════════════════════════════
    RESULTADO CLASIFICATORIA (ELO antes → después)
-   PLAN-coche-ranked.md
+   PLAN-5-de-5-ranked.md
    ═══════════════════════════════════════════ */
 .ranked-result-box.hidden { display: none; }
 .ranked-result-box { width: 100%; max-width: 320px; }
@@ -555,7 +555,7 @@ a      { text-decoration: none; }
    CUENTA ATRÁS — solo colores, resto intacto
    ═══════════════════════════════════════════ */
 /* La cuenta atras de los 10 segundos vive en css/cuenta-atras.css, una sola
-   definicion para Coche, Blackjack y En la Cadena. */
+   definicion para 5 de 5, Blackjack y En la Cadena. */
 
 /* Bug movil: ademas del overlay, se oculta por completo el area de enviar
    mientras la cuenta atras esta activa. Asi, aunque en algun navegador movil

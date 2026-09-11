@@ -1,8 +1,8 @@
 /* =============================================================================
    SUPERDRAFT — estilos propios
-   Base compartida: ../coche/css/style.css (tokens --np-*, ad-cols, botones,
+   Base compartida: ../5-de-5/css/style.css (tokens --np-*, ad-cols, botones,
    toast, autocompletado, player-input).
-   OJO: la hoja de Coche NO trae ni .hidden ni .loading-overlay, por mucho que
+   OJO: la hoja de 5 de 5 NO trae ni .hidden ni .loading-overlay, por mucho que
    este comentario dijera lo contrario. Van al final de este archivo.
    El campo reutiliza el look de En el Once (franjas verdes + lineas de pista).
    ============================================================================= */
@@ -476,7 +476,7 @@
    Esto NO estaba, y por eso el div de carga salía como texto suelto al final
    del documento: "SUPERDRAFT / Cargando base de datos…" colgando por debajo
    de la barra de días, con 42 px de scroll muerto en un móvil. La hoja de
-   Coche no define .loading-overlay (Bingo y Tres en Raya, que también la
+   5 de 5 no define .loading-overlay (Bingo y Tres en Raya, que también la
    heredan, se lo escriben cada uno en su archivo), así que ni el overlay se
    colocaba encima ni el .hidden que le pone init() al terminar de cargar
    apagaba nada: sin regla que lo mire, añadir la clase no hace absolutamente

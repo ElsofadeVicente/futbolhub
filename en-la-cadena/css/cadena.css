@@ -481,7 +481,7 @@ a      { text-decoration: none; }
 .toast.warning { background: var(--np-paper3); color: var(--np-ink); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); }
 
 /* La cuenta atras de los 10 segundos vive en css/cuenta-atras.css, una sola
-   definicion para Coche, Blackjack y En la Cadena. */
+   definicion para 5 de 5, Blackjack y En la Cadena. */
 
 /* ── RESPONSIVE ───────────────────────────── */
 @media (max-width: 400px) {
@@ -617,7 +617,7 @@ a      { text-decoration: none; }
   font-size: 0.75rem; margin: 0 0 12px; letter-spacing: 0.04em;
 }
 
-/* ── LOBBY MEJORADO — usa componentes compartidos (patrón blackjack/coche) ── */
+/* ── LOBBY MEJORADO — usa componentes compartidos (patrón blackjack/5-de-5) ── */
 /* La caja de la sala (marco, codigo, enlace, filas de jugador y cuenta atras
    de la sala publica) vive en css/sala.css, una sola vez para los seis
    juegos con sala. */

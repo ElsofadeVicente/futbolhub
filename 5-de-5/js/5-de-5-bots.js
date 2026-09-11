@@ -1,5 +1,5 @@
 /* =============================================
-   COCHE-BOTS.JS
+   5 DE 5-BOTS.JS
    Jugadores automáticos de las salas públicas.
    Corren en el cliente que sea host (igual que en
    blackjack: si el host cambia, los bots pasan con él).
@@ -50,7 +50,7 @@
       segundos siguientes.
    ============================================= */
 
-const CocheBots = (() => {
+const CincoDeCincoBots = (() => {
 
   /* ─── Reparto por número de restricciones acertadas ─── */
   const WEIGHTS_WITH_5    = { 2:  5, 3: 35, 4: 40, 5: 20 };
@@ -517,5 +517,5 @@ const CocheBots = (() => {
 })();
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CocheBots;
+  module.exports = CincoDeCincoBots;
 }

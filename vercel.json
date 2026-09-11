@@ -10,6 +10,26 @@
       "source": "/crucigrama/archivo/:resto*",
       "destination": "/crucigrama/",
       "permanent": true
+    },
+    {
+      "source": "/coche",
+      "destination": "/5-de-5/",
+      "permanent": true
+    },
+    {
+      "source": "/coche/:resto*",
+      "destination": "/5-de-5/",
+      "permanent": true
+    },
+    {
+      "source": "/como-jugar/coche",
+      "destination": "/como-jugar/5-de-5/",
+      "permanent": true
+    },
+    {
+      "source": "/como-jugar/coche/:resto*",
+      "destination": "/como-jugar/5-de-5/",
+      "permanent": true
     }
   ],
   "headers": [
@@ -64,7 +84,7 @@
       ]
     },
     {
-      "source": "/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle|aviso-legal|contacto|privacidad|sobre-futbolhub|como-jugar)",
+      "source": "/(bingo|blackjack|5-de-5|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle|aviso-legal|contacto|privacidad|sobre-futbolhub|como-jugar)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -73,7 +93,7 @@
       ]
     },
     {
-      "source": "/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle|aviso-legal|contacto|privacidad|sobre-futbolhub|como-jugar)/",
+      "source": "/(bingo|blackjack|5-de-5|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle|aviso-legal|contacto|privacidad|sobre-futbolhub|como-jugar)/",
       "headers": [
         {
           "key": "Cache-Control",
@@ -82,7 +102,7 @@
       ]
     },
     {
-      "source": "/como-jugar/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle)",
+      "source": "/como-jugar/(bingo|blackjack|5-de-5|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -91,7 +111,7 @@
       ]
     },
     {
-      "source": "/como-jugar/(bingo|blackjack|coche|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle)/",
+      "source": "/como-jugar/(bingo|blackjack|5-de-5|crucigrama|el-estadio|en-el-once|en-el-top|en-la-cadena|higher-or-lower|la-carrera|mentiroso|superdraft|tres-en-raya|wordle)/",
       "headers": [
         {
           "key": "Cache-Control",

@@ -3,7 +3,7 @@
    FUTBOLHUB
 
    EL PROBLEMA QUE RESUELVE (medido el 2026-09-02 contra producción):
-   un visitante nuevo a Coche, Bingo, Tres en Raya o Superdraft descarga
+   un visitante nuevo a 5 de 5, Bingo, Tres en Raya o Superdraft descarga
    1,48 MB DE SUPABASE antes de poder jugar — los 15 chunks de jugadores
    (945 KB comprimidos) más los 8 archivos de data/general (535 KB). Con el
    plan Free de Supabase (5 GB de egress al mes) eso son ~3.600 partidas y
@@ -47,7 +47,7 @@ const BUCKETS_PERMITIDOS = [
 ];
 
 /* max-age=300  : el navegador no vuelve a pedirlo en 5 minutos. Esto solo ya
- *                arregla que pasar de Coche a Bingo (que comparten los MISMOS
+ *                arregla que pasar de 5 de 5 a Bingo (que comparten los MISMOS
  *                datos) se volviera a bajar 1,48 MB por el `cache:'no-cache'`
  *                que llevaban estos fetch.
  * s-maxage=3600: la CDN de Vercel lo sirve una hora sin tocar Supabase. Es lo

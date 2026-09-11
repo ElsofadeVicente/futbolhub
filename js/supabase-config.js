@@ -104,7 +104,7 @@ function fhDataUrl(bucket, name) {
  *
  * El respaldo no es paranoia: sin él, cualquier entorno sin funciones de api/
  * (un `python -m http.server`, un Preview mal configurado) dejaría a los
- * juegos sin datos, y un fallo del proxy en producción tumbaría Coche, Bingo,
+ * juegos sin datos, y un fallo del proxy en producción tumbaría 5 de 5, Bingo,
  * Tres en Raya y Superdraft a la vez. Con él, lo peor que pasa es que se
  * vuelve al comportamiento de antes: funciona, solo que sin cachear.
  *

@@ -50,7 +50,7 @@
 .pw-circle-inner svg { width: 22px; height: 22px; }
 
 /* Generica, para meter avatares de OTROS jugadores en salas online (lobby
-   de El Mentiroso, asientos de Coche/Blackjack/En la Cadena/El Estadio...):
+   de El Mentiroso, asientos de 5 de 5/Blackjack/En la Cadena/El Estadio...):
    border-radius:inherit para adaptarse a la forma del contenedor que la use,
    al reves que .pw-avatar-img de aqui abajo que es solo del circulo de perfil
    propio y siempre redondo. Vive en JS: avatarInner() de js/auth.js. */
@@ -543,7 +543,7 @@
   /* NADA de top/right aqui: eran los offsets de cuando .pw-root flotaba
      (position: fixed). Ahora va en el flujo dentro de .fh-cabecera y es
      `relative`, asi que un `right: 10px` no lo pega al borde — lo DESPLAZA
-     10px hacia la izquierda. Medido en Coche: el circulo quedaba a 24px del
+     10px hacia la izquierda. Medido en 5 de 5: el circulo quedaba a 24px del
      borde en vez de a 14, descolocado respecto al boton Volver. */
   .pw-circle { width: 38px; height: 38px; }
   .pw-modal { padding: 22px 16px 18px; }

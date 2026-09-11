@@ -1,7 +1,7 @@
 /* ==========================================================================
-   noscript.css — el aviso de "hace falta JavaScript" de los 13 juegos.
+   noscript.css — el aviso de "hace falta JavaScript" de los 14 juegos.
 
-   Sin JavaScript ninguno de los 13 juegos puede arrancar (cargan datos de
+   Sin JavaScript ninguno de los 14 juegos puede arrancar (cargan datos de
    Supabase Storage y montan la pantalla en runtime), así que hasta ahora
    quien navegaba sin JS veía una página en blanco. Estilos deliberadamente
    autocontenidos y sin depender de los tokens de cada juego (--np-ink,

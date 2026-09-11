@@ -5,10 +5,10 @@
    Ejecuta RankedEngine.generate() en un hilo separado para no bloquear
    el hilo principal (countdown, UI, animaciones).
 
-   PLAN-coche-ranked.md, Fase 0 (2026-08-29): este archivo llevaba su
+   PLAN-5-de-5-ranked.md, Fase 0 (2026-08-29): este archivo llevaba su
    PROPIA copia completa de CLUBS_LIST/NATIONALITIES/generate()/
    _ensureSolution/etc., con el riesgo de divergencia que avisaba el
-   comentario del `new Worker(...?v=)` de coche/js/script.js: si esta
+   comentario del `new Worker(...?v=)` de 5-de-5/js/script.js: si esta
    copia y la de script.js se desincronizaban, dos jugadores de la misma
    sala podían generar rejillas DISTINTAS con la misma semilla. Ahora las
    dos (y el árbitro de Clasificatoria, api/ranked.js) llaman al MISMO

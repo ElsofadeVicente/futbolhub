@@ -1,5 +1,5 @@
 -- =====================================================================
--- RANKED — Clasificatoria 1v1 por ELO (PLAN-coche-ranked.md)
+-- RANKED — Clasificatoria 1v1 por ELO (PLAN-5-de-5-ranked.md)
 -- Pegar entero en el SQL Editor de Supabase y darle a Run. Idempotente.
 -- Requiere setup_perfiles.sql (tabla profiles) y setup_liga_ratelimit.sql
 -- (reutiliza rl_allow/rl_hits para el throttle de las RPC de lectura).
@@ -16,7 +16,7 @@
 -- propósito: la única puerta de escritura es el service_role del árbitro.
 --
 -- Genérico por "juego" desde el día 1 (columna en las 5 tablas) aunque
--- este trabajo solo cablea 'coche'. Añadir otro juego más adelante no
+-- este trabajo solo cablea '5-de-5'. Añadir otro juego más adelante no
 -- toca el esquema, solo el árbitro y el botón del juego correspondiente.
 -- =====================================================================
 
@@ -333,10 +333,10 @@ grant execute on function ranked_tramo_de_elo(int) to postgres;
 -- ─── pg_cron: cierre mensual, uno por juego cableado ──────────────────
 -- Igual que en setup_liga.sql: si pg_cron no está activo, activar la
 -- extensión (Database → Extensions → pg_cron) y volver a correr este
--- bloque, o llamar a ranked_cerrar_temporada('coche') a mano.
+-- bloque, o llamar a ranked_cerrar_temporada('5-de-5') a mano.
 do $$
 begin
-  perform cron.schedule('ranked-cierre-coche', '20 * * * *', $c$select ranked_cerrar_temporada('coche');$c$);
+  perform cron.schedule('ranked-cierre-5de5', '20 * * * *', $c$select ranked_cerrar_temporada('5-de-5');$c$);
 exception when undefined_function then
-  raise notice 'pg_cron no está activo: activa la extensión y vuelve a ejecutar este bloque, o llama a ranked_cerrar_temporada(''coche'') a mano.';
+  raise notice 'pg_cron no está activo: activa la extensión y vuelve a ejecutar este bloque, o llama a ranked_cerrar_temporada(''5-de-5'') a mano.';
 end $$;

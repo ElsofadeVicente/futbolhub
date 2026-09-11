@@ -2,14 +2,14 @@
    SALA.CSS — vocabulario común de las salas de espera
    FutbolHUB
 
-   Los seis juegos con sala online (En la Cadena, Coche, Blackjack, El
+   Los seis juegos con sala online (En la Cadena, 5 de 5, Blackjack, El
    Mentiroso, Tres en Raya y Bingo) llegaron cada uno por su lado a la misma
    pantalla: código de sala, lista de jugadores, quién manda y un botón de
    empezar. Pero la llamaban de formas distintas:
 
      · Al creador de la sala: "ANFITRIÓN" en Bingo, "HOST" en Blackjack,
-       Coche y El Mentiroso, "Host" en Tres en Raya y "👑 Host" en la Cadena.
-     · A ti mismo: "← TÚ" (Coche y Blackjack, con estilos escritos a mano en
+       5 de 5 y El Mentiroso, "Host" en Tres en Raya y "👑 Host" en la Cadena.
+     · A ti mismo: "← TÚ" (5 de 5 y Blackjack, con estilos escritos a mano en
        el propio JS), "← Tú" (la Cadena, reutilizando la clase del anfitrión,
        así que los dos distintivos se veían iguales), "(tu)" sin tilde en El
        Mentiroso, y nada en Bingo ni Tres en Raya.
@@ -73,7 +73,7 @@
   color: var(--np-ink);
 }
 
-/* Copiar el enlace de invitación. Estaba definido en Coche (con !important en
+/* Copiar el enlace de invitación. Estaba definido en 5 de 5 (con !important en
    casi todas las líneas) y otra vez en Blackjack, En la Cadena lo tenía como
    un icono 📋 suelto y El Mentiroso copiaba solo el CÓDIGO, no el enlace.
    Ahora es el mismo botón, con el mismo texto y la misma función en los seis:
@@ -116,12 +116,12 @@
        "COPIAR CODIGO" con la clase genérica .btn-tiny (aunque por dentro sí
        copiaba el enlace), así que quien entraba no veía la URL por ningún lado.
      · Bingo y Tres en Raya tampoco enseñaban el enlace debajo del código.
-     · Y los tamaños bailaban: .lobby-wrap a 500px en Coche y 460 en Blackjack,
+     · Y los tamaños bailaban: .lobby-wrap a 500px en 5 de 5 y 460 en Blackjack,
        el código con letter-spacing 12px o 0.28em o 0.12em según el juego, la
-       fila de jugador en Inter 0.95rem (Coche) o en DM Mono 0.72rem en
+       fila de jugador en Inter 0.95rem (5 de 5) o en DM Mono 0.72rem en
        mayúsculas (Blackjack, Cadena, Mentiroso).
 
-   El modelo es COCHE, por decisión del usuario. Estas reglas reproducen las
+   El modelo es 5 DE 5, por decisión del usuario. Estas reglas reproducen las
    suyas; los demás juegos las heredan porque esta hoja se carga DESPUÉS del
    CSS de cada juego y gana por orden a igual especificidad.
 
@@ -217,9 +217,9 @@
 .lobby-player-name {
   flex: 1; min-width: 0;
   /* Explicita y no heredada: el nombre heredaba la fuente base de cada juego y
-     no todas coinciden — Rajdhani en Coche, En la Cadena y El Mentiroso, y en
+     no todas coinciden — Rajdhani en 5 de 5, En la Cadena y El Mentiroso, y en
      Blackjack ninguna, o sea el Times New Roman del navegador. Rajdhani es la
-     de Coche, que es el modelo, y las seis paginas ya la cargan. */
+     de 5 de 5, que es el modelo, y las seis paginas ya la cargan. */
   font-family: 'Rajdhani', sans-serif;
   font-weight: 600;
   font-size: 0.95rem; color: var(--np-ink);

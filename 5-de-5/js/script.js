@@ -1,5 +1,5 @@
 /* =============================================
-   SCRIPT.JS — COCHE (Restricciones de Fútbol)
+   SCRIPT.JS — 5 DE 5 (Restricciones de Fútbol)
    QUIÉN COÑO FALTA  —  v10
    ============================================= */
 'use strict';
@@ -121,7 +121,7 @@ async function _fetchChunkRangeFromSupabase(cf) {
     const res = await fhFetchData('player-db', `players/chunks/${lo}-${hi}.json`);
     return await res.json();
   } catch (e) {
-    console.warn('[Coche] Error cargando jugadores:', e);
+    console.warn('[5 de 5] Error cargando jugadores:', e);
     return null;
   }
 }
@@ -132,7 +132,7 @@ async function _fetchLeaguesFromSupabase() {
     const res = await fhFetchData('player-db', 'leagues/league-teams.json');
     return await res.json();
   } catch (e) {
-    console.warn('[Coche] Error cargando ligas:', e);
+    console.warn('[5 de 5] Error cargando ligas:', e);
     return null;
   }
 }
@@ -141,14 +141,14 @@ async function _fetchLeaguesFromSupabase() {
    ahora son GENERALES (compartidos con Tres en Raya) y viven en
    game-data/general/. Se lee de ahí con respaldo a game-data/coche/ mientras no
    se haya subido la copia general a Supabase, para no romper nada. */
-async function _fetchCocheJsonFile(name) {
+async function _fetch5de5JsonFile(name) {
   for (const prefix of ['general', 'coche']) {
     try {
       const res = await fhFetchData('game-data', `${prefix}/${name}`);
       return await res.json();
     } catch (e) { /* siguiente prefijo */ }
   }
-  console.warn(`[Coche] Error cargando ${name} (general ni coche)`);
+  console.warn(`[5 de 5] Error cargando ${name} (general ni coche)`);
   return {};
 }
 
@@ -294,19 +294,19 @@ async function _loadData() {
   ];
 
   const metaPromises = [
-    _fetchCocheJsonFile('companeros_principal.json'),
-    _fetchCocheJsonFile('entrenados_por.json'),
-    _fetchCocheJsonFile('ganadores_clubes_internacional.json'),
-    _fetchCocheJsonFile('ganadores_seleccion.json'),
-    _fetchCocheJsonFile('GanadoresLigayCopa.json'),
-    _fetchCocheJsonFile('premios_individuales.json'),
+    _fetch5de5JsonFile('companeros_principal.json'),
+    _fetch5de5JsonFile('entrenados_por.json'),
+    _fetch5de5JsonFile('ganadores_clubes_internacional.json'),
+    _fetch5de5JsonFile('ganadores_seleccion.json'),
+    _fetch5de5JsonFile('GanadoresLigayCopa.json'),
+    _fetch5de5JsonFile('premios_individuales.json'),
     _fetchLeaguesFromSupabase(),
-    _fetchCocheJsonFile('perf_stats.json'),
-    _fetchCocheJsonFile('gen_pool.json'),
-    /* gen_pool.json es la BASE compartida; gen_pool_coche.json es esa misma
-       base con las excepciones propias de Coche encima (admin/generar_pool.py
-       → capa "Coche"). Si no existe o llega vacío, se cae a la base. */
-    _fetchCocheJsonFile('gen_pool_coche.json'),
+    _fetch5de5JsonFile('perf_stats.json'),
+    _fetch5de5JsonFile('gen_pool.json'),
+    /* gen_pool.json es la BASE compartida; gen_pool_5-de-5.json es esa misma
+       base con las excepciones propias de 5 de 5 encima (admin/generar_pool.py
+       → capa "5 de 5"). Si no existe o llega vacío, se cae a la base. */
+    _fetch5de5JsonFile('gen_pool_5-de-5.json'),
   ];
 
   const chunkPromises = CHUNK_NAMES.map(c => {
@@ -323,7 +323,7 @@ async function _loadData() {
     Promise.all(chunkPromises),
   ]);
 
-  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData, perfStats, genPool, genPoolCoche] = metaResults;
+  const [companeros, entrenados, clubInt, seleccion, ligaCopa, premios, leagueData, perfStats, genPool, genPool5de5] = metaResults;
 
   /* Stats precomputadas de performances (ligas 1ª div por cid, goles Champions,
      mejor temporada) — expuestas para validar jugadores fuera de PLAYERS_DB. */
@@ -446,13 +446,13 @@ async function _loadData() {
      escritos a mano). Ver TEAMMATES_LIST arriba. */
   TEAMMATES_LIST = _buildTeammatesList(companeros);
 
-  /* Dedup: Coche delega validate()/_isRedundant() en el motor compartido FR.
+  /* Dedup: 5 de 5 delega validate()/_isRedundant() en el motor compartido FR.
      FR.validate('teammate') necesita estos mapas inversos; se los inyectamos
      (ya construidos) para no recargar datos. */
   try { if (window.FR && FR.setTeammateMaps) FR.setTeammateMaps(_REVERSE_TEAMMATE, _REVERSE_TEAMMATE_IDS); } catch (e) {}
 
   /* Restrictions.generate() ahora delega en RankedEngine.generate() (Fase 0 de
-     PLAN-coche-ranked.md): el generador necesita esta misma lista y estos
+     PLAN-5-de-5-ranked.md): el generador necesita esta misma lista y estos
      mismos mapas inversos, o generaria con la lista de respaldo (38 nombres)
      en vez de los 227 curados. Sin esto, el hilo principal (sin Worker
      disponible) generaria una rejilla DISTINTA a la del Worker con la misma
@@ -505,16 +505,16 @@ async function _loadData() {
   });
 
   /* GEN_POOL: pool aparte de ~1500 jugadores reconocibles (gen_pool.json,
-     precomputado por fama con admin/build_coche_perf.py), usado SOLO para
+     precomputado por fama con admin/build_5de5_perf.py), usado SOLO para
      generar restricciones. Si gen_pool.json no cargó, cae a companeros_principal
-     (el comportamiento de antes) — nunca se queda vacío. gen_pool_coche.json,
+     (el comportamiento de antes) — nunca se queda vacío. gen_pool_5-de-5.json,
      si existe, manda por encima: es la misma base con las excepciones propias
-     de Coche (admin/generar_pool.py). */
+     de 5 de 5 (admin/generar_pool.py). */
   const poolIdsBase = (Array.isArray(genPool) && genPool.length)
     ? genPool.map(String)
     : Object.keys(companeros);
-  const poolIds = (Array.isArray(genPoolCoche) && genPoolCoche.length)
-    ? genPoolCoche.map(String)
+  const poolIds = (Array.isArray(genPool5de5) && genPool5de5.length)
+    ? genPool5de5.map(String)
     : poolIdsBase;
   GEN_POOL = poolIds.filter(id => allChunkData[id]).map(id => {
     const chunk = allChunkData[id];
@@ -560,15 +560,15 @@ const Restrictions = (() => {
   const normalize = RankedEngine.normalize;
 
   /* ────────── Generar restricciones (delegado en el motor compartido) ──────────
-     PLAN-coche-ranked.md, Fase 0 (2026-08-29): esto era una copia completa de
-     coche/js/restrictions-worker.js -- constantes CLUBS_LIST, NATIONALITIES,
+     PLAN-5-de-5-ranked.md, Fase 0 (2026-08-29): esto era una copia completa de
+     5-de-5/js/restrictions-worker.js -- constantes CLUBS_LIST, NATIONALITIES,
      LEAGUE_TEAMS/CIDS/LOGOS, TROPHIES, COACHES_LIST + generate()/_buildCandidates/_matching/
      _isRedundant/_familyUsed/_removeRedundancies/_ensureSolution -- con el
      riesgo de divergencia del que ya avisaba el comentario del "new Worker"
      de mas abajo (el "?v="). _isRedundant()/validate() ya delegaban en FR desde
      2026-08-03; ahora generate() delega en js/ranked-engine.js, que ES ese
      mismo codigo extraido a un modulo cargable en navegador, Worker y Node
-     (lo usa tambien coche/js/restrictions-worker.js y el arbitro de
+     (lo usa tambien 5-de-5/js/restrictions-worker.js y el arbitro de
      Clasificatoria, api/ranked.js). Verificado: 300 semillas reales contra
      FR.genPool, 0 discrepancias frente al generador viejo. */
   function generate(seed, db) {
@@ -1135,7 +1135,7 @@ const Sync = (() => {
   }
 
   /* Cola de emparejamiento: NO decide el resultado, solo con quién juegas
-     (ver PLAN-coche-ranked.md §6.1) — manipularla en el peor caso solo
+     (ver PLAN-5-de-5-ranked.md §6.1) — manipularla en el peor caso solo
      cambia el rival, nunca el ELO que se aplica al cerrar la partida. */
   const RANKED_QUEUE_PATH = 'restricciones/ranked_queue';
   const RANKED_PAIR_PATH  = 'restricciones/ranked_pairings';
@@ -1195,7 +1195,7 @@ const App = (() => {
      escriba sobre una sala distinta a la que iniciaste la acción. */
   let _sessionToken = 0;
   function _newSession() { return ++_sessionToken; }
-  /* _isLocal se queda siempre en false (PLAN-coche-ranked.md, Fase 1: modo
+  /* _isLocal se queda siempre en false (PLAN-5-de-5-ranked.md, Fase 1: modo
      Local eliminado). No se borra de los sitios donde forma parte de una
      condicion compuesta (p.ej. "_isHost && !_isLocal && _isPublic") para no
      tocar ramas de Privada/Publica ya probadas en produccion -- sencillamente
@@ -1206,7 +1206,7 @@ const App = (() => {
   let _isLocal    = false;
   let _localName  = '';
 
-  /* Clasificatoria (ranked 1v1 por ELO). Fase 1-3 de PLAN-coche-ranked.md. */
+  /* Clasificatoria (ranked 1v1 por ELO). Fase 1-3 de PLAN-5-de-5-ranked.md. */
   let _isRanked       = false;
   let _rankedMatchId  = null;
   let _rankedSeedBase = 0;
@@ -1312,7 +1312,7 @@ const App = (() => {
       };
       try {
         /* Con version: el worker delega en js/ranked-engine.js (un solo generador,
-           PLAN-coche-ranked.md Fase 0), pero sigue haciendo falta el ?v= — sin
+           PLAN-5-de-5-ranked.md Fase 0), pero sigue haciendo falta el ?v= — sin
            el cache-buster, un navegador con el worker.js viejo en caché no
            recargaria ranked-engine.js hasta que el navegador decida revalidar
            por su cuenta, y mientras tanto seguiria siendo el mismo archivo (no
@@ -1673,7 +1673,7 @@ const App = (() => {
           s.onload = res; s.onerror = rej;
           document.head.appendChild(s);
         });
-      } catch (e) { console.error('[Coche] No se pudo cargar futbol-restrictions.js', e); }
+      } catch (e) { console.error('[5 de 5] No se pudo cargar futbol-restrictions.js', e); }
     }
     _showScreen('screen-menu');
     _preloadDataInBackground();
@@ -1721,7 +1721,7 @@ const App = (() => {
         document.getElementById('autocomplete-list')?.classList.add('hidden');
       }
     });
-    console.log('✅ App Coche iniciada');
+    console.log('✅ App 5 de 5 iniciada');
   }
 
   /* ════════════════════════════════════════
@@ -1764,8 +1764,8 @@ const App = (() => {
     locked.classList.add('hidden'); unlocked.classList.remove('hidden');
     if (!window.FHRanked) return;
     try {
-      const perfil = await FHRanked.perfil('coche');
-      const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === 'coche');
+      const perfil = await FHRanked.perfil('5-de-5');
+      const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === '5-de-5');
       const elo         = fila ? fila.elo       : 200;
       const tramo       = fila ? fila.tramo     : 0;
       const racha       = fila ? fila.racha     : 0;
@@ -1939,7 +1939,7 @@ const App = (() => {
 
   /* ════════════════════════════════════════
      CLASIFICATORIA (ranked 1v1 por ELO)
-     PLAN-coche-ranked.md, Fases 1-3. Emparejamiento por cola en Firebase
+     PLAN-5-de-5-ranked.md, Fases 1-3. Emparejamiento por cola en Firebase
      (NO autoritativo: solo decide con quién juegas — ver §6.1 del plan);
      el resultado y el ELO los fija siempre api/ranked.js.
      ════════════════════════════════════════ */
@@ -1996,8 +1996,8 @@ const App = (() => {
       await _loadGameData();
       let elo = 200;
       try {
-        const perfil = await FHRanked.perfil('coche');
-        const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === 'coche');
+        const perfil = await FHRanked.perfil('5-de-5');
+        const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === '5-de-5');
         if (fila && typeof fila.elo === 'number') elo = fila.elo;
       } catch(e) { console.warn('[App] ranked perfil falló, uso ELO base 200:', e); }
 
@@ -2046,7 +2046,7 @@ const App = (() => {
     _rankedSearching = false;
     _rankedStopListening();
     try {
-      const { matchId, seedBase } = await FHRanked.call('crear', { juego:'coche', oponente_uid: rivalUid });
+      const { matchId, seedBase } = await FHRanked.call('crear', { juego:'5-de-5', oponente_uid: rivalUid });
       const { code, playerId } = await Sync.createRankedRoom(myName, myAvatar, matchId, seedBase);
       await Sync.rankedAnnouncePairing(rivalUid, { code, matchId, seedBase, from: myUid });
       Sync.rankedQueueLeave(myUid).catch(()=>{});
@@ -2129,7 +2129,7 @@ const App = (() => {
     box.innerHTML = '<p class="panel-hint">Cargando…</p>';
     try {
       const session = window.FHAuth ? await FHAuth.getSession() : null;
-      const data = await FHRanked.leaderboard('coche', 20);
+      const data = await FHRanked.leaderboard('5-de-5', 20);
       if (!data || !Array.isArray(data.top) || !data.top.length) {
         box.innerHTML = '<p class="panel-hint">Todavía no hay clasificación esta temporada.</p>';
         return;
@@ -2350,9 +2350,9 @@ const App = (() => {
          host anterior, asi que hay que reprogramarlas o la ronda se quedaria
          esperandolos. Se les pasa el reloj real de la ronda (inicio +
          duracion): ellos mismos reparten lo que quede. */
-      if (_isPublic && typeof CocheBots !== 'undefined' && _timerStartAt) {
+      if (_isPublic && typeof CincoDeCincoBots !== 'undefined' && _timerStartAt) {
         const left = _timerTotalSecs - Math.floor((Date.now()-_timerStartAt)/1000);
-        if (left > 3) CocheBots.onRound({
+        if (left > 3) CincoDeCincoBots.onRound({
           code: _roomCode, room, restrictions: _restrictions,
           roundSecs: _timerTotalSecs, startAt: _timerStartAt,
           isSuddenDeath: _isSuddenDeath,
@@ -2398,7 +2398,7 @@ const App = (() => {
          no nos hemos re-unido. No expulsar — el jugador se re-unirá al pulsar
          "Jugar de nuevo" (playAgain reintenta hasta que el status sea waiting). */
       if (room.status === 'waiting' || room.status === 'resetting') return;
-      /* En partida, que tu nodo desaparezca NO es una expulsión: Coche no
+      /* En partida, que tu nodo desaparezca NO es una expulsión: 5 de 5 no
          tiene forma de echar a nadie. Es que el corte de conexión (una
          llamada, cambiar de app) lo borró. Antes se salía al menú con
          "Has sido expulsado" y ya no había manera de volver. Ahora se
@@ -2521,8 +2521,8 @@ const App = (() => {
           _renderSubmissions(_players, room.submissions||{});
           /* Si una persona ya ha bloqueado a su futbolista, los bots que
              falten se dan prisa (2-10 s) en vez de agotar su turno. */
-          if (_isHost && _isPublic && !_isLocal && typeof CocheBots !== 'undefined') {
-            CocheBots.onHumanAnswer(room);
+          if (_isHost && _isPublic && !_isLocal && typeof CincoDeCincoBots !== 'undefined') {
+            CincoDeCincoBots.onHumanAnswer(room);
           }
           if (_isHost && !_revealTriggered) {
             const connected = _players.filter(p=>p.connected!==false);
@@ -2701,8 +2701,8 @@ const App = (() => {
     if (_isPublic && room.lobbyAt) _renderPublicLobbyTimer(room.lobbyAt);
 
     /* Bots: solo los gestiona el host, y solo en salas públicas */
-    if (_isHost && !_isLocal && _isPublic && _roomCode && typeof CocheBots !== 'undefined') {
-      CocheBots.syncLobby(room, _roomCode);
+    if (_isHost && !_isLocal && _isPublic && _roomCode && typeof CincoDeCincoBots !== 'undefined') {
+      CincoDeCincoBots.syncLobby(room, _roomCode);
     }
   }
 
@@ -2860,8 +2860,8 @@ const App = (() => {
          instante (no solo la duración) para que su hora de responder
          sea un punto del reloj de la ronda y no un temporizador suelto
          que el móvil pueda congelar al irse a segundo plano. */
-      if (_isHost && !_isLocal && _isPublic && typeof CocheBots !== 'undefined') {
-        CocheBots.onRound({
+      if (_isHost && !_isLocal && _isPublic && typeof CincoDeCincoBots !== 'undefined') {
+        CincoDeCincoBots.onRound({
           code: _roomCode,
           room,
           restrictions: _restrictions,
@@ -2971,8 +2971,8 @@ const App = (() => {
     /* Lo primero, los bots: sus temporizadores venían congelados y puede
        que a varios les tocara responder hace rato. Así llegan sus
        respuestas ANTES de que el reloj de abajo cierre la ronda. */
-    if (_isHost && _isPublic && !_isLocal && typeof CocheBots !== 'undefined') {
-      CocheBots.catchUp();
+    if (_isHost && _isPublic && !_isLocal && typeof CincoDeCincoBots !== 'undefined') {
+      CincoDeCincoBots.catchUp();
     }
     /* No comprobamos si _timerInterval sigue "vivo": en el caso exacto que
        queremos arreglar, el navegador puede dejarlo apuntando a un intervalo
@@ -3218,9 +3218,9 @@ const App = (() => {
          temporizadores estaban congelados y su turno ya había pasado).
          Se les deja terminar antes de cerrar la ronda para que no salga
          "Sin respuesta" por un problema del móvil del host. */
-      if (_isPublic && typeof CocheBots !== 'undefined' && CocheBots.pending()) {
-        CocheBots.catchUp();
-        await CocheBots.settle(3000);
+      if (_isPublic && typeof CincoDeCincoBots !== 'undefined' && CincoDeCincoBots.pending()) {
+        CincoDeCincoBots.catchUp();
+        await CincoDeCincoBots.settle(3000);
         if (!_live()) { _revealTriggered=false; return; }
       }
       /* Pequeña espera para que Firebase propague todas las submissions */
@@ -3527,8 +3527,8 @@ const App = (() => {
 
       let despues = null;
       try {
-        const perfil = await FHRanked.perfil('coche');
-        const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === 'coche');
+        const perfil = await FHRanked.perfil('5-de-5');
+        const fila = perfil && Array.isArray(perfil.juegos) && perfil.juegos.find(j => j.juego === '5-de-5');
         if (fila && typeof fila.elo === 'number') despues = fila.elo;
       } catch(e) { /* sin perfil fresco, se muestra solo el delta */ }
 
@@ -3561,7 +3561,7 @@ const App = (() => {
         </div>`;
     } catch(e) {
       console.warn('[App] No se pudo confirmar el resultado ranked:', e);
-      box.innerHTML = '<p class="ranked-result-error">No se pudo confirmar el resultado con el servidor. Tu ELO se actualizará solo si vuelves a abrir Coche más tarde.</p>';
+      box.innerHTML = '<p class="ranked-result-error">No se pudo confirmar el resultado con el servidor. Tu ELO se actualizará solo si vuelves a abrir 5 de 5 más tarde.</p>';
     }
   }
 
@@ -4196,7 +4196,7 @@ const App = (() => {
        renombrado, una pantalla retirada) para dejar la página sin ninguna
        pantalla activa: en blanco y, en la PWA, sin forma de salir. */
     const destino = document.getElementById(id);
-    if (!destino) { console.error('[Coche] No existe la pantalla #' + id); return; }
+    if (!destino) { console.error('[5 de 5] No existe la pantalla #' + id); return; }
     destino.classList.add('active');
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== destino) s.classList.remove('active');
@@ -4230,7 +4230,7 @@ const App = (() => {
   }
 
   function _resetState() {
-    if (typeof CocheBots !== 'undefined') CocheBots.stop();
+    if (typeof CincoDeCincoBots !== 'undefined') CincoDeCincoBots.stop();
     _lastArmedStatus=null;
     _roomCode=null; _playerId=null; _isHost=false; _isPublic=false;
     _isLocal=false; _localName='';
@@ -4261,18 +4261,18 @@ const App = (() => {
     /* El nombre entra en la sesión: tryReconnect lo pide, y sin él la vuelta
        automática tras una recarga tendría que preguntarlo otra vez. */
     const data = JSON.stringify({code:_roomCode,playerId:_playerId,isHost:_isHost,isPublic:_isPublic,name:_localName||'',ts:Date.now()});
-    try { sessionStorage.setItem('coche_session', data); } catch(e){}
+    try { sessionStorage.setItem('5de5_session', data); } catch(e){}
     /* Además en localStorage: al CERRAR la app (no solo recargar la pestaña)
        sessionStorage se borra, y sin la sesión el jugador vuelve a entrar a su
        MISMA sala pública como un segundo nodo duplicado (se veía a sí mismo
        como host + su copia + bots). localStorage sobrevive al cierre y deja
        que tryReconnect reutilice el hueco existente en vez de duplicarlo. */
-    try { localStorage.setItem('coche_session', data); } catch(e){}
+    try { localStorage.setItem('5de5_session', data); } catch(e){}
   }
   function _loadSession() {
     let s = null;
-    try { s = sessionStorage.getItem('coche_session'); } catch(e){}
-    if (!s) { try { s = localStorage.getItem('coche_session'); } catch(e){} }
+    try { s = sessionStorage.getItem('5de5_session'); } catch(e){}
+    if (!s) { try { s = localStorage.getItem('5de5_session'); } catch(e){} }
     if (!s) return null;
     try {
       const data = JSON.parse(s);
@@ -4283,8 +4283,8 @@ const App = (() => {
     } catch(e){ return null; }
   }
   function _clearSession() {
-    try { sessionStorage.removeItem('coche_session'); } catch(e){}
-    try { localStorage.removeItem('coche_session'); } catch(e){}
+    try { sessionStorage.removeItem('5de5_session'); } catch(e){}
+    try { localStorage.removeItem('5de5_session'); } catch(e){}
   }
 
   return {

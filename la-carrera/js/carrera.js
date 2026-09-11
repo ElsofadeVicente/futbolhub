@@ -25,7 +25,7 @@ document.addEventListener('error', (e) => {
   else if (el.dataset.fallback === 'mode-art-fallback') el.parentElement.classList.add('mode-art--fallback');
 }, true);
 
-// ── Normalización (igual que En el Top / Coche) ──
+// ── Normalización (igual que En el Top / 5 de 5) ──
 function norm(s) {
   return String(s || '').toLowerCase()
     .replace(/ø/g,'o').replace(/æ/g,'ae').replace(/ð/g,'d').replace(/þ/g,'th').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/İ/g,'i').replace(/ß/g,'b').replace(/œ/g,'oe').replace(/[\u200b-\u200f]/g,'')
@@ -1076,7 +1076,7 @@ function wordBoundaryMatch(n, q) {
   for (let i = 0; i < w.length; i++) if (w.slice(i).join(' ').startsWith(q)) return true;
   return false;
 }
-// Etiqueta de posición mostrada en cada sugerencia (igual que Coche).
+// Etiqueta de posición mostrada en cada sugerencia (igual que 5 de 5).
 const POS_LABEL = { GK: 'Portero', DEF: 'Defensa', MID: 'Centrocampista', FWD: 'Delantero' };
 
 async function buildSug(query) {

@@ -13,8 +13,8 @@
    con desenfoque, filetes de un pelo, elevación suave y un control
    segmentado en vez de las pestañas subrayadas.
 
-   CÓMO LLEGA A 13 JUEGOS SIN DUPLICAR NADA
-   · Los 13 CSS comparten los tokens --np-* de la migración a "periódico":
+   CÓMO LLEGA A 14 JUEGOS SIN DUPLICAR NADA
+   · Los 14 CSS comparten los tokens --np-* de la migración a "periódico":
      cambiarles el valor retiñe todos los juegos a la vez.
    · Sus valores cuadrados se hicieron variables CON RESPALDO
      (border-radius: var(--r-md, 0), var(--bd-c, var(--np-ink))…): en el
@@ -108,7 +108,7 @@
 
 /* ══════════════════════════════════════════════
    FONDO
-   Los 13 juegos comparten la misma textura de papel (rejilla de columnas +
+   Los 14 juegos comparten la misma textura de papel (rejilla de columnas +
    grano) dibujada con tintas oscuras, invisible sobre fondo oscuro. Se
    cambia por luz de estadio: dos focos difuminados y una malla muy tenue.
    ══════════════════════════════════════════════ */

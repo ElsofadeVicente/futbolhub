@@ -22,7 +22,7 @@
     ".read": false,
     ".write": false,
 
-    // COCHE y EL MENTIROSO comparten este nodo (se distinguen por room.game).
+    // 5 DE 5 y EL MENTIROSO comparten este nodo (se distinguen por room.game).
     "restricciones": {
       "rooms": {
         // Lectura/escritura SOLO si conoces el código de sala (6 chars). Así
@@ -35,13 +35,13 @@
       },
       "matchmaking": {
         // Índice público de salas en espera: solo {code, status, playerCount},
-        // sin datos personales. Coche lo lee entero para emparejar.
+        // sin datos personales. 5 de 5 lo lee entero para emparejar.
         ".read": true,
         "$code": {
           ".write": true
         }
       },
-      // CLASIFICATORIA (ranked 1v1 por ELO, PLAN-coche-ranked.md). Cola de
+      // CLASIFICATORIA (ranked 1v1 por ELO, PLAN-5-de-5-ranked.md). Cola de
       // emparejamiento por uid de Supabase: cada cliente escribe SU propia
       // entrada; se lee entera para buscar rival por ventana de ELO. Igual
       // que matchmaking, esto NO decide el resultado — solo con quién juegas
@@ -94,7 +94,7 @@
     },
 
     // TRES EN RAYA — salas 2 jugadores por turnos + matchmaking público.
-    // Misma forma que Coche/Blackjack: solo se abre por código de sala (6 chars),
+    // Misma forma que 5 de 5/Blackjack: solo se abre por código de sala (6 chars),
     // nadie puede listar todas las salas ni leer usernames de partidas ajenas.
     "tres-en-raya": {
       "rooms": {
@@ -115,7 +115,7 @@
     // BINGO — salas de varios jugadores + matchmaking público.
     // Todos los de la sala juegan el MISMO cartón (misma semilla) pero cada uno
     // a su ritmo; solo se comparte el progreso y el resultado final. Misma
-    // forma que Coche/Blackjack/Tres en Raya: se abre por código de sala, así
+    // forma que 5 de 5/Blackjack/Tres en Raya: se abre por código de sala, así
     // nadie puede listar las salas ni leer los nombres de partidas ajenas.
     "bingo": {
       "rooms": {

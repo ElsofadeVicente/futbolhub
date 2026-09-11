@@ -408,7 +408,7 @@ const Sync=(()=>{
       const od=window._FBOnDisconnect(ref(db,`${PATH}/${code}/players/${playerId}/connected`));
       /* cancel() ANTES de armar. Los onDisconnect se ACUMULAN sobre la
          misma ruta en vez de sustituirse (es el fallo que ya se documento
-         en Coche y Blackjack), y esta funcion se llama tambien al volver
+         en 5 de 5 y Blackjack), y esta funcion se llama tambien al volver
          a la sala, asi que sin el cancel se van apilando avisos de la
          misma sesion. */
       od.cancel().catch(()=>{}).then(()=>od.set(false).catch(()=>{}));

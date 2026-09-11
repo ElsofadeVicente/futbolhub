@@ -39,7 +39,7 @@ const BlackjackSync = (() => {
      Comprobado contra Firebase real forzando el corte con goOffline/goOnline:
      sin cancel() queda {connected:false} a secas; con cancel() queda
      {connected:false, isHost:true, name:…, score:…}. Mismo fallo que tenía
-     Coche (ver coche/js/script.js); Tres en Raya ya lo hacía bien. */
+     5 de 5 (ver 5-de-5/js/script.js); Tres en Raya ya lo hacía bien. */
   function _cancelOnDisconnect(path) {
     try {
       if (window._FBOnDisconnect) {

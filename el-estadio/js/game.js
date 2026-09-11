@@ -450,7 +450,7 @@ function confirmarGuess() {
    estadios.json trae 'clubs' (lista de nombres) cuando admin/generar_estadios.py
    --rellenar-clubes lo rellenó vía Wikidata (P115 al revés: qué club tiene
    este estadio como campo). El escudo NO viaja en el JSON: se resuelve en
-   runtime contra el bucket team-logos, igual que Blackjack/Coche/En el Once
+   runtime contra el bucket team-logos, igual que Blackjack/5 de 5/En el Once
    (_getLogoUrl en blackjack-game.js) — el archivo local se guardó con el
    nombre EXACTO del club (espacios → guion bajo) y sbStorageSafeKey ya quita
    los acentos al construir la clave, así que no hace falta ningún mapa de

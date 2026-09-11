@@ -209,7 +209,7 @@
   }
 
   /* ─────────── Pools de badges — SOLO Superdraft ───────────
-     Whitelists propias: no afectan a Coche ni a Tres en Raya (que siguen
+     Whitelists propias: no afectan a 5 de 5 ni a Tres en Raya (que siguen
      usando las constantes completas de FR). Para añadir/quitar, edita estos
      conjuntos. Nacionalidades extra llevan su bandera (team-flags) + adjetivo. */
   const NAT_KEEP = new Set([
@@ -547,7 +547,7 @@
     const soloActivos = activeRequired(D && D.objective);
     acItems = FR.suggest(q, 8, { filter: (m) => !soloActivos || isActive(m) });
     /* Deduplicar el mismo jugador indexado dos veces con IDs distintos pero
-       datos identicos (mismo patron que Coche: nombre + año + nacion + posicion). */
+       datos identicos (mismo patron que 5 de 5: nombre + año + nacion + posicion). */
     const seenFp = new Set();
     acItems = acItems.filter(it => {
       const fp = norm(it.name) + '|' + (it.birthYear || '') + '|' + (it.nationalTeam || '') + '|' + (it.position || '');

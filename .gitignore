@@ -27,10 +27,10 @@ data/transfermarkt_api_exports/
 # nunca deben subirse a GitHub.
 data/teams/logos/
 data/teams/flags/
-coche/data/logos/
-coche/data/flags/
-coche/data/trofeos/
-coche/data/coaches/
+5-de-5/data/logos/
+5-de-5/data/flags/
+5-de-5/data/trofeos/
+5-de-5/data/coaches/
 
 # Datos propios de cada juego ya migrados a Supabase (tablas creadas en la
 # tarea de esquema de "datos propios de cada juego"). El JS de cada juego ya
@@ -53,7 +53,7 @@ el-estadio/data/estadios.json
 # archivo que ya esta ignorado y que viaja a Supabase con sync.bat estadio.
 el-estadio/data/_backup/
 mentiroso/js/data.js
-coche/data/*.json
+5-de-5/data/*.json
 data/general/*.json
 # OJO: la regla de arriba lleva *.json, que en git NO entra en subcarpetas.
 # Los respaldos que deja admin/build_restricciones_db.py se colaban en el
@@ -115,5 +115,5 @@ admin/.crucigrama_meta.json
 
 # Notas personales sueltas en la raiz, no son parte del sitio
 Tutorial CMD Github.txt
-PLAN-coche-ranked.md
+PLAN-5-de-5-ranked.md
 actualizar_performances_activos.bat

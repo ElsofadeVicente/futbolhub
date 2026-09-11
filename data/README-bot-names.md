@@ -7,7 +7,7 @@ Los jugadores automáticos de las salas públicas cogen su nombre de
 
 **Fuente real:** Supabase Storage, bucket `game-data`, archivo `bot-names.json`
 (en la raíz del bucket, no dentro de ninguna carpeta de juego, porque lo usan
-blackjack y coche a la vez).
+blackjack y 5 de 5 a la vez).
 
 **Respaldo:** la copia de esta carpeta (`data/bot-names.json`), que va en el
 repo. Solo se usa si Storage no responde.

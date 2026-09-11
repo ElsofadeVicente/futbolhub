@@ -63,7 +63,7 @@
   }
 
   /* La pantalla que se está viendo AHORA. Hace falta para las pantallas que
-     no traen botón Volver (durante una partida de Bingo, de Coche…): ahí no
+     no traen botón Volver (durante una partida de Bingo, de 5 de 5…): ahí no
      hay ningún ancla, y sin esto el círculo se quedaba dentro de la fila de
      una pantalla ya oculta, o sea invisible.
 
@@ -124,7 +124,7 @@
 
     /* SACAR LA FILA DEL PADDING DEL CONTENEDOR.
        Cada juego le pone al suyo el padding que le apetece (16px en En el
-       Top, 20px en Coche, 80px arriba en En el Once). Si la fila lo hereda,
+       Top, 20px en 5 de 5, 80px arriba en En el Once). Si la fila lo hereda,
        el botón Volver se mete hacia dentro y el círculo se despega del borde
        derecho: dejan de estar donde han estado siempre. Y el padding de
        ARRIBA se convierte en hueco muerto encima de la cabecera, que es
@@ -152,7 +152,7 @@
   }
 
   /* Overlays a pantalla completa que no son una pantalla del juego (la
-     cuenta atrás de Coche/Blackjack/En la Cadena antes de empezar una
+     cuenta atrás de 5 de 5/Blackjack/En la Cadena antes de empezar una
      ronda): son `display:flex` centrando su contenido, y colarles una fila
      de cabecera como hijo más rompe ese centrado — la fila coge
      `flex-basis:100%` (ver ajustar()) y empuja el número grande fuera del
@@ -295,7 +295,7 @@
 
     /* Dos vigilantes, y a propósito no uno con todo activado: `childList`
        con `subtree` sobre el <body> se dispara con CADA cambio del DOM del
-       juego (Coche repinta el marcador varias veces por segundo), y aquí
+       juego (5 de 5 repinta el marcador varias veces por segundo), y aquí
        solo interesa una cosa de la lista de hijos: que aparezca el círculo,
        que el widget cuelga del <body> directamente. */
     new MutationObserver(pedirRepaso).observe(document.body, { childList: true });

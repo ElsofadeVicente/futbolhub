@@ -1,6 +1,6 @@
 /* =============================================
    RANKED.JS — Capa de datos del modo Clasificatoria (ranked 1v1 por ELO)
-   PLAN-coche-ranked.md
+   PLAN-5-de-5-ranked.md
 
    Cargar SIEMPRE después de:
      js/auth.js   (usa FHAuth.ready() / FHAuth.getSession(), lleva la sesión)

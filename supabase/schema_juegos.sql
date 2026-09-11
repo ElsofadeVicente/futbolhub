@@ -61,28 +61,28 @@ create table mentiroso_stat_definitions (
   constraint mentiroso_stat_definitions_single_row check (id = 1)
 );
 
--- ─── COCHE — datasets propios del juego (restricciones) ──────────────
-create table coche_companeros (
+-- ─── 5 DE 5 — datasets propios del juego (restricciones) ──────────────
+create table cinco_de_cinco_companeros (
   player_id bigint primary key,
   data      jsonb not null
 );
-create table coche_entrenadores (
+create table cinco_de_cinco_entrenadores (
   id   bigint primary key,
   data jsonb not null
 );
-create table coche_ganadores_clubes_intl (
+create table cinco_de_cinco_ganadores_clubes_intl (
   competition text primary key,
   data        jsonb not null
 );
-create table coche_ganadores_seleccion (
+create table cinco_de_cinco_ganadores_seleccion (
   competition text primary key,
   data        jsonb not null
 );
-create table coche_ganadores_liga_copa (
+create table cinco_de_cinco_ganadores_liga_copa (
   competition text primary key,
   data        jsonb not null
 );
-create table coche_premios_individuales (
+create table cinco_de_cinco_premios_individuales (
   premio text primary key,
   data   jsonb not null
 );

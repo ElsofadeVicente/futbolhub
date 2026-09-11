@@ -8,12 +8,12 @@
    imagen).
 
    Ahora la baraja se construye con la base de datos real de la
-   web (bucket "player-db", los mismos chunks que usan Coche y
+   web (bucket "player-db", los mismos chunks que usan 5 de 5 y
    En la Cadena) filtrada por el pool de reconocibles propio de
    El Mentiroso (game-data/general/gen_pool_mentiroso.json, base
    compartida + las excepciones propias de este juego — quien se
    saca aquí desaparece de la baraja aunque siga en Bingo o en
-   Coche; se cura en admin/generar_pool.py, capa "El Mentiroso").
+   5 de 5; se cura en admin/generar_pool.py, capa "El Mentiroso").
    De ahí salen:
      · la FOTO real de cada jugador  (campo img del chunk)
      · el ESCUDO de su último club   (bucket team-logos)
@@ -55,7 +55,7 @@ const MDeck = (function () {
   function pickRng(arr, rng) { return arr[Math.floor(rng() * arr.length)]; }
 
   /* ═══ 2. Escudos, banderas y logos ══════════════════════ */
-  /* Mismo criterio que coche/js/script.js:_logoUrl — el bucket
+  /* Mismo criterio que 5-de-5/js/script.js:_logoUrl — el bucket
      guarda "Nombre_Del_Equipo.png" y sbStorageUrl ya quita los
      acentos (las claves de Storage son ASCII). */
   function clubBadge(tmName) {
@@ -113,7 +113,7 @@ const MDeck = (function () {
   ];
 
   /* Ligas: lista de equipos históricos de cada una (misma lista
-     que usa Coche, para que "ha jugado en la Premier" signifique
+     que usa 5 de 5, para que "ha jugado en la Premier" signifique
      lo mismo en los dos juegos). */
   const LEAGUES = [
     { id: 'La Liga', name: 'LaLiga', logo: 'LaLiga', teams: [
@@ -198,7 +198,7 @@ const MDeck = (function () {
     { tm: 'Croatia',     name: 'croatas',      flag: 'hr'  },
   ];
 
-  /* Continentes (mismas listas que coche/js/restrictions-worker.js) */
+  /* Continentes (mismas listas que 5-de-5/js/restrictions-worker.js) */
   const CONTINENTS = [
     { id: 'europeo', name: 'europeos', emoji: '🇪🇺', list: [
       'Spain','England','France','Germany','Netherlands','Portugal','Italy',
@@ -307,7 +307,7 @@ const MDeck = (function () {
   /* ═══ 5. Carga del pool ═════════════════════════════════ */
   /* Solo los rangos que cubren la lista de fama (ids < 800.000):
      ~780 KB comprimidos, y el service worker los comparte con
-     Coche y En la Cadena, así que casi siempre vienen de caché. */
+     5 de 5 y En la Cadena, así que casi siempre vienen de caché. */
   const MAX_POOL_ID = 800000;
   const POOL_LIMIT  = 1500;
 
@@ -387,7 +387,7 @@ const MDeck = (function () {
          baremo propio y el juego sigue funcionando. Se prueba primero la
          capa propia de El Mentiroso (base + sus excepciones, resuelto en
          admin/generar_pool.py: quien está fuera aquí no sale nunca en la
-         baraja, aunque siga en el pool de Bingo o de Coche) y si no existe
+         baraja, aunque siga en el pool de Bingo o de 5 de 5) y si no existe
          o llega vacía se cae a la base compartida. */
       let fame = null;
       try {
