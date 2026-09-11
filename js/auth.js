@@ -174,6 +174,8 @@
         if (msg.includes('is invalid') && msg.includes('email')) return 'Ese correo no parece válido.';
         if (msg.includes('rate limit') || msg.includes('too many')) return 'Demasiados intentos. Espera un momento y vuelve a probar.';
         if (msg.includes('failed to fetch'))                 return 'Sin conexión. Comprueba tu internet.';
+        if (msg.includes('manual linking'))                  return 'La vinculación manual de cuentas no está activada todavía.';
+        if (msg.includes('already linked'))                  return 'Esa cuenta de Google ya está vinculada a otro perfil.';
         return (err && err.message) || 'Algo ha fallado. Inténtalo de nuevo.';
     }
 
@@ -390,6 +392,55 @@
         return { ok: true, url: pub.publicUrl };
     }
 
+    /* Quitar la foto de perfil: vuelve al avatar por defecto (inicial sobre
+       color). profiles.avatar_url a null es la fuente de verdad de qué se
+       muestra; borrar el archivo del bucket es solo limpieza y no bloquea
+       el resultado si falla (mejor un huérfano en Storage que dejar al
+       usuario con la foto vieja por un error de borrado). */
+    async function removeAvatar() {
+        const session = await getSession();
+        if (!session) return { ok: false, error: 'No has iniciado sesión.' };
+        const client = await ready();
+        const before = await getProfile();
+        const { error } = await client
+            .from('profiles').update({ avatar_url: null }).eq('id', session.user.id);
+        if (error) return { ok: false, error: friendlyError(error) };
+        cachedProfile = null;
+        if (before && before.avatar_url) {
+            const m = before.avatar_url.match(/\/avatars\/(.+)$/);
+            if (m) {
+                try { await client.storage.from('avatars').remove([decodeURIComponent(m[1])]); }
+                catch (e) { /* huérfano en Storage: no rompe la experiencia */ }
+            }
+        }
+        return { ok: true };
+    }
+
+    /* ── Vincular / comprobar Google ──
+       Deja entrar también con "Continuar con Google" a quien se registró con
+       correo y contraseña (o al revés). Requiere que "Manual linking" esté
+       activado en Supabase → Authentication → Sign In / Providers (apagado
+       por defecto); sin eso linkIdentity devuelve un error que friendlyError
+       ya traduce más arriba. */
+    async function googleLinked() {
+        const session = await getSession();
+        if (!session) return false;
+        const client = await ready();
+        const { data, error } = await client.auth.getUserIdentities();
+        if (error || !data) return false;
+        return data.identities.some(i => i.provider === 'google');
+    }
+
+    async function linkGoogle() {
+        const client = await ready();
+        const { error } = await client.auth.linkIdentity({
+            provider: 'google',
+            options: { redirectTo: location.href },
+        });
+        if (error) return { ok: false, error: friendlyError(error) };
+        return { ok: true }; // el navegador se va a Google y vuelve
+    }
+
     async function signOut() {
         cachedProfile = null; cachedProfileFor = null;
         /* Sin cliente y sin token guardado no hay sesión que cerrar, y cargar
@@ -541,6 +592,9 @@
         setUsername,
         changeUsername,
         uploadAvatar,
+        removeAvatar,
+        googleLinked,
+        linkGoogle,
         isUsernameFree,
         validateUsername,
         signOut,

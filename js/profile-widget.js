@@ -288,7 +288,7 @@
         const games = (window.FHStreaks && FHStreaks.list()) || [];
         const rachaGames = games.filter(g => 'streak' in g);
         const conRacha = rachaGames.filter(g => g.streak > 0);
-        const mejor = rachaGames.reduce((m, g) => Math.max(m, g.streak), 0);
+        const mejorHistorica = rachaGames.reduce((m, g) => Math.max(m, g.best || 0), 0);
         const changed = !!(profile && profile.username_changed);
 
         const desde = profile && profile.created_at
@@ -316,12 +316,14 @@
           <p class="pw-hint pw-hint--indent">${changed
             ? 'Ya has usado tu único cambio de nombre de usuario.'
             : 'Toca la foto para cambiarla, o el lápiz para cambiar tu nombre (una sola vez).'}</p>
+          ${profile && profile.avatar_url ? `<button class="pw-linkbtn" type="button" data-action="remove-photo">Quitar foto de perfil</button>` : ''}
+          <div class="pw-msg"></div>
 
           <div class="pw-field-label">Resumen</div>
           ${rachaGames.length === 0 ? `<p class="pw-text">No se han podido leer las partidas.</p>` : `
           <ul class="pw-stats-list">
             <li class="pw-stats-row"><span class="pw-stats-name">Juegos con racha viva</span><span class="pw-stats-val">${esc(conRacha.length)} de ${esc(rachaGames.length)}</span></li>
-            <li class="pw-stats-row"><span class="pw-stats-name">Mejor racha</span><span class="pw-stats-val">${esc(mejor)} 🔥</span></li>
+            <li class="pw-stats-row"><span class="pw-stats-name">Mejor racha histórica</span><span class="pw-stats-val">${esc(mejorHistorica)} 🏆</span></li>
           </ul>`}
 
           <div class="pw-field-label">Liga competitiva</div>
@@ -424,14 +426,23 @@
                        </span>
                      </li>`).join('') + `</ul>`;
 
-        const conRacha = diarios.filter(g => g.streak > 0);
-        const rachaHTML = conRacha.length === 0
-            ? `<p class="pw-text">Aún no tienes ninguna racha viva. Gana un día y empieza a contar.</p>`
-            : `<ul class="pw-stats-list">` + conRacha.map(g => `
-                 <li class="pw-stats-row">
+        /* Racha actual (viva ahora) e histórica (el tramo más largo que ha
+           habido, aunque ya se haya roto) — ver bestStreakEver en
+           js/hub-streaks.js. Se lista cualquier juego con alguna de las
+           dos por encima de 0, no solo los que tienen racha viva. */
+        const conHistorial = diarios.filter(g => g.streak > 0 || (g.best || 0) > 0);
+        const rachaHTML = conHistorial.length === 0
+            ? `<p class="pw-text">Aún no tienes ninguna racha. Gana un día y empieza a contar.</p>`
+            : `<ul class="pw-stats-list">` + conHistorial.map(g => {
+                const best = g.best || 0;
+                const val = best > g.streak
+                    ? `${g.streak} 🔥 · récord ${best} 🏆`
+                    : `${g.streak} 🔥${g.streak > 0 ? ' (récord)' : ''}`;
+                return `<li class="pw-stats-row">
                    <span class="pw-stats-name">${esc(g.label)}</span>
-                   <span class="pw-stats-val">${g.streak} 🔥</span>
-                 </li>`).join('') + `</ul>`;
+                   <span class="pw-stats-val">${val}</span>
+                 </li>`;
+              }).join('') + `</ul>`;
 
         const nivelesHTML = niveles.length === 0 ? '' : `
           <div class="pw-field-label">Progreso por niveles</div>
@@ -448,7 +459,7 @@
           <div class="pw-field-label">Hoy · ${esc(jugados.length)} de ${esc(diarios.length)} jugados</div>
           ${hoyHTML}
 
-          <div class="pw-field-label">Rachas</div>
+          <div class="pw-field-label">Rachas · actual y récord</div>
           ${rachaHTML}
           ${nivelesHTML}
 
@@ -463,11 +474,30 @@
 
           <p class="pw-hint">Tu foto y tu nombre de usuario se cambian desde <button class="pw-linkbtn pw-linkbtn--inline" type="button" data-action="perfil">Perfil</button>.</p>
 
+          <div class="pw-field-label">Cuenta</div>
+          <div data-slot="google"><p class="pw-text">Comprobando…</p></div>
+
           <div class="pw-msg"></div>
           <button class="pw-danger" type="button" data-action="logout">Cerrar sesión</button>
 
           <button class="pw-linkbtn" type="button" data-action="delete-account">Borrar mi cuenta</button>
         `);
+
+        /* Token para descartar la respuesta si el modal ya cambió de vista
+           antes de que vuelva — mismo patrón que perfilView() con la Liga. */
+        const slot = modal.querySelector('[data-slot="google"]');
+        const token = {};
+        ajustesView._token = token;
+        FHAuth.googleLinked().then(linked => {
+            if (ajustesView._token !== token || !slot.isConnected) return;
+            slot.innerHTML = linked
+                ? `<p class="pw-text">✓ Tu cuenta de Google ya está vinculada a este perfil.</p>`
+                : `<button class="pw-secondary" type="button" data-action="link-google">Vincular con Google</button>
+                   <p class="pw-hint">Así podrás entrar también con "Continuar con Google" usando este correo.</p>`;
+        }).catch(() => {
+            if (ajustesView._token !== token || !slot.isConnected) return;
+            slot.innerHTML = `<p class="pw-text">No se ha podido comprobar la vinculación con Google.</p>`;
+        });
     }
 
     /* ── Borrar cuenta ──
@@ -619,6 +649,21 @@
             case 'change-photo': {
                 const input = modal.querySelector('.pw-file');
                 if (input) input.click();
+                break;
+            }
+            case 'remove-photo': {
+                setMsg('', '');
+                const r = await FHAuth.removeAvatar();
+                if (!r.ok) { setMsg('error', r.error); break; }
+                profile = await FHAuth.getProfile(true);
+                renderCircle();
+                perfilView();
+                break;
+            }
+            case 'link-google': {
+                setMsg('', '');
+                const r = await FHAuth.linkGoogle();
+                if (!r.ok) setMsg('error', r.error);
                 break;
             }
             case 'logout':

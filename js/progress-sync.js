@@ -86,6 +86,10 @@
            (el once más caro) o bajando (el más joven), así que quedarse con
            el número mayor sería mentir la mitad de los días. */
         { prefix: 'superdraft-best-', merge: 'newest' },
+        /* Racha histórica máxima por juego (js/hub-streaks.js,
+           hub_best_streak_<juego>). 'max': es un récord, nunca debe bajar
+           al mezclar con otro dispositivo. */
+        { prefix: 'hub_best_streak_', merge: 'max' },
     ];
 
     const META_KEY    = 'fh_progress_meta';   // clave → cuándo cambió aquí

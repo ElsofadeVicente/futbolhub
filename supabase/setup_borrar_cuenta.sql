@@ -33,5 +33,13 @@ end;
 $$;
 
 -- Solo cuentas ya logueadas pueden borrarse a sí mismas; anon fuera.
-revoke all on function public.borrar_mi_cuenta() from public;
+--
+-- OJO: "revoke ... from public" NO basta en este proyecto. Supabase
+-- concede EXECUTE a anon/authenticated en cada función nueva vía
+-- ALTER DEFAULT PRIVILEGES (se comprobó con has_function_privilege()
+-- tras crearla: anon podía ejecutarla igual que si nunca se hubiera
+-- revocado). Hay que revocárselo a esos dos roles explícitamente —
+-- mismo patrón que ya usan las funciones de solo-admin de la Liga
+-- (liga_asignar_division, liga_cerrar_mes/semanas).
+revoke execute on function public.borrar_mi_cuenta() from public, anon, authenticated;
 grant execute on function public.borrar_mi_cuenta() to authenticated;

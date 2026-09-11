@@ -25,8 +25,10 @@
    se carga igual porque expone window.FHStreaks, que usa el
    perfil (js/profile-widget.js) para enseñar la racha y lo
    jugado hoy:
-     FHStreaks.list()  → [{href, label, streak, today}]
-                          today = {state:'win'|'loss', detail:'…'} | null
+     FHStreaks.list()  → [{href, label, streak, best, today}]
+                          streak = racha viva ahora mismo
+                          best   = racha histórica más larga (nunca baja)
+                          today  = {state:'win'|'loss', detail:'…'} | null
    ============================================= */
 (function () {
   'use strict';
@@ -248,6 +250,44 @@
     return streak;
   }
 
+  /* Racha HISTÓRICA: el tramo de victorias seguidas más largo que ha
+     existido, no solo el que sigue vivo hoy. computeStreak() no sirve para
+     esto porque para en la primera derrota contando desde hoy hacia atrás
+     — si ya rompiste tu mejor racha, esa marca queda detrás de una derrota
+     y computeStreak() nunca llega a verla. Aquí se recorre la ventana
+     entera de 400 días de más vieja a más nueva llevando el mismo tramo
+     que computeStreak (un día sin jugar no lo rompe, perder sí) y se
+     guarda el máximo visto. */
+  const BEST_PREFIX = 'hub_best_streak_';
+
+  function scanLongestStreak(game) {
+    const today = game.today();
+    let day = shiftDays(today, -399);
+    let running = 0, best = 0;
+    for (let i = 0; i < 400; i++) {
+      const st = game.stateFor(day);
+      if (st === 'loss') running = 0;
+      else if (st === 'win') { running++; if (running > best) best = running; }
+      day = shiftDays(day, 1);
+    }
+    return best;
+  }
+
+  /* Se guarda en localStorage (y viaja entre dispositivos vía
+     progress-sync.js, merge:'max') para no perder una racha más vieja que
+     los 400 días que aquí se pueden reconstruir. */
+  function bestStreakEver(game) {
+    const key = BEST_PREFIX + game.href;
+    const scanned = scanLongestStreak(game);
+    let stored = parseInt(localStorage.getItem(key), 10);
+    if (!Number.isFinite(stored)) stored = 0;
+    const best = Math.max(stored, scanned);
+    if (best > stored) {
+      try { localStorage.setItem(key, String(best)); } catch { /* nada */ }
+    }
+    return best;
+  }
+
   /* ── Render ── */
   function injectStyles() {
     if (document.getElementById('hub-streak-style')) return;
@@ -289,10 +329,12 @@
         ? game.contador()
         : (() => {
             const n = computeStreak(game);
+            const best = bestStreakEver(game);
             return n < 1 ? null : {
               valor: n, icono: '🔥',
               titulo: 'Racha: ' + n + ' partida' + (n !== 1 ? 's' : '')
                     + ' seguida' + (n !== 1 ? 's' : '') + ' sin fallar'
+                    + (best > n ? ' · récord: ' + best : '')
                     + ' (no jugar un día no la rompe)' };
           })();
       let badge = card.querySelector('.hub-streak-badge');
@@ -338,10 +380,12 @@
         const day    = game.today();
         const state  = game.stateFor(day);
         const detail = state ? (game.detailFor ? game.detailFor(day) : null) : null;
+        const streak = computeStreak(game);
         return {
           href:   game.href,
           label:  game.label,
-          streak: computeStreak(game),
+          streak,
+          best:   bestStreakEver(game),
           today:  state ? { state, detail } : null,
         };
       });
