@@ -706,14 +706,44 @@ function crucValidarTarjeta(t) {
        poder encoger una tarjeta que en el móvil, con un campo de 375px en vez
        de hasta 1.000, queda desproporcionada aunque en escritorio se vea bien. */
     const anchoMovil = Number(t.anchoMovil);
+    const giro = Math.max(-15, Math.min(15, Number(t.giro) || 0));
+    /* La POSICIÓN también puede ser distinta en móvil, no solo el ancho: el
+       recorrido no escala igual que el campo (crucEscala no es lineal), así
+       que un sitio libre en escritorio puede caer encima del trazo o de un
+       nodo en 375px, y al revés. `movilPropio` es explícito (no basta con
+       mirar si xMovil/yMovil están puestos) para poder guardar "0,0" como
+       posición de móvil real sin confundirla con "no hay override". Si no es
+       válido, se cae a la misma posición y giro que escritorio. */
+    const xMovilNum = Number(t.xMovil), yMovilNum = Number(t.yMovil);
+    const movilPropio = !!t.movilPropio
+        && xMovilNum >= 0 && xMovilNum <= 1 && yMovilNum >= 0 && yMovilNum <= 1;
+    const giroMovilNum = Number(t.giroMovil);
     return {
         div, x, y, img, icono,
         pie: typeof t.pie === 'string' ? t.pie : '',
         ancho: Math.max(80, Math.min(320, Number(t.ancho) || 132)),
         anchoMovil: (anchoMovil >= 50 && anchoMovil <= 320) ? anchoMovil : 0,
-        giro: Math.max(-15, Math.min(15, Number(t.giro) || 0)),
+        giro,
+        movilPropio,
+        xMovil: movilPropio ? xMovilNum : x,
+        yMovil: movilPropio ? yMovilNum : y,
+        giroMovil: movilPropio
+            ? Math.max(-15, Math.min(15, Number.isFinite(giroMovilNum) ? giroMovilNum : giro))
+            : giro,
         nivel: (Number.isInteger(nivel) && nivel >= 1 && nivel <= CRUC_TOTAL_NIVELES) ? nivel : 0,
     };
+}
+
+/* La posición (y el giro) que toca según el ancho real del campo: la propia
+   de móvil solo por debajo de 600px -el mismo corte que ya usa `esMovil` en
+   crucTarjetasCuradas para el ancho- y solo si la tarjeta la tiene. La usan
+   tanto el pintado como el cálculo del nivel automático, para que las dos
+   cosas estén de acuerdo con lo que se ve. */
+function crucPosTarjeta(t, ancho) {
+    const usarMovil = ancho <= 600 && t.movilPropio;
+    return usarMovil
+        ? { x: t.xMovil, y: t.yMovil, giro: t.giroMovil }
+        : { x: t.x, y: t.y, giro: t.giro };
 }
 
 /* ── QUE TARJETAS SE HAN VISTO YA ──────────────────────────────────────
@@ -735,9 +765,12 @@ function crucTarjApuntar(clave) {
     } catch (e) { /* sin localStorage se anima cada vez, y no pasa nada */ }
 }
 
-/* El nivel mas cercano a la tarjeta, para cuando no se ha elegido uno. */
-function crucNivelMasCerca(t, ancho, alto, pts, primero) {
-    const x = t.x * ancho, y = t.y * alto;
+/* El nivel mas cercano a una posicion (fraccion 0..1 del campo), para cuando
+   no se ha elegido uno. Recibe x,y ya resueltos -la posicion EFECTIVA, que en
+   movil puede ser la propia de la tarjeta- para que el nivel automatico
+   siempre case con lo que se ve, no con la posicion de escritorio. */
+function crucNivelMasCerca(px, py, ancho, alto, pts, primero) {
+    const x = px * ancho, y = py * alto;
     let mejor = 0, dm = Infinity;
     pts.forEach((p, i) => {
         const d = Math.hypot(p.x - x, p.y - y);
@@ -784,9 +817,10 @@ function crucTarjetasCuradas(idxDiv, ancho, alto, k, pts) {
     const vistas = crucTarjVistas();
     return (crucFotos || []).filter(t => t.div === idxDiv + 1).map(t => {
         const anchoTarj = (esMovil && t.anchoMovil) ? t.anchoMovil : t.ancho * n;
-        const sitio = `left:${(t.x * ancho).toFixed(1)}px;top:${(t.y * alto).toFixed(1)}px;`
-                    + `--rot:${t.giro}deg;--cruc-tarj-w:${anchoTarj.toFixed(1)}px`;
-        const nv = t.nivel || crucNivelMasCerca(t, ancho, alto, pts, primero);
+        const pos = crucPosTarjeta(t, ancho);
+        const sitio = `left:${(pos.x * ancho).toFixed(1)}px;top:${(pos.y * alto).toFixed(1)}px;`
+                    + `--rot:${pos.giro}deg;--cruc-tarj-w:${anchoTarj.toFixed(1)}px`;
+        const nv = t.nivel || crucNivelMasCerca(pos.x, pos.y, ancho, alto, pts, primero);
 
         /* Hasta que no se pasa SU nivel la tarjeta es una interrogacion: se ve
            que ahi hay algo, pero no que es. */
@@ -816,37 +850,65 @@ function crucTarjetasCuradas(idxDiv, ancho, alto, k, pts) {
    Polaroid: de borrosa y sin color a nitida. Cuando ya esta quieta, el pie se
    escribe a maquina. Van una detras de otra y no todas a la vez: con tres en
    la misma division revelandose a la vez no se mira ninguna. */
+
+/* Espera a que una foto de tarjeta cargue (o falle) antes de dejar que la
+   revelacion arranque. Sin <img> (tarjeta de icono) o ya cargada, resuelve
+   al momento; si no, se suscribe a load/error. Tope de 4s para no dejar la
+   tarjeta esperando para siempre a una imagen que nunca llega. */
+function crucEsperarImagen(img) {
+    if (!img || img.complete) return Promise.resolve();
+    return new Promise(resolve => {
+        const listo = () => resolve();
+        img.addEventListener('load', listo, { once: true });
+        img.addEventListener('error', listo, { once: true });
+        setTimeout(listo, 4000);
+    });
+}
+
 function crucRevelarTarjetas() {
-    const nuevas = document.querySelectorAll('.cruc-tarj-nueva');
+    const nuevas = [...document.querySelectorAll('.cruc-tarj-nueva')]
+        .filter(el => !el.dataset.revelando);   // se la llama por dos vias, ver abajo
     if (!nuevas.length) return;
+    nuevas.forEach(el => { el.dataset.revelando = '1'; });
     const suave = window.matchMedia
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    nuevas.forEach((el, i) => {
-        if (el.dataset.revelando) return;     // se la llama por dos vias, ver abajo
-        el.dataset.revelando = '1';
-        const pie = el.querySelector('.cruc-foto-pie');
-        const texto = el.dataset.pie || '';
-        crucTarjApuntar(el.dataset.clave);
-        if (suave) {
-            if (pie) pie.textContent = texto;
+    if (suave) {
+        nuevas.forEach(el => {
+            const pie = el.querySelector('.cruc-foto-pie');
+            crucTarjApuntar(el.dataset.clave);
+            if (pie) pie.textContent = el.dataset.pie || '';
             el.classList.remove('cruc-tarj-nueva');
-            return;
-        }
-        setTimeout(() => {
-            if (!el.isConnected) return;
-            el.classList.add('cruc-tarj-revela');
-            setTimeout(() => crucEscribirPie(pie, texto), 780);
-            /* Las clases se quitan A MANO, no se deja que las sostenga el
-               fill-mode: si la animacion no llega a correr (pestana en segundo
-               plano, o un navegador que no compone) lo que se ve tiene que ser
-               el estado FINAL, no el de partida — o la foto se queda borrosa y
-               a medio revelar para siempre. */
-            setTimeout(() => {
-                el.classList.remove('cruc-tarj-nueva', 'cruc-tarj-revela');
-                if (pie && !pie.textContent) pie.textContent = texto;
-            }, 1900);
-        }, 180 + i * 300);
-    });
+        });
+        return;
+    }
+    /* Antes de arrancar el reloj de la revelacion, se espera a que las
+       fotos de esta tanda hayan cargado (o fallado). Sin esto la animacion
+       corre a ciegas por tiempo: si la foto tarda mas que ella (bucket
+       cruc-fotos en frio), el "borrosa a nitida" ya ha terminado y
+       desaparecido cuando la imagen por fin llega, y se ve aparecer de
+       golpe sin ninguna transicion — justo lo que no se queria enseñar. */
+    Promise.all(nuevas.map(el => crucEsperarImagen(el.querySelector('.cruc-foto-img img'))))
+        .then(() => {
+            nuevas.forEach((el, i) => {
+                const pie = el.querySelector('.cruc-foto-pie');
+                const texto = el.dataset.pie || '';
+                crucTarjApuntar(el.dataset.clave);
+                setTimeout(() => {
+                    if (!el.isConnected) return;
+                    el.classList.add('cruc-tarj-revela');
+                    setTimeout(() => crucEscribirPie(pie, texto), 780);
+                    /* Las clases se quitan A MANO, no se deja que las sostenga el
+                       fill-mode: si la animacion no llega a correr (pestana en segundo
+                       plano, o un navegador que no compone) lo que se ve tiene que ser
+                       el estado FINAL, no el de partida — o la foto se queda borrosa y
+                       a medio revelar para siempre. */
+                    setTimeout(() => {
+                        el.classList.remove('cruc-tarj-nueva', 'cruc-tarj-revela');
+                        if (pie && !pie.textContent) pie.textContent = texto;
+                    }, 1900);
+                }, 180 + i * 300);
+            });
+        });
 }
 
 function crucEscribirPie(el, texto) {
