@@ -17,12 +17,22 @@
       "permanent": true
     },
     {
+      "source": "/coche/",
+      "destination": "/5-de-5/",
+      "permanent": true
+    },
+    {
       "source": "/coche/:resto*",
       "destination": "/5-de-5/",
       "permanent": true
     },
     {
       "source": "/como-jugar/coche",
+      "destination": "/como-jugar/5-de-5/",
+      "permanent": true
+    },
+    {
+      "source": "/como-jugar/coche/",
       "destination": "/como-jugar/5-de-5/",
       "permanent": true
     },
