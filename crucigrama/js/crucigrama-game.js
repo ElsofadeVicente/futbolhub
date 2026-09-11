@@ -60,6 +60,13 @@ const crucDivCache  = {};     // nº de división -> [niveles]
 let crucCelebrar  = null;
 let crucContando  = false;    // el contador de estrellas está en pleno recuento
 
+/* A qué nivel centrar el próximo pintado del mapa, DISTINTO del nodo
+   "actual" (tu progreso: el primero sin estrellas). Sin esto, salir de un
+   nivel que no es el de tu progreso (repetir uno viejo) te devolvía siempre
+   al mapa centrado en tu progreso, muy lejos de donde acababas de jugar. Se
+   consume igual que crucCelebrar: crucPintarMapa lo lee una vez y lo vacía. */
+let crucCentrarEn = null;
+
 /* Un solo sitio para saber si hay que quitar las animaciones. */
 function crucSuave() {
     return !!(window.matchMedia
@@ -1053,7 +1060,9 @@ function crucPintarMapa(fundido) {
         if (celebra) {
             crucFestejarEnMapa();
         } else {
-            const nodo = mapa.querySelector(`.cruc-nodo[data-nivel="${actual}"]`);
+            const centro = crucCentrarEn || actual;
+            crucCentrarEn = null;
+            const nodo = mapa.querySelector(`.cruc-nodo[data-nivel="${centro}"]`);
             if (nodo) wrap.scrollTop = nodo.offsetTop + nodo.parentElement.offsetTop - wrap.clientHeight * 0.58;
         }
         crucActualizarBarra();
@@ -1264,6 +1273,7 @@ function crucVigilarAnchoMapa() {
 function crucVolverAlMapa() {
     crucRelojPara();
     if (window.FHRuta) FHRuta.borrar('nivel');
+    if (crucNivel) crucCentrarEn = crucNivel;
     crucPintarMapa(true);
 }
 
@@ -1909,17 +1919,18 @@ function crucHandleKey(key) {
         const cellKey = `${row},${col}`;
         // Una palabra ya acertada no se puede borrar: se ha comprobado que es
         // correcta, y deshacerla sería perder un acierto por error de tecleo.
-        if (crucUserGrid[cellKey]) {
-            if (!crucIsCellCorrect(row, col)) {
-                delete crucUserGrid[cellKey];
-                // Re-comprobar TODAS las palabras que pasan por la celda: si alguna
-                // estaba marcada como resuelta, al borrar la letra deja de estarlo
-                // (antes quedaba "resuelta" para siempre y podía dar falso completado).
-                crucGetWordsAtCell(row, col).forEach(wd => crucCheckWordSolved(wd));
-                updateCellVisual(row, col);
-            }
+        if (crucUserGrid[cellKey] && !crucIsCellCorrect(row, col)) {
+            delete crucUserGrid[cellKey];
+            // Re-comprobar TODAS las palabras que pasan por la celda: si alguna
+            // estaba marcada como resuelta, al borrar la letra deja de estarlo
+            // (antes quedaba "resuelta" para siempre y podía dar falso completado).
+            crucGetWordsAtCell(row, col).forEach(wd => crucCheckWordSolved(wd));
+            updateCellVisual(row, col);
         } else {
-            // Move backwards
+            // Celda vacía O de un cruce ya acertado (letra en verde): no se
+            // toca, pero el cursor sigue retrocediendo. Si se queda aquí sin
+            // mover nada, Backspace se "pega" en la primera letra verde que
+            // encuentra y no deja seguir borrando hacia atrás.
             const prev = crucGetPrevCell(w, row, col);
             if (prev) {
                 crucSelectedCell = prev;
