@@ -1268,9 +1268,30 @@ function crucCuentaEstrellas(gana) {
     setTimeout(paso, 420);
 }
 
+/* Precarga la foto de la tarjeta que se destapa AL PASAR este nivel, justo
+   al EMPEZARLO: para cuando el jugador termine y vuelva al mapa, la imagen
+   ya está en la caché del navegador y crucEsperarImagen() no tiene que
+   esperar nada — el revelado sale fluido de verdad, no solo "menos feo".
+   Solo cubre tarjetas con `nivel` explícito (el caso de todas las curadas
+   hoy); las automáticas (nivel:0) necesitarían la geometría del mapa para
+   saber cuál les toca, y no compensa repetirla aquí solo para adelantar una
+   carga — se quedan esperando en el momento del revelado, como siempre.
+   Las referencias se guardan a propósito: un Image() sin referencia lo
+   puede tirar el recolector antes de que termine de descargar. */
+let crucPrecargas = [];
+function crucPrecargarFotoDeNivel(nivel) {
+    if (!crucFotos) return;
+    crucFotos.filter(t => t.nivel === nivel && t.img).forEach(t => {
+        const img = new Image();
+        img.src = sbStorageUrl('cruc-fotos', t.img);
+        crucPrecargas.push(img);
+    });
+}
+
 // ── Abrir un nivel ───────────────────────────
 async function crucAbrirNivel(nivel) {
     if (!crucNivelAbierto(nivel)) return;
+    crucPrecargarFotoDeNivel(nivel);
     const d = crucDivisionDe(nivel);
     crucLoading('CARGANDO NIVEL ' + nivel);
     let lista;
