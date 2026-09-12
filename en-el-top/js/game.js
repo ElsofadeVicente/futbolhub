@@ -6,7 +6,12 @@
 // ── Paths ──────────────────────────────────────
 const STATS_KEY         = 'enteltop_stats';
 const TODAY_KEY         = 'enteltop_today';
-const TIMER_TIMED       = 120;
+// Modo difícil: arranca corto y cada acierto regala tiempo — el reloj premia
+// ir bien, no solo castiga ir mal. TIMER_VISUAL_MAX es solo para la barra: a
+// partir de ahí se ve llena, aunque el tiempo real siga subiendo con cada +15.
+const TIMER_DIFICIL_INICIAL = 30;
+const TIMER_DIFICIL_BONUS   = 15;
+const TIMER_VISUAL_MAX      = 60;
 
 /* ── PEDIR DATOS SIN QUE UN PARPADEO DE RED ROMPA LA PARTIDA ──────────────
    Un `fetch` pelado se cae entero la primera vez que la PWA vuelve de
@@ -235,6 +240,7 @@ let _docClickBound = false;
 
 let _falloDeRed         = false; // alguna peticion del calendario se cayo por red
 let _timerStart        = 0;      // instante real de arranque del reloj
+let _timerTotal        = 0;      // segundos concedidos hasta ahora (inicial + bonos)
 let _bindHecho         = false;  // los listeners de una vez ya estan puestos
 let _arranqueIncompleto = false; // el juego no llego a montarse: se puede reintentar
 let _reintentando      = false;
@@ -295,7 +301,7 @@ function asegurarIndices() {
 // ── Refs ───────────────────────────────────────
 let elLoading, elMode, elGame, elEnd;
 let elModeOpts, elStartGameBtn, elStatsOpenBtn;
-let elTimerTrack, elTimerFill, elTimerNum;
+let elTimerTrack, elTimerFill, elTimerNum, elTimerBonus;
 let elScore, elTitle, elRowsWrap, elArchiveTag;
 let elInput, elSugBox, elGiveup;
 let elEndEmoji, elEndTitle, elEndSub, elEndQ, elEndRows, elEndStatsBtn;
@@ -317,6 +323,7 @@ async function init() {
   elTimerTrack      = document.getElementById('timer-track');
   elTimerFill       = document.getElementById('timer-fill');
   elTimerNum        = document.getElementById('timer-num');
+  elTimerBonus      = document.getElementById('timer-bonus');
   elScore           = document.getElementById('score-badge');
   elTitle           = document.getElementById('question-title');
   elRowsWrap        = document.getElementById('rows-wrap');
@@ -659,7 +666,7 @@ function startGame() {
   _ended        = false;
   _statsSaved   = false;
   _attemptMarked = false;
-  _timeLeft   = TIMER_TIMED;
+  _timerTotal = _timeLeft = TIMER_DIFICIL_INICIAL;
 
   // Enseñar antes de esconder: ver el comentario de showEndScreen.
   elGame.classList.remove('hidden');
@@ -687,7 +694,7 @@ function startGame() {
   renderGame();
   bindGameEvents();
 
-  if (_mode === 'timed') startTimer();
+  if (_mode === 'dificil') startTimer();
 
   elInput.disabled = false;
   elGiveup.disabled = false;
@@ -786,14 +793,19 @@ function updateScore() {
 function startTimer() {
   stopTimer();
   _timerStart = Date.now();
-  _timeLeft   = TIMER_TIMED;
+  _timerTotal = TIMER_DIFICIL_INICIAL;
+  _timeLeft   = TIMER_DIFICIL_INICIAL;
   updateTimerUI(_timeLeft);
   _timerInterval = setInterval(tickTimer, 200);
 }
 
+/* _timerTotal es lo concedido hasta ahora (inicial + bonos), y se compara
+   siempre contra el reloj REAL desde _timerStart — igual que antes con un
+   total fijo. Sumar un bono no toca _timerStart, así que no hay que tocar
+   nada más: la siguiente pasada ya calcula con el total nuevo. */
 function tickTimer() {
   const elapsed = (Date.now() - _timerStart) / 1000;
-  _timeLeft = Math.max(0, TIMER_TIMED - elapsed);
+  _timeLeft = Math.max(0, _timerTotal - elapsed);
   updateTimerUI(_timeLeft);
   if (_timeLeft <= 0) {
     stopTimer();
@@ -806,19 +818,42 @@ function stopTimer() {
   _timerInterval = null;
 }
 
+/* Cada acierto en modo difícil regala tiempo. Se repinta con tickTimer() en
+   vez de sumar a mano _timeLeft, para que el número mostrado salga siempre
+   del mismo cálculo contra el reloj real (evita que se desincronice con lo
+   que luego recalcule el próximo tick). */
+function addTimerBonus() {
+  _timerTotal += TIMER_DIFICIL_BONUS;
+  tickTimer();
+  showTimerBonus();
+}
+
+/* +15 animado junto al número. Se retrigger con el patrón de shakeInput:
+   quitar la clase, forzar reflow y volver a ponerla, para que un segundo
+   acierto seguido no se quede esperando a que termine la animación anterior. */
+function showTimerBonus() {
+  if (!elTimerBonus) return;
+  elTimerBonus.classList.remove('show');
+  void elTimerBonus.offsetWidth;
+  elTimerBonus.classList.add('show');
+  elTimerBonus.addEventListener('animationend', () => elTimerBonus.classList.remove('show'), { once: true });
+}
+
 /* Al volver la pagina de segundo plano (o de la congelacion del
    back-forward cache de Safari) el interval puede haberse quedado parado.
    Se pone al dia con el reloj real y se vuelve a enganchar. */
 function reanudarReloj() {
-  if (_mode !== 'timed' || _ended || !_timerStart) return;
+  if (_mode !== 'dificil' || _ended || !_timerStart) return;
   if (!elGame || elGame.classList.contains('hidden')) return;
   tickTimer();
   if (!_ended && !_timerInterval) _timerInterval = setInterval(tickTimer, 200);
 }
 
 function updateTimerUI(t) {
-  if (_mode !== 'timed') return;
-  const pct = (t / TIMER_TIMED) * 100;
+  if (_mode !== 'dificil') return;
+  // Pasado TIMER_VISUAL_MAX la barra se ve llena aunque el tiempo real siga
+  // subiendo con cada bono: es un indicador visual, no un tope de reloj.
+  const pct = Math.min(100, (t / TIMER_VISUAL_MAX) * 100);
   elTimerFill.style.width = pct + '%';
   elTimerFill.classList.toggle('urgent', t <= 10);
   elTimerNum.textContent = formatTime(t);
@@ -1008,6 +1043,7 @@ function validate(name, id) {
     _found.add(hit.r);
     revealRow(hit, 'found');
     updateScore();
+    if (_mode === 'dificil' && !_ended) addTimerBonus();
     if (_found.size === 10) { stopTimer(); luegoDe(600, () => endGame(true)); }
   } else {
     shakeInput();

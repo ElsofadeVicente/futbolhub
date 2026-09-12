@@ -292,6 +292,16 @@ body::before {
   color: var(--np-ink);
 }
 
+/* Aclaración del modo difícil, bajo el toggle */
+#mode-hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--np-ink-mid);
+  margin-top: -2px;
+}
+
 /* Botón principal */
 #start-game-btn {
   width: 100%;
@@ -420,6 +430,46 @@ body::before {
   font-variant-numeric: tabular-nums;
 }
 #timer-num.low { color: var(--np-red); }
+
+/* Envoltorio solo para poder colocar el +15 encima del número sin tocar el
+   flex de #top-bar: sigue siendo un único hijo, igual que antes. */
+.timer-num-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* +15 al acertar en modo difícil. Nace pegado al número, rebota hacia arriba
+   y se desvanece — mismo rebote con overshoot que .row.pop, para que se
+   sienta de la misma familia que el resto del juego. */
+#timer-bonus {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--np-green);
+  text-shadow: 0 0 8px rgba(45,106,53,.5);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#timer-bonus.show { animation: timer-bonus-pop .85s cubic-bezier(.2,.9,.3,1); }
+@keyframes timer-bonus-pop {
+  0%   { opacity: 0; transform: translate(30%, 0)     scale(.5); }
+  18%  { opacity: 1; transform: translate(30%, -8px)  scale(1.4); }
+  38%  { opacity: 1; transform: translate(30%, -12px) scale(1); }
+  75%  { opacity: 1; transform: translate(30%, -26px) scale(1); }
+  100% { opacity: 0; transform: translate(30%, -42px) scale(.9); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #timer-bonus.show { animation-name: timer-bonus-pop-soft; animation-duration: .6s; }
+  @keyframes timer-bonus-pop-soft {
+    0%   { opacity: 0; transform: translate(30%, 0); }
+    30%  { opacity: 1; transform: translate(30%, 0); }
+    100% { opacity: 0; transform: translate(30%, -8px); }
+  }
+}
 
 /* Título de pregunta */
 #question-title {

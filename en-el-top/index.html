@@ -8,12 +8,12 @@
   <title>Completa el top 10 de fútbol contra el reloj | FutbolHUB</title>
 <link rel="canonical" href="https://www.futbolhub.es/en-el-top/">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-<meta name="description" content="120 segundos y solo la bandera como pista: completa el top 10 de una categoría futbolística antes de que se acabe el tiempo. Un reto nuevo cada día.">
+<meta name="description" content="Solo la bandera como pista: completa el top 10 de una categoría futbolística. Sin límite, o a contrarreloj en modo difícil. Un reto nuevo cada día.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
 <meta property="og:title" content="Completa el top 10 de fútbol contra el reloj | FutbolHUB">
-<meta property="og:description" content="120 segundos y solo la bandera como pista: completa el top 10 de una categoría futbolística antes de que se acabe el tiempo. Un reto nuevo cada día.">
+<meta property="og:description" content="Solo la bandera como pista: completa el top 10 de una categoría futbolística. Sin límite, o a contrarreloj en modo difícil. Un reto nuevo cada día.">
 <meta property="og:url" content="https://www.futbolhub.es/en-el-top/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/en-el-top.jpg">
 <meta property="og:image:width" content="1200">
@@ -22,7 +22,7 @@
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Completa el top 10 de fútbol contra el reloj | FutbolHUB">
-<meta name="twitter:description" content="120 segundos y solo la bandera como pista: completa el top 10 de una categoría futbolística antes de que se acabe el tiempo. Un reto nuevo cada día.">
+<meta name="twitter:description" content="Solo la bandera como pista: completa el top 10 de una categoría futbolística. Sin límite, o a contrarreloj en modo difícil. Un reto nuevo cada día.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/en-el-top.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
 <link rel="manifest" href="../manifest.json">
@@ -37,7 +37,7 @@
        tres idas y vueltas en el camino critico que en un movil se notan. -->
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260901h">
+  <link rel="stylesheet" href="css/style.css?v=20260912a">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
@@ -114,7 +114,7 @@
       "@type": "VideoGame",
       "@id": "https://www.futbolhub.es/en-el-top/#game",
       "name": "En el Top",
-      "description": "120 segundos y solo la bandera como pista: completa el top 10 de una categoría futbolística antes de que se acabe el tiempo. Un reto nuevo cada día.",
+      "description": "Solo la bandera como pista: completa el top 10 de una categoría futbolística. Sin límite, o a contrarreloj en modo difícil. Un reto nuevo cada día.",
       "url": "https://www.futbolhub.es/en-el-top/",
       "image": "https://www.futbolhub.es/img/og/en-el-top.jpg",
       "inLanguage": "es-ES",
@@ -219,8 +219,9 @@
         <div id="mode-label">Selecciona el modo:</div>
         <div id="mode-toggle">
           <button class="mode-opt selected" data-mode="normal">Normal</button>
-          <button class="mode-opt" data-mode="timed">⏱ 2 minutos</button>
+          <button class="mode-opt" data-mode="dificil">⏱ Difícil</button>
         </div>
+        <p id="mode-hint">Difícil: empiezas con 30s y cada acierto suma +15s.</p>
 
         <button id="start-game-btn">Jugar →</button>
 
@@ -270,7 +271,10 @@
       <div id="top-bar" class="fh-volver-hueco">
         <span id="score-badge">0/10</span>
         <span id="archive-tag" class="hidden">Archivo</span>
-        <span id="timer-num">2:00</span>
+        <span class="timer-num-wrap">
+          <span id="timer-num">0:30</span>
+          <span id="timer-bonus" aria-hidden="true">+15</span>
+        </span>
       </div>
 
       <!-- h2 y no h1: lo rellena el JS con la pregunta del día, así que en el
@@ -375,7 +379,7 @@
 <script src="../js/pantalla-viva.js?v=20260901i"></script>
 <script src="../js/red.js?v=20260901d"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="js/game.js?v=20260902a"></script>
+<script src="js/game.js?v=20260912a"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).
   // Ruta a la RAIZ para que el scope cubra el hub y todos los juegos.
