@@ -380,21 +380,10 @@
   padding: 26px 22px 20px;
 }
 .sd-result-eyebrow { justify-content: center; margin-bottom: 14px; }
-/* La ✕ del modal de busqueda va colgando por encima de la tarjeta
-   (top:-20px), y aqui la tarjeta tiene overflow-y:auto: ahi fuera se
-   recortaria. Sticky + float la deja arriba a la derecha DENTRO del panel y
-   ademas la mantiene a la vista si hay que hacer scroll. */
-.sd-result-card .sd-modal-x {
-  position: sticky;
-  top: 0; left: auto; right: auto;
-  float: right;
-  transform: none;
-  width: 38px; height: 38px;
-  margin: -10px -6px 0 8px;
-  border-width: 2px;
-  font-size: 1rem;
-  z-index: 2;
-}
+/* El marco, la ✕ y los botones de esta tarjeta viven ahora en
+   css/resumen.css (.resumen-caja / .resumen-cerrar / .resumen-acciones),
+   compartido con el resto de juegos. .sd-modal-x (círculo gris) se queda
+   solo para el modal de búsqueda de jugador, que no toca esto. */
 
 /* Bloques de estadísticas */
 .sd-stats-block { margin-top: 18px; }

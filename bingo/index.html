@@ -38,13 +38,14 @@
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que 5 de 5/Tres en Raya) -->
-  <link rel="stylesheet" href="../5-de-5/css/style.css?v=20260906a">
-  <link rel="stylesheet" href="css/style.css?v=20260912a">
+  <link rel="stylesheet" href="../5-de-5/css/style.css?v=20260912a">
+  <link rel="stylesheet" href="css/style.css?v=20260912c">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
   <link rel="stylesheet" href="../css/sala.css?v=20260903a">
-  <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
+  <link rel="stylesheet" href="../css/resumen.css?v=20260912a">
+<link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
 <link rel="stylesheet" href="../css/profile-widget.css?v=20260911a">
@@ -325,9 +326,10 @@
   <div class="game-hint" id="game-hint">Coloca al futbolista en la casilla que creas que cumple</div>
 </div>
 
-<!-- ═══════════ PANTALLA 4: RESULTADO ═══════════ -->
-<div id="screen-result" class="screen">
-  <div class="result-wrap">
+<!-- ═══════════ RESUMEN DE PARTIDA — overlay sobre el cartón cerrado ═══════════ -->
+<div id="screen-result" class="resumen-overlay">
+  <div class="result-wrap resumen-caja">
+    <button class="resumen-cerrar" onclick="App.closeFinished()" aria-label="Cerrar">✕</button>
     <div class="result-head">
       <h2 class="result-title" id="result-title">CARTÓN CERRADO</h2>
       <div class="result-score">
@@ -342,17 +344,16 @@
 
     <div class="result-detail" id="result-detail"></div>
 
-    <div class="finished-actions">
-      <button class="btn-primary"   id="btn-again" onclick="App.playAgain()">🔄 Otra partida</button>
-      <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
+    <div class="resumen-acciones">
+      <button class="resumen-principal" id="btn-again" onclick="App.playAgain()">🔄 Otra partida</button>
+      <button class="resumen-secundaria" onclick="App.showMenu()">🏠 Menú</button>
     </div>
-<!-- Unidad de movil del panel de fin de partida: solo <1240px y solo
-     cuando este panel se muestra de verdad (js/ads.js no pide nada a
-     Google hasta que el hueco tiene ancho real). Va DESPUES de los
-     botones: si el anuncio carga tarde, que empuje hacia abajo lo que ya
-     no vas a pulsar y no el boton que tenias bajo el dedo. -->
-<div class="ad-slot ad-slot--flow" data-ad="movil-final"></div>
-
+    <!-- Unidad de movil del panel de fin de partida: solo <1240px y solo
+         cuando este panel se muestra de verdad (js/ads.js no pide nada a
+         Google hasta que el hueco tiene ancho real). Va DESPUES de los
+         botones: si el anuncio carga tarde, que empuje hacia abajo lo que ya
+         no vas a pulsar y no el boton que tenias bajo el dedo. -->
+    <div class="ad-slot ad-slot--flow" data-ad="movil-final"></div>
   </div>
 </div>
 
@@ -445,7 +446,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260912a';
+  s.src = 'js/script.js?v=20260912b';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }

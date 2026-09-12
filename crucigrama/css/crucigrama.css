@@ -833,21 +833,9 @@ body.cruc-sheet-abierto { overflow: hidden; }
   margin: 16px 0;
 }
 
-.cruc-completion-btns {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.cruc-completion-btns .next-btn {
-  background: var(--np-ink);
-  color: var(--np-paper);
-}
-
-.cruc-completion-btns .next-btn:hover {
-  background: var(--np-red);
-}
+/* .cruc-completion-btns y su estilo de botones ahora viven en
+   css/resumen.css (.resumen-acciones / .resumen-compartir / .resumen-secundaria),
+   compartido con el resto de juegos. */
 
 /* ── El aviso permanente de Finalizar (línea superior de la barra) ── */
 .cruc-finalizar-nota {

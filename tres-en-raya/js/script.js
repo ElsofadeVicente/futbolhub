@@ -67,7 +67,17 @@ window._AppReal = (function () {
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = $(id); if (el) el.classList.add('active');
+    /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
+       el tablero (ver showFinishedOverlay). Navegar a cualquier pantalla
+       real lo cierra, para que "Revancha"/"Menú" no lo dejen colgado encima
+       de la pantalla nueva. */
+    hideFinishedOverlay();
   }
+  /* Panel de resumen: overlay sobre #screen-game, no una pantalla más.
+     Cerrar (la X) solo esconde el panel y deja ver la rejilla final. */
+  function showFinishedOverlay() { const el = $('screen-finished'); if (el) el.classList.add('activo'); }
+  function hideFinishedOverlay() { const el = $('screen-finished'); if (el) el.classList.remove('activo'); }
+  function closeFinished() { hideFinishedOverlay(); }
   let _toastT = null;
   function showToast(msg, kind) {
     const t = $('toast'); if (!t) return;
@@ -632,7 +642,7 @@ window._AppReal = (function () {
 
   function showMatchOver() {
     if (!G) return;
-    const wasActive = $('screen-finished').classList.contains('active');
+    const wasActive = $('screen-finished').classList.contains('activo');
     const s = G.series || [0, 0];
     const mw = s[0] > s[1] ? 0 : s[1] > s[0] ? 1 : null;
     const isDraw = mw === null;
@@ -656,7 +666,7 @@ window._AppReal = (function () {
       const isWinner = !isDraw && mw === idx;
       return `<div class="final-score-item${isWinner ? ' winner-item' : ''}"><span class="final-score-name">${esc(p.name)}</span><span class="final-score-pts">${s[idx]}</span></div>`;
     }).join('');
-    showScreen('screen-finished');
+    showFinishedOverlay();
     /* Racha del hub una sola vez por partida (online re-renderiza el fin) */
     if (!wasActive) {
       try { window.HubStreaks && window.HubStreaks.registerPlay && window.HubStreaks.registerPlay('tres-en-raya'); } catch (e) {}
@@ -1210,7 +1220,7 @@ window._AppReal = (function () {
 
       if (finished) {
         stopTurnTimer();
-        if (!$('screen-finished').classList.contains('active')) { showScreen('screen-game'); renderScore(); renderBoard(); }
+        if (!$('screen-finished').classList.contains('activo')) { showScreen('screen-game'); renderScore(); renderBoard(); }
         _handleRematch();
         /* Retardo cancelable: deja ver la línea ganadora antes del cartel de fin. */
         clearTimeout(_finishTimer);
@@ -1545,6 +1555,6 @@ window._AppReal = (function () {
     init, setTab, startLocalGame, startDiario, adjustTarget,
     createRoom, joinRoom, findPublicRoom, leaveRoom, copyLink,
     pickCell, closePick, submitAnswer, selectAndSubmit,
-    skipTurn, proposeDraw, respondDraw, playAgain, showMenu, showToast,
+    skipTurn, proposeDraw, respondDraw, playAgain, showMenu, closeFinished, showToast,
   };
 })();

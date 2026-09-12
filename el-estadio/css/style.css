@@ -457,19 +457,15 @@ a      { text-decoration: none; }
 /* ══════════════════════════════════════════════
    PANTALLA FIN
    ══════════════════════════════════════════════ */
-#screen-end {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: auto;
-}
-#screen-end.active { display: flex; }
+/* El marco (borde, sombra, ancho, fondo semitransparente, centrado) vienen
+   ahora de css/resumen.css (.resumen-overlay/.resumen-caja): #screen-end es
+   un overlay sobre la última ronda, no una pantalla que las sustituya —
+   mismo tamaño de cuadrado que en los otros 13 juegos, sin excepción aquí. */
 
 .end-wrap {
-  width: 100%; max-width: 640px;
+  width: 100%;
   display: flex; flex-direction: column;
   align-items: center;
-  padding: 28px 20px 40px;
   gap: 20px;
 }
 

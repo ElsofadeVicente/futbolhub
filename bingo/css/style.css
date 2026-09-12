@@ -262,16 +262,16 @@
 
 .toast.ok { background: var(--bg-line); color: var(--np-ink); box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink)); font-family: 'Anton', sans-serif; letter-spacing: .1em; }
 
-/* ═══════════ RESULTADO ═══════════ */
-#screen-result { justify-content: flex-start; padding: 26px 16px 40px; }
-.result-wrap { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
-
-/* .finished-actions es una clase compartida de 5-de-5/css/style.css con
-   max-width:320px pero sin align-self propio: sin este centrado, el bloque
-   de botones (más estrecho que .result-wrap) se queda pegado al borde
-   izquierdo en vez de centrado bajo el cartón — es lo que se veía como
-   "Otra partida"/"Menú" descolocados en la pantalla de resultado. */
-.finished-actions { align-self: center; }
+/* ═══════════ RESULTADO — overlay sobre el cartón cerrado ═══════════ */
+/* Antes #screen-result era un .screen en columna, y "justify-content:
+   flex-start" alineaba la tarjeta arriba (eje vertical). Ahora es
+   .resumen-overlay, un flex en FILA: la propiedad que controla "arriba en
+   vez de centrado" pasa a ser align-items, no justify-content — con el
+   valor viejo, la tarjeta se iba pegada a la izquierda en vez de arriba. */
+#screen-result { align-items: flex-start; padding: 26px 16px 40px; }
+/* El marco (borde, sombra, ancho) viene de css/resumen.css (.resumen-caja) —
+   mismo tamaño de cuadrado en los 14 juegos, sin excepción propia aquí. */
+.result-wrap { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 
 .result-head { text-align: center; }
 .result-title {

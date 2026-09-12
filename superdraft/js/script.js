@@ -830,10 +830,14 @@
     openResult();
   }
 
-  /* El boton de reintentar solo tiene sentido en el archivo. */
+  /* El boton de reintentar solo tiene sentido en el archivo; "Objetivo" es su
+     opuesto (solo hoy, que no se puede reintentar). Son la misma "acción
+     secundaria" de la tarjeta de resultado, nunca las dos a la vez. */
   function setReplayVisible(visible) {
     const b = $('sd-replay-btn');
     if (b) b.style.display = visible ? '' : 'none';
+    const m = $('sd-menu-btn');
+    if (m) m.style.display = visible ? 'none' : '';
   }
 
   /* ═══════════════════ PANTALLAS / NAV ═══════════════════ */
@@ -860,7 +864,7 @@
     if (!ov) return;
     $('sd-result-day').textContent = '#' + curDay + (curDay < maxDay ? ' \u00b7 Archivo' : '');
     renderStats();
-    ov.classList.remove('hidden');
+    ov.classList.add('activo');
     startCountdown();
   }
 
@@ -875,7 +879,7 @@
      a pintar la intro de otra edición y no quiere volver al campo. */
   function hideResult() {
     const ov = $('sd-result-overlay');
-    if (ov) ov.classList.add('hidden');
+    if (ov) ov.classList.remove('activo');
     stopCountdown();
   }
 
@@ -1128,15 +1132,15 @@
        ningún sitio. Los datos de la intro ya están puestos desde la última
        loadDay(), así que no hace falta recalcular. */
     $('sd-menu-btn').addEventListener('click', () => { hideResult(); showScreen('screen-intro'); });
-    /* Ver el once ↔ Ver resultado: el panel se cierra y se reabre sobre el
-       mismo campo, así que ninguno de los dos se pierde al alternar. */
-    $('sd-view-pitch-btn').addEventListener('click', closeResult);
+    /* Ver resultado ↔ cerrar (X o fondo): el panel se cierra y se reabre
+       sobre el mismo campo, así que ninguno de los dos se pierde al
+       alternar. "Ver el once" como botón se retiró: la X ya hace lo mismo. */
     $('sd-view-result-btn').addEventListener('click', openResult);
     /* Escape cierra el panel, como cualquier modal de la web. */
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
       const ov = $('sd-result-overlay');
-      if (ov && !ov.classList.contains('hidden')) closeResult();
+      if (ov && ov.classList.contains('activo')) closeResult();
     });
     $('nav-prev').addEventListener('click',  () => loadDay(curDay - 1));
     $('nav-next').addEventListener('click',  () => loadDay(curDay + 1));

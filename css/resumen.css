@@ -1,0 +1,229 @@
+/* =============================================
+   RESUMEN.CSS — la pantalla de fin de partida de los 14 juegos
+   FutbolHUB
+
+   Igual que ads.css, guia-link.css, volver.css, sala.css, cuenta-atras.css y
+   barra-partida.css: esto NO es el design system de los juegos, es UNA pieza
+   compartida. Se carga después del CSS del juego, así que gana por orden a
+   cualquier definición antigua que quede por ahí.
+
+   EL PROBLEMA QUE RESUELVE
+   Cada uno de los 14 juegos construyó su "pantalla de resultado" por su
+   cuenta: 10 nombres de contenedor distintos, un marco con borde grueso en
+   unos y sin borde en otros (o redondeado, en Superdraft), una X en solo 3
+   de 14 (y cada una con su propio estilo — círculo gris, círculo papel,
+   cuadrado fino), y 7 de 14 sin botón de Compartir. Decisión del usuario
+   (2026-09-12): mismo marco de bordes negros gruesos, misma X negra con
+   borde negro para cerrar, mismo botón de Compartir donde ya existe, y
+   exactamente UN botón de acción secundaria por juego — todos con el mismo
+   estilo. La parte central (las estadísticas) la sigue montando cada juego,
+   dentro de `.resumen-caja`.
+
+   CERRAR REVELA EL TABLERO
+   En los juegos que antes mostraban el resultado como pantalla completa (La
+   Carrera, En el Top, Tres en Raya, Bingo, Blackjack, El Estadio, En la
+   Cadena, 5 de 5), `.resumen-overlay` se monta AHORA sobre la pantalla de
+   juego sin desactivarla — como ya hacía Superdraft con `#sd-result-overlay`
+   sobre `#screen-game` — así que cerrar con la X (o tocar el fondo) deja ver
+   el tablero/mesa/cartón ya terminado detrás, en vez de navegar a ningún
+   sitio.
+
+   COLORES
+   Tokens que ya usan los 14 juegos (--np-ink, --np-paper, --np-red, --bd-c,
+   --r-md, --sh-x/y/b/c…), con el mismo respaldo que usa el resto del CSS
+   desde que se retiró el tema Moderno: si el token no existe, el valor de
+   respaldo es el clásico de siempre, y el día que se quiera resucitar un
+   tema oscuro no hay que tocar nada de esto.
+   ============================================= */
+
+.resumen-overlay,
+.resumen-overlay *,
+.resumen-caja { box-sizing: border-box; }
+
+/* ── EL FONDO ────────────────────────────────────────────────────────── */
+.resumen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(var(--np-ink-rgb, 15, 18, 14), .6);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.resumen-overlay.activo { display: flex; }
+/* Compatibilidad con juegos que ya usaban .hidden/[hidden] para esconder su
+   overlay: esta hoja carga después del CSS del juego y ganaría por orden a
+   un display:flex propio, así que aquí se respeta explícitamente. */
+.resumen-overlay.hidden,
+.resumen-overlay[hidden] { display: none !important; }
+
+/* ── LA TARJETA ──────────────────────────────────────────────────────── */
+.resumen-caja {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  text-align: center;
+  background: var(--np-paper);
+  border: 3px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0);
+  box-shadow: var(--sh-x, 5px) var(--sh-y, 5px) var(--sh-b, 0) var(--sh-c, var(--np-ink));
+  padding: 36px 26px 24px;
+  animation: resumenEntra .3s cubic-bezier(.34, 1.4, .64, 1);
+}
+@keyframes resumenEntra {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── LA X ────────────────────────────────────────────────────────────
+   Cuadrada, no círculo: mismo lenguaje visual que el resto del marco.
+   Negra sobre papel, con borde negro — no gris (Superdraft) ni fina (Wordle,
+   La Carrera/En el Top). En hover se invierte a rojo, igual que .fh-volver y
+   que el resto de botones de cierre del sitio. */
+.resumen-cerrar {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--np-paper);
+  border: 2px solid var(--bd-c, var(--np-ink));
+  border-radius: var(--r-md, 0);
+  color: var(--np-ink);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.resumen-cerrar:hover {
+  background: var(--np-red);
+  border-color: var(--np-red);
+  color: var(--np-paper);
+}
+.resumen-cerrar:focus-visible {
+  outline: 2px solid var(--np-red);
+  outline-offset: 2px;
+}
+
+/* ── LOS BOTONES DE ACCIÓN ───────────────────────────────────────────
+   Como mucho dos: Compartir (donde el juego ya lo tenía) + una única acción
+   secundaria específica del juego. Nunca tres — es la decisión del usuario,
+   así que un juego con más de una acción "de cierre" tiene que elegir cuál
+   sobrevive aquí; el resto sigue accesible desde el menú normal del juego. */
+.resumen-acciones {
+  display: flex;
+  /* Explícito, no por defecto: en varios juegos esta fila convive con la
+     clase vieja que sustituye (.completion-buttons, .finished-actions…),
+     que a veces trae su propio flex-direction:column. Sin fijarlo aquí, esa
+     regla no compite con nada de esta clase (flex-direction no se declaraba)
+     y ganaba ella sola: la fila salía en columna con cada botón estirado
+     hasta su max-width, en vez de en fila. */
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  /* Ancho explícito, no dado por hecho: en una .resumen-caja que además es
+     flex-column (5 de 5 y compañía, para conservar su apilado con gap)
+     "align-items:center" en el padre encoge a esta fila a su ancho de
+     contenido en vez de darle el ancho disponible, y los dos botones
+     terminaban envueltos en dos líneas por debajo de su hueco real. */
+  width: 100%;
+  margin-top: 20px;
+}
+
+.resumen-compartir,
+.resumen-principal,
+.resumen-secundaria {
+  flex: 1 1 140px;
+  max-width: 220px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 18px;
+  font-family: 'DM Mono', monospace;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: var(--r-md, 0);
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+
+/* .resumen-principal es el mismo botón sólido que .resumen-compartir, para
+   juegos sin Compartir donde una de las dos acciones (normalmente "Jugar de
+   nuevo") sigue mereciendo el peso visual del negro sólido. Misma regla para
+   los dos: son la misma pieza con dos nombres, uno para compartir de verdad
+   y otro para cuando no lo hay. */
+.resumen-compartir,
+.resumen-principal {
+  background: var(--np-ink);
+  color: var(--np-paper);
+  border: 2px solid var(--bd-c, var(--np-ink));
+  box-shadow: var(--sh-x, 3px) var(--sh-y, 3px) var(--sh-b, 0) var(--sh-c-red, var(--np-red));
+}
+.resumen-compartir:hover,
+.resumen-principal:hover {
+  background: var(--np-red);
+  border-color: var(--np-red);
+}
+
+.resumen-secundaria {
+  background: transparent;
+  color: var(--np-ink);
+  border: 1.5px solid var(--bd-c, var(--np-ink));
+}
+.resumen-secundaria:hover {
+  background: var(--np-ink);
+  color: var(--np-paper);
+}
+
+.resumen-compartir:focus-visible,
+.resumen-principal:focus-visible,
+.resumen-secundaria:focus-visible {
+  outline: 2px solid var(--np-red);
+  outline-offset: 2px;
+}
+
+/* Blackjack/Superdraft deshabilitan "Jugar de nuevo" mientras se procesa la
+   petición (o lo bloquean directamente, El Estadio, hasta el día siguiente):
+   sin esto el botón se ve exactamente igual estando inerte. */
+.resumen-compartir:disabled,
+.resumen-principal:disabled,
+.resumen-secundaria:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Varios juegos esconden alguno de estos botones según el modo/estado (En
+   el Once "Siguiente partido" en modo diario, El Estadio "Jugar de
+   nuevo"/"Ver clasificación", Bingo "Otra partida" en modo diario…), unos
+   con el atributo nativo `hidden` y otros con una clase `.hidden` propia.
+   Como esta hoja carga DESPUÉS del CSS del juego, su `display:inline-flex`
+   les ganaría por orden a un `.hidden{display:none}` de esa hoja — y al
+   atributo `hidden` SIEMPRE, porque el estilo del navegador para `[hidden]`
+   pierde contra cualquier regla de autor, tenga la especificidad que tenga.
+   Sin esto, un botón que el JS marca como oculto se vería igual. */
+.resumen-compartir.hidden, .resumen-compartir[hidden],
+.resumen-principal.hidden, .resumen-principal[hidden],
+.resumen-secundaria.hidden, .resumen-secundaria[hidden] {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .resumen-caja { padding: 30px 18px 20px; max-width: none; }
+  .resumen-compartir,
+  .resumen-principal,
+  .resumen-secundaria { flex-basis: 100%; max-width: none; }
+}

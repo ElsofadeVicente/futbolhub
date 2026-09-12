@@ -1565,8 +1565,9 @@ function buildCrucigramaScreen() {
         </div>
 
         <!-- RESULTADO DEL NIVEL -->
-        <div class="cruc-completion-modal" id="cruc-completion-modal">
-            <div class="cruc-completion-content">
+        <div class="cruc-completion-modal resumen-overlay" id="cruc-completion-modal">
+            <div class="cruc-completion-content resumen-caja">
+                <button class="resumen-cerrar" onclick="crucVolverAlMapa()" aria-label="Cerrar">✕</button>
                 <div class="cruc-comp-estrellas" id="cruc-comp-estrellas"></div>
                 <div class="cruc-completion-title" id="cruc-comp-title">NIVEL SUPERADO</div>
                 <div class="cruc-completion-sub" id="cruc-comp-sub"></div>
@@ -1581,10 +1582,9 @@ function buildCrucigramaScreen() {
                     </div>
                 </div>
                 <p class="cruc-comp-texto" id="cruc-comp-texto"></p>
-                <div class="cruc-completion-btns">
-                    <button class="next-btn" id="cruc-comp-seguir">Continuar →</button>
-                    <button class="give-up-btn" id="cruc-share-btn" onclick="crucShare()">📤 Compartir</button>
-                    <button class="give-up-btn" id="cruc-comp-mapa" onclick="crucVolverAlMapa()">Ir al mapa</button>
+                <div class="cruc-completion-btns resumen-acciones">
+                    <button class="next-btn resumen-secundaria" id="cruc-comp-seguir">Continuar →</button>
+                    <button class="resumen-compartir" id="cruc-share-btn" onclick="crucShare()">📤 Compartir</button>
                 </div>
             </div>
         </div>
@@ -2277,9 +2277,11 @@ function crucShowCompletion(revealed = false) {
     /* SIEMPRE se vuelve por el mapa: al superar, "Continuar" lleva al mapa y
        ahí se celebra el nodo (crucCelebrar). Desde el mapa el jugador pulsa el
        siguiente nivel — el mapa es la navegación. Si no ha pasado, "Reintentar"
-       rehace el mismo nivel. */
+       rehace el mismo nivel. La X (.resumen-cerrar) hace lo mismo que hacía
+       antes "Ir al mapa" (ya retirado como botón aparte, era redundante con
+       Continuar en cuanto se pasaba el nivel: ahora la X cubre ese cierre en
+       los dos casos). */
     const seguir = document.getElementById('cruc-comp-seguir');
-    const mapaBtn = document.getElementById('cruc-comp-mapa');
     if (seguir) {
         if (!paso) {
             seguir.textContent = 'Reintentar nivel';
@@ -2292,13 +2294,6 @@ function crucShowCompletion(revealed = false) {
                 crucVolverAlMapa();
             };
         }
-    }
-    /* El botón secundario "Ir al mapa" solo tiene sentido cuando NO se ha
-       pasado (ahí el principal es Reintentar). Al superar es redundante con
-       Continuar, así que se esconde. */
-    if (mapaBtn) {
-        mapaBtn.hidden = paso;
-        mapaBtn.onclick = () => { crucCloseCompletion(); crucVolverAlMapa(); };
     }
 
     modal.classList.add('active');

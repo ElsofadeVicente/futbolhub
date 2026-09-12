@@ -50,7 +50,7 @@ function fallo(texto, detalle) {
   if (elLoading) elLoading.classList.remove('hidden');
   if (elMode)  elMode.classList.add('hidden');
   if (elGame)  elGame.classList.add('hidden');
-  if (elEnd)   elEnd.classList.add('hidden');
+  if (elEnd)   elEnd.classList.remove('activo');
   if (elNav && _editions.length > 1) { elNav.classList.remove('hidden'); renderNav(); }
 }
 
@@ -515,7 +515,7 @@ function irAlMenu() {
   elMode.classList.remove('hidden');
   elLoading.classList.add('hidden');
   elGame.classList.add('hidden');
-  elEnd.classList.add('hidden');
+  elEnd.classList.remove('activo');
 }
 
 /* Carga el mes actual y los anteriores (hasta 3 fallos seguidos), para poder
@@ -643,7 +643,14 @@ function bindModalEvents() {
   });
 
   elEndStatsBtn.addEventListener('click', openStats);
+
+  const elEndClose = document.getElementById('end-close-btn');
+  if (elEndClose) elEndClose.addEventListener('click', closeEnd);
 }
+
+/* Cerrar (X) no navega a ningún sitio: solo esconde el panel y deja ver las
+   10 filas del resultado, que siguen montadas detrás. */
+function closeEnd() { elEnd.classList.remove('activo'); }
 
 // ══════════════════════════════════════════════
 //  START GAME
@@ -671,7 +678,7 @@ function startGame() {
   // Enseñar antes de esconder: ver el comentario de showEndScreen.
   elGame.classList.remove('hidden');
   elMode.classList.add('hidden');
-  elEnd.classList.add('hidden');
+  elEnd.classList.remove('activo');
   elLoading.classList.add('hidden');
   elNav.classList.remove('hidden');
   renderNav();
@@ -1117,9 +1124,11 @@ function showEndScreen(won) {
   elEndRows.innerHTML  = '';
   elEndRows.appendChild(filas);
 
-  // Ya está todo montado: ahora sí se puede cambiar de pantalla.
-  elEnd.classList.remove('hidden');
-  elGame.classList.add('hidden');
+  // Ya está todo montado: ahora sí se puede mostrar el resumen.
+  // #game-screen ya NO se esconde: el resumen es un overlay encima (ver
+  // css/resumen.css), y cerrarlo con la X deja ver las 10 filas tal y como
+  // quedaron.
+  elEnd.classList.add('activo');
   elLoading.classList.add('hidden');
   elMode.classList.add('hidden');
   /* Sin calendario (resultado enseñado desde local, sin red) la barra de
