@@ -1360,6 +1360,18 @@ function crucVolverAlMapa() {
     crucPintarMapa(true);
 }
 
+/* Botón "← Mapa" DURANTE la partida: si el nivel no está terminado, avisa de
+   que se reiniciará al volver a entrar (la rejilla nunca guarda progreso a
+   medias) antes de salir. Si ya está completo no hay nada que perder y se
+   sale directo. */
+function crucVolverAlMapaConfirmar() {
+    if (crucData && !crucIsComplete()) {
+        const salir = confirm('Estás a punto de salir sin finalizar el nivel. Se reiniciará cuando vuelvas a entrar. ¿Seguro que quieres salir?');
+        if (!salir) return;
+    }
+    crucVolverAlMapa();
+}
+
 // ── Arranque ─────────────────────────────────
 async function crucStart() {
     crucArranqueIncompleto = false;
@@ -1460,7 +1472,7 @@ function buildCrucigramaScreen() {
         <!-- HEADER -->
         <div class="cruc-header">
             <div class="cruc-nav-row">
-                <button class="fh-volver" onclick="crucVolverAlMapa()">← Mapa</button>
+                <button class="fh-volver" onclick="crucVolverAlMapaConfirmar()">← Mapa</button>
                 <div class="cruc-title-block">
                     <h1 class="cruc-title">NIVEL ${crucNivel}</h1>
                     <div class="cruc-edition">${crucEsc(d.nombre)}</div>
