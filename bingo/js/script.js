@@ -27,6 +27,39 @@
   const $   = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+  /* ── Cuenta: con sesión iniciada se usa el usuario y su foto y no hace
+     falta pedir el nombre — mismo patrón que 5 de 5, Blackjack, El Mentiroso
+     y En la Cadena. Sin sesión, el input de siempre (ver nameFrom). ── */
+  function accAvatar() {
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    return (id && id.avatarUrl) || null;
+  }
+  /* HTML de dentro de un circulo de avatar: foto si tiene, si no la inicial. */
+  function avatarInner(p) {
+    if (window.FHAuth && FHAuth.avatarInner) return FHAuth.avatarInner(p && p.name, p && p.avatar);
+    return esc(((p && p.name) || '?').charAt(0).toUpperCase());
+  }
+  function setupAccountName() {
+    if (!(window.FHAuth && FHAuth.onIdentity)) return;
+    const NAME_INPUTS = ['input-host-name', 'input-join-name', 'input-public-name'];
+    FHAuth.onIdentity(id => {
+      NAME_INPUTS.forEach(i => {
+        const el = $(i);
+        if (el) el.style.display = id ? 'none' : '';
+      });
+      document.querySelectorAll('.account-name-hint').forEach(h => h.remove());
+      if (id) NAME_INPUTS.forEach(i => {
+        const el = $(i);
+        if (!el) return;
+        const hint = document.createElement('p');
+        hint.className = 'panel-hint account-name-hint';
+        hint.style.margin = '0 0 8px';
+        hint.textContent = 'Entras como @' + id.username;
+        el.parentNode.insertBefore(hint, el);
+      });
+    });
+  }
+
   /* ─────────── Constantes de juego ─────────── */
   const SIZE      = 4;                 // carton 4x4
   const CELLS     = SIZE * SIZE;       // 16 casillas
@@ -861,7 +894,7 @@
       await F.set(F.ref(F.db, `bingo/rooms/${code}`), {
         host: myUid(), status: 'waiting', seed, public: !!isPublic,
         createdAt: F.serverTimestamp(),
-        players: { [myUid()]: { name, filled: 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid } },
+        players: { [myUid()]: { name, avatar: accAvatar(), filled: 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid } },
       });
       if (isPublic) {
         await F.set(F.ref(F.db, `bingo/matchmaking/${code}`), {
@@ -883,7 +916,7 @@
       isHost = data.host === myUid();
       const authUid = await window._FBAuthReady;
       await F.set(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`), {
-        name, filled: 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid,
+        name, avatar: accAvatar(), filled: 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid,
       });
       listen();
       return code;
@@ -971,7 +1004,7 @@
         $('lobby-count-kicker').textContent = `Jugadores (${list.length})`;
         $('lobby-players').innerHTML = list.map(([id, p]) => `
           <div class="lobby-player-row">
-            <div class="lobby-player-avatar">${esc((p.name || '?')[0].toUpperCase())}</div>
+            <div class="lobby-player-avatar">${avatarInner(p)}</div>
             <span class="lobby-player-name">${esc(p.name || 'Jugador')}</span>
             ${id === room.host ? '<span class="lobby-player-host">ANFITRIÓN</span>' : ''}
             ${id === myUid() ? '<span class="lobby-player-you">← TÚ</span>' : ''}
@@ -997,6 +1030,7 @@
       const players = Object.entries(room.players || {});
       $('rivals').innerHTML = players.map(([id, p]) => `
         <div class="rival${id === myUid() ? ' me' : ''}">
+          <span class="rival-avatar">${avatarInner(p)}</span>
           <span class="rival-name">${esc(p.name || '?')}</span>
           <span class="rival-bar"><i style="width:${(Math.min(16, p.filled || 0) / 16) * 100}%"></i></span>
           <span class="rival-num">${p.done ? (p.bingo ? 'BINGO' : (Number(p.hits) || 0) + '/16') : (Number(p.filled) || 0) + '/16'}</span>
@@ -1098,7 +1132,7 @@
       isHost = snap.val().host === myUid();
       const authUid = await window._FBAuthReady;
       await F.set(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`), {
-        name, filled: filled || 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid,
+        name, avatar: accAvatar(), filled: filled || 0, done: false, joinedAt: F.serverTimestamp(), uid: authUid,
       });
       listen();
       return code;
@@ -1161,6 +1195,8 @@
   }
 
   function nameFrom(inputId, panel) {
+    const id = window.FHAuth && FHAuth.identity && FHAuth.identity();
+    if (id && id.username) return id.username;
     const v = ($(inputId)?.value || '').trim();
     if (!v) { showError(panel, 'Escribe tu nombre'); return null; }
     return v.slice(0, 16);
@@ -1353,6 +1389,8 @@
     }
 
     $('loading-overlay').classList.add('hidden');
+
+    setupAccountName();
 
     /* Volver a la sala y/o al cartón a medias. Los manejadores globales de
        abajo se registran SIEMPRE, pase lo que pase aquí: cuando esto iba

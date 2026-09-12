@@ -93,21 +93,44 @@
 .caller-ghost .caller-last  { font-size: 1.1rem; }
 .caller-ghost .caller-first { color: rgba(var(--np-ink-rgb, 15,18,14), 0.5); }
 
-/* ── Marcador de rivales (online) ── */
-.rivals { display: flex; flex-direction: column; gap: 4px; }
-.rival { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: .58rem; }
-.rival-name { width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: .08em; color: var(--np-ink-mid); }
+/* ── Marcador de rivales (online) ──
+   Una fila con margen para crecer: dos o más jugadores no la hacen más
+   estrecha (max-height + scroll propio, ver más abajo) y un nombre largo
+   pasa a una segunda línea en vez de cortarse con puntos suspensivos. */
+.rivals {
+  display: flex; flex-direction: column; gap: 4px;
+  max-height: 108px; overflow-y: auto;
+}
+.rival { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: .58rem; }
+.rival-avatar {
+  width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%; overflow: hidden;
+  background: var(--np-paper3); border: 1px solid var(--np-ink-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .5rem; font-weight: 700; color: var(--np-ink);
+}
+.rival-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.rival-name {
+  flex: 1 1 60px; min-width: 0;
+  overflow-wrap: anywhere; white-space: normal;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--np-ink-mid);
+}
 .rival.me .rival-name { color: var(--np-red); font-weight: 500; }
-.rival-bar { flex: 1; height: 6px; background: var(--np-paper3); border: 1px solid var(--np-ink-soft); overflow: hidden; }
+.rival-bar { flex: 1 1 60px; height: 6px; background: var(--np-paper3); border: 1px solid var(--np-ink-soft); overflow: hidden; }
 .rival-bar i { display: block; height: 100%; background: var(--np-ink); transition: width .3s; }
 .rival.me .rival-bar i { background: var(--np-red); }
-.rival-num { width: 44px; text-align: right; letter-spacing: .04em; color: var(--np-ink); }
+.rival-num { flex-shrink: 0; width: 44px; text-align: right; letter-spacing: .04em; color: var(--np-ink); }
 
-/* ── EL CARTÓN ── */
+/* ── EL CARTÓN ──
+   El presupuesto de alto que se resta (300px) ya cuenta con el marcador de
+   rivales a su tope (.rivals tiene max-height propio, ver arriba) para que
+   el cartón NO se achique según cuántos jugadores haya en la sala — en un
+   móvil normal quien manda es el ANCHO de todos modos (min(460px, …) casi
+   siempre gana por el lado del ancho), así que esto solo entra en juego con
+   ventanas bajas (portátil, apaisado). */
 .board-wrap { display: flex; justify-content: center; }
 .card-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  width: 100%; max-width: min(460px, calc(100vh - 230px));
+  width: 100%; max-width: min(460px, calc(100vh - 300px));
   gap: 2px; background: var(--np-ink);
   border: 2px solid var(--bd-c, var(--np-ink)); box-shadow: var(--shadow);
 }
