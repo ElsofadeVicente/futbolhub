@@ -1467,9 +1467,11 @@ const App = (() => {
     if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'UNIRSE A SALA ▶'; }
   }
 
-  /* La X de la tarjeta de resumen es solo estilo: hace lo mismo que "Menú",
-     no una cosa nueva. */
-  function closeFinished() { showMenu(); }
+  /* Cerrar (X) el resumen no abandona nada: solo esconde el panel y deja ver
+     la mesa de la última mano, que sigue montada detrás. */
+  function closeFinished() {
+    document.getElementById('screen-finished')?.classList.remove('activo');
+  }
 
   /* ══════════════════════════════════════════
      TOAST
@@ -1720,6 +1722,10 @@ const App = (() => {
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== destino) s.classList.remove('active');
     });
+    /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
+       la mesa (ver _showPhase('finished') en blackjack-game.js). Navegar a
+       cualquier pantalla real lo cierra. */
+    document.getElementById('screen-finished')?.classList.remove('activo');
     // Defensa extra: el menú nunca debe arrastrar la barra "Objetivo" de una partida
     // anterior (bug: al salir a mitad de partida podía quedar visible al hacer scroll).
     if (id === 'screen-menu') {

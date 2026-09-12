@@ -269,13 +269,11 @@ body::before {
 .sug-meta { flex-shrink: 0; margin-left: auto; padding-left: 12px; font-family: var(--font-mono); font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--np-ink-mid); white-space: nowrap; }
 .sug-item.active .sug-meta { color: rgba(244, 184, 154, .95); }
 
-/* ── Pantalla final — sigue siendo un .screen normal, como siempre ──────
-   El marco de la tarjeta (borde, sombra, ancho) viene de css/resumen.css
-   (.resumen-caja) — mismo tamaño de cuadrado que en el resto de juegos. */
-#end-screen {
-  position: relative; z-index: 1; min-height: 100vh; background: var(--np-paper);
-  display: flex; align-items: flex-start; justify-content: center; padding: 28px 16px 52px; overflow-y: auto;
-}
+/* ── Resumen de partida — overlay sobre la tabla ya resuelta ──────────
+   El marco, el ancho, el fondo semitransparente y el centrado vienen de
+   css/resumen.css (.resumen-overlay/.resumen-caja): #end-screen ya no es
+   una pantalla más que sustituye a #game-screen, es un overlay encima —
+   mismo tamaño de cuadrado que en el resto de juegos, sin excepción aquí. */
 #end-box { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 #end-emoji { font-size: 2.6rem; margin-top: 6px; }
 #end-title { font-family: var(--font-serif); font-style: italic; font-weight: 900; font-size: clamp(1.6rem, 4vw, 2.2rem); text-align: center; color: var(--np-ink); line-height: 1.0; }
@@ -295,7 +293,11 @@ body::before {
 .btn-ghost:hover { border-color: var(--np-red); color: var(--np-red); }
 
 /* ── Overlays y modales ──────────────────────── */
-.overlay { position: fixed; inset: 0; background: rgba(var(--np-ink-rgb, 15,18,14), 0.72); display: flex; align-items: center; justify-content: center; z-index: 600; padding: 20px; backdrop-filter: blur(3px); animation: fadeIn .18s ease; }
+/* z-index 1100, no 600: el modal de Estadísticas se abre ENCIMA del
+   resumen de partida (.resumen-overlay, z-index 1000), que ahora también es
+   un overlay — antes bastaba con superar a #end-screen (z-index:1, pantalla
+   normal), pero eso ya no existe. */
+.overlay { position: fixed; inset: 0; background: rgba(var(--np-ink-rgb, 15,18,14), 0.72); display: flex; align-items: center; justify-content: center; z-index: 1100; padding: 20px; backdrop-filter: blur(3px); animation: fadeIn .18s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .np-modal { background: var(--np-paper); border: 2px solid var(--bd-c, var(--np-ink)); box-shadow: var(--sh-x,5px) var(--sh-y,5px) var(--sh-b,0) var(--sh-c,var(--np-ink)); padding: 28px 26px; max-width: 360px; width: 100%; position: relative; animation: modal-in .22s cubic-bezier(.34,1.56,.64,1); }
 .np-modal--wide { max-width: 460px; }

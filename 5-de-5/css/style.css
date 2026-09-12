@@ -487,12 +487,12 @@ a      { text-decoration: none; }
 #results-restrictions-legend { background:var(--np-paper); padding:0 14px; }
 
 /* ═══════════════════════════════════════════
-   FIN DE PARTIDA — sigue siendo un .screen normal, como siempre
+   FIN DE PARTIDA
    ═══════════════════════════════════════════ */
-#screen-finished { justify-content: center; padding: 28px 24px; }
-/* El marco de la tarjeta (borde grueso, sombra, fondo) vive en
-   css/resumen.css (.resumen-caja), compartido con el resto de juegos; aquí
-   solo se conserva el apilado interno en columna con gap. */
+/* El marco (borde grueso, sombra, fondo) vive ahora en css/resumen.css
+   (.resumen-caja), compartido con el resto de juegos. Aquí solo se conserva
+   el apilado interno en columna con gap, que antes ponía el .screen que se
+   le quitó a #screen-finished al convertirlo en overlay sobre el tablero. */
 #screen-finished .resumen-caja { display: flex; flex-direction: column; align-items: center; gap: 18px; }
 
 .finished-trophy { font-size:3.5rem; filter:grayscale(100%); animation:pulse 2.5s infinite; }

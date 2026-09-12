@@ -781,12 +781,12 @@ body {
 #btn-next-round { width: 100%; }
 
 /* ══════════════════════════════════════════════
-   FINAL — sigue siendo un .screen normal, como siempre
+   FINAL
    ══════════════════════════════════════════════ */
-#screen-finished { justify-content: center; padding: 24px; }
-/* El marco de la tarjeta (borde grueso, sombra, fondo) vive en
-   css/resumen.css (.resumen-caja). Aquí solo se conserva el apilado interno
-   en columna con gap. */
+/* El marco (borde grueso, sombra, fondo) vive ahora en css/resumen.css
+   (.resumen-caja). Aquí solo se conserva el apilado interno en columna con
+   gap, que antes ponía el .screen que se le quitó a #screen-finished al
+   convertirlo en overlay sobre la mesa. */
 #screen-finished .resumen-caja { display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .finished-trophy { font-size: 3.5rem; filter: grayscale(100%); animation: pulse 2.5s infinite; }
 

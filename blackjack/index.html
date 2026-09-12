@@ -37,14 +37,14 @@
        tres idas y vueltas en el camino critico que en un movil se notan. -->
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/blackjack.css?v=20260912b" />
+  <link rel="stylesheet" href="css/blackjack.css?v=20260912a" />
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
   <link rel="stylesheet" href="../css/sala.css?v=20260903a">
   <link rel="stylesheet" href="../css/cuenta-atras.css?v=20260903a">
   <link rel="stylesheet" href="../css/barra-partida.css?v=20260903b">
-  <link rel="stylesheet" href="../css/resumen.css?v=20260912c">
+  <link rel="stylesheet" href="../css/resumen.css?v=20260912b">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -408,9 +408,9 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     PANTALLA 6: FIN DE PARTIDA
+     RESUMEN DE PARTIDA — overlay sobre la mesa ya terminada
      ═══════════════════════════════════════════════ -->
-<div id="screen-finished" class="screen">
+<div id="screen-finished" class="resumen-overlay">
   <div class="resumen-caja">
     <button class="resumen-cerrar" onclick="App.closeFinished()" aria-label="Cerrar">✕</button>
     <div class="finished-trophy">🏆</div>
@@ -504,7 +504,7 @@
   /* Version FIJA, no Date.now(): con el timestamp ninguno de estos scripts
      se cacheaba nunca — se bajaban enteros en cada carga. Al tocar
      cualquiera de ellos, sube la letra. */
-  const V = '?v=20260912b';
+  const V = '?v=20260912a';
   const scripts = [
     '../js/supabase-config.js?v=20260909a',
     '../js/auth.js?v=20260911b',

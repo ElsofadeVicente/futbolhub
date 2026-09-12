@@ -163,11 +163,17 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => {
     if (s !== destino) s.classList.remove('active');
   });
+  /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
+     la última ronda (ver mostrarFin). Navegar a cualquier pantalla real lo
+     cierra. */
+  document.getElementById('screen-end')?.classList.remove('activo');
 }
 
-/* La X de la tarjeta de resumen es solo estilo: hace lo mismo que volver al
-   menú, no una cosa nueva. */
-function closeFinished() { showScreen('screen-menu'); }
+/* Cerrar (X) no navega a ningún sitio: solo esconde el panel y deja ver el
+   mapa de la última ronda, que sigue montado detrás. */
+function closeFinished() {
+  document.getElementById('screen-end')?.classList.remove('activo');
+}
 
 /* ══════════════════════════════════════════════
    MENÚ
@@ -585,7 +591,7 @@ function mostrarFin(alreadyPlayed = false) {
     container.appendChild(row);
   });
 
-  showScreen('screen-end');
+  document.getElementById('screen-end').classList.add('activo');
 
   /* Modo diario: stats/Firebase/guardado solo la primera vez del día */
   if (!alreadyPlayed) {

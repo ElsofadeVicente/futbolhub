@@ -145,10 +145,16 @@
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== destino) s.classList.remove('active');
     });
+    /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
+       el cartón (ver showResultOverlay). Navegar a cualquier pantalla real
+       lo cierra. */
+    hideResultOverlay();
   }
-  /* La X de la tarjeta de resumen es solo estilo: hace lo mismo que "Menú",
-     no una cosa nueva. */
-  function closeFinished() { showMenu(); }
+  /* Panel de resumen: overlay sobre #screen-game, no una pantalla más.
+     Cerrar (la X) solo esconde el panel y deja ver el cartón cerrado. */
+  function showResultOverlay() { const el = $('screen-result'); if (el) el.classList.add('activo'); }
+  function hideResultOverlay() { const el = $('screen-result'); if (el) el.classList.remove('activo'); }
+  function closeFinished() { hideResultOverlay(); }
 
   function showToast(msg, kind) {
     const t = $('toast');
@@ -859,7 +865,7 @@
         }).join('')}
       </div>`;
 
-    showScreen('screen-result');
+    showResultOverlay();
   }
 
   /* ═══════════════ ONLINE — Firebase Realtime DB ═══════════════ */

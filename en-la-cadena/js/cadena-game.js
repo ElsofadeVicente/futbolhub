@@ -205,11 +205,16 @@ const App = (() => {
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== t) s.classList.remove('active');
     });
+    /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
+       la cadena (ver _endGame). Navegar a cualquier pantalla real lo cierra. */
+    document.getElementById('screen-result')?.classList.remove('activo');
   }
 
-  /* La X de la tarjeta de resumen es solo estilo: hace lo mismo que "Menú",
-     no una cosa nueva. */
-  function closeFinished() { showMenu(); }
+  /* Cerrar (X) no abandona nada: solo esconde el panel y deja ver la última
+     cadena, que sigue montada detrás. */
+  function closeFinished() {
+    document.getElementById('screen-result')?.classList.remove('activo');
+  }
 
   function showMenu() {
     CadenaGame.FBSync.cleanup();
@@ -1291,8 +1296,7 @@ const App = (() => {
     const s = CadenaGame._state;
     if (s) s.phase = 'finished';
     setTimeout(() => {
-      document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
-      document.getElementById('screen-result').classList.add('active');
+      document.getElementById('screen-result').classList.add('activo');
 
       const btns = document.getElementById('result-buttons');
       const exitLabel = s?.mode === 'online' ? '🏠 Salir de sala' : '🏠 Menú';

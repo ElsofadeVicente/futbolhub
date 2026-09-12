@@ -754,12 +754,18 @@ const BlackjackGame = (() => {
 
   /* ── Cambiar pantalla activa ── */
   function _showPhase(phase) {
+    /* "finished" ya no es una pantalla que sustituya a las demás: es un
+       overlay sobre la mesa (#screen-reveal, tal y como quedó), igual que
+       hace Superdraft. No toca qué .screen está activa por debajo. */
+    if (phase === 'finished') {
+      document.getElementById('screen-finished')?.classList.add('activo');
+      return;
+    }
     const map = {
       'selecting':      'screen-selecting',
       'waiting-reveal': 'screen-waiting',
       'reveal':         'screen-reveal',
       'scoring':        'screen-reveal',
-      'finished':       'screen-finished',
     };
     const screenId = map[phase] || 'screen-menu';
     /* Se busca la pantalla PRIMERO y solo se apagan las demás si existe. Al
@@ -772,6 +778,9 @@ const BlackjackGame = (() => {
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== el) s.classList.remove('active');
     });
+    /* Cualquier fase real cierra el resumen si seguía abierto (defensivo,
+       igual que _showScreen en blackjack-app.js). */
+    document.getElementById('screen-finished')?.classList.remove('activo');
   }
 
   function _posLabel(pos) {
