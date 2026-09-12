@@ -307,7 +307,7 @@
     const r = $('wd-result-overlay');
     const ru = $('wd-rules-overlay');
     const st = $('wd-stats-overlay');
-    return (r && r.classList.contains('activo')) ||
+    return (r && !r.classList.contains('hidden')) ||
            (ru && !ru.classList.contains('hidden')) ||
            (st && !st.classList.contains('hidden'));
   }
@@ -509,9 +509,9 @@
     renderDistInto($('wd-result-dist'), s, state.won ? state.guesses.length : 'fail');
     nextPuzzleCountdown(countdownEl);
 
-    overlay.classList.add('activo');
+    overlay.classList.remove('hidden');
   }
-  function closeResult() { $('wd-result-overlay').classList.remove('activo'); }
+  function closeResult() { $('wd-result-overlay').classList.add('hidden'); }
 
   function openRules() { $('wd-rules-overlay').classList.remove('hidden'); }
   function closeRules() { $('wd-rules-overlay').classList.add('hidden'); }

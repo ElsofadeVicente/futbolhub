@@ -205,15 +205,6 @@ const App = (() => {
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== t) s.classList.remove('active');
     });
-    /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
-       la cadena (ver _endGame). Navegar a cualquier pantalla real lo cierra. */
-    document.getElementById('screen-result')?.classList.remove('activo');
-  }
-
-  /* Cerrar (X) no abandona nada: solo esconde el panel y deja ver la última
-     cadena, que sigue montada detrás. */
-  function closeFinished() {
-    document.getElementById('screen-result')?.classList.remove('activo');
   }
 
   function showMenu() {
@@ -830,7 +821,7 @@ const App = (() => {
     showMenu, showCreateGame, showJoinGame,
     selectMode, selectTime, setType, addPlayer, removePlayer,
     startGame, startOnlineGame, joinRoom, leaveLobby,
-    copyRoomCode, continueAfterElim, playAgain, closeFinished,
+    copyRoomCode, continueAfterElim, playAgain,
     showToast, init, _startGameUI,
     menuSetMode, menuSelectLives, menuSelectLivesLocal,
     menuCreateRoom, menuJoinRoom, menuStartLocal
@@ -1296,12 +1287,13 @@ const App = (() => {
     const s = CadenaGame._state;
     if (s) s.phase = 'finished';
     setTimeout(() => {
-      document.getElementById('screen-result').classList.add('activo');
+      document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
+      document.getElementById('screen-result').classList.add('active');
 
       const btns = document.getElementById('result-buttons');
       const exitLabel = s?.mode === 'online' ? '🏠 Salir de sala' : '🏠 Menú';
-      btns.innerHTML = '<button class="resumen-principal" onclick="App.playAgain()">🔄 Jugar de nuevo</button>' +
-                       '<button class="resumen-secundaria" onclick="App.showMenu()">' + exitLabel + '</button>';
+      btns.innerHTML = '<button class="btn-primary" onclick="App.playAgain()">🔄 Jugar de nuevo</button>' +
+                       '<button class="btn-secondary" onclick="App.showMenu()">' + exitLabel + '</button>';
 
       document.getElementById('winner-name').textContent = winner ? winner.name : '— Empate —';
       document.getElementById('chain-stats').innerHTML =

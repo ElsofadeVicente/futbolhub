@@ -45,7 +45,6 @@
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
-  <link rel="stylesheet" href="../css/resumen.css?v=20260912b">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -355,9 +354,8 @@
 </div>
 
 <!-- Modal de completado -->
-<div id="completion-modal" class="completion-modal resumen-overlay">
-  <div class="completion-content resumen-caja">
-    <button class="resumen-cerrar" onclick="closeCompletionModal()" aria-label="Cerrar">✕</button>
+<div id="completion-modal" class="completion-modal">
+  <div class="completion-content">
     <div class="completion-title">✅ ALINEACIÓN COMPLETADA</div>
     <div class="completion-match" id="completion-match"></div>
     <div class="completion-stats">
@@ -376,12 +374,12 @@
     </div>
     <div class="completion-streak" id="comp-streak"></div>
     <div class="comp-countdown" id="comp-countdown" style="display:none;"></div>
-    <div class="completion-buttons resumen-acciones">
+    <div class="completion-buttons">
       <!-- OJO: "Siguiente partido" debe ser el PRIMER .next-btn del bloque:
-           el JS lo localiza con querySelector('.completion-buttons .next-btn').
-           Solo se ve fuera del modo diario (no hay "siguiente" en el reto del día). -->
-      <button class="next-btn resumen-secundaria" onclick="nextMatch()">Siguiente partido →</button>
-      <button class="resumen-compartir" id="once-share-btn" onclick="onceShare()">📤 Compartir</button>
+           el JS lo localiza con querySelector('.completion-buttons .next-btn') -->
+      <button class="next-btn" onclick="nextMatch()">Siguiente partido →</button>
+      <button class="next-btn" id="once-share-btn" onclick="onceShare()">📤 Compartir</button>
+      <button class="give-up-btn" onclick="closeCompletionModal()">Ver alineación</button>
     </div>
   </div>
 </div>

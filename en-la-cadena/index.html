@@ -43,7 +43,6 @@
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
   <link rel="stylesheet" href="../css/sala.css?v=20260903a">
   <link rel="stylesheet" href="../css/cuenta-atras.css?v=20260903a">
-  <link rel="stylesheet" href="../css/resumen.css?v=20260912b">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -464,27 +463,24 @@
   </div>
 </div>
 
-<!-- ══════════════ RESUMEN DE PARTIDA — overlay sobre la última cadena ══════════════ -->
-<div id="screen-result" class="resumen-overlay">
-  <div class="result-container resumen-caja">
-    <button class="resumen-cerrar" onclick="App.closeFinished()" aria-label="Cerrar">✕</button>
+<!-- ══════════════ PANTALLA 7: FIN DE JUEGO ══════════════ -->
+<div id="screen-result" class="screen">
+  <div class="result-container">
     <div class="result-trophy">🏆</div>
     <h2 class="result-title">¡GANADOR!</h2>
     <div class="winner-name" id="winner-name">—</div>
     <div class="chain-stats" id="chain-stats"></div>
-    <!-- El contenido de los botones se reescribe en runtime (_endGame en
-         cadena-game.js, según haya sala online o no), pero la clase
-         .resumen-acciones se queda fija aquí. -->
-    <div class="resumen-acciones" id="result-buttons">
-      <button class="resumen-principal" onclick="App.playAgain()">🔄 Jugar de nuevo</button>
-      <button class="resumen-secundaria" onclick="App.showMenu()">🏠 Menú</button>
+    <div class="result-buttons" id="result-buttons">
+      <button class="btn-primary" onclick="App.playAgain()">🔄 Jugar de nuevo</button>
+      <button class="btn-secondary" onclick="App.showMenu()">🏠 Menú</button>
     </div>
-    <!-- Unidad de movil del panel de fin de partida: solo <1240px y solo
-         cuando este panel se muestra de verdad (js/ads.js no pide nada a
-         Google hasta que el hueco tiene ancho real). Va DESPUES de los
-         botones: si el anuncio carga tarde, que empuje hacia abajo lo que ya
-         no vas a pulsar y no el boton que tenias bajo el dedo. -->
-    <div class="ad-slot ad-slot--flow" data-ad="movil-final"></div>
+<!-- Unidad de movil del panel de fin de partida: solo <1240px y solo
+     cuando este panel se muestra de verdad (js/ads.js no pide nada a
+     Google hasta que el hueco tiene ancho real). Va DESPUES de los
+     botones: si el anuncio carga tarde, que empuje hacia abajo lo que ya
+     no vas a pulsar y no el boton que tenias bajo el dedo. -->
+<div class="ad-slot ad-slot--flow" data-ad="movil-final"></div>
+
   </div>
 </div>
 
@@ -563,7 +559,7 @@
   // Cargar el resto del juego
   const s1 = document.createElement('script'); s1.src = 'js/cadena-data.js?v=20260912a';  document.body.appendChild(s1);
   s1.onload = () => {
-    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js?v=20260912a'; document.body.appendChild(s2);
+    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js?v=20260906a'; document.body.appendChild(s2);
   };
 </script>
 

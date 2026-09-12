@@ -757,13 +757,21 @@ body::before {
 .sug-highlight { color: var(--np-red); font-weight: 700; }
 
 /* ══════════════════════════════════════════════
-   RESUMEN DE PARTIDA — overlay sobre las 10 filas ya reveladas
-   El marco, el ancho, el fondo semitransparente y el centrado vienen de
-   css/resumen.css (.resumen-overlay/.resumen-caja): #end-screen ya no es
-   una pantalla más que sustituye a #game-screen, es un overlay encima —
-   mismo tamaño de cuadrado que en el resto de juegos, sin excepción aquí.
+   END SCREEN
    ══════════════════════════════════════════════ */
+#end-screen {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  background: var(--np-paper);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 16px 52px;
+  overflow-y: auto;
+}
 #end-box {
+  max-width: 640px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -860,10 +868,6 @@ body::before {
 /* ══════════════════════════════════════════════
    OVERLAYS & MODALES
    ══════════════════════════════════════════════ */
-/* z-index 1100, no 600: el modal de Estadísticas se abre ENCIMA del resumen
-   de partida (.resumen-overlay, z-index 1000), que ahora también es un
-   overlay — antes bastaba con superar a #end-screen (z-index:1, pantalla
-   normal), pero eso ya no existe. */
 .overlay {
   position: fixed;
   inset: 0;
@@ -871,7 +875,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
+  z-index: 600;
   padding: 20px;
   backdrop-filter: blur(3px);
   animation: fadeIn .18s ease;

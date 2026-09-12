@@ -38,12 +38,11 @@
   <link rel="preconnect" href="https://rssvejgdekwysiseqzkd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que 5 de 5/Tres en Raya) -->
-  <link rel="stylesheet" href="../5-de-5/css/style.css?v=20260912a">
-  <link rel="stylesheet" href="css/style.css?v=20260912a">
+  <link rel="stylesheet" href="../5-de-5/css/style.css?v=20260906a">
+  <link rel="stylesheet" href="css/style.css?v=20260825b">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
-  <link rel="stylesheet" href="../css/resumen.css?v=20260912b">
   <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -253,10 +252,10 @@
      el once a la vista, igual que las estadísticas de La Carrera / En el Top,
      y la barra de días vive fuera (fija abajo), así que se puede saltar a
      otra edición desde donde sea. -->
-<div id="sd-result-overlay" class="sd-modal resumen-overlay">
+<div id="sd-result-overlay" class="sd-modal hidden">
   <div class="sd-modal-backdrop" onclick="SD.closeResult()"></div>
-  <div class="sd-modal-card sd-result-card resumen-caja">
-    <button class="resumen-cerrar" onclick="SD.closeResult()" aria-label="Cerrar y ver el once">✕</button>
+  <div class="sd-modal-card sd-result-card">
+    <button class="sd-modal-x" onclick="SD.closeResult()" aria-label="Cerrar y ver el once">✕</button>
 
     <div class="sd-intro-eyebrow sd-result-eyebrow">
       <span class="sd-num">№ 12</span><span class="sd-sep">·</span>
@@ -281,15 +280,12 @@
 
     <div id="sd-countdown" class="sd-countdown"></div>
 
-    <div class="sd-end-actions resumen-acciones">
-      <button id="sd-share-btn" class="resumen-compartir">📤 Compartir</button>
-      <!-- Reintentar (solo archivo) y Objetivo (solo hoy) son mutuamente
-           excluyentes: es el único hueco de "acción secundaria", ver
-           setReplayVisible() en script.js. "Ver el once" y "Hub" se
-           retiraron: la X ya hace lo primero, y el .fh-volver de esquina
-           (visible al cerrar) ya hace lo segundo. -->
-      <button id="sd-replay-btn" class="resumen-secundaria">🔄 Reintentar</button>
-      <button id="sd-menu-btn" class="resumen-secundaria">Objetivo</button>
+    <div class="sd-end-actions">
+      <button id="sd-share-btn" class="btn-primary">📤 Compartir</button>
+      <button id="sd-replay-btn" class="btn-primary">🔄 Reintentar</button>
+      <button id="sd-view-pitch-btn" class="btn-secondary">⚽ Ver el once</button>
+      <button id="sd-menu-btn" class="btn-secondary">Objetivo</button>
+      <a href="../index.html" class="btn-secondary">🏠 Hub</a>
     </div>
   </div>
 </div>
@@ -357,7 +353,7 @@
 </script>
 <script src="../js/ruta.js?v=20260820a"></script>
 <script src="../js/rotacion.js?v=20260906a"></script>
-<script src="js/script.js?v=20260912a"></script>
+<script src="js/script.js?v=20260906a"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).
   // Ruta a la RAIZ para que el scope cubra el hub y todos los juegos.

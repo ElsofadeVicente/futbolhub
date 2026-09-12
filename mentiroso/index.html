@@ -44,7 +44,6 @@
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
   <link rel="stylesheet" href="../css/sala.css?v=20260903a">
-  <link rel="stylesheet" href="../css/resumen.css?v=20260912b">
 <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -443,16 +442,13 @@
   </div>
 </div>
 
-<div id="overlay-gameover" class="overlay resumen-overlay">
-  <div class="overlay-inner gameover-inner resumen-caja">
-    <button class="resumen-cerrar" id="btn-gameover-close" aria-label="Cerrar">✕</button>
+<div id="overlay-gameover" class="overlay hidden">
+  <div class="overlay-inner gameover-inner">
     <div class="finished-trophy">🏆</div>
     <div class="finished-title">ULTIMO EN PIE</div>
     <div class="winner-name" id="winner-name">-</div>
     <div class="reveal-lives" id="winner-scoreboard"></div>
-    <div class="resumen-acciones">
-      <button class="resumen-secundaria" id="btn-menu">VOLVER AL MENU</button>
-    </div>
+    <button class="btn-primary" id="btn-menu">VOLVER AL MENU</button>
   </div>
 </div>
 
@@ -502,7 +498,7 @@
     .then(cred => { window._FBAuthUid = cred.user.uid; return cred.user.uid; })
     .catch(e => { console.warn('⚠️ Firebase Auth anónima:', e); return null; });
 
-  const V = '?v=20260912a';
+  const V = '?v=20260908a';
   // deck.js construye la baraja con la base de datos real de la web
   // (chunks de player-db + lista de fama de 5 de 5) y define las
   // condiciones de cada ronda. game.js depende de window.MDeck.

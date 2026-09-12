@@ -42,7 +42,6 @@
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
   <link rel="stylesheet" href="../css/edicion.css?v=20260819a">
-  <link rel="stylesheet" href="../css/resumen.css?v=20260912b">
   <link rel="stylesheet" href="../css/otros-juegos.css?v=20260827a">
 <link rel="stylesheet" href="../css/intro-texto.css?v=20260902b">
 <link rel="stylesheet" href="../css/noscript.css?v=20260827a">
@@ -263,10 +262,10 @@
 </div>
 
 <!-- ═══════════ Resultado ═══════════ -->
-<div id="wd-result-overlay" class="overlay resumen-overlay">
+<div id="wd-result-overlay" class="overlay hidden">
   <div id="wd-result-backdrop" class="wd-overlay-backdrop"></div>
-  <div class="np-modal resumen-caja">
-    <button id="wd-result-close" class="resumen-cerrar" aria-label="Cerrar">✕</button>
+  <div class="np-modal">
+    <button id="wd-result-close" class="close-btn" aria-label="Cerrar">✕</button>
     <div class="eyebrow">
       <span class="eyebrow-num wd-day-label">#1</span>
       <span class="eyebrow-sep">·</span>
@@ -284,9 +283,9 @@
 
     <div id="wd-result-countdown" class="wd-countdown"></div>
 
-    <div class="wd-result-actions resumen-acciones">
-      <button id="wd-result-share-btn" class="resumen-compartir">📤 Compartir</button>
-      <a href="../" class="resumen-secundaria">🏠 Hub</a>
+    <div class="wd-result-actions">
+      <button id="wd-result-share-btn" class="btn-primary">📤 Compartir</button>
+      <a href="../" class="btn-secondary">🏠 Hub</a>
     </div>
   </div>
 </div>
@@ -319,7 +318,7 @@
 <script src="../js/pantalla-viva.js?v=20260901i"></script>
 <script src="../js/red.js?v=20260901d"></script>
 <script src="../js/ruta.js?v=20260820a"></script>
-<script src="js/game.js?v=20260912a"></script>
+<script src="js/game.js?v=20260902a"></script>
 <script>
   // PWA: registrar el service worker (cache de datos pesados + instalable).
   if ('serviceWorker' in navigator) {

@@ -145,7 +145,6 @@ function cacheDom() {
     playAgainBtn:   document.getElementById('hol-play-again'),
     changeModeBtn:  document.getElementById('hol-change-mode'),
     backIngame:     document.getElementById('hol-back-ingame'),
-    gameoverClose:  document.getElementById('hol-gameover-close'),
   };
 }
 
@@ -308,11 +307,6 @@ async function initGame() {
   DOM.btnLower.addEventListener('click',  () => handleChoice('lower'));
 
   DOM.playAgainBtn.addEventListener('click', restartGame);
-  /* Cerrar (X) no reinicia ni cambia de modo: solo esconde el panel y deja
-     ver la última comparación, que sigue montada detrás. */
-  if (DOM.gameoverClose) DOM.gameoverClose.addEventListener('click', () => {
-    DOM.gameoverScreen.classList.remove('active');
-  });
   if (DOM.backIngame) DOM.backIngame.addEventListener('click', showModeMenu);
   if (DOM.changeModeBtn) DOM.changeModeBtn.addEventListener('click', () => {
     DOM.gameoverScreen.classList.remove('active');

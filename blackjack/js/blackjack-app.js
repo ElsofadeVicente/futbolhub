@@ -773,7 +773,7 @@ const App = (() => {
     }
 
     // Restaurar botón de "jugar de nuevo" por si quedó deshabilitado
-    const playAgainBtn = document.getElementById('btn-play-again');
+    const playAgainBtn = document.querySelector('#screen-finished .btn-primary');
     if (playAgainBtn) {
       playAgainBtn.disabled    = false;
       playAgainBtn.textContent = '🔄 Jugar de nuevo';
@@ -960,7 +960,7 @@ const App = (() => {
       BlackjackGame.resetScores?.();
       _localScores = {};
       _localRound  = 0;
-      const finBtn = document.getElementById('btn-play-again');
+      const finBtn = document.querySelector('#screen-finished .btn-primary');
       if (finBtn) { finBtn.disabled = true; finBtn.textContent = 'CARGANDO…'; }
       _startNextLocalRound()
         .catch(e => showToast('Error: ' + e.message, 'error'))
@@ -972,7 +972,7 @@ const App = (() => {
 
     if (!_roomCode || !_playerId) return;
 
-    const btn = document.getElementById('btn-play-again');
+    const btn = document.querySelector('#screen-finished .btn-primary');
     if (btn) { btn.disabled = true; }
 
     try {
@@ -1467,12 +1467,6 @@ const App = (() => {
     if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'UNIRSE A SALA ▶'; }
   }
 
-  /* Cerrar (X) el resumen no abandona nada: solo esconde el panel y deja ver
-     la mesa de la última mano, que sigue montada detrás. */
-  function closeFinished() {
-    document.getElementById('screen-finished')?.classList.remove('activo');
-  }
-
   /* ══════════════════════════════════════════
      TOAST
      ══════════════════════════════════════════ */
@@ -1722,10 +1716,6 @@ const App = (() => {
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== destino) s.classList.remove('active');
     });
-    /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
-       la mesa (ver _showPhase('finished') en blackjack-game.js). Navegar a
-       cualquier pantalla real lo cierra. */
-    document.getElementById('screen-finished')?.classList.remove('activo');
     // Defensa extra: el menú nunca debe arrastrar la barra "Objetivo" de una partida
     // anterior (bug: al salir a mitad de partida podía quedar visible al hacer scroll).
     if (id === 'screen-menu') {
@@ -1802,7 +1792,6 @@ const App = (() => {
     copyLink,
     playAgain,
     showMenu,
-    closeFinished,
     showToast,
   };
 

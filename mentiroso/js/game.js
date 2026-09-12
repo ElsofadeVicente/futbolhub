@@ -712,7 +712,7 @@ function _reset(){
   clearTimeout(_botTimer);_botTimer=null;
   if(_unsub){_unsub();_unsub=null;}
   $('#overlay-reveal')?.classList.add('hidden');
-  $('#overlay-gameover')?.classList.remove('activo');
+  $('#overlay-gameover')?.classList.add('hidden');
   _clearSession();
 }
 
@@ -817,16 +817,16 @@ function _onRoomUpdate(room){
   switch(room.status){
     case'waiting':
       $('#overlay-reveal').classList.add('hidden');
-      $('#overlay-gameover').classList.remove('activo');
+      $('#overlay-gameover').classList.add('hidden');
       _renderLobby(room);
       break;
     case'playing':
       $('#overlay-reveal').classList.add('hidden');
-      $('#overlay-gameover').classList.remove('activo');
+      $('#overlay-gameover').classList.add('hidden');
       _renderGame(room);
       break;
     case'reveal':
-      $('#overlay-gameover').classList.remove('activo');
+      $('#overlay-gameover').classList.add('hidden');
       _renderGame(room);
       _renderReveal(room);
       break;
@@ -1631,7 +1631,7 @@ function _renderReveal(room){
 }
 
 function _renderFinished(room){
-  $('#overlay-gameover').classList.add('activo');
+  $('#overlay-gameover').classList.remove('hidden');
   $('#winner-name').textContent=room.winnerName||'—';
   const sb=$('#winner-scoreboard');sb.innerHTML='';
   Object.entries(room.players||{})
@@ -2075,11 +2075,6 @@ function boot(){
   $('#btn-practice')?.addEventListener('click',_startLocal);
   $('#btn-start')?.addEventListener('click',_startGame);
   $('#btn-menu')?.addEventListener('click',_leaveRoom);
-  /* Cerrar (X) no abandona la sala: solo esconde el panel y deja ver la
-     mesa final, que sigue montada detrás. */
-  $('#btn-gameover-close')?.addEventListener('click',()=>{
-    $('#overlay-gameover').classList.remove('activo');
-  });
   $('[data-action="leave-lobby"]')?.addEventListener('click',_leaveRoom);
   $('#btn-leave-game')?.addEventListener('click',()=>{
     if(confirm('¿Seguro que quieres abandonar la partida?'))_leaveRoom();

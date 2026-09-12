@@ -163,16 +163,6 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => {
     if (s !== destino) s.classList.remove('active');
   });
-  /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
-     la última ronda (ver mostrarFin). Navegar a cualquier pantalla real lo
-     cierra. */
-  document.getElementById('screen-end')?.classList.remove('activo');
-}
-
-/* Cerrar (X) no navega a ningún sitio: solo esconde el panel y deja ver el
-   mapa de la última ronda, que sigue montado detrás. */
-function closeFinished() {
-  document.getElementById('screen-end')?.classList.remove('activo');
 }
 
 /* ══════════════════════════════════════════════
@@ -591,7 +581,7 @@ function mostrarFin(alreadyPlayed = false) {
     container.appendChild(row);
   });
 
-  document.getElementById('screen-end').classList.add('activo');
+  showScreen('screen-end');
 
   /* Modo diario: stats/Firebase/guardado solo la primera vez del día */
   if (!alreadyPlayed) {
