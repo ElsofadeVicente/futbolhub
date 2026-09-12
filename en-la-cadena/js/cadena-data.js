@@ -17,6 +17,12 @@ const CadenaData = (() => {
   let suggestionItems    = [];
   let suggestionIndex    = -1;
 
+  // Nombres de equipo (normalizados) que al menos un jugador de la base
+  // lleva en su ficha. team-names.json trae también clubes sin ningún
+  // jugador asociado (canteras, equipos amateur...) que nunca podrían
+  // validarse como respuesta, así que no tiene sentido sugerirlos.
+  let teamsWithPlayers = null;
+
   /* ── Normalización ── */
   const norm = s =>
     s.toLowerCase()
@@ -43,6 +49,23 @@ const CadenaData = (() => {
 
   function filterTeams(teams) {
     return (teams || []).filter(t => !isFilialTeam(t));
+  }
+
+  // Se construye una sola vez, cuando todos los chunks de jugadores ya están
+  // en memoria (el countdown de 10s antes de empezar se encarga de eso). Si
+  // se llama antes, devuelve null y buildSuggestions no filtra por esto —
+  // mejor sugerir de más un instante que dejar la caja sin sugerencias.
+  function getTeamsWithPlayers() {
+    if (teamsWithPlayers) return teamsWithPlayers;
+    if (!_chunksLoaded) return null;
+    const set = new Set();
+    for (const chunk of Object.values(chunkCache)) {
+      for (const player of Object.values(chunk)) {
+        for (const t of filterTeams(player.teams)) set.add(norm(t));
+      }
+    }
+    teamsWithPlayers = set;
+    return set;
   }
 
   /* ── Chunk helpers (ahora contra Supabase, no contra archivos JSON) ── */
@@ -258,9 +281,11 @@ const CadenaData = (() => {
       renderSuggestions(finalItems, query);
 
     } else {
+      const validClubs = getTeamsWithPlayers();
       const candidates = [];
       for (const t of teamNames) {
         const n = norm(t);
+        if (validClubs && !validClubs.has(n)) continue;
         let cat;
         if      (n === q)                   cat = 0;
         else if (n.startsWith(q))           cat = 1;
