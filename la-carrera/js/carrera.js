@@ -974,7 +974,7 @@ async function _prepareAndPlay(date, saved) {
 
 function startGame() {
   _attempt = 1; _visible = 1; _ended = false; _won = false; _statsSaved = false; _attemptMarked = false;
-  elEnd.classList.remove('activo');
+  elEnd.classList.add('hidden');
   elIntro.classList.add('hidden');
   elGame.classList.remove('hidden');
   elNav.classList.remove('hidden');
@@ -1237,9 +1237,7 @@ function endGame() {
   setTimeout(showEnd, 500);
 }
 function showEnd() {
-  /* Ya no se esconde #game-screen: el resumen es un overlay encima (ver
-     css/resumen.css), y cerrarlo con la X deja ver la tabla de intentos tal
-     y como quedó. */
+  elGame.classList.add('hidden');
   if (_won) {
     elEndEmoji.textContent = _attempt === 1 ? '🏆' : (_attempt <= 3 ? '🥇' : '✅');
     elEndTitle.textContent = _attempt === 1 ? '¡A la primera!' : '¡Acertado!';
@@ -1254,14 +1252,11 @@ function showEnd() {
   elRevealName.textContent = _target.name;
 
   renderTable(elEndCareer, true);
-  elEnd.classList.add('activo');
+  elEnd.classList.remove('hidden');
   elNav.classList.remove('hidden');
   renderNav();
   setTimeout(openStats, 650);
 }
-/* Cerrar (X) no navega a ningún sitio: solo esconde el panel y deja ver la
-   tabla de intentos, que sigue montada detrás. */
-function closeEnd() { elEnd.classList.remove('activo'); }
 
 // ══════════════════════════════════════════════
 //  COMPARTIR
@@ -1290,7 +1285,6 @@ function bindModalEvents() {
   document.getElementById('stats-overlay').addEventListener('click', e => { if (e.target.id === 'stats-overlay') closeStats(); });
   document.getElementById('end-stats-btn').addEventListener('click', openStats);
   document.getElementById('share-btn').addEventListener('click', doShare);
-  document.getElementById('end-close-btn').addEventListener('click', closeEnd);
 }
 function openStats() { renderStatsModal(loadStats()); elStatsOverlay.classList.remove('hidden'); startCountdown(); }
 function closeStats() { elStatsOverlay.classList.add('hidden'); stopCountdown(); }

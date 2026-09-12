@@ -3495,7 +3495,7 @@ const App = (() => {
           '</div>';
       }).join('');
     }
-    _showFinishedOverlay();
+    _showScreen('screen-finished');
 
     const rankedBox = document.getElementById('ranked-result-box');
     if (room.isRanked && room.rankedMatchId) {
@@ -4201,24 +4201,12 @@ const App = (() => {
     document.querySelectorAll('.screen').forEach(s => {
       if (s !== destino) s.classList.remove('active');
     });
-    /* El resumen de fin de partida ya no es un .screen: es un overlay sobre
-       el tablero (ver _showFinishedOverlay). Navegar a cualquier pantalla
-       real lo cierra, para que "Jugar de nuevo"/"Menú" no lo dejen colgado
-       encima de la pantalla nueva. */
-    _hideFinishedOverlay();
   }
 
-  /* Panel de resumen: overlay sobre #screen-round, no una pantalla más. Cerrar
-     (la X) solo esconde el panel y deja ver el tablero de la última ronda. */
-  function _showFinishedOverlay() {
-    const el = document.getElementById('screen-finished');
-    if (el) el.classList.add('activo');
-  }
-  function _hideFinishedOverlay() {
-    const el = document.getElementById('screen-finished');
-    if (el) el.classList.remove('activo');
-  }
-  function closeFinished() { _hideFinishedOverlay(); }
+  /* La X de la tarjeta de resumen es solo estilo: hace lo mismo que "Menú",
+     no una cosa nueva. #screen-finished sigue siendo una pantalla más del
+     sistema .screen, como siempre. */
+  function closeFinished() { showMenu(); }
   function _currentScreen() {
     return [...document.querySelectorAll('.screen')].find(s=>s.classList.contains('active'))?.id||'';
   }

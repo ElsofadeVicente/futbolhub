@@ -118,6 +118,7 @@
   font-size: 1rem;
   font-weight: 700;
   line-height: 1;
+  text-decoration: none;
   cursor: pointer;
   z-index: 2;
   transition: background .12s, color .12s, border-color .12s;

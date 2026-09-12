@@ -455,12 +455,19 @@ a      { text-decoration: none; }
 }
 
 /* ══════════════════════════════════════════════
-   PANTALLA FIN
+   PANTALLA FIN — sigue siendo un .screen normal, como siempre
    ══════════════════════════════════════════════ */
-/* El marco (borde, sombra, ancho, fondo semitransparente, centrado) vienen
-   ahora de css/resumen.css (.resumen-overlay/.resumen-caja): #screen-end es
-   un overlay sobre la última ronda, no una pantalla que las sustituya —
-   mismo tamaño de cuadrado que en los otros 13 juegos, sin excepción aquí. */
+#screen-end {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+#screen-end.active { display: flex; }
+/* El marco de la tarjeta (borde, sombra, ancho) viene de css/resumen.css
+   (.resumen-caja) — mismo tamaño de cuadrado que en el resto de juegos. */
 
 .end-wrap {
   width: 100%;
