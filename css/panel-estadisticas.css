@@ -1,0 +1,51 @@
+/* =============================================================================
+   PANEL-ESTADISTICAS.CSS — el modal de "Estadísticas" (jugadas/aciertos/racha)
+   FutbolHUB · 2026-09-12
+
+   Solo 3 de los 14 juegos tienen esta pantalla, separada del panel de
+   victoria/derrota: La Carrera y En el Top (#stats-overlay, prácticamente
+   idénticos ya) y Wordle (#wd-stats-overlay, con un marco más fino). Este
+   archivo lleva a Wordle a la misma medida que los otros dos: mismo borde,
+   misma sombra, mismo ancho, mismo estilo de X.
+
+   NO TOCAR .np-modal NI .close-btn EN GENERAL — es la trampa que rompió el
+   intento de esta misma tarde (ver CLAUDE.md). Esas dos clases son la base
+   compartida de VARIOS modales por juego, no solo el de Estadísticas:
+
+     · En el Top: .np-modal también la usa #giveup-overlay (confirmar rendición).
+     · Wordle: .np-modal también la usan #wd-rules-overlay (Cómo se juega) Y
+       #wd-result-overlay (el panel de resultado — no se toca bajo ningún
+       concepto, y encima reutiliza las mismas clases de contenido
+       .wd-stats-nums/.wd-dist/.wd-stats-kicker que el modal de Estadísticas).
+
+   Por eso cada regla de aquí va anclada al ID del contenedor de Estadísticas
+   (#stats-overlay / #wd-stats-overlay), nunca a la clase sola: con "#id .clase"
+   la especificidad ya gana sola a la regla genérica, así que ni siquiera hace
+   falta jugar con el orden de carga del <link>. Ningún otro modal del mismo
+   juego puede verse afectado, sea cual sea el orden en que se cargue esta hoja.
+
+   El CONTENIDO de dentro (números, etiquetas, gráfico de barras) no se toca:
+   cada juego sigue mostrando sus propios datos con su propio layout interno.
+   ============================================================================= */
+
+#stats-overlay .np-modal,      /* La Carrera y En el Top comparten este id */
+#wd-stats-overlay .np-modal {  /* Wordle */
+  border: 2px solid var(--bd-c, var(--np-ink));
+  box-shadow: var(--sh-x, 5px) var(--sh-y, 5px) var(--sh-b, 0) var(--sh-c, var(--np-ink));
+  padding: 28px 26px;
+  max-width: 460px;
+  /* Límite de alto con scroll interno: ninguno de los tres lo tenía a la vez
+     que el borde grueso, y en un móvil bajo el gráfico de barras + los 4-5
+     números podían no caber. Con esto nunca desborda la pantalla. */
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+#stats-overlay .close-btn,
+#wd-stats-overlay .close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+  top: 12px;
+  right: 14px;
+}
