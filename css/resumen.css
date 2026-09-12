@@ -84,10 +84,27 @@
    Cuadrada, no círculo: mismo lenguaje visual que el resto del marco.
    Negra sobre papel, con borde negro — no gris (Superdraft) ni fina (Wordle,
    La Carrera/En el Top). En hover se invierte a rojo, igual que .fh-volver y
-   que el resto de botones de cierre del sitio. */
+   que el resto de botones de cierre del sitio.
+
+   STICKY, no absolute: cuando el contenido de la tarjeta es más alto que la
+   pantalla (el top 10 de En el Top, el detalle de Bingo…), .resumen-caja
+   scrollea por dentro. Con `position:absolute` la X es un hijo más de ese
+   scroll y se iba hacia arriba en cuanto bajabas a leer — te quedabas sin
+   forma de cerrar sin volver a subir. Sticky la deja clavada arriba SIEMPRE,
+   pegada al borde de la propia tarjeta (que es su ancestro con scroll), no
+   al viewport entero.
+
+   `float` y `align-self` puestos los dos a la vez a propósito: la tarjeta
+   tiene dos maquetaciones según el juego (bloque normal con text-align, o
+   flex-column en 5 de 5/Blackjack/Tres en Raya/Wordle) y cada propiedad solo
+   hace efecto en la suya — float no pinta nada en un flex item y align-self
+   no pinta nada fuera de flex, así que no hace falta detectar cuál es. */
 .resumen-cerrar {
-  position: absolute;
-  top: 10px; right: 10px;
+  position: sticky;
+  top: 10px;
+  float: right;
+  align-self: flex-end;
+  margin: -26px -16px 0 10px;
   width: 32px; height: 32px;
   display: flex;
   align-items: center;
@@ -102,6 +119,7 @@
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
+  z-index: 2;
   transition: background .12s, color .12s, border-color .12s;
 }
 .resumen-cerrar:hover {
