@@ -961,6 +961,16 @@ async function _prepareAndPlay(date, saved) {
   };
   _total   = career.length;
 
+  /* La carrera entera (todos los clubIds) y la foto del jugador ya se
+     conocen aquí, mucho antes de que le toque a cada una salir en
+     pantalla: cada escudo se revela club a club según se acierta, y la
+     foto solo al terminar. Sin esto, el <img> del escudo no se crea (y el
+     navegador no lo pide) hasta que la fila deja de estar "locked" —
+     justo cuando el jugador ya está mirando el hueco. Se precargan EN
+     ORDEN DE APARICIÓN: los escudos según se van a revelar, la foto la
+     última (es lo último que se ve, al final de la partida). */
+  precargarImagenesCarrera(_target);
+
   elLoading.classList.add('hidden');
 
   if (saved) {   // partida de hoy ya jugada, sin carrera guardada (formato viejo)
@@ -996,6 +1006,18 @@ function updateBadge() { elAttempt.textContent = `Intento ${_attempt} / ${_total
 function crestImg(clubId) {
   if (!clubId) return '<span class="crest-spacer"></span>';
   return `<img src="${fhImgUrl(`${CREST_BASE}${clubId}.png`)}" alt="" loading="lazy" data-fallback="hide-on-error">`;
+}
+
+/* window.FHPrecarga la trae js/precarga-fotos.js (compartido con el resto
+   de la web); si por lo que sea no ha cargado, esto no hace nada y el juego
+   sigue exactamente igual que antes. */
+function precargarImagenesCarrera(target) {
+  if (!window.FHPrecarga) return;
+  const urls = target.career
+    .map(row => row.clubId ? fhImgUrl(`${CREST_BASE}${row.clubId}.png`) : null)
+    .filter(Boolean);
+  if (target.img) urls.push(fhImgUrl(target.img));
+  FHPrecarga.encolar(urls);
 }
 
 function renderTable(container, revealAll) {

@@ -1115,7 +1115,17 @@ function crucPintarMapa(fundido) {
        donde está el jugador. */
     const celebra = crucCelebrar
         && mapa.querySelector(`.cruc-nodo[data-nivel="${crucCelebrar.nivel}"]`);
-    requestAnimationFrame(() => {
+    /* SIN requestAnimationFrame: leer offsetTop ya fuerza el layout, así que
+       esperar un frame no hacía falta para nada — solo dejaba un frame de
+       por medio en el que el mapa ya estaba construido pero SEGUÍA oculto
+       (cruc-mapa-cargando), y ese frame llegaba a pintarse: un rectángulo de
+       césped liso, sin campo ni nodos, durante unas milésimas antes de que
+       apareciera todo de golpe. Colocando el scroll y descubriendo el mapa
+       en el MISMO tick en el que se construye, ese frame intermedio no
+       llega a existir nunca. try/finally por si `crucFestejarEnMapa` o el
+       cálculo del scroll lanzan: el mapa tiene que descubrirse pase lo que
+       pase, o se queda invisible para siempre. */
+    try {
         /* El scroll VA PRIMERO: crucActualizarBarra mira el centro del scroll
            para decir en qué división estás, así que con scrollTop aún a 0
            mostraría la división de arriba (Leyenda). */
@@ -1129,13 +1139,14 @@ function crucPintarMapa(fundido) {
         }
         crucActualizarBarra();
         crucVigilarAnchoMapa();
+    } finally {
         /* Ya colocado el scroll: se descubre el mapa (el fundido oculta el
            salto a la posición del jugador / la celebración). */
         mapa.classList.remove('cruc-mapa-cargando');
-        /* Despues de colocar el scroll: si se lanza antes, la tarjeta se
-           revela mientras el mapa todavia se esta situando y te la pierdes. */
-        crucRevelarTarjetas();
-    });
+    }
+    /* Despues de colocar el scroll: si se lanza antes, la tarjeta se
+       revela mientras el mapa todavia se esta situando y te la pierdes. */
+    crucRevelarTarjetas();
     /* Y una segunda via por temporizador, que NO es por si acaso:
        requestAnimationFrame no corre con la pestana oculta, asi que un mapa
        pintado en segundo plano (vuelves de otra app justo despues de pasar un
