@@ -855,11 +855,13 @@ const Sync = (() => {
   }
 
   async function startGame(code, roundData) {
-    const {update}=FB();
+    const {update,serverTimestamp}=FB();
     await update(_ref(`${ROOMS_PATH}/${code}`),{
       status:'playing', round:1,
       roundSeed:roundData.seed, restrictions:roundData.restrictions,
-      roundStartAt:Date.now(), submissions:{}, lockedPlayers:{}, doneCount:0, results:null,
+      /* Hora del SERVIDOR, no Date.now() del anfitrion: asi todos los clientes
+         miden el tiempo restante contra el mismo reloj (ver _now / serverTimeOffset). */
+      roundStartAt:serverTimestamp(), submissions:{}, lockedPlayers:{}, doneCount:0, results:null,
       pointsToWin: roundData.pointsToWin ?? 7,
       roundSecs:   roundData.roundSecs   ?? 60,
       isSuddenDeath: false, suddenDeathPlayers: [],
@@ -868,13 +870,14 @@ const Sync = (() => {
   }
 
   async function nextRound(code, roundNum, roundData, updatedPlayers) {
-    const {update}=FB();
+    const {update,serverTimestamp}=FB();
     const batch = {};
     batch[`${ROOMS_PATH}/${code}/status`]             = 'playing';
     batch[`${ROOMS_PATH}/${code}/round`]              = roundNum;
     batch[`${ROOMS_PATH}/${code}/roundSeed`]          = roundData.seed;
     batch[`${ROOMS_PATH}/${code}/restrictions`]       = roundData.restrictions;
-    batch[`${ROOMS_PATH}/${code}/roundStartAt`]       = Date.now();
+    /* Hora del SERVIDOR (ver startGame): que todos midan contra el mismo reloj. */
+    batch[`${ROOMS_PATH}/${code}/roundStartAt`]       = serverTimestamp();
     batch[`${ROOMS_PATH}/${code}/submissions`]        = {};
     batch[`${ROOMS_PATH}/${code}/lockedPlayers`]      = {};
     batch[`${ROOMS_PATH}/${code}/doneCount`]          = 0;
@@ -1246,6 +1249,24 @@ const App = (() => {
   let _timerTotalSecs = null;
   const ROUND_SECS    = 60;
   const POINTS_WIN    = 7;   // default
+
+  /* RELOJ DE SERVIDOR (2026-09-14).
+     El cronometro de la ronda comparaba `Date.now()` de un dispositivo contra
+     el `roundStartAt` escrito por OTRO dispositivo. Si los dos relojes no
+     coinciden (algo tan comun como un movil con la hora ~1 min desfasada), el
+     que va adelantado veia una ronda recien empezada como YA vencida: el
+     detector `isResume` saltaba, ponia el cronometro a 0 y bloqueaba el input,
+     y al no ser anfitrion nadie revivia la ronda -- justo el "temporizador a 0
+     y no deja escribir" reportado. Aparecia sobre todo en la SEGUNDA partida
+     porque "jugar de nuevo" cambia quien es el anfitrion, y con el el reloj de
+     referencia. Firebase publica el desfase con su servidor en
+     `.info/serverTimeOffset`; `_now()` devuelve la hora de servidor estimada,
+     igual en todos los dispositivos. Los `roundStartAt` se escriben con
+     `serverTimestamp()` (el servidor pone la hora), asi que ambos extremos
+     viven en el mismo reloj y el desfase entre dispositivos deja de importar.
+     Mismo patron que El Mentiroso (ver CLAUDE.md). */
+  let _serverTimeOffset = 0;
+  function _now() { return Date.now() + _serverTimeOffset; }
 
   let _publicLobbyTimer     = null;
   let _publicLobbyWarnTimer = null;
@@ -1678,6 +1699,19 @@ const App = (() => {
     _showScreen('screen-menu');
     _preloadDataInBackground();
     _setupAccountName();
+
+    /* Suscribirse al desfase con el reloj del servidor de Firebase. Con esto
+       `_now()` da la hora de servidor y el cronometro de la ronda deja de
+       depender de que los relojes de los dos dispositivos coincidan. */
+    try {
+      const fb = window._FB;
+      if (fb && fb.onValue && fb.ref && fb.db) {
+        fb.onValue(fb.ref(fb.db, '.info/serverTimeOffset'), snap => {
+          const off = snap.val();
+          if (typeof off === 'number' && isFinite(off)) _serverTimeOffset = off;
+        });
+      }
+    } catch (e) { console.warn('[5 de 5] serverTimeOffset no disponible:', e); }
 
     /* Nombres de los jugadores automáticos: se piden ya para que la
        primera sala pública no tenga que esperar a la red. */
@@ -2837,22 +2871,30 @@ const App = (() => {
       }
       /* Normalmente "ahora" SÍ es el inicio real: todos los clientes llegan
          aquí unos segundos después de room.roundStartAt (lo que tarda la
-         animación de restricciones) y ese margen es igual para todos.
-         Pero si el móvil mató la pestaña de verdad a mitad de ronda (una
-         llamada) y Sync.tryReconnect nos devuelve YA en 'playing', este
-         mismo camino se ejecuta desde cero con room.round ya avanzado: sin
-         esto, "ahora" nos regalaría un cronómetro de secs completos (y a
-         los bots con él) aunque al reloj real ya casi no le quedara nada.
-         Con eso el reveal solo podía llegar por el rescate de 12s del
-         vigilante en vez de por el propio cronómetro — o nunca, si el
-         vigilante también arrancaba tarde. Usar roundStartAt cuando el
-         hueco es mayor de lo que la animación explica arranca el timer ya
-         con el tiempo real que queda (o en 0, disparando el reveal de
-         inmediato por el camino normal). */
-      const startedAt = Date.now();
-      const roomStart = Number(room.roundStartAt) || 0;
-      const isResume  = roomStart > 0 && (startedAt - roomStart) > 8000;
-      const effectiveStart = isResume ? roomStart : startedAt;
+         animación de restricciones) y ese margen es igual para todos. Pero si
+         el móvil mató la pestaña a mitad de ronda (una llamada) y
+         Sync.tryReconnect nos devuelve YA en 'playing', este mismo camino se
+         ejecuta desde cero con la ronda avanzada: hay que arrancar el reloj con
+         el tiempo que REALMENTE queda, no regalar secs completos.
+
+         Cuánto lleva abierta la ronda se mide contra el reloj del SERVIDOR
+         (skew-proof): roundStartAt se escribió con serverTimestamp y _now() da
+         la hora de servidor, así que el número es correcto en todos los
+         dispositivos por muy desfasada que tengan la hora local. Antes esto era
+         Date.now() de un cliente contra el roundStartAt de OTRO: con los relojes
+         desfasados salía un elapsed enorme y el cronómetro arrancaba ya a 0,
+         bloqueando el input en una ronda recién empezada (el bug reportado). */
+      const roomStart     = Number(room.roundStartAt) || 0;
+      const elapsedByRoom = roomStart > 0 ? Math.max(0, _now() - roomStart) : 0;
+      /* Solo tratamos la ronda como "reanudada" (perdimos tiempo por un corte /
+         segundo plano) si de verdad lleva rato abierta. En una ronda fresca
+         procesada al momento, elapsedByRoom ≈ lo que dura la animación (~5s),
+         por debajo del umbral, así que se arranca con el tiempo completo. */
+      const isResume = elapsedByRoom > 8000;
+      /* effectiveStart va en el reloj LOCAL (Date.now()): _startTimer y los bots
+         cuentan con Date.now(), así que el inicio de servidor se pasa a local
+         restando el tiempo ya transcurrido. */
+      const effectiveStart = isResume ? (Date.now() - elapsedByRoom) : Date.now();
       _startTimer(effectiveStart, secs);
 
       /* Los bots arrancan su reloj en el mismo instante que el resto:
@@ -3030,7 +3072,75 @@ const App = (() => {
        valen aunque el reloj local se haya quedado parado en segundo plano. */
     const inicio = Number(room.roundStartAt || 0);
     const secs   = Number(room.roundSecs || ROUND_SECS);
-    return inicio > 0 && Date.now() > inicio + secs * 1000 + 2000;
+    /* _now() (hora de servidor) contra roundStartAt (también de servidor): sin
+       esto, un reloj local desfasado cerraba rondas antes de tiempo o no las
+       cerraba nunca. */
+    return inicio > 0 && _now() > inicio + secs * 1000 + 2000;
+  }
+
+  /* ════════════════════════════════════════
+     RED DE SEGURIDAD: NUNCA QUEDARSE BLOQUEADO EN UNA RONDA VIVA (2026-09-14)
+
+     Aunque el reloj de servidor arregla la causa conocida (ver _now), esto es
+     la garantía de último recurso, al estilo de pantalla-viva.js: si por lo
+     que sea acabo con el input deshabilitado y el cronómetro parado en una
+     ronda que SIGUE viva (animación que no terminó, onComplete que no llegó,
+     cronómetro que se puso a 0 por un desfase transitorio…), este repaso lo
+     detecta y revive la ronda en vez de dejarla clavada para siempre. Solo
+     actúa cuando la ronda de verdad tiene tiempo por delante; si ya se acabó,
+     no toca nada y deja que el cierre normal la lleve a resultados. */
+  function _repararRondaSiAtascada(room) {
+    if (_isLocal || !room || room.status !== 'playing') return;
+    if (room.round !== _round) return;             // aún no sincronizados con la ronda
+    if (_currentScreen() !== 'screen-round') return;
+    if (_revealTriggered) return;                  // la ronda se está cerrando
+    if (_submitted) return;                        // ya respondimos: el input debe seguir bloqueado
+    /* Ya hay respuesta nuestra en la sala (p. ej. tras reconectar): no reabrir. */
+    if (room.submissions && room.submissions[_playerId]) return;
+    /* Espectador de muerte súbita: no juega esta ronda. */
+    if (_isSuddenDeath && !_suddenDeathPlayers.includes(_playerId)) return;
+
+    const roomStart     = Number(room.roundStartAt) || 0;
+    const secs          = _isSuddenDeath ? SUDDEN_DEATH_SECS : (Number(room.roundSecs) || ROUND_SECS);
+    const elapsedByRoom = roomStart > 0 ? Math.max(0, _now() - roomStart) : 0;
+    /* Todavía en la ventana de la animación de restricciones: no pelear con
+       ella (dispara su propio onComplete que habilita el input). */
+    if (roomStart > 0 && elapsedByRoom < 8000) return;
+    const remaining = secs - Math.floor(elapsedByRoom / 1000);
+    if (remaining <= 1) return;                    // la ronda ya se acabó → que la cierre el vigilante
+
+    const pi   = document.getElementById('player-input');
+    const sb   = document.getElementById('submit-btn');
+    const grid = document.getElementById('restrictions-grid');
+
+    /* Si el grid perdió las restricciones (animación que nunca corrió), pintarlas
+       ya visibles, sin animación. */
+    if (grid && _restrictions.length &&
+        grid.querySelectorAll('.restriction-card.visible').length === 0) {
+      grid.innerHTML = _restrictions.map(r => {
+        const iconHtml = r.imgUrl
+          ? `<img class="restriction-img" src="${_escHtml(fhImgUrl(r.imgUrl))}"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'"
+                 alt="">
+             <span class="restriction-icon-fallback" style="display:none">${_escHtml(r.icon||'❓')}</span>`
+          : `<span class="restriction-icon-fallback">${_escHtml(r.icon||'❓')}</span>`;
+        return `<div class="restriction-card visible">
+          <div class="restriction-icon">${iconHtml}</div>
+          <div class="restriction-label">${_escHtml(r.label)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    let reparado = false;
+    if (pi && pi.disabled) { pi.disabled = false; reparado = true; }
+    if (sb && sb.disabled) { sb.disabled = false; reparado = true; }
+    /* El cronómetro no está corriendo (o se paró en 0): relanzarlo con el
+       tiempo real que queda, en reloj local. */
+    if (_timerStartAt === null) {
+      _startTimer(Date.now() - elapsedByRoom, secs);
+      reparado = true;
+    }
+    if (reparado) console.warn('[App] Ronda revivida por la red de seguridad (restaban', remaining, 's)');
   }
 
   function _roundWatchdog() {
@@ -3042,6 +3152,8 @@ const App = (() => {
        eternamente a alguien que no va a volver. Y se repinta el boton de pasar
        de ronda, que es lo que deja la pantalla de resultados sin salida. */
     if (room) { _failoverHost(room); _sincronizarBotonSiguienteRonda(room); }
+    /* Y si la ronda sigue viva pero yo me quedé con el input bloqueado, revivirla. */
+    if (room) _repararRondaSiAtascada(room);
     if (!room || room.status !== 'playing' || _revealTriggered) { _rondaAtascadaDesde = 0; return; }
     if (!room.players || !room.players[_playerId])            { _rondaAtascadaDesde = 0; return; }
     if (!_rondaListaParaCerrar(room))                          { _rondaAtascadaDesde = 0; return; }
