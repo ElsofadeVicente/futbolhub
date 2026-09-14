@@ -39,7 +39,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que 5 de 5/Blackjack) -->
   <link rel="stylesheet" href="../5-de-5/css/style.css?v=20260906a">
-  <link rel="stylesheet" href="css/style.css?v=20260814a">
+  <link rel="stylesheet" href="css/style.css?v=20260914a">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
@@ -187,13 +187,14 @@
 
   <div class="menu-wrap">
     <div class="menu-tabs">
-      <button class="menu-tab active" id="tab-local">🎮 Local</button>
+      <button class="menu-tab active" id="tab-diario">📅 Diario</button>
+      <button class="menu-tab"        id="tab-local">🎮 Local</button>
       <button class="menu-tab"        id="tab-private">🔒 Privada</button>
       <button class="menu-tab"        id="tab-public">🌐 Pública</button>
     </div>
     <script>
       (function () {
-        var tabs = ['local', 'private', 'public'];
+        var tabs = ['diario', 'local', 'private', 'public'];
         tabs.forEach(function (tab) {
           var btn = document.getElementById('tab-' + tab);
           if (!btn) return;
@@ -213,8 +214,27 @@
       })();
     </script>
 
+    <!-- Diario -->
+    <div id="panel-diario" class="menu-panel active">
+      <p class="panel-hint">La misma rejilla para todo el mundo, sin límite de intentos hasta completarla — pero si la dejas a medias, cuenta como derrota y corta la racha.</p>
+      <div class="tr-diario-card">
+        <div class="tr-diario-stat">
+          <span class="tr-diario-stat-num" id="diario-card-racha">0</span>
+          <span class="tr-diario-stat-label">🔥 Racha</span>
+        </div>
+        <div class="tr-diario-card-sep"></div>
+        <div class="tr-diario-stat">
+          <span class="tr-diario-stat-num" id="diario-card-record">0</span>
+          <span class="tr-diario-stat-label">🏆 Récord</span>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-diario-play" onclick="App.startDiario()">JUGAR LA REJILLA DE HOY ▶</button>
+      <button class="stats-link-btn" onclick="App.openDiarioStats()">📊 Ver estadísticas</button>
+      <p class="menu-error hidden" id="error-diario"></p>
+    </div>
+
     <!-- Local -->
-    <div id="panel-local" class="menu-panel active">
+    <div id="panel-local" class="menu-panel">
       <p class="panel-hint">Dos jugadores por turnos en la misma pantalla</p>
       <div class="name-duo">
         <input id="input-p1-name" class="menu-input" type="text" placeholder="Jugador 1" maxlength="16" />
@@ -229,8 +249,7 @@
           <button class="settings-btn" aria-label="Sumar una victoria para ganar" onclick="App.adjustTarget('local', 1)">+</button>
         </div>
       </div>
-      <button class="btn-primary" onclick="App.startDiario()">REJILLA DEL DÍA ▶</button>
-      <button class="btn-secondary" onclick="App.startLocalGame()">JUGAR ▶</button>
+      <button class="btn-primary" onclick="App.startLocalGame()">JUGAR ▶</button>
       <p class="menu-error hidden" id="error-local"></p>
     </div>
 
@@ -325,6 +344,8 @@
 
 <!-- ═══════════ PANTALLA 3: PARTIDA ═══════════ -->
 <div id="screen-game" class="screen">
+  <button class="fh-volver" id="btn-game-back" onclick="App.leaveRoom()">← Volver</button>
+
   <div class="game-topbar">
     <div class="turn-timer hidden" id="turn-timer">30</div>
     <div class="scorebox" id="score-p1">
@@ -395,6 +416,16 @@
   </div>
 </div>
 
+<!-- Estadísticas de la rejilla del día -->
+<div id="diario-stats-overlay" class="pick-overlay hidden">
+  <div class="pick-card stats-card">
+    <button class="pick-close" onclick="App.closeDiarioStats()" aria-label="Cerrar">✕</button>
+    <p class="stats-kicker">TRES EN RAYA · REJILLA DEL DÍA</p>
+    <h2 class="stats-heading">Estadísticas</h2>
+    <div class="stats-nums" id="diario-stats-nums"></div>
+  </div>
+</div>
+
 <!-- Cuenta atrás / carga -->
 <div id="loading-overlay" class="loading-overlay">
   <div class="loading-inner">
@@ -413,7 +444,8 @@
     var methods = [
       'setTab','startLocalGame','startDiario','createRoom','joinRoom','findPublicRoom',
       'leaveRoom','copyLink','skipTurn','proposeDraw','respondDraw','pickCell','closePick',
-      'submitAnswer','selectAutocomplete','selectAndSubmit','playAgain','showMenu','showToast'
+      'submitAnswer','selectAutocomplete','selectAndSubmit','playAgain','showMenu','showToast',
+      'openDiarioStats','closeDiarioStats'
     ];
     var proxy = {};
     methods.forEach(function (m) {
@@ -438,7 +470,7 @@
 <script src="../js/supabase-config.js?v=20260912b"></script>
 <script src="../js/auth.js?v=20260911b"></script>
 <script src="../js/progress-sync.js?v=20260911b"></script>
-<script src="../js/hub-streaks.js?v=20260911b"></script>
+<script src="../js/hub-streaks.js?v=20260914a"></script>
 <script src="../js/img-heal.js?v=20260903a"></script>
 <script src="../js/profile-widget.js?v=20260912b"></script>
 <script src="../js/cabecera.js?v=20260903b"></script>
@@ -484,7 +516,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260912b';
+  s.src = 'js/script.js?v=20260914a';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }

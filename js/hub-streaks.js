@@ -192,13 +192,18 @@
       },
     },
     {
+      /* Sin límite de intentos desde 2026-09-14: terminar SIEMPRE es 9 de 9
+         (solo se rellena una casilla al acertar, así que un tablero completo
+         implica los 9 aciertos). "Ganar" ya no admite término medio — antes
+         (con 9 intentos y sin poder reintentar un fallo) 6 de 9 contaba como
+         día ganado; ahora, si no llegas a las 9, es que lo dejaste a medias. */
       href: 'tres-en-raya',
       label: 'Tres en Raya',
       today: madridToday,
       stateFor(day) {
         const s = readJSON(`tresenraya_day_${day}`);
         if (!s || typeof s.hits !== 'number') return null;
-        return (s.completed !== false && s.hits >= 6) ? 'win' : 'loss';
+        return (s.completed !== false && s.hits === 9) ? 'win' : 'loss';
       },
       detailFor(day) {
         const s = readJSON(`tresenraya_day_${day}`);

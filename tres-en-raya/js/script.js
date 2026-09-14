@@ -249,8 +249,18 @@ window._AppReal = (function () {
   }
 
   function renderScore() {
+    /* Botón de volver de la partida: "Salir" cuando abandonar de verdad saca
+       a alguien más de la sala (online), "Volver" el resto de las veces. */
+    const backBtn = $('btn-game-back');
+    if (backBtn && G) backBtn.textContent = G.mode === 'online' ? '← Salir' : '← Volver';
+
     /* En el diario el marcador de dos jugadores no significa nada: se
-       reaprovecha para enseñar aciertos e intentos, que es lo que se mira. */
+       reaprovecha para enseñar aciertos e intentos, que es lo que se mira.
+       "Saltar turno" y "Ronda en tablas" tampoco pintan nada aquí (no hay
+       turno que ceder ni rival con quien pactar tablas), así que se ocultan
+       en vez de dejarlos ahí solo para avisar con un toast al pulsarlos. */
+    const acciones = $('btn-skip') ? $('btn-skip').closest('.game-actions') : null;
+    if (acciones) acciones.classList.toggle('hidden', G && G.mode === 'diario');
     if (G && G.mode === 'diario') {
       const hits = G.board.filter(Boolean).length;
       $('name-p1').textContent = 'Aciertos';
@@ -265,7 +275,7 @@ window._AppReal = (function () {
       const si2 = $('series-info');
       if (si2) si2.textContent = G.over
         ? 'Vuelve mañana a por la siguiente'
-        : `Te quedan ${G.intentos} intento${G.intentos === 1 ? '' : 's'}`;
+        : `Sin límite de intentos — llevas ${G.intentos || 0}`;
       return;
     }
     const series = G.series || [0, 0];
@@ -333,18 +343,24 @@ window._AppReal = (function () {
     showToast(`Ronda ${G.gameNum} · empieza ${G.players[starter].name}`);
   }
 
-  /* ═══════════════ REJILLA DEL DIA (2026-09-06) ═══════════════
+  /* ═══════════════ REJILLA DEL DIA (2026-09-06, sin límite desde 2026-09-14) ═══════════════
      Tres en Raya era el unico juego del cuarteto de restricciones que no se
      podia jugar solo: su modo «local» son dos personas en la misma pantalla,
      y no tiene bot. Ahora hay una rejilla diaria, la misma para todo el mundo,
-     que se juega en solitario con NUEVE intentos — el formato del Immaculate
-     Grid, que es de donde viene la mecanica.
+     que se juega en solitario y en su PROPIA pestaña del menu (antes vivia
+     como un boton dentro de «Local»).
+
+     Sin limite de intentos (decision del usuario, 2026-09-14): se puede
+     fallar las veces que haga falta hasta completar las 9 casillas, así que
+     terminar SIEMPRE es un 9 de 9. Lo unico que cuenta como derrota — y corta
+     la racha del hub — es EMPEZAR (hacer al menos un intento) y no acabar:
+     se guarda el progreso tras cada intento (guardarDia) con completed:false,
+     y js/hub-streaks.js ya trata eso como fallo mientras no se complete.
 
      Reutiliza buildGrid()/renderBoard()/pickCell() tal cual: lo unico propio
-     es la condicion de final (se acaban los intentos o se llenan las nueve) y
-     que no hay turnos que alternar. */
-  const DIARIO_INTENTOS = 9;
-  const DIARIO_RACHA    = 6;   // aciertos que cuentan como dia ganado en el hub
+     es la condicion de final (el tablero se llena entero) y que no hay turnos
+     que alternar. G.intentos deja de ser "los que quedan" y pasa a ser "los
+     que se han gastado", sin techo. */
 
   function hoyMadrid() {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
@@ -364,12 +380,21 @@ window._AppReal = (function () {
   function leerDia(f) {
     try { return JSON.parse(localStorage.getItem(claveDia(f)) || 'null'); } catch { return null; }
   }
+  /* Aritmetica de calendario pura (sin husos), igual que shiftDays() de
+     js/hub-streaks.js — se duplica aqui porque ese archivo no expone nada
+     mas alla de FHStreaks.list(). */
+  function shiftDia(f, delta) {
+    const [y, m, d] = f.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() + delta);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
   function guardarDia() {
     if (!G || G.mode !== 'diario') return;
     try {
       localStorage.setItem(claveDia(), JSON.stringify({
         hits: G.board.filter(Boolean).length,
-        intentos: DIARIO_INTENTOS - (G.intentos || 0),
+        intentos: G.intentos || 0,   // intentos GASTADOS, sin techo
         completed: !!G.over,
         seed: G.seed, min: G.min,
         board: G.board.map(c => c ? { id: c.id, name: c.name, img: c.img || null } : null),
@@ -397,6 +422,7 @@ window._AppReal = (function () {
     if (!dataReady) { showToast('Cargando datos…'); return; }
     const ya = leerDia();
     if (ya && ya.completed) { mostrarDiaJugado(ya); return; }
+    if (ya && typeof ya.hits === 'number') { reanudarDiario(ya); return; }
     const res = rejillaDelDia();
     if (!res) { showToast('No se ha podido montar la rejilla de hoy', 'err'); return; }
     G = {
@@ -408,12 +434,44 @@ window._AppReal = (function () {
       over: false, matchOver: false, winner: null, roundWinner: null, winLine: null, passes: 0,
       mode: 'diario',
       series: [0, 0], targetWins: 1, gameNum: 1,
-      intentos: DIARIO_INTENTOS,
+      intentos: 0,
     };
     try { window._ttt = G; } catch (e) {}
     showScreen('screen-game');
     stopTurnTimer();
-    $('game-hint').textContent = 'Rejilla del día · 9 intentos, uno por casilla. Un fallo también gasta intento.';
+    $('game-hint').textContent = 'Rejilla del día · sin límite de intentos. Ojo: si la dejas a medias cuenta como derrota.';
+    renderScore(); renderBoard();
+  }
+
+  /* Recupera una rejilla empezada hoy pero sin terminar (se salió a medias,
+     cerró la pestaña…). Sin esto, reabrir el diario tiraba las casillas ya
+     acertadas y montaba un tablero vacío desde cero — antes era un mal menor
+     porque solo se perdían intentos de una bolsa de 9; ahora que se puede
+     tardar varias sesiones en completarla, perder el progreso sería peor. */
+  function reanudarDiario(d) {
+    const grid = (typeof d.seed === 'number') ? buildGrid(d.seed, d.min || MIN_CELL) : null;
+    if (!grid) {
+      showToast('No se pudo recuperar tu partida de hoy, se reinicia', 'err');
+      try { localStorage.removeItem(claveDia()); } catch (e) {}
+      startDiario();
+      return;
+    }
+    const board = (d.board || []).map(c => c ? { owner: 0, id: c.id, name: c.name, img: c.img || null } : null);
+    while (board.length < 9) board.push(null);
+    G = {
+      grid, seed: d.seed, min: d.min || MIN_CELL,
+      board,
+      turn: 0, startedBy: 0,
+      players: [{ name: 'Tú' }, { name: '' }],
+      usedIds: new Set(board.filter(Boolean).map(c => String(c.id))),
+      over: false, matchOver: false, winner: null, roundWinner: null, winLine: null, passes: 0,
+      mode: 'diario', series: [0, 0], targetWins: 1, gameNum: 1,
+      intentos: d.intentos || 0,
+    };
+    try { window._ttt = G; } catch (e) {}
+    showScreen('screen-game');
+    stopTurnTimer();
+    $('game-hint').textContent = 'Sigues con la rejilla de hoy · sin límite de intentos.';
     renderScore(); renderBoard();
   }
 
@@ -427,24 +485,80 @@ window._AppReal = (function () {
       players: [{ name: 'Tú' }, { name: '' }],
       usedIds: new Set((d.board || []).filter(Boolean).map(c => String(c.id))),
       over: true, matchOver: true, winner: null, roundWinner: null, winLine: null, passes: 0,
-      mode: 'diario', series: [0, 0], targetWins: 1, gameNum: 1, intentos: 0,
+      mode: 'diario', series: [0, 0], targetWins: 1, gameNum: 1, intentos: d.intentos || 0,
     };
     while (G.board.length < 9) G.board.push(null);
     showScreen('screen-game');
     stopTurnTimer();
-    $('game-hint').textContent = `Ya has jugado la rejilla de hoy: ${d.hits} de 9. Vuelve mañana.`;
+    $('game-hint').textContent = `Ya has completado la rejilla de hoy en ${d.intentos || 0} intento${(d.intentos || 0) === 1 ? '' : 's'}. Vuelve mañana.`;
     renderScore(); renderBoard();
   }
 
   function finDiario() {
     G.over = true; G.matchOver = true;
-    const hits = G.board.filter(Boolean).length;
     guardarDia();
     renderScore(); renderBoard();
-    $('game-hint').textContent = hits === 9
-      ? '¡Rejilla perfecta! 9 de 9.'
-      : `Se acabaron los intentos: ${hits} de 9.`;
-    showToast(hits >= DIARIO_RACHA ? `✓ ${hits}/9 — día ganado` : `${hits}/9`, hits >= DIARIO_RACHA ? 'ok' : 'err');
+    const intentos = G.intentos || 0;
+    $('game-hint').textContent = `¡Rejilla completada! 9 de 9 en ${intentos} intento${intentos === 1 ? '' : 's'}.`;
+    showToast('✓ Rejilla del día completada', 'ok');
+    renderDiarioCard();
+  }
+
+  /* ── Racha / estadísticas del diario, para la pestaña del menú y el modal ──
+     No se lleva un contador aparte: se recorren (como hub-streaks.js) los
+     últimos 400 días de tresenraya_day_* ya guardados en localStorage, así
+     que no hay nada que se pueda desincronizar ni doble-contar. */
+  function statsDiario() {
+    let day = hoyMadrid();
+    let jugados = 0, completados = 0;
+    for (let i = 0; i < 400; i++) {
+      const d = leerDia(day);
+      if (d && typeof d.hits === 'number') {
+        jugados++;
+        if (d.completed !== false && d.hits === 9) completados++;
+      }
+      day = shiftDia(day, -1);
+    }
+    let streak = 0, best = 0;
+    try {
+      const row = window.FHStreaks && window.FHStreaks.list().find(g => g.href === 'tres-en-raya');
+      if (row) { streak = row.streak || 0; best = row.best || 0; }
+    } catch (e) {}
+    return { jugados, completados, pct: jugados ? Math.round((completados / jugados) * 100) : 0, streak, best };
+  }
+
+  /* Tarjeta de racha/récord + texto del botón, en la pestaña Diario del menú. */
+  function renderDiarioCard() {
+    const s = statsDiario();
+    const rEl = $('diario-card-racha'), bEl = $('diario-card-record');
+    if (rEl) rEl.textContent = s.streak;
+    if (bEl) bEl.textContent = s.best;
+    const btn = $('btn-diario-play');
+    if (!btn) return;
+    const ya = leerDia();
+    if (ya && ya.completed) btn.textContent = '✓ REJILLA DE HOY COMPLETADA';
+    else if (ya && typeof ya.hits === 'number') btn.textContent = `CONTINUAR · ${ya.hits} DE 9 ▶`;
+    else btn.textContent = 'JUGAR LA REJILLA DE HOY ▶';
+  }
+
+  function openDiarioStats() {
+    const s = statsDiario();
+    const cont = $('diario-stats-nums');
+    if (cont) {
+      cont.innerHTML = [
+        { val: s.jugados,           label: 'Jugadas' },
+        { val: s.completados,       label: 'Completadas' },
+        { val: s.pct + '%',         label: '%' },
+        { val: s.streak,            label: 'Racha' },
+        { val: s.best,              label: 'Récord' },
+      ].map(({ val, label }) =>
+        `<div class="stat-cell"><div class="stat-val">${esc(val)}</div><div class="stat-label">${esc(label)}</div></div>`
+      ).join('');
+    }
+    const ov = $('diario-stats-overlay'); if (ov) ov.classList.remove('hidden');
+  }
+  function closeDiarioStats() {
+    const ov = $('diario-stats-overlay'); if (ov) ov.classList.add('hidden');
   }
 
   function startLocalGame() {
@@ -568,9 +682,9 @@ window._AppReal = (function () {
   }
 
   function gastarIntentoDiario() {
-    G.intentos = Math.max(0, (G.intentos || 0) - 1);
+    G.intentos = (G.intentos || 0) + 1;   // cuenta hacia arriba, sin techo
     guardarDia();          // por si se cierra la pestaña a mitad
-    if (G.intentos <= 0 || G.board.every(Boolean)) { finDiario(); return; }
+    if (G.board.every(Boolean)) { finDiario(); return; }
     renderScore(); renderBoard();
   }
 
@@ -697,6 +811,7 @@ window._AppReal = (function () {
     closePick();
     const again = $('btn-play-again'); if (again) again.classList.remove('hidden');
     showScreen('screen-menu');
+    renderDiarioCard();
   }
 
   /* ═══════════════ AUTOCOMPLETADO ═══════════════ */
@@ -1500,7 +1615,15 @@ window._AppReal = (function () {
     await Sync.findPublic(name);
     marcarSala(name || 'Jugador');
   }
-  function leaveRoom() { desmarcarSala(); Sync.leave(); }
+  function leaveRoom() {
+    /* Salir de la rejilla del día a medias (ya con algún intento hecho)
+       cuenta como derrota y corta la racha — se avisa antes de que sea
+       irreversible, en vez de simplemente dejar que pase. */
+    if (G && G.mode === 'diario' && !G.over && (G.intentos || 0) > 0) {
+      if (!confirm('Si sales ahora sin completar la rejilla de hoy, contará como derrota y se cortará tu racha. ¿Seguro que quieres salir?')) return;
+    }
+    desmarcarSala(); Sync.leave();
+  }
   function copyLink() {
     const code = Sync.getCode();
     if (!code) return;
@@ -1528,6 +1651,7 @@ window._AppReal = (function () {
       return;
     }
     $('loading-overlay').classList.add('hidden');
+    renderDiarioCard();
 
     /* Deep link ?sala=CODE. Dos casos distintos:
          · Venías de esta misma sala (recargaste, volviste a la pestaña): se
@@ -1559,5 +1683,6 @@ window._AppReal = (function () {
     createRoom, joinRoom, findPublicRoom, leaveRoom, copyLink,
     pickCell, closePick, submitAnswer, selectAndSubmit,
     skipTurn, proposeDraw, respondDraw, playAgain, showMenu, showToast,
+    openDiarioStats, closeDiarioStats,
   };
 })();
