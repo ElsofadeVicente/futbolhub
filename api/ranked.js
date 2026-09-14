@@ -432,7 +432,13 @@ module.exports = async function handler(req, res) {
         return sendJson(res, 400, { error: 'accion_desconocida' });
     }
   } catch (e) {
+    /* El mensaje va SOLO al log de Vercel, no al cliente. Antes se devolvía
+       `detalle: e.message`, y los errores que se lanzan aquí llevan dentro el
+       texto crudo de Supabase (`Supabase 400 en rpc/...: <respuesta>`, ver
+       sbAdmin), o sea nombres de tabla, de RPC y mensajes de Postgres. A
+       quien llama no le sirven de nada y a quien busca el hueco le dibujan el
+       esquema. Retirado el 2026-09-12. */
     console.error('[ranked]', e);
-    return sendJson(res, 500, { error: 'error_interno', detalle: e.message });
+    return sendJson(res, 500, { error: 'error_interno' });
   }
 };

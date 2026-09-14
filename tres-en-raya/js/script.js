@@ -65,8 +65,21 @@ window._AppReal = (function () {
   const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const el = $(id); if (el) el.classList.add('active');
+    /* Se busca la pantalla PRIMERO y solo se apagan las demás si existe. Al
+       revés —apagar todas y luego encender— basta con que el id no esté (un
+       renombrado, una pantalla retirada) para dejar la página sin ninguna
+       pantalla activa: en blanco y, en la PWA, sin forma de salir.
+
+       El `if (el)` de antes no salvaba nada: evitaba la excepción, pero para
+       entonces ya había apagado las cuatro pantallas. Este era el ÚNICO de
+       los ocho juegos con .screen al que no se le había aplicado el arreglo
+       (2026-09-12). */
+    const destino = $(id);
+    if (!destino) { console.error('[Tres en Raya] No existe la pantalla #' + id); return; }
+    destino.classList.add('active');
+    document.querySelectorAll('.screen').forEach(s => {
+      if (s !== destino) s.classList.remove('active');
+    });
   }
   let _toastT = null;
   function showToast(msg, kind) {

@@ -968,7 +968,24 @@
          5 de 5 y Blackjack ya lo hacían así (.remove()). */
       if (window._FBOnDisconnect) {
         try {
-          window._FBOnDisconnect(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`)).remove();
+          /* cancel() antes de armar: las operaciones de onDisconnect se
+             ACUMULAN en el mismo camino, no se sustituyen. Hoy aquí solo se
+             arma .remove() (así que rearmarla sola sería inofensivo), pero el
+             patrón de los otros juegos con sala es cancelar primero — en 5 de
+             5 y en Blackjack no hacerlo fue justo lo que dejaba el nodo del
+             jugador reducido a {connected:false}, sin nombre, sin marcador y
+             sin corona.
+
+             VA ENCADENADO, no en dos líneas sueltas (2026-09-12): cancel()
+             borra TODAS las operaciones pendientes de ese camino, así que si
+             se lanzara sin esperar podría llevarse por delante el .remove()
+             recién armado y devolver los fantasmas que ese remove existe para
+             evitar. Encadenando, el orden es explícito. Mismo patrón que
+             _registerPresence() en mentiroso/js/game.js. */
+          const odRef = F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`);
+          window._FBOnDisconnect(odRef).cancel()
+            .catch(() => {})
+            .then(() => window._FBOnDisconnect(odRef).remove().catch(() => {}));
           // Si el que se cae es el anfitrión, la sala deja de estar
           // disponible: fuera del índice de matchmaking (igual que en
           // cleanup()). Si se cae otro, la sala sigue abierta.

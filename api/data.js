@@ -80,7 +80,17 @@ function claveValida(k) {
   if (k.startsWith('/') || k.includes('..') || k.includes('//')) return false;
   // Control, comillas y los que separan partes de una URL. Todo lo demás
   // (espacios, "&", acentos...) se deja pasar y se codifica al construirla.
-  return !/[\u0000-\u001f\u007f?#\\"'<>]/.test(k);
+  //
+  // EL APOSTROFO NO SE RECHAZA (2026-09-12). Estaba en esta lista junto a
+  // la comilla doble, por la costumbre de pensar en no romper un atributo
+  // HTML. Pero esto no es HTML: es una clave de Storage que se
+  // percent-encodea segmento a segmento antes de salir de aqui, asi que un
+  // apostrofo no puede significar otra cosa. Lo que si hacia era devolver
+  // 400 a dos escudos que existen y se piden de verdad:
+  // Club_Deportivo_O'Higgins.png y Al-Sha'ab_CSC_Sharjah.png, los dos
+  // presentes en el-estadio/data/estadios.json. Y encodeURIComponent NO
+  // codifica el apostrofo, asi que llegaba crudo hasta aqui y se caia.
+  return !/[\u0000-\u001f\u007f?#\\"<>]/.test(k);
 }
 
 /** Codifica la clave segmento a segmento, igual que sbStorageUrl en el cliente:

@@ -1389,15 +1389,13 @@ async function crucStart() {
 
 function openCrucigrama() { crucStart(); }
 
-/* Un arranque fallido no se queda muerto: al volver la conexión se reintenta
-   solo (js/red.js), que es lo que salvó a En el Top y La Carrera. */
-function crucReintentarArranque() {
-    if (!crucArranqueIncompleto || crucReintentando) return;
-    crucReintentando = true;
-    crucLoading('REINTENTANDO…');
-    crucStart().finally(() => { crucReintentando = false; });
-}
-if (window.FHRed && FHRed.alRecuperar) FHRed.alRecuperar(crucReintentarArranque);
+/* crucReintentarArranque() vive al FINAL del archivo, junto al arranque.
+   Aquí había una SEGUNDA declaración de la misma función (2026-09-12): por
+   el hoisting de `function` ganaba la de abajo, así que esta no llegaba a
+   ejecutarse nunca — pero su `FHRed.alRecuperar(...)` sí se registraba, y el
+   reintento quedaba enganchado DOS VECES al mismo evento. Lo tapaba la
+   guarda `crucReintentando`, no el diseño. Se deja una sola, la de abajo,
+   que además tiene los listeners de respaldo para cuando no hay js/red.js. */
 
 
 function crucNormalizeEntry(entrada) {

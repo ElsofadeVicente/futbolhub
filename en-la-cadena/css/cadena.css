@@ -167,8 +167,9 @@ a      { text-decoration: none; }
   font-family: 'DM Mono', monospace; color: var(--np-ink-mid);
   letter-spacing: 0.06em; text-transform: uppercase;
 }
-#fb-indicator { color: var(--np-red); }
-#fb-indicator.ok { color: var(--correct); }
+/* Aqui vivian #fb-indicator y #fb-indicator.ok (el testigo de conexion con
+   Firebase). Ese id no esta en el HTML ni lo crea el JS: reglas muertas,
+   retiradas el 2026-09-12. */
 
 /* ── SETUP / CREATE ───────────────────────── */
 .setup-container {

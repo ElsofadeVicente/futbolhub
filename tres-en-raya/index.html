@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <!-- Sentry: captura errores JS del navegador. crossorigin hace falta para ver el mensaje real del error, no un "Script error." vacio -->
 <script src="https://js-de.sentry-cdn.com/6fd91929f6d3930e6a8aee5ed64bea69.min.js" crossorigin="anonymous"></script>
-  <title>Tres en raya de fútbol online (grid tipo Immaculate Grid) | FutbolHUB</title>
+  <title>Tres en raya de fútbol online (Immaculate Grid) | FutbolHUB</title>
   <link rel="canonical" href="https://www.futbolhub.es/tres-en-raya/">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="description" content="El grid de fútbol al estilo Immaculate Grid: reclama una casilla nombrando un futbolista que cumpla su fila y su columna a la vez. Local y online.">
 <!-- Open Graph / redes sociales -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FutbolHUB">
-<meta property="og:title" content="Tres en raya de fútbol online (grid tipo Immaculate Grid) | FutbolHUB">
+<meta property="og:title" content="Tres en raya de fútbol online (Immaculate Grid) | FutbolHUB">
 <meta property="og:description" content="El grid de fútbol al estilo Immaculate Grid: reclama una casilla nombrando un futbolista que cumpla su fila y su columna a la vez. Local y online.">
 <meta property="og:url" content="https://www.futbolhub.es/tres-en-raya/">
 <meta property="og:image" content="https://www.futbolhub.es/img/og/tres-en-raya.jpg">
@@ -21,7 +21,7 @@
 <meta property="og:image:alt" content="Tres en Raya: portada del juego en FutbolHUB">
 <meta property="og:locale" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Tres en raya de fútbol online (grid tipo Immaculate Grid) | FutbolHUB">
+<meta name="twitter:title" content="Tres en raya de fútbol online (Immaculate Grid) | FutbolHUB">
 <meta name="twitter:description" content="El grid de fútbol al estilo Immaculate Grid: reclama una casilla nombrando un futbolista que cumpla su fila y su columna a la vez. Local y online.">
 <meta name="twitter:image" content="https://www.futbolhub.es/img/og/tres-en-raya.jpg">
 <!-- PWA: instalable y con color de barra tambien entrando directo a un juego -->
@@ -435,12 +435,12 @@
   window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
 </script>
 
-<script src="../js/supabase-config.js?v=20260909a"></script>
+<script src="../js/supabase-config.js?v=20260912b"></script>
 <script src="../js/auth.js?v=20260911b"></script>
 <script src="../js/progress-sync.js?v=20260911b"></script>
 <script src="../js/hub-streaks.js?v=20260911b"></script>
 <script src="../js/img-heal.js?v=20260903a"></script>
-<script src="../js/profile-widget.js?v=20260911b"></script>
+<script src="../js/profile-widget.js?v=20260912b"></script>
 <script src="../js/cabecera.js?v=20260903b"></script>
 <script src="../js/pantalla-viva.js?v=20260901i"></script>
 <script src="../js/red.js?v=20260901d"></script>
@@ -484,7 +484,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260908a';
+  s.src = 'js/script.js?v=20260912b';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }

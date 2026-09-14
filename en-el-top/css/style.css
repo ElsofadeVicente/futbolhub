@@ -184,12 +184,12 @@ body::before {
 #mode-box:hover #mode-art img {
   transform: none;
 }
-#mode-art--fallback {
+.mode-art--fallback {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-#mode-art--fallback::after {
+.mode-art--fallback::after {
   content: "EN EL TOP";
   font-family: var(--font-display);
   font-size: 2rem;

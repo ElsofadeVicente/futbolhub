@@ -555,6 +555,12 @@ function mostrarFin(alreadyPlayed = false) {
   const total = state.scores.reduce((a, b) => a + b, 0);
 
   document.getElementById('end-score-total').textContent = total.toLocaleString('es-ES');
+  /* El maximo sale de las constantes, no escrito a mano en el HTML: ahi se
+     quedo en "25.000" cuando la partida paso de 5 rondas a 4 y nadie lo
+     actualizo, asi que una partida perfecta se veia como 20.000 / 25.000
+     (2026-09-12). Atado aqui, no puede volver a desincronizarse. */
+  const elMax = document.getElementById('end-score-max');
+  if (elMax) elMax.textContent = '/ ' + (MAX_SCORE * TOTAL_RONDAS).toLocaleString('es-ES');
   document.getElementById('end-grade').textContent       = grade(total);
   document.getElementById('end-title').textContent       = gradeTitle(total);
 

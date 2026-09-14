@@ -747,7 +747,11 @@ async function updateDailyHeader(offsetDays, prevAvailable = false) {
     const navEl = document.getElementById('day-nav');
     if (!navEl) return;
 
-    document.body.classList.add('daily-nav-active');
+    /* La barra se enseña y se esconde con .hidden en el propio #day-nav, que
+       sí tiene su regla. Aquí se marcaba además el <body> con
+       'daily-nav-active' y ninguna hoja la miraba: en este juego #day-nav va
+       en el flujo (no es fixed como en los demás), así que no hay que
+       reservarle sitio a nadie. No-op retirado el 2026-09-12. */
     navEl.classList.remove('hidden');
 
     const canGoBack    = prevAvailable;      // hay archivo para el día anterior
@@ -766,7 +770,6 @@ async function updateDailyHeader(offsetDays, prevAvailable = false) {
 }
 
 function hideDailyNav() {
-    document.body.classList.remove('daily-nav-active');
     const navEl = document.getElementById('day-nav');
     if (navEl) navEl.classList.add('hidden');
 }
@@ -1396,13 +1399,15 @@ function openGuessModal(playerIndex) {
 
     document.getElementById('guess-modal').classList.add('active');
 
+    /* El modo de solo lectura se aplica entero aquí abajo (teclas desactivadas,
+       botón de revelar escondido, título distinto). Antes se marcaba además el
+       modal con la clase 'read-only', que ninguna hoja miraba: no-op retirado
+       el 2026-09-12. */
     if (isReadOnly) {
-        document.getElementById('guess-modal').classList.add('read-only');
         document.querySelectorAll('.key').forEach(k => { k.disabled = true; k.style.opacity = '0.5'; k.style.cursor = 'not-allowed'; });
         document.getElementById('reveal-btn-modal').style.display = 'none';
         document.querySelector('.modal-title').textContent = 'INTENTOS REALIZADOS';
     } else {
-        document.getElementById('guess-modal').classList.remove('read-only');
         document.querySelectorAll('.key').forEach(k => { k.disabled = false; k.style.opacity = '1'; k.style.cursor = 'pointer'; });
         document.getElementById('reveal-btn-modal').style.display = 'block';
         document.querySelector('.modal-title').textContent = 'ADIVINA EL JUGADOR';

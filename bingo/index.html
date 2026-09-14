@@ -396,12 +396,12 @@
   window.addEventListener('unhandledrejection', function(e){ console.error('[Unhandled Promise]', e.reason); });
 </script>
 
-<script src="../js/supabase-config.js?v=20260909a"></script>
+<script src="../js/supabase-config.js?v=20260912b"></script>
 <script src="../js/auth.js?v=20260911b"></script>
 <script src="../js/progress-sync.js?v=20260911b"></script>
 <script src="../js/hub-streaks.js?v=20260911b"></script>
 <script src="../js/img-heal.js?v=20260903a"></script>
-<script src="../js/profile-widget.js?v=20260911b"></script>
+<script src="../js/profile-widget.js?v=20260912b"></script>
 <script src="../js/cabecera.js?v=20260903b"></script>
 <script src="../js/pantalla-viva.js?v=20260901i"></script>
 <script src="../js/red.js?v=20260901d"></script>
@@ -445,7 +445,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260912a';
+  s.src = 'js/script.js?v=20260912b';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }

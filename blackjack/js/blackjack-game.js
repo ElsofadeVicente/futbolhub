@@ -480,11 +480,16 @@ const BlackjackGame = (() => {
   /* ─── club → URL del escudo en Supabase Storage (bucket team-logos) ─── */
   function _getLogoUrl(club) {
     if (!club) return null;
-    // Misma lógica que safe_key() en admin/upload_images_to_storage.py, que
-    // es quien decide la clave real en Storage: sin quitar acentos/diéresis
-    // aquí, un club como "Atlético Saguntino" o "1.FC Köln" pediría un
-    // archivo que nunca coincide con el que se subió (Storage rechaza claves
-    // no-ASCII, así que la clave subida siempre va sin acentos).
+    // Quien decide la clave real en Storage es safe_key() de
+    // admin/upload_images_to_storage.py: sin quitar acentos/diéresis, un club
+    // como "Atlético Saguntino" o "1.FC Köln" pediría un archivo que nunca
+    // coincide con el que se subió (Storage rechaza claves no-ASCII).
+    //
+    // Lo de aquí es solo la primera mitad: las letras que NFKD no descompone
+    // (ø, ł, ß...) las quita sbStorageSafeKey() en js/supabase-config.js, por
+    // donde pasa sbStorageUrl() de la línea de abajo. Se deja la normalización
+    // local porque además cambia los separadores (/:*?"<>| y espacios) a "_",
+    // que eso sí es propio de esta función.
     const fname = club.trim()
       .normalize('NFKD').replace(/[̀-ͯ]/g, '')
       .replace(/[\/:\*\?"<>|]/g, '_')

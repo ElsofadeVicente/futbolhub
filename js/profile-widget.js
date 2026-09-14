@@ -112,7 +112,13 @@
     function renderCircle() {
         circleInner.innerHTML = avatarHTML();
         applyAvatarColors(circleInner);
-        circleBtn.classList.toggle('pw-logged', !!session);
+        /* Aquí se hacía además un toggle de la clase 'pw-logged' según hubiera
+           sesión o no. NINGUNA hoja del proyecto la miraba y ningún JS la
+           consultaba, así que era un no-op en las 15 páginas: añadir una clase
+           solo hace algo si existe la regla que la mira (misma familia que el
+           .loading-overlay de Superdraft, 2026-08-25). Lo que de verdad
+           distingue estar logueado ya lo pinta avatarHTML() + applyAvatarColors.
+           Retirado el 2026-09-12. */
     }
 
     function renderDropdown() {

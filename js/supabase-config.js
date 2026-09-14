@@ -49,7 +49,28 @@ async function sbFetchAll(path, pageSize = 1000) {
  * ver admin/upload_images_to_storage.py:safe_key, misma normalización).
  */
 function sbStorageSafeKey(name) {
-    return String(name).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    /* EL TERCER PASO NO SOBRA (2026-09-12). Quien decide la clave REAL en
+       Storage es safe_key() de admin/upload_images_to_storage.py, y ese hace
+       .encode("ascii", "ignore"): BORRA todo lo que no sea ASCII. NFKD +
+       quitar diacr\u00edticos combinantes no es lo mismo \u2014 hay letras que NFKD no
+       descompone porque son letras por derecho propio, no una vocal con algo
+       encima: \u00f8, \u0142, \u00df, \u0111, \u00e6 (la misma familia que la \u0131 turca que rompi\u00f3 el
+       autocompletado el 2026-08-25). Esas sobreviv\u00edan aqu\u00ed y se iban
+       percent-encoded a una clave que en Storage no existe.
+
+       Eran 10 escudos que NO CARGABAN NUNCA, y en silencio, porque el onerror
+       de cada <img> esconde el hueco: Br\u00f8ndby IF, Lillestr\u00f8m SK, Troms\u00f8 IL,
+       Wis\u0142a Cracovia, Wis\u0142a P\u0142ock, Zag\u0142\u0119bie Lubin, \u015al\u0105sk Wroc\u0142aw, Widzew
+       \u0141\u00f3d\u017a, Jagiellonia Bia\u0142ystok y FC Blau-Wei\u00df Linz \u2014 9 de ellos en
+       el-estadio/data/estadios.json, o sea que sal\u00edan de verdad al jugar.
+
+       Verificado sobre los 1303 PNG de data/teams/{logos,flags}: con este
+       tercer paso, 1303/1303 coinciden con lo que sube el script de Python.
+       Si se toca esta funci\u00f3n, volver a pasar esa comprobaci\u00f3n. */
+    return String(name)
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\x00-\x7F]/g, "");
 }
 
 /* Buckets de IMAGEN (escudos, banderas, logos de liga, fotos de entrenador,
