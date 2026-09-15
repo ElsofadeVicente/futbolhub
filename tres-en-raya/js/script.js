@@ -901,8 +901,9 @@ window._AppReal = (function () {
     /* La clase es 'selected', que es la que estiliza el diseño compartido
        (igual que 5 de 5 y Superdraft). Con 'active' la marca era invisible: ni
        la preselección ni el movimiento con las flechas se veían. */
-    document.querySelectorAll('.autocomplete-item').forEach((el, idx) =>
-      el.classList.toggle('selected', idx === acIndex));
+    const items = document.querySelectorAll('.autocomplete-item');
+    items.forEach((el, idx) => el.classList.toggle('selected', idx === acIndex));
+    if (acIndex >= 0 && items[acIndex]) items[acIndex].scrollIntoView({ block: 'nearest' });
   }
 
   /* ═══════════════ ONLINE — Firebase Realtime DB ═══════════════ */

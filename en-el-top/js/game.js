@@ -1007,9 +1007,9 @@ function moveSug(dir) {
 
 function setAcIdx(i) {
   _acIdx = i;
-  elSugBox.querySelectorAll('.sug-item').forEach((el, j) =>
-    el.classList.toggle('active', j === i)
-  );
+  const items = elSugBox.querySelectorAll('.sug-item');
+  items.forEach((el, j) => el.classList.toggle('active', j === i));
+  if (i >= 0 && items[i]) items[i].scrollIntoView({ block: 'nearest' });
 }
 
 function closeSug() {

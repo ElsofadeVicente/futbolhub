@@ -1211,7 +1211,12 @@ function highlight(name, query) {
   return escHtml(name.slice(0, idx)) + `<span class="sug-highlight">${escHtml(name.slice(idx, idx + query.length))}</span>` + escHtml(name.slice(idx + query.length));
 }
 function moveSug(dir) { setAcIdx(Math.max(0, Math.min(_acItems.length - 1, _acIdx + dir))); }
-function setAcIdx(i) { _acIdx = i; elSug.querySelectorAll('.sug-item').forEach((el, j) => el.classList.toggle('active', j === i)); }
+function setAcIdx(i) {
+  _acIdx = i;
+  const items = elSug.querySelectorAll('.sug-item');
+  items.forEach((el, j) => el.classList.toggle('active', j === i));
+  if (i >= 0 && items[i]) items[i].scrollIntoView({ block: 'nearest' });
+}
 function closeSug() { elSug.classList.remove('open'); elSug.innerHTML = ''; _acItems = []; _acIdx = -1; }
 function submitSug(item) { closeSug(); elInput.value = ''; if (!_ended) guess(item.name, item.id); }
 

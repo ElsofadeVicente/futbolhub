@@ -566,8 +566,9 @@
     list.classList.remove('hidden');
   }
   function paintAc() {
-    document.querySelectorAll('.autocomplete-item').forEach((el, idx) =>
-      el.classList.toggle('selected', idx === acIndex));
+    const items = document.querySelectorAll('.autocomplete-item');
+    items.forEach((el, idx) => el.classList.toggle('selected', idx === acIndex));
+    if (acIndex >= 0 && items[acIndex]) items[acIndex].scrollIntoView({ block: 'nearest' });
   }
   function onKey(e) {
     const list = $('autocomplete-list');
