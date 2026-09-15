@@ -1095,6 +1095,22 @@ const App = (() => {
     const s = CadenaGame._state;
     if (!s) return;
 
+    /* El otro jugador ha pulsado "Jugar de nuevo" y reseteado la sala a
+       'lobby' mientras este cliente seguia plantado en la pantalla de
+       resultado de la partida anterior. El listener de la partida
+       terminada sigue vivo (no se desuscribe al acabar, porque hace falta
+       para enterarse de esto mismo), pero ningun caso de mas abajo
+       reaccionaba a 'lobby': el marcador viejo se quedaba en pantalla,
+       en silencio, hasta que este jugador pulsara el boton el mismo — y
+       mientras tanto el estado local se iba desincronizando por debajo
+       (turnIndex, cadena...) sin que la pantalla lo reflejara. Si seguimos
+       en 'finished' localmente, seguirle al lobby exactamente como si
+       hubieramos pulsado "Jugar de nuevo" nosotros mismos. */
+    if (remote.status === 'lobby' && s.phase === 'finished') {
+      App.playAgain();
+      return;
+    }
+
     let needsBeginTurn = false;
 
     if (remote.players) s.players = toPlayersArray(remote.players);
