@@ -311,7 +311,7 @@ const CincoDeCincoBots = (() => {
         try {
           const buckets = await _round.search;
           if (!buckets || token !== _scanToken) return;
-          await _submit(_round.code, entry.botId, entry.name, buckets, _round.usedIds);
+          await _submit(_round.code, entry.botId, entry.name, buckets, _round.usedIds, _round.roundNum);
         } catch (e) {
           console.warn('[Bots] envío fallido:', e);
         } finally {
@@ -368,6 +368,7 @@ const CincoDeCincoBots = (() => {
     _round = {
       code, token, search,
       startAt,
+      roundNum: room.round,        // para que submitAnswer aborte si la ronda ya cambió
       endAt:   startAt + secs * 1000,
       usedIds: new Set(),          // para que dos bots no vayan al mismo
       rushed:  new Set(),          // humanos cuya respuesta ya nos hizo acelerar
@@ -437,7 +438,7 @@ const CincoDeCincoBots = (() => {
   }
 
   /* ─── Elegir y enviar, esquivando los ya dichos ─── */
-  async function _submit(code, botId, botName, buckets, usedIds) {
+  async function _submit(code, botId, botName, buckets, usedIds, roundNum) {
     const taken = new Set(usedIds);
 
     /* Nombres que ya han dicho los demás en esta ronda */
@@ -482,7 +483,7 @@ const CincoDeCincoBots = (() => {
       const candidates = BotCore.shuffle(freeList[k] || []);
       for (const player of candidates) {
         try {
-          await Sync.submitAnswer(code, botId, player.name, player.id || null);
+          await Sync.submitAnswer(code, botId, player.name, player.id || null, roundNum);
           usedIds.add(String(player.id));
           usedIds.add(BotNames.norm(player.name));
           console.log(`[Bots] ${botName} responde ${player.name} (${k} restricciones)`);

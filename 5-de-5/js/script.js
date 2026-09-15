@@ -892,11 +892,28 @@ const Sync = (() => {
     await update(_ref('/'), batch);
   }
 
-  async function submitAnswer(code, playerId, footballerName, footballerId) {
+  async function submitAnswer(code, playerId, footballerName, footballerId, expectedRound) {
     const {update,runTransaction,get}=FB();
     const lockKey = Restrictions.normalize(footballerName)
       .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/,'');
     if (!lockKey) throw new Error('Nombre inválido');
+
+    /* Bug real: un rival aparecía con su respuesta ya "enviada" nada más
+       empezar la ronda siguiente, sin haber contestado. Causa: submitAnswer
+       no comprobaba la ronda — si el envío tardaba (autocompletado, red) y
+       el host ya había cerrado la ronda y llamado a nextRound() (que resetea
+       submissions/lockedPlayers/doneCount y sube `round`), este envío
+       tardío escribía igualmente en submissions/doneCount, "resucitando" un
+       envío fantasma en la ronda NUEVA. Con `expectedRound` se aborta si la
+       ronda ya no es la que se esperaba. Quedan dos comprobaciones (antes y
+       después del bloqueo del nombre) porque el bloqueo en sí mismo puede
+       tardar y dejar la ronda vieja plantada en medio. */
+    const rondaYaCambio = async () => {
+      if (expectedRound == null) return false;
+      const snap = await get(_ref(`${ROOMS_PATH}/${code}/round`));
+      return snap.val() !== expectedRound;
+    };
+    if (await rondaYaCambio()) throw new Error('La ronda ya ha terminado');
 
     /* runTransaction puede reintentar el callback varias veces ante conflictos.
        La variable 'locked' debe reflejar el resultado del ÚLTIMO intento,
@@ -919,6 +936,18 @@ const Sync = (() => {
     const finalVal = result.snapshot.val();
     if (finalVal !== playerId) {
       throw new Error('Este futbolista ya fue elegido por otro jugador');
+    }
+
+    /* Segunda comprobación, ya con el nombre bloqueado: si la ronda cambió
+       justo durante el bloqueo, se deshace (solo si sigue siendo nuestro,
+       por si alguien más ya lo reutilizó en la ronda nueva) y se aborta,
+       para no dejar el nombre enganchado en la ronda que empieza. */
+    if (await rondaYaCambio()) {
+      await runTransaction(
+        _ref(`${ROOMS_PATH}/${code}/lockedPlayers/${lockKey}`),
+        current => current === playerId ? null : current
+      );
+      throw new Error('La ronda ya ha terminado');
     }
 
     await update(_ref(`${ROOMS_PATH}/${code}/submissions/${playerId}`),{
