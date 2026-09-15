@@ -82,7 +82,7 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-.caller-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.caller-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
 .skip-btn {
   font-family: 'DM Mono', monospace; font-size: .56rem; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase;
@@ -91,6 +91,11 @@
 }
 .skip-btn:hover { background: var(--np-paper); color: var(--np-ink); }
 .caller-left { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .1em; color: rgba(var(--np-paper-rgb, 244,234,210), 0.45); }
+/* Reloj total de la partida: cuánto llevas desde el primer futbolista. Es lo
+   que decide el desempate del ranking online (más aciertos y, si hay
+   empate, menos tiempo), así que se deja a la vista mientras se juega en vez
+   de enseñarse solo al final. */
+.caller-clock { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .08em; color: rgba(var(--np-paper-rgb, 244,234,210), 0.7); }
 
 /* Fantasma que vuela del locutor a la casilla */
 .caller-ghost { pointer-events: none; display: flex; align-items: center; gap: 9px; }
@@ -125,16 +130,17 @@
 .rival-num { flex-shrink: 0; width: 44px; text-align: right; letter-spacing: .04em; color: var(--np-ink); }
 
 /* ── EL CARTÓN ──
-   El presupuesto de alto que se resta (200px) deja sitio a la fila del
-   círculo de perfil + el locutor por arriba y la pista por abajo con el
-   cartón en modo local (sin rivales): medido, ~214px de cromo fijo. El
-   marcador de rivales (online) tiene su propio max-height con scroll propio
-   (ver arriba), así que no hace falta reservarle sitio aparte — si aparece
-   en una ventana muy baja, la página gana un scroll propio en vez de
-   recortar el cartón, que es preferible a que el cartón vuelva a ser enano
-   siempre para cubrir un caso raro. En un móvil normal quien manda es el
-   ANCHO de todos modos (el cartón ya ocupa toda la pantalla), así que esta
-   fórmula solo entra en juego en tablet/escritorio. */
+   El `calc(100vh - 200px)` es solo el ARRANQUE, para el primer pintado antes
+   de que corra el JS: un presupuesto fijo se queda corto en cuanto algo de
+   alrededor cambia de alto (la fila del círculo de perfil se metió en el
+   flujo el 2026-08-31 y este número nunca se recalibró del todo), y entonces
+   la última fila del cartón se salía por debajo de la ventana — reportado
+   por el usuario: se veía bien a zoom 80% y cortado a 100%, porque a más
+   zoom hay MENOS alto disponible en px de CSS y el presupuesto fijo deja de
+   alcanzar.
+   `ajustarTablero()` en script.js MIDE lo que sobra de verdad (mismo patrón
+   que crucAjustarAlto() en el Crucigrama) y pone un max-width propio en
+   línea, así que el número de aquí deja de ser lo único que decide. */
 .board-wrap { display: flex; justify-content: center; }
 .card-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
@@ -297,7 +303,7 @@
   border: 1.5px solid var(--bd-c, var(--np-ink)); box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink));
 }
 .rs-item--main { background: var(--np-ink); }
-.rs-num { font-family: 'Anton', sans-serif; font-size: 1.5rem; line-height: 1; color: var(--np-ink); }
+.rs-num { font-family: 'Anton', sans-serif; font-size: clamp(1.05rem, 4.6vw, 1.5rem); line-height: 1; color: var(--np-ink); }
 .rs-lbl { font-family: 'DM Mono', monospace; font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; color: var(--np-ink-mid); }
 .rs-item--main .rs-num { color: var(--np-paper); }
 .rs-item--main .rs-lbl { color: rgba(var(--np-paper-rgb, 244,234,210), 0.6); }

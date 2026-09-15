@@ -39,7 +39,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700;1,900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <!-- Sistema de diseño compartido (mismo "newspaper" que 5 de 5/Tres en Raya) -->
   <link rel="stylesheet" href="../5-de-5/css/style.css?v=20260906a">
-  <link rel="stylesheet" href="css/style.css?v=20260914a">
+  <link rel="stylesheet" href="css/style.css?v=20260915a">
   <link rel="stylesheet" href="../css/ads.css?v=20260831a">
   <link rel="stylesheet" href="../css/guia-link.css?v=20260815a">
   <link rel="stylesheet" href="../css/volver.css?v=20260903a">
@@ -312,6 +312,7 @@
     <div class="caller-side">
       <button class="skip-btn" id="btn-skip" onclick="App.skip()">SALTAR ⏭</button>
       <span class="caller-left" id="caller-left">—</span>
+      <span class="caller-clock" id="caller-clock">⏱ 0:00</span>
     </div>
   </div>
 
@@ -334,6 +335,7 @@
         <div class="rs-item rs-item--main"><span class="rs-num" id="rs-hits">0</span><span class="rs-lbl">aciertos</span></div>
         <div class="rs-item"><span class="rs-num" id="rs-fails">0</span><span class="rs-lbl">falladas</span></div>
         <div class="rs-item"><span class="rs-num" id="rs-empty">0</span><span class="rs-lbl">sin rellenar</span></div>
+        <div class="rs-item" id="rs-time-item"><span class="rs-num" id="rs-time">0:00</span><span class="rs-lbl">tiempo</span></div>
       </div>
       <p class="result-best" id="result-best"></p>
     </div>
@@ -445,7 +447,7 @@
 
   const s = document.createElement('script');
   // Version FIJA, no Date.now(): con el timestamp el script no se cacheaba nunca.
-  s.src = 'js/script.js?v=20260912b';
+  s.src = 'js/script.js?v=20260915a';
   s.onload = () => {
     const realApp = window._AppReal;
     if (!realApp) { console.error('❌ _AppReal no encontrado'); return; }

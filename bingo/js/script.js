@@ -26,6 +26,14 @@
   /* ─────────── Utilidades ─────────── */
   const $   = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  /* m:ss a partir de milisegundos. Se usa para el reloj total de la partida
+     (cuánto se tarda en cerrar el cartón), que es lo que desempata el
+     ranking online cuando dos jugadores aciertan lo mismo. */
+  function formatMMSS(ms) {
+    const total = Math.max(0, Math.round((ms || 0) / 1000));
+    const m = Math.floor(total / 60), s = total % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
 
   /* ── Cuenta: con sesión iniciada se usa el usuario y su foto y no hace
      falta pedir el nombre — mismo patrón que 5 de 5, Blackjack, El Mentiroso
@@ -107,6 +115,7 @@
     deadline: 0,
     tickId: null,
     result: null,
+    startedAt: 0,        // Date.now() del primer futbolista, para el reloj total
   };
 
   let POOL      = [];        // futbolistas curados (objetos completos de FR)
@@ -408,6 +417,45 @@
     board.classList.remove('in');
     void board.offsetWidth;
     board.classList.add('in');
+
+    ajustarTablero();
+    /* Segunda pasada con retardo: la fila del círculo de perfil la inserta
+       cabecera.js en el siguiente tick (un MutationObserver + setTimeout(0)),
+       así que la primera medida de arriba puede hacerse ANTES de que esa fila
+       exista todavía y quedarse corta. */
+    setTimeout(ajustarTablero, 120);
+  }
+
+  /* ═══════════════ EL CARTÓN: el alto disponible se MIDE, no se adivina ═══════════════
+     El CSS parte de un presupuesto fijo (calc(100vh - 200px), ver style.css)
+     que se queda corto en cuanto algo de alrededor cambia de alto — reportado
+     por el usuario: a zoom 100% el cartón salía cortado por abajo, y a 80%
+     (más alto disponible en px de CSS) se veía perfecto. En vez de perseguir
+     un número exacto, se mide lo que sobra de verdad y se corrige, como ya
+     hace crucAjustarAlto() en el Crucigrama con su rejilla. */
+  function ajustarTablero(vuelta) {
+    vuelta = vuelta || 0;
+    const grid = document.querySelector('.card-grid');
+    const sg = $('screen-game');
+    if (!grid || !sg || !sg.classList.contains('active') || vuelta > 4) return;
+    /* Se vuelve al cálculo del CSS antes de medir: si no, una vez encogido en
+       línea el cartón nunca podría volver a crecer aunque la ventana (o el
+       zoom) ganara espacio de sobra. */
+    if (vuelta === 0) grid.style.removeProperty('max-width');
+    const sobra = document.documentElement.scrollHeight - window.innerHeight;
+    if (sobra <= 0) return;
+    const actual = grid.getBoundingClientRect().width;
+    const nuevo = Math.max(220, Math.floor(actual - sobra - 4));
+    if (nuevo >= actual) return;
+    grid.style.maxWidth = nuevo + 'px';
+    void grid.offsetWidth;
+    ajustarTablero(vuelta + 1);
+  }
+
+  let _ajusteTableroResize = null;
+  function pedirAjusteTablero() {
+    clearTimeout(_ajusteTableroResize);
+    _ajusteTableroResize = setTimeout(() => ajustarTablero(), 80);
   }
 
   function paintCell(i) {
@@ -516,6 +564,7 @@
     try {
       localStorage.setItem(claveDia(), JSON.stringify({
         hits: G.result.hits, bingo: G.result.bingo, filled: G.result.filled,
+        elapsedMs: G.result.elapsedMs || 0,
         completed: true,
         seed: G.seed, idx: G.idx,
         board: G.board.map(c => (c && c.seqIdx != null) ? c.seqIdx : null),
@@ -538,6 +587,7 @@
         mode: G.mode,
         sala: G.mode === 'online' ? (Sync.code || null) : null,
         idx:  G.idx,
+        startedAt: G.startedAt,
         /* Por casilla, la posicion en la secuencia del que pusiste ahi. */
         board: G.board.map(c => (c && c.seqIdx != null) ? c.seqIdx : null),
         /* Huella del carton. La semilla sola NO basta: buildGame() sortea sobre
@@ -590,6 +640,9 @@
        carton, asi que salen solos. */
     G.skipped = built.seq.slice(0, G.idx).filter((_, i) => !d.board.includes(i));
     G.result = null;
+    /* El reloj total sigue contando desde el arranque de VERDAD, no desde que
+       se recarga la página — si no, cada recarga regalaría tiempo. */
+    G.startedAt = (typeof d.startedAt === 'number') ? d.startedAt : Date.now();
 
     $('caller').classList.remove('done', 'urgent');
     $('rivals').classList.toggle('hidden', G.mode !== 'online');
@@ -616,6 +669,7 @@
     G.board  = new Array(CELLS).fill(null);
     G.skipped = [];
     G.result = null;
+    G.startedAt = Date.now();
     olvidarPartida();          // la partida nueva sustituye a la que hubiera
 
     /* 'done' la pone finish() para apagar el locutor al cerrar el carton, y nadie
@@ -654,6 +708,8 @@
     const secs = Math.ceil(left / 1000);
     $('ring-num').textContent = secs;
     $('caller').classList.toggle('urgent', left <= 3000);
+    const clockEl = $('caller-clock');
+    if (clockEl) clockEl.textContent = '⏱ ' + formatMMSS(Date.now() - (G.startedAt || Date.now()));
     if (left === 0) { stopTimer(); skip(); }
   }
 
@@ -747,7 +803,8 @@
        (BINGO) o no. Los aciertos solo sirven para saber cuanto te ha faltado. */
     const bingo = hits === CELLS;
     /* El récord se lee ANTES de guardarlo: si no, siempre parecería nuevo. */
-    G.result = { hits, bingo, filled: filledCount(), prevBest: readBest() };
+    const elapsedMs = Math.max(0, Date.now() - (G.startedAt || Date.now()));
+    G.result = { hits, bingo, filled: filledCount(), prevBest: readBest(), elapsedMs };
 
     revealAnimation(bingo, () => {
       G.phase = 'over';
@@ -811,6 +868,14 @@
     $('rs-hits').textContent  = `${r.hits}/16`;
     $('rs-fails').textContent = fails;
     $('rs-empty').textContent = CELLS - r.filled;
+    /* Partidas guardadas antes de que existiera este campo no tienen tiempo:
+       se esconde la casilla en vez de enseñar un "0:00" que sería mentira. */
+    const timeItem = $('rs-time-item');
+    if (timeItem) {
+      const hayTiempo = typeof r.elapsedMs === 'number' && r.elapsedMs > 0;
+      timeItem.classList.toggle('hidden', !hayTiempo);
+      if (hayTiempo) $('rs-time').textContent = formatMMSS(r.elapsedMs);
+    }
 
     $('result-title').textContent = r.bingo ? '¡BINGO!' : 'NO HAY BINGO';
     $('result-title').classList.toggle('is-bingo', r.bingo);
@@ -1052,6 +1117,19 @@
           <span class="rival-bar"><i style="width:${(Math.min(16, p.filled || 0) / 16) * 100}%"></i></span>
           <span class="rival-num">${p.done ? (p.bingo ? 'BINGO' : (Number(p.hits) || 0) + '/16') : (Number(p.filled) || 0) + '/16'}</span>
         </div>`).join('');
+      /* La fila de rivales puede aparecer/crecer bastante después del primer
+         pintado del cartón (gente entrando a la sala, avanzando): si eso
+         empuja el tablero hacia abajo hay que volver a medir el hueco real. */
+      ajustarTablero();
+    }
+
+    /* Gana quien más acierta, y entre empatados quien menos ha tardado en
+       cerrar el cartón — decisión del usuario. tiempoOrden() trata "sin
+       tiempo guardado" (jugadores que reportaron antes de que existiera este
+       campo) como el peor caso, nunca como el mejor por casualidad de un
+       0 heredado de undefined. */
+    function tiempoOrden(p) {
+      return (typeof p.elapsedMs === 'number' && p.elapsedMs > 0) ? p.elapsedMs : Infinity;
     }
 
     function renderRanking() {
@@ -1059,7 +1137,7 @@
       const done = players.filter(([, p]) => p.done);
       const rank = done
         .map(([id, p]) => ({ id, ...p }))
-        .sort((a, b) => (b.hits || 0) - (a.hits || 0));
+        .sort((a, b) => (b.hits || 0) - (a.hits || 0) || (tiempoOrden(a) - tiempoOrden(b)));
       const box = $('ranking');
       box.classList.remove('hidden');
       box.innerHTML = `
@@ -1068,7 +1146,7 @@
           <div class="rank-row${p.id === myUid() ? ' me' : ''}">
             <span class="rank-pos">${i + 1}</span>
             <span class="rank-name">${esc(p.name || '?')}</span>
-            <span class="rank-detail">${p.bingo ? 'cartón cerrado' : (CELLS - (Number(p.hits) || 0)) + ' falladas'}</span>
+            <span class="rank-detail">${p.bingo ? 'cartón cerrado' : (CELLS - (Number(p.hits) || 0)) + ' falladas'}${tiempoOrden(p) !== Infinity ? ' · ' + formatMMSS(p.elapsedMs) : ''}</span>
             <span class="rank-points">${p.bingo ? 'BINGO' : (Number(p.hits) || 0) + '/16'}</span>
           </div>`).join('')}
         ${done.length < players.length ? '<p class="lobby-hint">Esperando a los demás…</p>' : ''}`;
@@ -1093,7 +1171,7 @@
       const F = fb();
       if (!F || !code) return;
       F.update(F.ref(F.db, `bingo/rooms/${code}/players/${myUid()}`), {
-        done: true, filled: r.filled, hits: r.hits, bingo: r.bingo,
+        done: true, filled: r.filled, hits: r.hits, bingo: r.bingo, elapsedMs: r.elapsedMs || 0,
       }).catch(() => {});
     }
 
@@ -1204,7 +1282,10 @@
       if (slot) slot.ok = FR.validate(slot.player, G.cats[i]);
     }
     const hits = G.board.filter(c => c && c.ok).length;
-    G.result = { hits, bingo: hits === CELLS, filled: G.board.filter(Boolean).length, prevBest: readBest() };
+    G.result = {
+      hits, bingo: hits === CELLS, filled: G.board.filter(Boolean).length, prevBest: readBest(),
+      elapsedMs: (typeof d.elapsedMs === 'number' && d.elapsedMs > 0) ? d.elapsedMs : null,
+    };
     showScreen('screen-game');
     renderBoard();
     for (let i = 0; i < CELLS; i++) if (G.board[i]) paintCell(i);
@@ -1420,6 +1501,17 @@
       if (G.phase !== 'playing') return;
       if (e.code === 'Space') { e.preventDefault(); skip(); }
     });
+
+    /* El cartón se remide al cambiar de tamaño de ventana Y al cambiar el
+       zoom del navegador: Chrome dispara 'resize' en los dos casos, porque
+       las dos cosas cambian innerWidth/innerHeight en CSS px. Con las fuentes
+       aún sin cargar el texto de las casillas mide menos de lo que va a medir
+       de verdad, así que se remide otra vez cuando estén listas. */
+    window.addEventListener('resize', pedirAjusteTablero);
+    window.addEventListener('orientationchange', pedirAjusteTablero);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => ajustarTablero()).catch(() => {});
+    }
 
     /* El momento exacto de una recarga: aqui se apunta el tiempo REAL que
        quedaba, que es lo unico que las guardas de cada jugada no saben. */
