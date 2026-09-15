@@ -14,6 +14,7 @@ node_modules/
 # en GitHub, por eso no se ignora toda la carpeta data/ entera.
 data/players/
 data/teams/*.json
+data/teams/_backup/
 data/transfers/
 data/teammates/
 data/performances/
