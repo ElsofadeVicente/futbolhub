@@ -433,7 +433,7 @@
      (más alto disponible en px de CSS) se veía perfecto. En vez de perseguir
      un número exacto, se mide lo que sobra de verdad y se corrige, como ya
      hace crucAjustarAlto() en el Crucigrama con su rejilla. */
-  function ajustarTablero(vuelta) {
+  function ajustarTablero(vuelta, natural) {
     vuelta = vuelta || 0;
     const grid = document.querySelector('.card-grid');
     const sg = $('screen-game');
@@ -441,15 +441,27 @@
     /* Se vuelve al cálculo del CSS antes de medir: si no, una vez encogido en
        línea el cartón nunca podría volver a crecer aunque la ventana (o el
        zoom) ganara espacio de sobra. */
-    if (vuelta === 0) grid.style.removeProperty('max-width');
+    if (vuelta === 0) {
+      grid.style.removeProperty('max-width');
+      grid.style.removeProperty('--bcell-scale');
+      natural = grid.getBoundingClientRect().width;
+    }
     const sobra = document.documentElement.scrollHeight - window.innerHeight;
     if (sobra <= 0) return;
     const actual = grid.getBoundingClientRect().width;
     const nuevo = Math.max(220, Math.floor(actual - sobra - 4));
     if (nuevo >= actual) return;
     grid.style.maxWidth = nuevo + 'px';
+    /* El texto y los iconos de la casilla (.bcell-cat, .cat-media...) usan
+       tamaños en vw que en escritorio son en la práctica FIJOS (el clamp()
+       casi nunca toca su mínimo a estos anchos). Encoger solo el ancho del
+       cartón sin encoger tambien el contenido dejaba letras e iconos del
+       tamaño de antes dentro de una casilla más pequeña: se recortaban y
+       parecía que el texto de una fila invadía la de abajo. Esta variable
+       escala ese contenido en la misma proporción que el propio cartón. */
+    grid.style.setProperty('--bcell-scale', Math.min(1, nuevo / natural));
     void grid.offsetWidth;
-    ajustarTablero(vuelta + 1);
+    ajustarTablero(vuelta + 1, natural);
   }
 
   let _ajusteTableroResize = null;
