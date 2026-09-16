@@ -433,7 +433,16 @@
      (más alto disponible en px de CSS) se veía perfecto. En vez de perseguir
      un número exacto, se mide lo que sobra de verdad y se corrige, como ya
      hace crucAjustarAlto() en el Crucigrama con su rejilla. */
-  function ajustarTablero(vuelta, natural) {
+  /* Ancho al que está pensado el diseño (el max-width de .card-grid en
+     style.css). El texto y los iconos de la casilla se escalan siempre
+     contra ESTE número fijo, nunca contra "lo que ya medía el cartón" en
+     esta sesión concreta: en una ventana baja, calc(100vh - 200px) YA deja
+     el cartón por debajo de 700px sin que este JS toque nada, así que medir
+     el encogido desde ahí sub-corregía (se veía "un poco mejor" pero seguía
+     recortando). Midiendo siempre contra 700 la escala vale tanto si encoge
+     el propio CSS como si encoge además el bucle de abajo. */
+  const ANCHO_DISENO_CARTON = 700;
+  function ajustarTablero(vuelta) {
     vuelta = vuelta || 0;
     const grid = document.querySelector('.card-grid');
     const sg = $('screen-game');
@@ -441,27 +450,23 @@
     /* Se vuelve al cálculo del CSS antes de medir: si no, una vez encogido en
        línea el cartón nunca podría volver a crecer aunque la ventana (o el
        zoom) ganara espacio de sobra. */
-    if (vuelta === 0) {
-      grid.style.removeProperty('max-width');
-      grid.style.removeProperty('--bcell-scale');
-      natural = grid.getBoundingClientRect().width;
-    }
+    if (vuelta === 0) grid.style.removeProperty('max-width');
     const sobra = document.documentElement.scrollHeight - window.innerHeight;
-    if (sobra <= 0) return;
-    const actual = grid.getBoundingClientRect().width;
-    const nuevo = Math.max(220, Math.floor(actual - sobra - 4));
-    if (nuevo >= actual) return;
-    grid.style.maxWidth = nuevo + 'px';
-    /* El texto y los iconos de la casilla (.bcell-cat, .cat-media...) usan
-       tamaños en vw que en escritorio son en la práctica FIJOS (el clamp()
-       casi nunca toca su mínimo a estos anchos). Encoger solo el ancho del
-       cartón sin encoger tambien el contenido dejaba letras e iconos del
-       tamaño de antes dentro de una casilla más pequeña: se recortaban y
-       parecía que el texto de una fila invadía la de abajo. Esta variable
-       escala ese contenido en la misma proporción que el propio cartón. */
-    grid.style.setProperty('--bcell-scale', Math.min(1, nuevo / natural));
-    void grid.offsetWidth;
-    ajustarTablero(vuelta + 1, natural);
+    if (sobra > 0) {
+      const actual = grid.getBoundingClientRect().width;
+      const nuevo = Math.max(220, Math.floor(actual - sobra - 4));
+      if (nuevo < actual) {
+        grid.style.maxWidth = nuevo + 'px';
+        void grid.offsetWidth;
+        ajustarTablero(vuelta + 1);
+        return;
+      }
+    }
+    /* Ya no hace falta seguir encogiendo (o no hacía falta desde el
+       principio): fija la escala del contenido contra el ancho FINAL,
+       sea cual sea el motivo de que el cartón sea más pequeño de 700px. */
+    const final = grid.getBoundingClientRect().width;
+    grid.style.setProperty('--bcell-scale', Math.min(1, final / ANCHO_DISENO_CARTON));
   }
 
   let _ajusteTableroResize = null;
