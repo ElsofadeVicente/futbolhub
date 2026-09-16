@@ -1548,6 +1548,7 @@ function buildCrucigramaScreen() {
                 Puedes <b>finalizar</b> aunque te falten 1 o 2 palabras: pasas de nivel igual.
             </div>
             <div class="cruc-progress">
+                <div class="cruc-progress-bar" id="cruc-progress-bar"></div>
                 <span id="cruc-solved-count">${crucSolvedWords.size}</span>/${crucData.words.length} palabras
                 <span class="cruc-reloj" id="cruc-reloj">${crucFormatoTiempo(crucSegundos)}</span>
             </div>
@@ -1604,6 +1605,7 @@ function buildCrucigramaScreen() {
 
     renderGrid();
     renderCluesList();
+    crucRenderBarraProgreso(false);
 
     // Recalcular tamaño si cambia el viewport
     window._crucResizeHandler && window.removeEventListener('resize', window._crucResizeHandler);
@@ -2209,6 +2211,7 @@ function crucCheckWordSolved(word) {
     // Update progress
     const countEl = document.getElementById('cruc-solved-count');
     if (countEl) countEl.textContent = crucSolvedWords.size;
+    crucRenderBarraProgreso(eraNueva);
     updateCluesPanel();
     // Flash solved word cells
     cells.forEach(({ row, col }) => updateCellVisual(row, col));
@@ -2232,6 +2235,36 @@ function crucOndaPalabra(cells) {
         cell.classList.add('cruc-cell-onda');
         setTimeout(() => cell.classList.remove('cruc-cell-onda'), 620 + i * 55);
     });
+}
+
+/* Barra de progreso: un segmento por palabra del nivel, relleno por cuenta
+   (no por identidad de palabra, igual que el contador "N/10" al que
+   acompaña). Se reconstruye si el número de segmentos no cuadra (nivel
+   nuevo) y solo hace "pop" en el segmento recién rellenado al resolver una
+   palabra por primera vez. */
+function crucRenderBarraProgreso(popUltimo) {
+    const bar = document.getElementById('cruc-progress-bar');
+    if (!bar || !crucData) return;
+    const total = crucData.words.length;
+    if (bar.children.length !== total) {
+        bar.innerHTML = '';
+        for (let i = 0; i < total; i++) {
+            const seg = document.createElement('div');
+            seg.className = 'cruc-progress-seg';
+            bar.appendChild(seg);
+        }
+    }
+    const segs = bar.children;
+    const filled = crucSolvedWords.size;
+    for (let i = 0; i < segs.length; i++) {
+        segs[i].classList.toggle('cruc-progress-seg--filled', i < filled);
+    }
+    if (popUltimo && filled > 0 && segs[filled - 1]) {
+        const seg = segs[filled - 1];
+        seg.classList.remove('cruc-progress-seg--pop');
+        void seg.offsetWidth;
+        seg.classList.add('cruc-progress-seg--pop');
+    }
 }
 
 function crucIsCellCorrect(r, c) {

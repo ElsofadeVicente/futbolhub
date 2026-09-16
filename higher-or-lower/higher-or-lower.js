@@ -95,6 +95,7 @@ const HOL = {
   rightPlayer: null,
   score: 0,
   record: 0,
+  recordBeatenThisRun: false,
   currentCategory: 'mv',
   currentMode: null,
   isAnimating: false,
@@ -344,8 +345,11 @@ function startNewGame() {
   HOL.gameOver = false;
   HOL.isAnimating = false;
   HOL.currentCategory = 'mv';
+  HOL.recordBeatenThisRun = false;
 
   DOM.scoreValue.textContent = '0';
+  DOM.scoreValue.classList.remove('gold', 'pop');
+  DOM.recordValue.classList.remove('gold', 'pop');
   DOM.gameoverScreen.classList.remove('active');
 
   HOL.leftPlayer  = pickRandomPlayer(null);
@@ -483,6 +487,15 @@ function handleChoice(choice) {
   if (isCorrect) {
     HOL.score++;
     DOM.scoreValue.textContent = HOL.score;
+    /* En cuanto la racha supera el récord guardado, los dos números pasan
+       a dorado en vivo (no solo al perder) y se quedan así el resto de la
+       partida. */
+    if (HOL.score > HOL.record) {
+      HOL.record = HOL.score;
+      localStorage.setItem(HOL_CONFIG.storageKeyPrefix + HOL.currentMode, String(HOL.record));
+      DOM.recordValue.textContent = HOL.record;
+      markRecordGold();
+    }
     HOL.pendingTimers.push(setTimeout(() => chainTransition(), 1400));
   } else {
     HOL.pendingTimers.push(setTimeout(() => triggerGameOver(), 1600));
@@ -512,16 +525,31 @@ function chainTransition() {
   }, 450));
 }
 
+/* Pinta racha y récord en dorado y los deja así el resto de la partida.
+   Solo dispara el "pop" la primera vez que se supera en esta ronda. */
+function markRecordGold() {
+  const yaEraDorado = HOL.recordBeatenThisRun;
+  HOL.recordBeatenThisRun = true;
+  DOM.scoreValue.classList.add('gold');
+  DOM.recordValue.classList.add('gold');
+  if (!yaEraDorado) {
+    [DOM.scoreValue, DOM.recordValue].forEach(el => {
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+    });
+  }
+}
+
 function triggerGameOver() {
   HOL.gameOver = true;
   HOL.isAnimating = false;
 
-  let isNewRecord = false;
-  if (HOL.score > HOL.record) {
-    HOL.record = HOL.score;
-    localStorage.setItem(HOL_CONFIG.storageKeyPrefix + HOL.currentMode, String(HOL.record));
-    isNewRecord = true;
-  }
+  /* El récord ya se actualiza EN VIVO en handleChoice() en cuanto se
+     supera, así que aquí solo hace falta leer si pasó en esta partida —
+     comparar HOL.score > HOL.record de nuevo daría siempre falso, porque
+     los dos ya estarían igualados. */
+  const isNewRecord = HOL.recordBeatenThisRun;
   DOM.recordValue.textContent = HOL.record;
   DOM.goScore.textContent = HOL.score;
   DOM.goRecord.innerHTML = isNewRecord

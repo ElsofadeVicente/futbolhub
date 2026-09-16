@@ -1244,6 +1244,7 @@ const App = (() => {
   let _rankedSeedBase = 0;
 
   let _round           = 0;
+  let _myRoundStreak   = 0;   // rondas seguidas GANADAS por mí, solo visual, se resetea en la ronda 1 de cada partida
   let _players         = [];
   let _restrictions    = [];
   /* MEMORIA DE PARTIDA (2026-09-06). Claves de las restricciones ya salidas
@@ -3511,6 +3512,14 @@ const App = (() => {
     _renderResultsUI(room.round, safeRestrictions, results, _players);
     _showScreen('screen-results');
 
+    /* Racha de RONDAS ganadas seguidas (no de restricciones): se resetea
+       sola en la ronda 1 de cada partida nueva, así no hace falta engancharse
+       a ningún otro punto de reinicio. */
+    if (room.round === 1) _myRoundStreak = 0;
+    const iWon = !!results[_playerId]?.isWinner;
+    _myRoundStreak = iWon ? _myRoundStreak + 1 : 0;
+    _updateRoundStreakBadge(_myRoundStreak, iWon);
+
     /* Aprovechar que el host está leyendo los resultados para precalcular
        las restricciones de la siguiente ronda en background (igual que en local) */
     if (_isHost) _preGenerateNextRestrictions();
@@ -3971,6 +3980,25 @@ const App = (() => {
         </div>
       `;
     }).join('');
+  }
+
+  /* Solo se enseña a partir de 2 rondas seguidas ganadas — ganar una suelta
+     no dice nada. A partir de 3 crece y se pinta del acento. */
+  function _updateRoundStreakBadge(streak, pop) {
+    const el = document.getElementById('results-streak');
+    if (!el) return;
+    if (streak >= 2) {
+      el.textContent = 'RACHA ×' + streak;
+      el.classList.remove('hidden');
+      el.classList.toggle('hot', streak >= 3);
+      if (pop) {
+        el.classList.remove('pop');
+        void el.offsetWidth;
+        el.classList.add('pop');
+      }
+    } else {
+      el.classList.add('hidden');
+    }
   }
 
   function _renderResultsUI(round, restrictions, results, players) {

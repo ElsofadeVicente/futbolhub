@@ -451,6 +451,19 @@ a      { text-decoration: none; }
 .results-title { font-family:'Playfair Display',serif; font-style:italic; font-weight:900; font-size:clamp(1.8rem,6vw,2.8rem); color:var(--np-paper); }
 .results-subtitle { font-family:'DM Mono',monospace; font-size:.65rem; color:rgba(var(--np-paper-rgb, 244,234,210), 0.52); letter-spacing:0.2em; text-transform:uppercase; margin-top:4px; }
 
+/* Racha de rondas ganadas seguidas: solo aparece a partir de ×2, y a partir
+   de ×3 crece y se pinta del acento. */
+.results-streak {
+  font-family:'DM Mono',monospace; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase;
+  color:rgba(var(--np-paper-rgb, 244,234,210), 0.6); margin-top:6px;
+  transition: color .2s ease, font-size .2s ease;
+}
+.results-streak.hidden { display: none; }
+.results-streak.hot { color:var(--np-red); font-size:.95rem; }
+.results-streak.pop { animation: c5StreakPop .32s cubic-bezier(.34,1.56,.64,1); }
+@keyframes c5StreakPop { 0% { transform:scale(1); } 40% { transform:scale(1.28); } 100% { transform:scale(1); } }
+@media (prefers-reduced-motion: reduce) { .results-streak.pop { animation:none; } }
+
 .results-list { width:100%; display:flex; flex-direction:column; gap:10px; padding:14px; flex:1; overflow-y:auto; background:var(--np-paper); }
 
 .result-card {

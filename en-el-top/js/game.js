@@ -225,6 +225,7 @@ let _timeLeft      = 0;
 let _timerInterval = null;
 let _ended         = false;
 let _statsSaved    = false;
+let _streak        = 0;   // aciertos seguidos DENTRO de la ronda actual (se resetea en cada fallo real)
 
 let _days     = {};   // { "AAAA-MM-DD": entry } de todos los meses cargados
 let _editions = [];   // fechas jugables (<= hoy), ASCENDENTE (edición 1 = la más antigua)
@@ -302,7 +303,7 @@ function asegurarIndices() {
 let elLoading, elMode, elGame, elEnd;
 let elModeOpts, elStartGameBtn, elStatsOpenBtn;
 let elTimerTrack, elTimerFill, elTimerNum, elTimerBonus;
-let elScore, elTitle, elRowsWrap, elArchiveTag;
+let elScore, elStreak, elTitle, elRowsWrap, elArchiveTag;
 let elInput, elSugBox, elGiveup;
 let elEndEmoji, elEndTitle, elEndSub, elEndQ, elEndRows, elEndStatsBtn;
 let elGiveupOverlay, elGiveupYes, elGiveupNo;
@@ -325,6 +326,7 @@ async function init() {
   elTimerNum        = document.getElementById('timer-num');
   elTimerBonus      = document.getElementById('timer-bonus');
   elScore           = document.getElementById('score-badge');
+  elStreak          = document.getElementById('streak-badge');
   elTitle           = document.getElementById('question-title');
   elRowsWrap        = document.getElementById('rows-wrap');
   elInput           = document.getElementById('ans-input');
@@ -666,6 +668,7 @@ function startGame() {
   _ended        = false;
   _statsSaved   = false;
   _attemptMarked = false;
+  _streak       = 0;
   _timerTotal = _timeLeft = TIMER_DIFICIL_INICIAL;
 
   // Enseñar antes de esconder: ver el comentario de showEndScreen.
@@ -720,6 +723,7 @@ function renderGame() {
     elRowsWrap.appendChild(makeRow(p));
   }
   updateScore();
+  updateStreakBadge(false);
 }
 
 function makeRow(p) {
@@ -773,6 +777,22 @@ function revealRow(p, state) {
 
 function updateScore() {
   elScore.textContent = `${_found.size}/10`;
+}
+
+/* Racha de aciertos seguidos dentro de la ronda: sube con un pop y, a
+   partir de 3 seguidos, crece de tamaño y cambia de color (misma idea que
+   el resto de "rachas calientes" del proyecto). Un fallo real la apaga al
+   instante; repetir un nombre ya encontrado no cuenta ni para bien ni
+   para mal, así que no toca la racha. */
+function updateStreakBadge(pop) {
+  if (!elStreak) return;
+  elStreak.textContent = `Racha ${_streak}`;
+  elStreak.classList.toggle('hot', _streak >= 3);
+  if (pop) {
+    elStreak.classList.remove('pop');
+    void elStreak.offsetWidth;
+    elStreak.classList.add('pop');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1043,10 +1063,14 @@ function validate(name, id) {
     _found.add(hit.r);
     revealRow(hit, 'found');
     updateScore();
+    _streak++;
+    updateStreakBadge(true);
     if (_mode === 'dificil' && !_ended) addTimerBonus();
     if (_found.size === 10) { stopTimer(); luegoDe(600, () => endGame(true)); }
   } else {
     shakeInput();
+    _streak = 0;
+    updateStreakBadge(false);
   }
 }
 

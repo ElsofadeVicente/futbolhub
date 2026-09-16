@@ -59,7 +59,7 @@
 .caller-player.enter   { animation: callerIn .34s cubic-bezier(.2,.9,.3,1.3); }
 .caller-player.leaving { animation: callerOut .19s ease-in forwards; }
 .caller-player.gone    { opacity: 0; }
-@keyframes callerIn  { from { opacity: 0; transform: translateX(26px) rotate(3deg); } to { opacity: 1; transform: none; } }
+@keyframes callerIn  { from { opacity: 0; transform: translateX(26px) rotate(3deg) scale(.82); } to { opacity: 1; transform: none; } }
 @keyframes callerOut { to { opacity: 0; transform: translateX(-30px) rotate(-4deg); } }
 
 .caller-photo {

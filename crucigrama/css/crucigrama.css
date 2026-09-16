@@ -639,6 +639,42 @@ a      { text-decoration: none; }
   color: var(--np-red);
 }
 
+/* Barra de progreso: un segmento por palabra del nivel. Sustituye al "N/10"
+   como refuerzo visual inmediato; el texto se queda igual debajo. */
+.cruc-progress-bar {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 6px;
+}
+
+.cruc-progress-seg {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--r-sm, 2px);
+  background: var(--np-ink-soft);
+  transition: background-color .25s ease;
+}
+
+.cruc-progress-seg--filled {
+  background: var(--np-red);
+}
+
+.cruc-progress-seg--pop {
+  animation: crucSegPop .32s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes crucSegPop {
+  0%   { transform: scaleY(1); }
+  40%  { transform: scaleY(2.1); }
+  100% { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cruc-progress-seg--pop { animation: none; }
+}
+
 .cruc-actions {
   display: flex;
   gap: 8px;

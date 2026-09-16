@@ -484,6 +484,16 @@ function clubBadgesHTML(clubs) {
    ══════════════════════════════════════════════ */
 let resMap = null;
 
+/* Color del pin según lo lejos que quedó el guess, para que se note antes
+   de leer el número de distancia. Umbrales calibrados sobre DECAY_KM=500
+   (a los 500 km la puntuación ya cayó al 37%), no a ojo. */
+function colorPorDistancia(distKm) {
+  if (distKm < 5)   return '#3fae5c'; // muy cerca
+  if (distKm < 50)  return '#8fae2f'; // cerca
+  if (distKm < 300) return '#c98a1f'; // lejos
+  return '#c1441e';                   // muy lejos
+}
+
 function showResult(estadio, distKm, puntos) {
   const idx = state.rondaActual;
 
@@ -503,10 +513,11 @@ function showResult(estadio, distKm, puntos) {
     attribution: '© OpenStreetMap', maxZoom: 18,
   }).addTo(resMap);
 
+  const colorPin = colorPorDistancia(distKm);
   const pinIcon = L.divIcon({
     className: '',
     html: `<svg width="24" height="35" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(1px 1px 2px rgba(0,0,0,.3))">
-      <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z" fill="#b5221e" stroke="#0f120e" stroke-width="2"/>
+      <path d="M14,2C8.48,2,4,6.48,4,12C4,19,14,36,14,36S24,19,24,12C24,6.48,19.52,2,14,2Z" fill="${colorPin}" stroke="#0f120e" stroke-width="2"/>
       <circle cx="14" cy="12" r="4" fill="#0f120e"/>
     </svg>`,
     iconSize: [24, 35], iconAnchor: [12, 35],
@@ -526,7 +537,7 @@ function showResult(estadio, distKm, puntos) {
 
   L.marker(guessLL, { icon: pinIcon }).addTo(resMap).bindPopup('Tu pin').openPopup();
   L.marker(realLL,  { icon: estadioIcon }).addTo(resMap).bindPopup(estadio.name);
-  L.polyline([guessLL, realLL], { color: '#b5221e', weight: 2, dashArray: '6,4', opacity: 0.85 }).addTo(resMap);
+  L.polyline([guessLL, realLL], { color: colorPin, weight: 2, dashArray: '6,4', opacity: 0.85 }).addTo(resMap);
   resMap.fitBounds(L.latLngBounds([guessLL, realLL]), { padding: [30, 30] });
 
   const btnLabel = document.getElementById('btn-siguiente-label');
@@ -551,10 +562,40 @@ function siguienteRonda() {
    ══════════════════════════════════════════════ */
 let endMap = null;
 
+/* Suma la puntuación ronda a ronda sobre el elemento del total, marcando
+   con --sumando la fila que se está sumando en ese instante. */
+function animarSumaRondas(el, scores) {
+  const filas = [...document.querySelectorAll('.end-round-row')];
+  let total = 0, i = 0;
+  el.textContent = '0';
+  function paso() {
+    if (i >= scores.length) return;
+    const fila = filas[i];
+    if (fila) fila.classList.add('end-round-row--sumando');
+    const desde = total;
+    total += scores[i];
+    contarHastaEstadio(el, desde, total, 420);
+    if (fila) setTimeout(() => fila.classList.remove('end-round-row--sumando'), 420);
+    i++;
+    setTimeout(paso, 600);
+  }
+  paso();
+}
+
+function contarHastaEstadio(el, desde, hasta, duracion) {
+  const inicio = performance.now();
+  function frame(ahora) {
+    const t = Math.min(1, (ahora - inicio) / duracion);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(desde + (hasta - desde) * eased).toLocaleString('es-ES');
+    if (t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 function mostrarFin(alreadyPlayed = false) {
   const total = state.scores.reduce((a, b) => a + b, 0);
 
-  document.getElementById('end-score-total').textContent = total.toLocaleString('es-ES');
   /* El maximo sale de las constantes, no escrito a mano en el HTML: ahi se
      quedo en "25.000" cuando la partida paso de 5 rondas a 4 y nadie lo
      actualizo, asi que una partida perfecta se veia como 20.000 / 25.000
@@ -584,10 +625,22 @@ function mostrarFin(alreadyPlayed = false) {
       <span class="end-round-dist">${fmtDist(dist)}</span>
       <span class="end-round-score">${sc.toLocaleString('es-ES')}</span>
     `;
+    row.dataset.roundIdx = i;
     container.appendChild(row);
   });
 
   showScreen('screen-end');
+
+  /* El total se construye ronda a ronda: cuenta hacia arriba y hace una
+     pausa breve antes de sumar la siguiente, en vez de aparecer de golpe.
+     Solo la primera vez que se ve el resultado del día — en una revisita
+     ya no aporta nada, solo retrasa ver la cifra. */
+  const elTotal = document.getElementById('end-score-total');
+  if (alreadyPlayed) {
+    elTotal.textContent = total.toLocaleString('es-ES');
+  } else {
+    animarSumaRondas(elTotal, state.scores);
+  }
 
   /* Modo diario: stats/Firebase/guardado solo la primera vez del día */
   if (!alreadyPlayed) {

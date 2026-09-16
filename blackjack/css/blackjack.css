@@ -695,9 +695,13 @@ body {
 .reveal-cards-list {
   display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 4px;
   min-height: 160px;
+  perspective: 900px;
 }
 
-/* ── Mini-carta reveal — más grande, foto + nombre + valor claros ── */
+/* ── Mini-carta reveal — más grande, foto + nombre + valor claros ──
+   Gira sobre el eje Y con perspectiva real (en vez del scale+fade plano de
+   antes): es el momento de mayor tensión de la ronda, la carta "se vuelve"
+   hacia el jugador. */
 .reveal-card {
   width: clamp(120px, 14vw, 170px);
   flex-shrink: 0;
@@ -705,12 +709,13 @@ body {
   flex-direction: column;
   overflow: hidden;
   opacity: 0;
-  transform: scale(0.78) translateY(6px);
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transform: rotateY(-100deg) scale(.85);
+  backface-visibility: hidden;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.2,.8,.2,1);
   border: 2px solid var(--bd-c, var(--np-ink));
   box-shadow: var(--sh-x,3px) var(--sh-y,3px) var(--sh-b,0) var(--sh-c,var(--np-ink));
 }
-.reveal-card.flip-in { opacity: 1; transform: scale(1) translateY(0); }
+.reveal-card.flip-in { opacity: 1; transform: rotateY(0deg) scale(1); }
 
 /* Header negro — solo escudo, sin posición */
 .reveal-card-header {

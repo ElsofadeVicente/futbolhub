@@ -413,11 +413,47 @@ body::before {
 
 /* #game-back vivía en #top-bar; ahora es .fh-volver, ver css/volver.css. */
 
+.score-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
 #score-badge {
   font-family: var(--font-display);
   font-size: 1rem;
   color: var(--np-red);
   letter-spacing: 0.06em;
+}
+
+/* Racha de aciertos seguidos: discreta hasta que "se calienta" a partir de
+   3, momento en el que crece y se pinta del acento — la misma lógica de
+   refuerzo por umbral que el resto del proyecto. */
+#streak-badge {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  color: var(--np-ink-mid);
+  transition: color .2s ease, font-size .2s ease;
+}
+
+#streak-badge.hot {
+  color: var(--np-red);
+  font-size: 0.82rem;
+}
+
+#streak-badge.pop {
+  animation: streakPop .32s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes streakPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.32); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #streak-badge.pop { animation: none; }
 }
 
 #timer-num {

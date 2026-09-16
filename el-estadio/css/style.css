@@ -528,6 +528,15 @@ a      { text-decoration: none; }
 }
 .end-round-row:nth-child(odd) { background: var(--np-paper); }
 
+/* Se marca mientras su puntuación se está sumando al total, en la pantalla
+   de resultado final. Doble clase a propósito: ".end-round-row:nth-child(odd)"
+   tiene más especificidad (0,2,0) que una clase suelta (0,1,0) y ganaría en
+   las filas impares si no se iguala aquí. */
+.end-round-row.end-round-row--sumando {
+  background: rgba(181, 34, 30, 0.12);
+  transition: background-color .2s ease;
+}
+
 .end-round-num {
   font-family: 'DM Mono', monospace; font-size: 0.6rem;
   letter-spacing: 0.2em; color: var(--np-ink-mid);
