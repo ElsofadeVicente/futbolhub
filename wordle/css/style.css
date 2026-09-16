@@ -54,18 +54,18 @@ button { cursor: pointer; }
 /* ══════════════════════════════════════════════
    COLUMNAS LATERALES DE ANUNCIOS
    ══════════════════════════════════════════════ */
-.ad-col {
+.fh-rail {
   position: fixed;
   top: 0; bottom: 0; width: var(--ad-col-w, 72px);
   display: flex; flex-direction: column;
   z-index: 3;
   background: var(--np-paper);
 }
-.ad-col--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
-.ad-col--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
+.fh-rail--left  { left: 0;  border-right: 1px solid var(--np-ink-soft); }
+.fh-rail--right { right: 0; border-left:  1px solid var(--np-ink-soft); }
 
 @media (max-width: 759px) {
-  .ad-col { display: none; }
+  .fh-rail { display: none; }
 }
 
 /* ══════════════════════════════════════════════

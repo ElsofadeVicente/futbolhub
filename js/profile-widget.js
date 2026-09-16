@@ -751,16 +751,16 @@
     FHAuth.onChange((event) => { setTimeout(() => refresh(event), 0); });
 
     /* En los juegos hay columnas de anuncios fijas pegadas al borde derecho
-       (.ad-col, position:fixed). Desplazamos el círculo a su izquierda para
+       (.fh-rail, position:fixed). Desplazamos el círculo a su izquierda para
        que no las tape. En el hub esas columnas son estáticas (parte del
        grid), así que no se detectan y el círculo se queda en su sitio. */
     function positionClearOfAds() {
-        // .ad-col = la mayoría de juegos; .bj-ad-sidebar = blackjack (misma idea)
+        // .fh-rail = la mayoría de juegos; .bj-ad-sidebar = blackjack (misma idea)
         // Usamos clientWidth (sin la barra de scroll): una columna fija a la
         // derecha llega hasta ese borde, aunque innerWidth sea mayor.
         const vw = document.documentElement.clientWidth || window.innerWidth;
         let shift = 0;
-        document.querySelectorAll('.ad-col, .bj-ad-sidebar').forEach(c => {
+        document.querySelectorAll('.fh-rail, .bj-ad-sidebar').forEach(c => {
             const cs = getComputedStyle(c);
             if (cs.position !== 'fixed' || cs.display === 'none') return;
             const r = c.getBoundingClientRect();

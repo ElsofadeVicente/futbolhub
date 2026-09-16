@@ -70,7 +70,7 @@
 
   /* Un hueco solo cuenta si ocupa sitio de verdad. offsetWidth es la prueba
      buena: da 0 tanto si el propio hueco esta oculto como si lo esta
-     cualquier ancestro —que es el caso de .ad-col en movil y el de una
+     cualquier ancestro —que es el caso de .fh-rail en movil y el de una
      .screen sin .active— y no obliga a saber QUIEN lo oculto. La altura no
      vale: un hueco sin llenar mide 0 de alto a proposito
      (.ad-slot:not([data-ad-filled])). */
@@ -101,7 +101,7 @@
      queda vacia. Si no, el grid seguiria reservando 172px a cada lado para
      nada y el contenido saldria estrechado sin motivo. */
   function tirar(host) {
-    const col = host.closest('.ad-col');
+    const col = host.closest('.fh-rail');
     host.remove();
     if (col && !col.querySelector('[data-ad]')) col.remove();
   }
@@ -132,7 +132,7 @@
      160x0 en un escritorio de 1400px y no se pintaba ninguno. El ancho, en
      cambio, si es real (160px el rascacielos, 336px el de movil) y se va a
      0 en cuanto lo esconde el propio hueco o CUALQUIER ancestro, que es lo
-     que pasa con .ad-col en movil y con una .screen sin .active.
+     que pasa con .fh-rail en movil y con una .screen sin .active.
 
      Como el ancho puede cambiar sin scroll ni resize —el juego le pone
      .active a otra pantalla y ahi aparece el hueco del panel de

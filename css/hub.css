@@ -140,30 +140,30 @@ body.np-body::before {
 }
 
 /* ── Columnas de anuncios ── */
-/* El hub usa ad-cols DENTRO del grid (no fixed como en los juegos).
+/* El hub usa fh-rails DENTRO del grid (no fixed como en los juegos).
    Anulamos aquí lo que impone global.css. */
-body.np-body .np-layout .ad-col {
+body.np-body .np-layout .fh-rail {
   position: static;
   top: auto; bottom: auto; left: auto; right: auto;
   width: auto;
   background: transparent;
   z-index: auto;
 }
-.ad-col { display: none; }
+.fh-rail { display: none; }
 
 @media (min-width: 1240px) {
   /* auto y no 172px fijos: si js/ads.js quita las columnas (sin unidad
      configurada, o con bloqueador de anuncios) el contenido se queda con
      todo el ancho en vez de dejar dos huecos vacíos. */
   .np-layout { grid-template-columns: auto 1fr auto; }
-  .ad-col { width: 172px; }
-  body.np-body .np-layout .ad-col {
+  .fh-rail { width: 172px; }
+  body.np-body .np-layout .fh-rail {
     display: block;
     padding: 0 6px;
     align-self: stretch;
   }
-  .ad-col--left  { border-right: 1px solid var(--np-ink-soft); }
-  .ad-col--right { border-left:  1px solid var(--np-ink-soft); }
+  .fh-rail--left  { border-right: 1px solid var(--np-ink-soft); }
+  .fh-rail--right { border-left:  1px solid var(--np-ink-soft); }
   /* El anuncio acompaña al scroll: una sola impresión rinde mucho más. */
   .ad-slot--rail { position: sticky; top: 16px; }
 }

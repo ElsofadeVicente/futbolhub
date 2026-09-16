@@ -60,7 +60,7 @@
   /* Lo que sale en TODAS las páginas y por tanto no prueba que el juego esté
      vivo. Sin descontarlo, la inicial del círculo de perfil ya contaba como
      "hay contenido" y el rescate no saltaría nunca. */
-  var CROMO = '#paper-overlay, .pw-root, .fh-cabecera, .ad-col, #' + ID_PANEL +
+  var CROMO = '#paper-overlay, .pw-root, .fh-cabecera, .fh-rail, #' + ID_PANEL +
               ', script, style, link, noscript, template';
 
   var MIN_TEXTO = 20;    // caracteres de texto útil para dar la página por viva

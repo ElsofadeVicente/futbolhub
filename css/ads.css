@@ -32,13 +32,13 @@
 /* Por debajo del umbral no hay columna que valga: fuera, y que el
    contenido recupere el ancho (--ad-col-w vale 0). */
 @media (max-width: 1239px) {
-  .ad-col,
+  .fh-rail,
   .bj-ad-sidebar { display: none !important; }
 }
 
 /* ── El hueco de la unidad ──
    Reserva altura para que el anuncio, al entrar, no empuje nada (CLS). */
-.ad-col .ad-slot,
+.fh-rail .ad-slot,
 .bj-ad-sidebar .ad-slot {
   display: block;
   width: 160px;
@@ -50,7 +50,7 @@
   top: 16px;
 }
 
-.ad-col .ad-slot ins.adsbygoogle,
+.fh-rail .ad-slot ins.adsbygoogle,
 .bj-ad-sidebar .ad-slot ins.adsbygoogle { display: block; }
 
 /* Sin unidad configurada, con bloqueador, o sin consentimiento: AdSense
