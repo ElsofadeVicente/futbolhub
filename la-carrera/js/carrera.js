@@ -928,9 +928,16 @@ async function _prepareAndPlay(date, saved) {
   /* En #loading-body, NO en #loading-screen: ese contenedor lleva el botón
      Volver y es el que centra con margin:auto (ver fail()). Sobrescribir
      elLoading entero se llevaba los dos por delante y el spinner quedaba
-     pegado arriba, sin el wrapper que lo centraba. */
+     pegado arriba, sin el wrapper que lo centraba.
+
+     OJO CON EL LARGO DEL TEXTO: "Cargando carrera…" son 18 caracteres, por
+     debajo del MIN_TEXTO=20 de js/pantalla-viva.js. Con una red algo lenta,
+     ese script veía la pantalla de carga como "sin contenido" y volvía a
+     enseñar #intro-screen durante medio segundo — el "se buguea y sale la
+     pantalla de Jugar otra vez" que reportó el usuario. El texto largo no es
+     estético, es lo que mantiene esta pantalla por encima del umbral. */
   (document.getElementById('loading-body') || elLoading).innerHTML =
-    '<div class="spin"></div><p>Cargando carrera…</p>';
+    '<div class="spin"></div><p>Cargando la carrera de este día…</p>';
 
   /* Reconstruir la carrera SI necesita el manifest de performances. Si no
      llego en el arranque se pide aqui, que es su primer uso real. */
@@ -983,6 +990,7 @@ async function _prepareAndPlay(date, saved) {
 }
 
 function startGame() {
+  cancelarStatsAuto();   // por si se cambia de edición antes de que salte el aviso automático
   _attempt = 1; _visible = 1; _ended = false; _won = false; _statsSaved = false; _attemptMarked = false;
   elEnd.classList.add('hidden');
   elIntro.classList.add('hidden');
@@ -1282,7 +1290,34 @@ function showEnd() {
   elEnd.classList.remove('hidden');
   elNav.classList.remove('hidden');
   renderNav();
-  setTimeout(openStats, 650);
+  programarStatsAuto();
+}
+
+/* El modal de estadísticas se abre solo a los 650ms de ver el resultado, para
+   quien se queda quieto mirando. Pero es un overlay `position:fixed` que
+   centra su contenido tapando la pantalla entera (ver .overlay en
+   carrera.css): a quien en ese medio segundo ya está scrolleando el móvil
+   para llegar a "Compartir" o "Ver mis estadísticas" (ambos MÁS ABAJO en
+   #end-actions) el overlay le tapa la vista de golpe, y desde donde estaba
+   scrolleando eso se siente exactamente como "se me sube la pantalla sola".
+   Si el jugador ya se ha puesto a interactuar, se cancela el aviso
+   automático: total, va a abrir las estadísticas él mismo o ya está mirando
+   lo que quería mirar. */
+let _statsAutoTimer = null;
+let _statsAutoOffs = [];
+function cancelarStatsAuto() {
+  if (_statsAutoTimer) { clearTimeout(_statsAutoTimer); _statsAutoTimer = null; }
+  _statsAutoOffs.forEach(quitar => quitar());
+  _statsAutoOffs = [];
+}
+function programarStatsAuto() {
+  cancelarStatsAuto();
+  const cancelar = () => cancelarStatsAuto();
+  ['scroll', 'touchstart', 'wheel'].forEach(ev => {
+    window.addEventListener(ev, cancelar, { passive: true });
+    _statsAutoOffs.push(() => window.removeEventListener(ev, cancelar));
+  });
+  _statsAutoTimer = setTimeout(() => { cancelarStatsAuto(); openStats(); }, 650);
 }
 
 // ══════════════════════════════════════════════
