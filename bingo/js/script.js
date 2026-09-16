@@ -442,6 +442,13 @@
      recortando). Midiendo siempre contra 700 la escala vale tanto si encoge
      el propio CSS como si encoge además el bucle de abajo. */
   const ANCHO_DISENO_CARTON = 700;
+  /* Suelo del ancho: por debajo de esto el texto de la casilla (que ya tiene
+     su propio mínimo legible, ver .bcell-cat en el CSS) deja de tener sitio
+     aunque el icono y los huecos se encojan a cero. Se prefiere un poco de
+     scroll en una ventana muy baja a una letra que no se lee — el "cartón
+     cortado" del bug original era MUCHO peor sin ningún ajuste, esto es
+     solo el límite de hasta dónde merece la pena seguir encogiendo. */
+  const ANCHO_MINIMO_CARTON = 400;
   function ajustarTablero(vuelta) {
     vuelta = vuelta || 0;
     const grid = document.querySelector('.card-grid');
@@ -452,9 +459,9 @@
        zoom) ganara espacio de sobra. */
     if (vuelta === 0) grid.style.removeProperty('max-width');
     const sobra = document.documentElement.scrollHeight - window.innerHeight;
-    if (sobra > 0) {
-      const actual = grid.getBoundingClientRect().width;
-      const nuevo = Math.max(220, Math.floor(actual - sobra - 4));
+    const actual = grid.getBoundingClientRect().width;
+    if (sobra > 0 && actual > ANCHO_MINIMO_CARTON) {
+      const nuevo = Math.max(ANCHO_MINIMO_CARTON, Math.floor(actual - sobra - 4));
       if (nuevo < actual) {
         grid.style.maxWidth = nuevo + 'px';
         void grid.offsetWidth;
@@ -464,8 +471,17 @@
     }
     /* Ya no hace falta seguir encogiendo (o no hacía falta desde el
        principio): fija la escala del contenido contra el ancho FINAL,
-       sea cual sea el motivo de que el cartón sea más pequeño de 700px. */
-    const final = grid.getBoundingClientRect().width;
+       sea cual sea el motivo de que el cartón sea más pequeño de 700px.
+       Y si el propio calc(100vh - 200px) del CSS ya lo deja por debajo del
+       suelo SIN que este bucle haya tocado nada, se empuja hacia arriba
+       hasta el suelo: de lo contrario el suelo de arriba nunca protegería a
+       nadie, porque solo actúa cuando este código ENCOGE, no cuando el
+       punto de partida ya nace pequeño. */
+    let final = actual;
+    if (final < ANCHO_MINIMO_CARTON) {
+      grid.style.maxWidth = ANCHO_MINIMO_CARTON + 'px';
+      final = ANCHO_MINIMO_CARTON;
+    }
     grid.style.setProperty('--bcell-scale', Math.min(1, final / ANCHO_DISENO_CARTON));
   }
 
