@@ -197,6 +197,21 @@ function loadTodayResult() {
 // ══════════════════════════════════════════════
 //  ÍNDICE DE EQUIPOS
 // ══════════════════════════════════════════════
+/* Filiales/juveniles fuera del autocompletado de equipos. Un filial (B, II,
+   Castilla, Atlético...) o un equipo juvenil nunca es una respuesta válida
+   en una pregunta de equipos (mismo criterio que usa el generador de la
+   categoría "bilanz" en admin/scraper_enteltop.py), así que ofrecerlo al
+   escribir solo confunde: se ve en la lista pero nunca puede ser el
+   acierto. team-names.json es el listado de TODOS los clubes vistos en la
+   base, con reservas y juveniles incluidos. */
+const TEAM_YOUTH_RE = /\b(u-?\s?(1[3-9]|2[0-3])|sub-?\s?\d{1,2}|under\s?\d{2}|onder\s?\d{2}|youth|yth|jugend|jeugd|juvenil(es)?|primavera|nachwuchs|cantera|academy)\b/;
+function isFilialOJuvenil(name) {
+  const n = norm(name);
+  if (!n) return false;
+  if (/ y$/.test(n) || TEAM_YOUTH_RE.test(n)) return true; // TM abrevia "equipo juvenil" como "... Y"
+  if (/\bii\b/.test(n) || / b$/.test(n) || / c$/.test(n)) return true;
+  return /\b(castilla|atletic|reserves?|res|amateur(e|s)?|amat|bis|jong|promesas)\b/.test(n);
+}
 function buildTeamIndex(teamNames, leagueTeams) {
   const priorityMap = new Map();
   for (const [, leagueData] of Object.entries(leagueTeams)) {
@@ -204,11 +219,13 @@ function buildTeamIndex(teamNames, leagueTeams) {
       if (!priorityMap.has(teamName)) priorityMap.set(teamName, leagueData.priority);
     }
   }
-  const result = teamNames.map(name => ({
-    name,
-    normName: norm(name),
-    priority: priorityMap.get(name) || 999
-  }));
+  const result = teamNames
+    .filter(name => !isFilialOJuvenil(name))
+    .map(name => ({
+      name,
+      normName: norm(name),
+      priority: priorityMap.get(name) || 999
+    }));
   result.sort((a, b) => a.priority - b.priority);
   return result;
 }
