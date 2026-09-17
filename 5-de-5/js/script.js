@@ -80,7 +80,7 @@ let _COACH_MAP          = {};  // id → [coachName, ...]
 let _TEAMMATE_MAP       = {};  // id → [playerName, ...]
 let _REVERSE_TEAMMATE   = {};  // normalizedName → Set<normalizedName> (relación inversa)
 let _REVERSE_TEAMMATE_IDS = {}; // normalizedName(famoso) → Set<id_string> (check por ID)
-let _PERF_MAP           = {};  // id → { lg:[cids 1a división], clg:goles Champions, bsg:mejor temporada }
+let _PERF_MAP           = {};  // id → { lg:[cids 1a división], clg:goles Champions, bsg/bsa/bsy:mejor temporada (goles/asist./amarillas), csg/csa/csy:temporada en curso }
 
 let _acItems         = [];
 let _acIndex         = -1;
@@ -208,6 +208,15 @@ function _buildPlayerFromChunk(id, chunk) {
     lg:          _PERF_MAP[sid]?.lg  || [],
     clg:         _PERF_MAP[sid]?.clg || 0,
     bsg:         _PERF_MAP[sid]?.bsg || 0,
+    bsa:         _PERF_MAP[sid]?.bsa || 0,
+    bsy:         _PERF_MAP[sid]?.bsy || 0,
+    csg:         _PERF_MAP[sid]?.csg || 0,
+    csa:         _PERF_MAP[sid]?.csa || 0,
+    csy:         _PERF_MAP[sid]?.csy || 0,
+    psg:         _PERF_MAP[sid]?.psg || 0,
+    psa:         _PERF_MAP[sid]?.psa || 0,
+    psy:         _PERF_MAP[sid]?.psy || 0,
+    loaned:      !!_PERF_MAP[sid]?.ln,
   };
 }
 
@@ -459,6 +468,14 @@ async function _loadData() {
      semilla. */
   try { if (window.RankedEngine) RankedEngine.setTeammateData(TEAMMATES_LIST, _REVERSE_TEAMMATE, _REVERSE_TEAMMATE_IDS); } catch (e) {}
 
+  /* Etiquetas de temporada ("_season: {actual, pasada}"), calculadas por
+     admin/build_5de5_perf.py y viajando dentro de perf_stats.json bajo esa
+     clave especial (nunca puede chocar con un id de jugador, son
+     numericos). Sin esto las restricciones "en vivo"/"de la pasada"
+     dirian el respaldo generico de ranked-engine.js en vez de la
+     temporada real. */
+  try { if (window.RankedEngine && _PERF_MAP._season) RankedEngine.setTemporadaLabels(_PERF_MAP._season); } catch (e) {}
+
   /* Máxima transferencia en €  */
   function _maxFee(transfers) {
     if (!transfers || !transfers.length) return 0;
@@ -501,6 +518,15 @@ async function _loadData() {
       lg:           ps.lg  || [],
       clg:          ps.clg || 0,
       bsg:          ps.bsg || 0,
+      bsa:          ps.bsa || 0,
+      bsy:          ps.bsy || 0,
+      csg:          ps.csg || 0,
+      csa:          ps.csa || 0,
+      csy:          ps.csy || 0,
+      psg:          ps.psg || 0,
+      psa:          ps.psa || 0,
+      psy:          ps.psy || 0,
+      loaned:       !!ps.ln,
     };
   });
 
@@ -542,6 +568,15 @@ async function _loadData() {
       lg:           ps.lg  || [],
       clg:          ps.clg || 0,
       bsg:          ps.bsg || 0,
+      bsa:          ps.bsa || 0,
+      bsy:          ps.bsy || 0,
+      csg:          ps.csg || 0,
+      csa:          ps.csa || 0,
+      csy:          ps.csy || 0,
+      psg:          ps.psg || 0,
+      psa:          ps.psa || 0,
+      psy:          ps.psy || 0,
+      loaned:       !!ps.ln,
     };
   });
 
@@ -1369,7 +1404,7 @@ const App = (() => {
            por su cuenta, y mientras tanto seguiria siendo el mismo archivo (no
            hay copia que diverja, pero si el motor compartido cambia de version
            conviene forzar la recarga igualmente). */
-        worker = new Worker('js/restrictions-worker.js?v=20260906a');
+        worker = new Worker('js/restrictions-worker.js?v=20260917b');
       } catch(e) {
         finish(() => { try { resolve(_sync()); } catch(err){ reject(err); } });
         return;
@@ -1402,6 +1437,11 @@ const App = (() => {
         teammates:          TEAMMATES_LIST,
         /* Los Set no sobreviven a structured clone: viaja como array. */
         usadas:             _mem,
+        /* Etiquetas de temporada ({actual,pasada}), para las restricciones
+           "en vivo"/"de la pasada" — mismo motivo que teammates: el worker
+           no tiene su propio _PERF_MAP, asi que sin esto generaria con el
+           respaldo generico de ranked-engine.js. */
+        temporadaLabels:    _PERF_MAP._season,
       });
     });
   }

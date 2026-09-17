@@ -512,6 +512,11 @@
       lg:  _PERF_MAP[sid]?.lg  || [],
       clg: _PERF_MAP[sid]?.clg || 0,
       bsg: _PERF_MAP[sid]?.bsg || 0,
+      bsa: _PERF_MAP[sid]?.bsa || 0,
+      bsy: _PERF_MAP[sid]?.bsy || 0,
+      csg: _PERF_MAP[sid]?.csg || 0,
+      csa: _PERF_MAP[sid]?.csa || 0,
+      csy: _PERF_MAP[sid]?.csy || 0,
     };
   }
 
@@ -823,6 +828,8 @@
         mv:   typeof chunk.mv === 'number' ? chunk.mv : (parseInt(chunk.mv, 10) || 0),
         club: chunk.club || null,
         lg: ps.lg || [], clg: ps.clg || 0, bsg: ps.bsg || 0,
+        bsa: ps.bsa || 0, bsy: ps.bsy || 0,
+        csg: ps.csg || 0, csa: ps.csa || 0, csy: ps.csy || 0,
       };
     };
 
@@ -910,7 +917,21 @@
       case 'career_apps_ge':  return (player.apps  || 0) >= r.value;
       case 'champions_goals_ge': return (player.clg || 0) >= r.value;
       case 'season_goals_ge':    return (player.bsg || 0) >= r.value;
+      /* season_assists_ge/season_yellows_ge/current_season_*_ge: solo las
+         genera el motor de 5 de 5 (js/ranked-engine.js), nunca los
+         generadores de Bingo/Tres en Raya de este mismo archivo — pero el
+         validate() de aqui es el que usa 5 de 5 en cliente (FR.validate),
+         asi que tiene que reconocer el tipo igual que RankedEngine.validate. */
+      case 'season_assists_ge':  return (player.bsa || 0) >= r.value;
+      case 'season_yellows_ge':  return (player.bsy || 0) >= r.value;
+      case 'current_season_goals_ge':   return (player.csg || 0) >= r.value;
+      case 'current_season_assists_ge': return (player.csa || 0) >= r.value;
+      case 'current_season_yellows_ge': return (player.csy || 0) >= r.value;
+      case 'pastseason_goals_ge':       return (player.psg || 0) >= r.value;
+      case 'pastseason_assists_ge':     return (player.psa || 0) >= r.value;
+      case 'pastseason_yellows_ge':     return (player.psy || 0) >= r.value;
       case 'natGoals_ge':        return (player.natGoals || 0) >= r.value;
+      case 'on_loan':            return !!player.loaned;
       case 'fee_gt': return (player.maxFee || 0) > r.value;
       case 'fee_lt': return (player.maxFee || 0) < r.value;
       case 'foot': return player.foot === 'both' || player.foot === r.value;

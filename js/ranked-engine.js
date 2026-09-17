@@ -317,6 +317,19 @@
     ],
   };
 
+  /* Campeon de LIGA o COPA domestica de un pais + nacionalidad de ESE MISMO
+     pais es la combinacion mas facil que existe (medido: ganar la liga o la
+     copa de tu propio pais lo ha hecho casi cualquier grande de esa
+     nacionalidad). _isRedundant la descarta como par valido, igual que ya
+     descarta nacionalidad+continente. */
+  const DOMESTIC_TROPHY_NAT = {
+    'Liga España':      'Spain',   'Copa España':      'Spain',
+    'Liga Inglaterra':  'England', 'Copa Inglaterra':  'England',
+    'Liga Italia':      'Italy',   'Copa Italia':      'Italy',
+    'Liga Francia':     'France',  'Copa Francia':     'France',
+    'Liga Alemania':    'Germany', 'Copa Alemania':    'Germany',
+  };
+
   const COACHES_LIST = [
     { name:'Hansi Flick',     id:'67',    icon:'🎽' },
     { name:'Jürgen Klopp',    id:'118',   icon:'🎽' },
@@ -392,6 +405,22 @@
     for (const [k, v] of Object.entries(reverseTeammateIds || {})) _REVERSE_TEAMMATE_IDS[k] = new Set(v);
   }
 
+  /* Etiquetas de temporada ("26/27" en vivo, "25/26" la pasada), calculadas
+     por admin/build_5de5_perf.py y expuestas en perf_stats.json bajo la
+     clave especial "_season" (ver ese script). Sin esto las restricciones
+     dirian el respaldo generico de aqui abajo en vez de la temporada real.
+     Conviven a proposito desde 2026-09-17 (decision del usuario): "en
+     vivo" sola se queda casi vacia a mitad de temporada, pero quitarla del
+     todo pierde la gracia de "esta jugando bien AHORA" — ver el comentario
+     de _buildCandidates. */
+  let _TEMPORADA_ACTUAL_LABEL = 'temporada en curso';
+  let _TEMPORADA_PASADA_LABEL = 'temporada pasada';
+  function setTemporadaLabels(labels) {
+    if (!labels) return;
+    if (typeof labels.actual === 'string' && labels.actual) _TEMPORADA_ACTUAL_LABEL = labels.actual;
+    if (typeof labels.pasada === 'string' && labels.pasada) _TEMPORADA_PASADA_LABEL = labels.pasada;
+  }
+
   /* ── validate ── */
   function validate(player, r) {
     if (!player || !r) return false;
@@ -447,7 +476,16 @@
       case 'one_club': return (player.teams || []).length === 1;
       case 'champions_goals_ge': return (player.clg || 0) >= r.value;
       case 'season_goals_ge':    return (player.bsg || 0) >= r.value;
+      case 'season_assists_ge':  return (player.bsa || 0) >= r.value;
+      case 'season_yellows_ge':  return (player.bsy || 0) >= r.value;
+      case 'current_season_goals_ge':   return (player.csg || 0) >= r.value;
+      case 'current_season_assists_ge': return (player.csa || 0) >= r.value;
+      case 'current_season_yellows_ge': return (player.csy || 0) >= r.value;
+      case 'pastseason_goals_ge':       return (player.psg || 0) >= r.value;
+      case 'pastseason_assists_ge':     return (player.psa || 0) >= r.value;
+      case 'pastseason_yellows_ge':     return (player.psy || 0) >= r.value;
       case 'natGoals_ge':        return (player.natGoals || 0) >= r.value;
+      case 'on_loan':            return !!player.loaned;
       case 'fee_gt': return (player.maxFee || 0) > r.value;
       case 'fee_lt': return (player.maxFee || 0) < r.value;
       case 'team':
@@ -474,6 +512,32 @@
       }
     }
     return count;
+  }
+
+  /* Todos los clubes de `shuffledClubs` que comparten al menos `minCount`
+     jugadores del pool con club1 (excluido el propio club1). Antes se
+     tomaba el PRIMERO que superaba el umbral, y eso premiaba a los clubes
+     "muy conectados" (mucho trasiego historico de jugadores): superan el
+     umbral contra CASI cualquier club1, así que ganaban la carrera mucho
+     más a menudo que uno con plantilla más cerrada, sin que eso fuera azar
+     real. Medido (10.000 rondas, 2026-09-17): Leicester City salía en 5 de
+     los 15 pares más frecuentes, y "Athletic Bilbao + Real Sociedad" 8
+     veces más que la media de un par cualquiera. Devolver TODOS los que
+     pasan y elegir uno al azar reparte la probabilidad de verdad. */
+  function _clubsPassingThreshold(shuffledClubs, club1Name, club1r, db, minCount) {
+    const passing = [];
+    for (const club of shuffledClubs) {
+      if (club.tmName === club1Name) continue;
+      let pairCount = 0;
+      for (const p of db) {
+        if (validate(p, club1r) && validate(p, { type:'club', value:club.tmName })) {
+          pairCount++;
+          if (pairCount >= minCount) break;
+        }
+      }
+      if (pairCount >= minCount) passing.push(club);
+    }
+    return passing;
   }
 
   function _buildCandidates(rng, db) {
@@ -522,6 +586,7 @@
     candidates.push({ type:'caps_ge', value:75,  label:'75 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'caps_ge', value:100, label:'100 o más internacionalidades',  imgUrl:null, icon:'🌍', family:'caps' });
     candidates.push({ type:'clubs_le', value:3, label:'Ha jugado en 3 o menos clubes',imgUrl:null, icon:'🏟️', family:'clubs_count' });
+    candidates.push({ type:'on_loan', label:'Estuvo cedido en algún club', imgUrl:null, icon:'🔄', family:'loan' });
     candidates.push({ type:'fee_gt', value:40000000, label:'Traspaso de más de 40M €',   imgUrl:null, icon:'💰', family:'fee' });
     candidates.push({ type:'fee_gt', value:20000000, label:'Traspaso de más de 20M €',   imgUrl:null, icon:'💰', family:'fee' });
     candidates.push({ type:'champions_goals_ge', value:10, label:'10+ goles en Champions', imgUrl:null, icon:'⭐', family:'champions_goals' });
@@ -530,6 +595,42 @@
     candidates.push({ type:'season_goals_ge', value:10, label:'10+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
     candidates.push({ type:'season_goals_ge', value:20, label:'20+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
     candidates.push({ type:'season_goals_ge', value:30, label:'30+ goles en una temporada de liga', imgUrl:null, icon:'⚽', family:'season_goals' });
+    candidates.push({ type:'season_assists_ge', value:10, label:'10+ asistencias en una temporada de liga', imgUrl:null, icon:'🎯', family:'season_assists' });
+    candidates.push({ type:'season_assists_ge', value:15, label:'15+ asistencias en una temporada de liga', imgUrl:null, icon:'🎯', family:'season_assists' });
+    candidates.push({ type:'season_assists_ge', value:20, label:'20+ asistencias en una temporada de liga', imgUrl:null, icon:'🎯', family:'season_assists' });
+    candidates.push({ type:'season_yellows_ge', value:10, label:'10+ tarjetas amarillas en una temporada de liga', imgUrl:null, icon:'🟨', family:'season_yellows' });
+    candidates.push({ type:'season_yellows_ge', value:15, label:'15+ tarjetas amarillas en una temporada de liga', imgUrl:null, icon:'🟨', family:'season_yellows' });
+    /* "En vivo" (temporada EN CURSO) y "de la pasada" (ULTIMA COMPLETA)
+       conviven a proposito, en cualquier competicion de club (no solo 1a
+       division). Comparten `family` con su pareja (current_season_goals/
+       assists/yellows) para que _familyUsed garantice que nunca salen las
+       dos variantes en la misma ronda — y de paso, al ser una familia con
+       el doble de candidatos, tiene mas peso en el sorteo y mas margen
+       para que _ensureSolution encuentre una solucion real (ver ahi:
+       "en vivo" a mitad de temporada casi nunca llega a 2 respuestas por
+       si sola, pero "la pasada" -temporada completa- casi siempre si).
+       Se recalculan cada vez que se corre admin/build_5de5_perf.py, asi
+       que estan tan al dia como la ultima vez que se actualizaron
+       performances y se hizo sync.bat general — ver la cabecera de ese
+       script. 15+ amarillas se descarto en las dos por umbrales/medicion:
+       demasiado pocos candidatos por debajo del minimo de 2 que exige
+       _matching() mas abajo. */
+    candidates.push({ type:'current_season_goals_ge', value:5,  label:`5+ goles en la ${_TEMPORADA_ACTUAL_LABEL}`,  imgUrl:null, icon:'⚽', family:'current_season_goals' });
+    candidates.push({ type:'current_season_goals_ge', value:10, label:`10+ goles en la ${_TEMPORADA_ACTUAL_LABEL}`, imgUrl:null, icon:'⚽', family:'current_season_goals' });
+    candidates.push({ type:'current_season_goals_ge', value:15, label:`15+ goles en la ${_TEMPORADA_ACTUAL_LABEL}`, imgUrl:null, icon:'⚽', family:'current_season_goals' });
+    candidates.push({ type:'current_season_assists_ge', value:5,  label:`5+ asistencias en la ${_TEMPORADA_ACTUAL_LABEL}`,  imgUrl:null, icon:'🎯', family:'current_season_assists' });
+    candidates.push({ type:'current_season_assists_ge', value:10, label:`10+ asistencias en la ${_TEMPORADA_ACTUAL_LABEL}`, imgUrl:null, icon:'🎯', family:'current_season_assists' });
+    candidates.push({ type:'current_season_assists_ge', value:15, label:`15+ asistencias en la ${_TEMPORADA_ACTUAL_LABEL}`, imgUrl:null, icon:'🎯', family:'current_season_assists' });
+    candidates.push({ type:'current_season_yellows_ge', value:5,  label:`5+ tarjetas amarillas en la ${_TEMPORADA_ACTUAL_LABEL}`,  imgUrl:null, icon:'🟨', family:'current_season_yellows' });
+    candidates.push({ type:'current_season_yellows_ge', value:10, label:`10+ tarjetas amarillas en la ${_TEMPORADA_ACTUAL_LABEL}`, imgUrl:null, icon:'🟨', family:'current_season_yellows' });
+    candidates.push({ type:'pastseason_goals_ge', value:5,  label:`5+ goles en la ${_TEMPORADA_PASADA_LABEL}`,  imgUrl:null, icon:'⚽', family:'current_season_goals' });
+    candidates.push({ type:'pastseason_goals_ge', value:10, label:`10+ goles en la ${_TEMPORADA_PASADA_LABEL}`, imgUrl:null, icon:'⚽', family:'current_season_goals' });
+    candidates.push({ type:'pastseason_goals_ge', value:15, label:`15+ goles en la ${_TEMPORADA_PASADA_LABEL}`, imgUrl:null, icon:'⚽', family:'current_season_goals' });
+    candidates.push({ type:'pastseason_assists_ge', value:5,  label:`5+ asistencias en la ${_TEMPORADA_PASADA_LABEL}`,  imgUrl:null, icon:'🎯', family:'current_season_assists' });
+    candidates.push({ type:'pastseason_assists_ge', value:10, label:`10+ asistencias en la ${_TEMPORADA_PASADA_LABEL}`, imgUrl:null, icon:'🎯', family:'current_season_assists' });
+    candidates.push({ type:'pastseason_assists_ge', value:15, label:`15+ asistencias en la ${_TEMPORADA_PASADA_LABEL}`, imgUrl:null, icon:'🎯', family:'current_season_assists' });
+    candidates.push({ type:'pastseason_yellows_ge', value:5,  label:`5+ tarjetas amarillas en la ${_TEMPORADA_PASADA_LABEL}`,  imgUrl:null, icon:'🟨', family:'current_season_yellows' });
+    candidates.push({ type:'pastseason_yellows_ge', value:10, label:`10+ tarjetas amarillas en la ${_TEMPORADA_PASADA_LABEL}`, imgUrl:null, icon:'🟨', family:'current_season_yellows' });
     candidates.push({ type:'natGoals_ge', value:20, label:'20+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
     candidates.push({ type:'natGoals_ge', value:30, label:'30+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
     candidates.push({ type:'natGoals_ge', value:50, label:'50+ goles con su selección', imgUrl:null, icon:'🌍', family:'nat_goals' });
@@ -551,12 +652,22 @@
     if (rA.type === 'trophy_any' && rB.type === 'trophy' && (rA.value||[]).includes(rB.value)) return true;
     if (rA.type === 'nationality' && rB.type === 'continent') return true;
     if (rA.type === 'continent' && rB.type === 'nationality') return true;
+    if (rA.type === 'trophy' && rB.type === 'nationality' && DOMESTIC_TROPHY_NAT[rA.value] === rB.value) return true;
+    if (rB.type === 'trophy' && rA.type === 'nationality' && DOMESTIC_TROPHY_NAT[rB.value] === rA.value) return true;
     if (rA.type === 'caps_ge' && rB.type === 'caps_ge' && rA.value > rB.value) return true;
     if (rA.type === 'caps_0' && rB.type === 'caps_ge') return true;
     if (rA.type === 'caps_ge' && rA.value >= 1 && rB.type === 'caps_0') return true;
     if (rA.type === 'caps_le' && rB.type === 'caps_le' && rA.value < rB.value) return true;
     if (rA.type === 'champions_goals_ge' && rB.type === 'champions_goals_ge' && rA.value > rB.value) return true;
     if (rA.type === 'season_goals_ge'    && rB.type === 'season_goals_ge'    && rA.value > rB.value) return true;
+    if (rA.type === 'season_assists_ge'  && rB.type === 'season_assists_ge'  && rA.value > rB.value) return true;
+    if (rA.type === 'season_yellows_ge'  && rB.type === 'season_yellows_ge'  && rA.value > rB.value) return true;
+    if (rA.type === 'current_season_goals_ge'   && rB.type === 'current_season_goals_ge'   && rA.value > rB.value) return true;
+    if (rA.type === 'current_season_assists_ge' && rB.type === 'current_season_assists_ge' && rA.value > rB.value) return true;
+    if (rA.type === 'current_season_yellows_ge' && rB.type === 'current_season_yellows_ge' && rA.value > rB.value) return true;
+    if (rA.type === 'pastseason_goals_ge'   && rB.type === 'pastseason_goals_ge'   && rA.value > rB.value) return true;
+    if (rA.type === 'pastseason_assists_ge' && rB.type === 'pastseason_assists_ge' && rA.value > rB.value) return true;
+    if (rA.type === 'pastseason_yellows_ge' && rB.type === 'pastseason_yellows_ge' && rA.value > rB.value) return true;
     if (rA.type === 'natGoals_ge'        && rB.type === 'natGoals_ge'        && rA.value > rB.value) return true;
     if (rA.type === 'one_club' && rB.type === 'clubs_ge') return true;
     if (rB.type === 'one_club' && rA.type === 'clubs_ge') return true;
@@ -612,8 +723,17 @@
               _matching(r, db) >= 2
             );
             if (replacement) { result[j] = replacement; changed = true; break outer; }
+            /* "Relajada" quita la exigencia de _isRedundant si hiciera
+               falta, pero la unicidad de familia NO es negociable: sin
+               este `!usedFamilies.has(...)` (medido, 2026-09-17: 1 ronda
+               de 1500 con "en vivo" Y "de la pasada" a la vez), esta rama
+               podia colar una SEGUNDA restriccion de una familia que ya
+               estaba en la ronda, siempre que los dos tipos no estuvieran
+               declarados _isRedundant entre si — como paso con
+               current_season_goals_ge/pastseason_goals_ge, que comparten
+               family pero son type distinto. */
             const relaxed = shuffledPool.find(r =>
-              !result.includes(r) &&
+              !result.includes(r) && !usedFamilies.has(r.family || r.type) &&
               !result.some((e, k) => k !== j && (_isRedundant(e, r) || _isRedundant(r, e))) &&
               _matching(r, db) >= 2
             );
@@ -631,7 +751,6 @@
     const filteredDB = clubRestrictions.length > 0
       ? db.filter(p => clubRestrictions.every(cr => validate(p, cr)))
       : db;
-    const MIN_SOLUCIONES = 2;
     const hasSolution = (rs) => {
       const nonClub = rs.filter(r => r.type !== 'club');
       let n = 0;
@@ -641,6 +760,55 @@
       return false;
     };
     if (hasSolution(restrictions)) return restrictions;
+
+    /* Las familias PROTEGIDAS ("en vivo") exigen que el jugador este ACTIVO
+       en la temporada de referencia, y el pool de generacion esta lleno de
+       leyendas retiradas (esta curado por FAMA de toda la carrera, no por
+       vigencia). Medido (2026-09-17, 500 rondas reales): el 81% de las
+       veces que "en vivo" sale elegida, NINGUN jugador del par de clubes
+       tiene datos de esa temporada, sea cual sea el umbral — asi que no es
+       cuestion de bajar el listón (probado: 0% de exito bajando de umbral
+       dentro de la misma familia) ni de que hueco se repara primero
+       (tambien probado: mismo resultado exacto, porque si la propia
+       restriccion protegida es el cuello de botella, tocar CUALQUIER otra
+       cosa no puede ayudar — una interseccion solo se puede encoger, nunca
+       ampliar). Lo unico que la salva de verdad es pedirle menos: si existe
+       AL MENOS una respuesta real (no cero), se acepta con esa en vez de
+       exigirle las mismas 2 que a cualquier otra familia — sigue siendo una
+       ronda resoluble, solo con una respuesta mas concreta, que es lo
+       esperable de un dato "en vivo" en vez de un defecto. */
+    const protegidoIdx = restrictions.findIndex((r, i) => i >= 2 && PROTECTED_FAMILIES.has(r.family || r.type));
+    if (protegidoIdx !== -1) {
+      const familia = restrictions[protegidoIdx].family || restrictions[protegidoIdx].type;
+      /* Antes de conformarse con 1 sola respuesta, probar las VARIANTES
+         HERMANAS de la misma familia — "en vivo" y "de la pasada" ahora
+         comparten familia a proposito (2026-09-17): si la elegida era la
+         de en vivo (poca gente con datos a mitad de temporada) puede que
+         la de la pasada (temporada completa, mucha mas gente) SI llegue a
+         las 2 respuestas de siempre, sin tener que rebajar nada. */
+      const hermanas = shuffledPool.filter(c =>
+        (c.family || c.type) === familia && c !== restrictions[protegidoIdx]);
+      for (const cand of hermanas) {
+        if (restrictions.some((r, i) => i !== protegidoIdx && (_isRedundant(r, cand) || _isRedundant(cand, r)))) continue;
+        const prueba = [...restrictions];
+        prueba[protegidoIdx] = cand;
+        if (hasSolution(prueba)) return prueba;
+      }
+      /* Ninguna variante llega a 2: aceptar la ORIGINAL con solo 1 en vez
+         de exigirle lo mismo que a cualquier otra familia — sigue siendo
+         una ronda resoluble, solo con una respuesta mas concreta. Medido
+         (2026-09-17, 500 rondas): el 81% de las veces que "en vivo" sale
+         elegida, NINGUN jugador del par de clubes tiene datos de esa
+         temporada, sea cual sea el umbral — asi que no es cuestion de
+         bajar el listón dentro de la MISMA variante (probado: 0% de
+         exito) ni de que hueco se repara primero (tambien probado: mismo
+         resultado, porque si la propia restriccion protegida es el cuello
+         de botella, tocar CUALQUIER otra cosa no puede ayudar — una
+         interseccion solo se puede encoger, nunca ampliar). */
+      const nonClub = restrictions.filter(r => r.type !== 'club');
+      if (filteredDB.some(p => nonClub.every(r => validate(p, r)))) return restrictions;
+    }
+
     const result = [...restrictions];
     const swappableIdx = result.map((_, i) => i).filter(i => i >= 2);
     for (const idx of swappableIdx) {
@@ -692,6 +860,32 @@
   }
 
   const _ONECLUB_PROB = 0.02;
+
+  /* Tope al peso de "compañero de X" en el reparto de familias libres.
+     Medido (10.000 rondas, 2026-09-17): sin tope, "teammate" se llevaba el
+     26,7% de los 3 huecos libres (hasta 227 candidatos jugables, uno por
+     cada famoso curado) contra un 0,4% combinado de las tres "en vivo"
+     (2-3 candidatos cada una) — el peso era literalmente el tamaño de la
+     familia, así que una con 100x más candidatos ganaba 100x más a menudo.
+     Con el tope a 10, "compañero de X" compite en la misma liga que
+     coach(14)/league(10)/trophy_domestic(10) en vez de aplastarlas. */
+  const TEAMMATE_WEIGHT_CAP = 10;
+
+  /* Minimo de jugadores del pool que deben cumplir las 5 restricciones a la
+     vez. Vive a nivel de modulo (antes era local a _ensureSolution) porque
+     ahora tambien la usa la seleccion de club2: un club2 que solo comparte
+     UN jugador con club1 ya deja el techo de la ronda en 1 solucion pase lo
+     que pase en los 3 huecos libres (solo pueden ESTRECHAR, nunca ampliar),
+     asi que ese nivel de la cascada era "sin garantia" exactamente igual
+     que el que ya se cerro. */
+  const MIN_SOLUCIONES = 2;
+
+  /* Familias que _ensureSolution intenta salvar aceptando 1 sola solucion
+     en vez de las 2 de siempre — ver el comentario dentro de la funcion.
+     Solo las "en vivo": son las unicas que exigen que el jugador siga
+     activo AHORA, cuando el resto del pool esta lleno de leyendas
+     retiradas. */
+  const PROTECTED_FAMILIES = new Set(['current_season_goals', 'current_season_assists', 'current_season_yellows']);
 
   /* Identidad de una restriccion, para la MEMORIA DE PARTIDA. Dos
      restricciones con la misma clave son la misma etiqueta aunque sean
@@ -782,30 +976,47 @@
     }
 
     if (clubRestrictions.length < 2) {
-      for (const club of shuffledClubs) {
-        if (club.tmName === club1.meta.tmName) continue;
-        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-        let pairCount = 0;
-        for (const p of db) {
-          if (validate(p, club1.r) && validate(p, r)) {
-            pairCount++;
-            if (pairCount >= MIN_PAIR) break;
-          }
-        }
-        if (pairCount >= MIN_PAIR) { clubRestrictions.push(r); break; }
+      const strong = _clubsPassingThreshold(shuffledClubs, club1.meta.tmName, club1.r, db, MIN_PAIR);
+      if (strong.length) {
+        const club = strong[Math.floor(rng() * strong.length)];
+        clubRestrictions.push({ type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' });
       }
     }
 
     if (clubRestrictions.length < 2) {
-      for (const club of shuffledClubs) {
-        if (club.tmName === club1.meta.tmName) continue;
-        const r = { type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' };
-        if (db.some(p => validate(p, club1.r) && validate(p, r))) {
-          clubRestrictions.push(r); break;
-        }
+      /* MIN_SOLUCIONES, no 1: un club2 que solo comparta 1 jugador con
+         club1 deja el techo de la ronda en 1 solucion pase lo que pase en
+         los huecos libres (solo pueden estrechar el resultado, nunca
+         ampliarlo), asi que _ensureSolution jamas podria arreglarla. */
+      const weak = _clubsPassingThreshold(shuffledClubs, club1.meta.tmName, club1.r, db, MIN_SOLUCIONES);
+      if (weak.length) {
+        const club = weak[Math.floor(rng() * weak.length)];
+        clubRestrictions.push({ type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' });
+      }
+    }
+
+    if (clubRestrictions.length < 2) {
+      /* Ultimo recurso ANTES de rendirse: una liga (nunca la de club1, eso
+         lo marcaria _isRedundant) que SI comparta jugadores con club1.
+         Sustituye al viejo "coger cualquier club sin ninguna garantia de
+         jugadores en comun", que era la causa real (medida: ~5-6% de las
+         rondas) de rejillas sin NINGUNA respuesta posible: si club1 y club2
+         no comparten a nadie, la ronda queda irresoluble para siempre,
+         porque _ensureSolution (mas abajo) nunca vuelve a tocar estos dos
+         primeros huecos (swappableIdx empieza en el indice 2). Una liga
+         distinta casi siempre tiene solape, porque cubre decenas de equipos. */
+      const club1League = club1.meta.league;
+      const otherLeagues = _shuffle(Object.entries(LEAGUE_CIDS).filter(([lg]) => lg !== club1League), rng);
+      for (const [liga, cid] of otherLeagues) {
+        const lr = { type:'league', value:liga, cid, teams:LEAGUE_TEAMS[liga]||[], label:`Ha jugado en ${liga}`, imgUrl:LEAGUE_LOGOS[liga]||null, icon:'⚽', family:'league' };
+        if (db.some(p => validate(p, club1.r) && validate(p, lr))) { clubRestrictions.push(lr); break; }
       }
     }
     if (clubRestrictions.length < 2) {
+      /* Defensa final: no deberia alcanzarse nunca (implicaria que club1 no
+         comparte ni un jugador del pool con NINGUN otro club ni con NINGUNA
+         otra liga). Si pasara, una ronda floja es mejor que una sin segundo
+         hueco de club. */
       for (const club of CLUBS_LIST) {
         if (club.tmName !== club1.meta.tmName) {
           clubRestrictions.push({ type:'club', value:club.tmName, label:`Ha jugado en ${club.display}`, imgUrl:club.logoUrl, icon:'🏟️', family:'club' });
@@ -852,7 +1063,7 @@
         }
         return false;
       }),
-      f => familyGroups[f].length,
+      f => f === 'teammate' ? Math.min(familyGroups[f].length, TEAMMATE_WEIGHT_CAP) : familyGroups[f].length,
       rng
     );
 
@@ -889,6 +1100,7 @@
     claveRestriccion,
     validate,
     setTeammateData,
+    setTemporadaLabels,
     normalize,
     rng: { mulberry32: _mulberry32, shuffle: _shuffle, weightedShuffle: _weightedShuffle },
     CLUBS_LIST, LEAGUE_TEAMS, LEAGUE_CIDS, LEAGUE_LOGOS, NATIONALITIES,
