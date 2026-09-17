@@ -498,16 +498,22 @@ const App = (() => {
 
     const btnStart = document.getElementById('btn-start-online');
     const hintEl   = document.getElementById('lobby-hint-players');
+    const isHost = myId === 0;
+    const enough = normalized.length >= 2;
     if (btnStart) {
-      const isHost = myId === 0;
       btnStart.style.display = isHost ? 'block' : 'none';
       if (isHost) {
-        const enough = normalized.length >= 2;
         btnStart.disabled = !enough;
         btnStart.style.opacity = enough ? '1' : '0.45';
-        if (hintEl) hintEl.textContent = enough
+      }
+    }
+    if (hintEl) {
+      if (enough) {
+        hintEl.textContent = isHost
           ? `${normalized.length} jugadores listos — ¡puedes empezar!`
-          : `Esperando jugadores… (${normalized.length}/2 mínimo para empezar)`;
+          : `${normalized.length} jugadores listos. Esperando a que el anfitrión empiece…`;
+      } else {
+        hintEl.textContent = `Esperando jugadores… (${normalized.length}/2 mínimo para empezar)`;
       }
     }
   }
