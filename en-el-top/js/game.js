@@ -206,10 +206,14 @@ function loadTodayResult() {
    base, con reservas y juveniles incluidos. */
 const TEAM_YOUTH_RE = /\b(u-?\s?(1[3-9]|2[0-3])|sub-?\s?\d{1,2}|under\s?\d{2}|onder\s?\d{2}|youth|yth|jugend|jeugd|juvenil(es)?|primavera|nachwuchs|cantera|academy)\b/;
 function isFilialOJuvenil(name) {
+  // El sufijo B/C se mira sobre el nombre SIN normalizar: quitar los puntos
+  // convierte "Chongqing F.C." en "chongqing f c", que también termina en
+  // " c" y lo marcaría como filial por error.
+  if (/\s[BC]$/.test(String(name || '').trim())) return true;
   const n = norm(name);
   if (!n) return false;
   if (/ y$/.test(n) || TEAM_YOUTH_RE.test(n)) return true; // TM abrevia "equipo juvenil" como "... Y"
-  if (/\bii\b/.test(n) || / b$/.test(n) || / c$/.test(n)) return true;
+  if (/\bii\b/.test(n)) return true;
   return /\b(castilla|atletic|reserves?|res|amateur(e|s)?|amat|bis|jong|promesas)\b/.test(n);
 }
 function buildTeamIndex(teamNames, leagueTeams) {
