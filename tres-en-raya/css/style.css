@@ -89,6 +89,8 @@
   box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c,var(--np-ink)); transition: background .12s, color .12s;
 }
 .mini-btn:hover { background: var(--np-ink); color: var(--np-paper); }
+.mini-btn--danger { border-color: var(--np-red); color: var(--np-red); }
+.mini-btn--danger:hover { background: var(--np-red); color: var(--np-paper); }
 /* Cuenta atrás del turno: recuadro propio en el extremo izquierdo de la barra
    superior, con el mismo aspecto que los marcadores. */
 .turn-timer {

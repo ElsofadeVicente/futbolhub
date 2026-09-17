@@ -258,9 +258,11 @@ window._AppReal = (function () {
        reaprovecha para enseñar aciertos e intentos, que es lo que se mira.
        "Saltar turno" y "Ronda en tablas" tampoco pintan nada aquí (no hay
        turno que ceder ni rival con quien pactar tablas), así que se ocultan
-       en vez de dejarlos ahí solo para avisar con un toast al pulsarlos. */
-    const acciones = $('btn-skip') ? $('btn-skip').closest('.game-actions') : null;
-    if (acciones) acciones.classList.toggle('hidden', G && G.mode === 'diario');
+       y en su lugar sale "Rendirse" — al revés que ellos dos. */
+    const esDiario = !!(G && G.mode === 'diario');
+    if ($('btn-skip')) $('btn-skip').classList.toggle('hidden', esDiario);
+    if ($('btn-draw')) $('btn-draw').classList.toggle('hidden', esDiario);
+    if ($('btn-give-up')) $('btn-give-up').classList.toggle('hidden', !esDiario || (G && G.over));
     if (G && G.mode === 'diario') {
       const hits = G.board.filter(Boolean).length;
       $('name-p1').textContent = 'Aciertos';
@@ -270,8 +272,13 @@ window._AppReal = (function () {
       $('score-p1').classList.toggle('active', !G.over);
       $('score-p2').classList.remove('active');
       const b = $('turn-badge');
-      b.textContent = G.over ? `${hits} DE 9` : 'REJILLA DEL DÍA';
-      b.style.background = 'var(--np-ink)';
+      /* Rendirse NO es completar: aunque los aciertos coincidan, el
+         distintivo tiene que dejar claro cuál de los dos pasó — si no, un
+         "X DE 9" idéntico en los dos casos hace parecer terminada una
+         rejilla que se dejó a medias a propósito. */
+      if (!G.over) { b.textContent = 'REJILLA DEL DÍA'; b.style.background = 'var(--np-ink)'; }
+      else if (G.rendido) { b.textContent = `TE HAS RENDIDO · ${hits} DE 9`; b.style.background = 'var(--np-red)'; }
+      else { b.textContent = `${hits} DE 9`; b.style.background = 'var(--np-ink)'; }
       const si2 = $('series-info');
       if (si2) si2.textContent = G.over
         ? 'Vuelve mañana a por la siguiente'
@@ -396,6 +403,7 @@ window._AppReal = (function () {
         hits: G.board.filter(Boolean).length,
         intentos: G.intentos || 0,   // intentos GASTADOS, sin techo
         completed: !!G.over,
+        rendido: !!G.rendido,   // se dejó a medias A PROPÓSITO, no es lo mismo que un 9/9
         seed: G.seed, min: G.min,
         board: G.board.map(c => c ? { id: c.id, name: c.name, img: c.img || null } : null),
         ts: Date.now(),
@@ -486,11 +494,14 @@ window._AppReal = (function () {
       usedIds: new Set((d.board || []).filter(Boolean).map(c => String(c.id))),
       over: true, matchOver: true, winner: null, roundWinner: null, winLine: null, passes: 0,
       mode: 'diario', series: [0, 0], targetWins: 1, gameNum: 1, intentos: d.intentos || 0,
+      rendido: !!d.rendido,
     };
     while (G.board.length < 9) G.board.push(null);
     showScreen('screen-game');
     stopTurnTimer();
-    $('game-hint').textContent = `Ya has completado la rejilla de hoy en ${d.intentos || 0} intento${(d.intentos || 0) === 1 ? '' : 's'}. Vuelve mañana.`;
+    $('game-hint').textContent = d.rendido
+      ? `Te rendiste hoy con ${d.hits || 0} de 9. Vuelve mañana a por la siguiente.`
+      : `Ya has completado la rejilla de hoy en ${d.intentos || 0} intento${(d.intentos || 0) === 1 ? '' : 's'}. Vuelve mañana.`;
     renderScore(); renderBoard();
   }
 
@@ -502,6 +513,27 @@ window._AppReal = (function () {
     $('game-hint').textContent = `¡Rejilla completada! 9 de 9 en ${intentos} intento${intentos === 1 ? '' : 's'}.`;
     showToast('✓ Rejilla del día completada', 'ok');
     renderDiarioCard();
+    /* Estadísticas automáticas al terminar, igual que La Carrera y En el Top:
+       breve espera para que se vea primero el tablero completo y el toast
+       antes de que el modal se ponga encima. */
+    setTimeout(openDiarioStats, 700);
+  }
+
+  /* Rendirse cierra el día para siempre (no solo "salir", que deja la
+     rejilla resumible): se guarda con `over` a true, así que guardarDia()
+     la marca `completed:true` con los aciertos que hubiera — cuenta como
+     derrota igual que dejarla a medias, pero ya no se puede reanudar hoy. */
+  function rendirseDiario() {
+    if (!G || G.mode !== 'diario' || G.over) return;
+    if (!confirm('¿Seguro que quieres rendirte? La rejilla de hoy se quedará como está y contará como derrota.')) return;
+    G.over = true; G.matchOver = true; G.rendido = true;
+    guardarDia();
+    renderScore(); renderBoard();
+    const hits = G.board.filter(Boolean).length;
+    $('game-hint').textContent = `Te has rendido con ${hits} de 9. Vuelve mañana a por la siguiente.`;
+    showToast('Te has rendido', 'err');
+    renderDiarioCard();
+    setTimeout(openDiarioStats, 700);
   }
 
   /* ── Racha / estadísticas del diario, para la pestaña del menú y el modal ──
@@ -536,7 +568,8 @@ window._AppReal = (function () {
     const btn = $('btn-diario-play');
     if (!btn) return;
     const ya = leerDia();
-    if (ya && ya.completed) btn.textContent = '✓ REJILLA DE HOY COMPLETADA';
+    if (ya && ya.completed && ya.rendido) btn.textContent = `TE RENDISTE · ${ya.hits || 0} DE 9`;
+    else if (ya && ya.completed) btn.textContent = '✓ REJILLA DE HOY COMPLETADA';
     else if (ya && typeof ya.hits === 'number') btn.textContent = `CONTINUAR · ${ya.hits} DE 9 ▶`;
     else btn.textContent = 'JUGAR LA REJILLA DE HOY ▶';
   }
@@ -1684,6 +1717,6 @@ window._AppReal = (function () {
     createRoom, joinRoom, findPublicRoom, leaveRoom, copyLink,
     pickCell, closePick, submitAnswer, selectAndSubmit,
     skipTurn, proposeDraw, respondDraw, playAgain, showMenu, showToast,
-    openDiarioStats, closeDiarioStats,
+    openDiarioStats, closeDiarioStats, rendirseDiario,
   };
 })();
