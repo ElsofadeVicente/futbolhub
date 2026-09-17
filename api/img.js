@@ -16,6 +16,27 @@
    la respuesta en su CDN de borde, así que en régimen normal esto no es más
    lento que pedir la imagen en directo.
 
+   Esa primera traída pasa por images.weserv.nl (proxy público de reescalado
+   y conversión de formato, sin API key) pidiendo WebP: las fotos de
+   jugador de Transfermarkt son JPEG de ~20 KB casi siempre, PERO ~1 de cada
+   14 es un PNG con transparencia (la ficha "genérica" que TM genera para
+   quien no tiene foto de estudio) de 150-180 KB — 8 veces más pesado, MISMA
+   resolución (300x390), y se nota en cualquier juego que cambie de foto a
+   menudo (Higher or Lower sobre todo). Igual con los escudos de
+   tmssl.akamaized.net (~30 KB en PNG, ~14 KB en WebP). Medido con Pillow en
+   local antes de usar weserv: los bytes que devuelve son IDÉNTICOS a
+   convertir la misma imagen con quality=82, así que no es una aproximación.
+   Si weserv falla (caído, timeout, respuesta rara) se cae al fetch directo
+   de siempre: el peor caso es servir sin convertir, nunca romper la imagen.
+
+   No se le pide que reescale (sin `w=`): 300x390 y 139x181 ya son el tamaño
+   real al que se pintan (panel de ~340-500px con `background-size: cover`),
+   así que pedir menos solo dejaría la foto borrosa sin ahorrar casi nada.
+
+   Lo ya cacheado ANTES de este cambio no se convierte solo — esta caché es
+   "para siempre" (ver CACHE_CONTROL) y una imagen ya guardada no vuelve a
+   pedirse nunca. Backfill de lo existente: admin/optimizar_cache_imagenes.py.
+
    fhImgUrl() en js/supabase-config.js es quien construye la URL que llega
    aquí (?u=<url original>, urlencoded). El allowlist de abajo tiene que
    llevar EXACTAMENTE los mismos hosts que esa función — si no, cualquiera
@@ -126,15 +147,37 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  let origenRes;
+  const CABECERA_ORIGEN = { 'User-Agent': 'Mozilla/5.0 (compatible; FutbolHUB/1.0; +https://www.futbolhub.es)' };
+
+  // Intento con timeout: si weserv tarda más de esto, se sigue por el fetch
+  // directo de siempre en vez de dejar la petición del navegador colgada.
+  async function fetchConTope(url, opts, ms) {
+    const ctrl = new AbortController();
+    const aviso = setTimeout(() => ctrl.abort(), ms);
+    try {
+      return await fetch(url, { ...opts, signal: ctrl.signal });
+    } finally {
+      clearTimeout(aviso);
+    }
+  }
+
+  let origenRes = null;
   try {
-    origenRes = await fetch(origen.href, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FutbolHUB/1.0; +https://www.futbolhub.es)' },
-    });
+    const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(origen.href)}&output=webp&q=82`;
+    const r = await fetchConTope(weservUrl, {}, 5000);
+    if (r.ok && (r.headers.get('content-type') || '').startsWith('image/')) origenRes = r;
   } catch {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.status(502).end('No se pudo contactar con el origen');
-    return;
+    // weserv caído, lento o con un error raro: se sigue por el origen directo.
+  }
+
+  if (!origenRes) {
+    try {
+      origenRes = await fetch(origen.href, { headers: CABECERA_ORIGEN });
+    } catch {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.status(502).end('No se pudo contactar con el origen');
+      return;
+    }
   }
   if (!origenRes.ok) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');

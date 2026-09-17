@@ -101,6 +101,10 @@ const HOL = {
   isAnimating: false,
   gameOver: false,
   pendingTimers: [],
+  /* El siguiente rival ya elegido y con la foto precargada, ver
+     precargarSiguiente(). null cuando no hay ninguno listo (game over, o
+     el turno anterior falló). */
+  nextPlayer: null,
 };
 
 /* Cancela cualquier setTimeout de transición/game-over en vuelo.
@@ -346,6 +350,7 @@ function startNewGame() {
   HOL.isAnimating = false;
   HOL.currentCategory = 'mv';
   HOL.recordBeatenThisRun = false;
+  HOL.nextPlayer = null;
 
   DOM.scoreValue.textContent = '0';
   DOM.scoreValue.classList.remove('gold', 'pop');
@@ -496,6 +501,15 @@ function handleChoice(choice) {
       DOM.recordValue.textContent = HOL.record;
       markRecordGold();
     }
+    /* Se elige YA al siguiente rival (aunque no se vaya a pintar hasta
+       dentro de 1850ms, ver chainTransition) para poder precargar su foto
+       en cuanto se sabe cuál es, no cuando hace falta pintarla. Son ~1,8s
+       de margen de sobra para que la imagen ya esté en caché del navegador
+       cuando el turno cambie, en vez de que se vea el hueco cargando. */
+    HOL.nextPlayer = pickRandomPlayer(HOL.rightPlayer);
+    if (HOL.nextPlayer && HOL.nextPlayer.img && window.FHPrecarga) {
+      FHPrecarga.encolar(fhImgUrl(HOL.nextPlayer.img));
+    }
     HOL.pendingTimers.push(setTimeout(() => chainTransition(), 1400));
   } else {
     HOL.pendingTimers.push(setTimeout(() => triggerGameOver(), 1600));
@@ -512,7 +526,12 @@ function chainTransition() {
 
   HOL.pendingTimers.push(setTimeout(() => {
     HOL.leftPlayer  = HOL.rightPlayer;
-    HOL.rightPlayer = pickRandomPlayer(HOL.leftPlayer);
+    // Ya elegido y precargado en handleChoice(); el respaldo cubre el único
+    // camino que llega aquí sin pasar por ahí (restartGame -> startNewGame
+    // no usa chainTransition, así que en la práctica nextPlayer siempre
+    // debería estar listo, pero más vale no dejarlo en manos de eso).
+    HOL.rightPlayer = HOL.nextPlayer || pickRandomPlayer(HOL.leftPlayer);
+    HOL.nextPlayer = null;
 
     renderLeft();
     renderRight();
