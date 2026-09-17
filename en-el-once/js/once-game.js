@@ -1598,12 +1598,24 @@ function checkGuess() {
         // lleno hasta que se cierra el modal) vuelva a ejecutar esta rama y
         // duplique el punto/historial.
         guessLocked = true;
-        if (!playerGuessHistory[currentPlayerIndex]) playerGuessHistory[currentPlayerIndex] = [];
-        playerGuessHistory[currentPlayerIndex].push({
+        // Capturado aparte: si el jugador sale del modal (Esc/botón) antes de
+        // que pase la animación, closeGuessModal() pone currentPlayerIndex a
+        // null y el acierto se perdía — revealPlayer(null) no marcaba a nadie
+        // y el once se quedaba sin el nombre aunque las letras ya estuvieran
+        // en verde.
+        const playerIdx = currentPlayerIndex;
+        if (!playerGuessHistory[playerIdx]) playerGuessHistory[playerIdx] = [];
+        playerGuessHistory[playerIdx].push({
             guess: guessWord, status: new Array(targetName.length).fill('correct')
         });
         animateCorrectGuess();
-        setTimeout(() => { revealPlayer(currentPlayerIndex); closeGuessModal(); updateOnceStats('correct'); }, 1500);
+        setTimeout(() => {
+            revealPlayer(playerIdx);
+            // Solo cierra el modal si sigue siendo el mismo (si el jugador ya
+            // salió y abrió el de otro futbolista, no hay que tocárselo).
+            if (currentPlayerIndex === playerIdx) closeGuessModal();
+            updateOnceStats('correct');
+        }, 1500);
         return;
     }
 
@@ -1639,7 +1651,12 @@ function checkGuess() {
 
     if (currentRow >= 6) {
         guessLocked = true;
-        setTimeout(() => { revealPlayer(currentPlayerIndex, true); closeGuessModal(); updateOnceStats('failed'); }, 1000);
+        const playerIdx = currentPlayerIndex; // mismo motivo que en el acierto: no fiarse de currentPlayerIndex en el timeout
+        setTimeout(() => {
+            revealPlayer(playerIdx, true);
+            if (currentPlayerIndex === playerIdx) closeGuessModal();
+            updateOnceStats('failed');
+        }, 1000);
     }
 }
 
@@ -2077,6 +2094,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('keydown', (e) => {
         if (!document.getElementById('guess-modal').classList.contains('active')) return;
+        if (e.key === 'Escape') { closeGuessModal(); return; }
         if (isMobile()) return;
         if (e.key === 'Enter') handleKeyPress('Enter');
         else if (e.key === 'Backspace') handleKeyPress('Delete');
