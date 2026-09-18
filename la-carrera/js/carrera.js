@@ -57,18 +57,31 @@ function formatCountdown(ms) {
 }
 
 // ── Temporadas → año ──
+// Un año de 2 cifras puede ser 19YY o 20YY; se elige el que no caiga en un
+// futuro implausible (más de unos años por delante de hoy) en vez de un
+// pivote fijo en 50. Ese pivote fijo interpretaba cualquier club con
+// historial anterior a 1950 al revés: "47/48" salía como 2047/48 en vez de
+// 1947/48. Ver la misma nota en generar_carrera.py.
+function resolve2DigitYear(yy) {
+  const cand = 2000 + yy;
+  const hoy = new Date().getFullYear();
+  return cand <= hoy + 6 ? cand : 1900 + yy;
+}
 function seasonStartYear(s) {
   s = String(s || '');
   if (/^\d{4}$/.test(s)) return +s;
   const m = s.match(/(\d{2})\/(\d{2})/);
-  if (m) { const yy = +m[1]; return yy >= 50 ? 1900 + yy : 2000 + yy; }
+  if (m) return resolve2DigitYear(+m[1]);
   const y = s.match(/\d{4}/); return y ? +y[0] : 0;
 }
 function seasonEndYear(s) {
   s = String(s || '');
   if (/^\d{4}$/.test(s)) return +s;
+  // Un "YY/ZZ" son siempre dos años consecutivos: se deriva del de inicio ya
+  // resuelto, no se resuelve ZZ por su cuenta con el mismo criterio — así un
+  // caso al borde ("49/50") no da inicio y cierre en siglos distintos.
   const m = s.match(/(\d{2})\/(\d{2})/);
-  if (m) { const zz = +m[2]; return zz >= 50 ? 1900 + zz : 2000 + zz; }
+  if (m) return seasonStartYear(s) + 1;
   const y = s.match(/\d{4}/); return y ? +y[0] : 0;
 }
 
@@ -259,6 +272,24 @@ function buildCareer(transfersArr, perfArr) {
   //    propio fichaje (tn).
   const stints = [];
   const tr = transfersArr || [];
+
+  // Año de cierre real de cada temporada, indexado por su año de inicio
+  // (p.ej. "10/11" -> 2010:2011). Sin esto, endY se queda en el año de
+  // INICIO de la última temporada jugada, así que un jugador que se retira
+  // tras una final de Champions en mayo (temporada AAAA/AA+1) sale con un
+  // año menos del real. startY sí puede quedarse en año de inicio (es el
+  // criterio habitual: "fichó en 2005"); el problema era solo el cierre de
+  // la ÚLTIMA temporada de cada etapa. Ver la misma nota en generar_carrera.py.
+  const seasonEndByStart = new Map();
+  for (const r of tr) {
+    const sy = seasonStartYear(r.s);
+    if (sy) seasonEndByStart.set(sy, seasonEndYear(r.s));
+  }
+  for (const r of perfArr) {
+    const sy = seasonStartYear(r.s);
+    if (sy) seasonEndByStart.set(sy, seasonEndYear(r.s));
+  }
+
   for (let i = tr.length - 1; i >= 0; i--) {
     const m = tr[i];
     if (m.type !== 'Transfer' && m.type !== 'Loan') continue;
@@ -418,7 +449,8 @@ function buildCareer(transfersArr, perfArr) {
   rows = merged;
   rows.forEach(s => {
     s.clubId = /^\d+$/.test(s.tid) ? +s.tid : s.tid;
-    s.years = s.startY === s.endY ? `${s.startY}` : `${s.startY}-${s.endY}`;
+    const eyReal = seasonEndByStart.has(s.endY) ? seasonEndByStart.get(s.endY) : s.endY;
+    s.years = s.startY === eyReal ? `${s.startY}` : `${s.startY}-${eyReal}`;
   });
 
   // Normalizar nombres de campo al mismo formato que espera renderTable/legacy.
