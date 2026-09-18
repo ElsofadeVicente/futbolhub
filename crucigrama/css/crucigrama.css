@@ -992,10 +992,11 @@ body.cruc-sheet-abierto { overflow: hidden; }
   --cruc-cesped-a:   #3c6440;
   --cruc-cesped-b:   #365c3a;
   --cruc-cal:        rgba(248,246,238,.78);
-  /* El tramo del camino que aún no se ha recorrido: la misma tiza, a menos
-     opacidad -"algo más oscurito" que el tramo ya andado, sin ser un color
-     nuevo. */
-  --cruc-cal-baja:   rgba(248,246,238,.34);
+  /* Los focos del camino: blanco cuando están encendidos (recorrido), gris
+     -el mismo blanco, a menos opacidad, que sobre el césped se lee como
+     gris- cuando no. */
+  --cruc-foco-on:    rgba(255,255,255,.92);
+  --cruc-foco-off:   rgba(255,255,255,.24);
   --cruc-oro:        #e0a326;
   --cruc-oro-bd:     #8a6d1a;
   --cruc-oro-off:    rgba(255,255,255,.20);
@@ -1010,7 +1011,6 @@ body.cruc-sheet-abierto { overflow: hidden; }
   --cruc-cesped-a:   #123021;
   --cruc-cesped-b:   #0e281b;
   --cruc-cal:        rgba(210,240,232,.36);
-  --cruc-cal-baja:   rgba(210,240,232,.16);
   --cruc-oro:        #ffc85c;
   --cruc-oro-bd:     #6b4e00;
   --cruc-bloq-bg:    rgba(4,14,10,.85);
@@ -1131,18 +1131,17 @@ html.cruc-mapa-fija, html.cruc-mapa-fija body { height: 100%; overflow: hidden; 
   width: 100%; height: 100%;
   display: block; pointer-events: none;
 }
-/* El camino, tramo a tramo: el que ya se ha andado se ve macizo y dorado
-   -mismo color que un nodo "hecho"-, el que todavía no se ha andado se
-   queda en la tiza discontinua de siempre pero más apagada, para que el
-   contraste se note de un vistazo. */
-.cruc-arco-dim { stroke: var(--cruc-cal-baja, var(--cruc-cal)); }
-.cruc-arco-lit { stroke: var(--cruc-oro); }
-/* El destello que recorre el tramo recién andado (crucAnimarRecorrido). */
-.cruc-recorrido-spark {
-  fill: var(--cruc-oro); filter: drop-shadow(0 0 7px var(--cruc-oro));
-}
+/* El camino, tramo a tramo, con la misma línea de puntos de siempre: el que
+   ya se ha andado sale en focos blancos, el que todavía no en gris. */
+.cruc-arco-dim { stroke: var(--cruc-foco-off); }
+.cruc-arco-lit { stroke: var(--cruc-foco-on); }
+/* Los focos sueltos del tramo que se está encendiendo en cadena
+   (crucAnimarRecorrido): empiezan ocultos -el `cruc-arco-dim` de debajo ya
+   los pinta apagados- y se descubren uno a uno con un breve resplandor. */
+.cruc-foco { fill: var(--cruc-foco-on); }
+.cruc-foco-on { filter: drop-shadow(0 0 3px rgba(255,255,255,.75)); }
 @media (prefers-reduced-motion: reduce) {
-  .cruc-recorrido-spark { display: none; }
+  .cruc-foco { display: none; }
 }
 
 /* ── EL CARTEL DE CAMBIO DE DIVISIÓN ──────────────────────────────────────

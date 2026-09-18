@@ -1009,6 +1009,22 @@ function crucTarjetas(pts, traza, ancho, idxDiv, k, alto) {
     }).join('');
 }
 
+/* Las posiciones de los focos sueltos de un tramo (el que se va a animar en
+   cadena), con el mismo espaciado que ya usa la línea de puntos de
+   `stroke-dasharray` (un periodo cada 21*k). Se mide sobre un `<path>`
+   creado aparte -no hace falta insertarlo en el documento para poder
+   preguntarle su longitud y sus puntos-, y se deja uno de margen en cada
+   extremo para que ningún foco caiga encima de un nodo. */
+function crucFocosDeCamino(d, k) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    const len = path.getTotalLength();
+    const n = Math.max(2, Math.round(len / (21 * k)));
+    const focos = [];
+    for (let i = 1; i <= n; i++) focos.push(path.getPointAtLength(i / (n + 1) * len));
+    return focos;
+}
+
 let crucBloques = [];
 
 /* `fundido` = entrar al mapa con un fundido, para que el salto de scroll a la
@@ -1081,20 +1097,24 @@ function crucPintarMapa(fundido) {
         const pts = crucPosiciones(b.niveles, ancho, b.alto, b.idx + 1);
         const recorrido = crucRecorrido(pts, b.idx + 1, ancho);
         const camino = recorrido.d;
-        /* El camino, tramo a tramo: andado (dorado, macizo) o no (tiza
-           apagada, como siempre). El tramo que toca animar arranca oculto
-           -sin dasharray/dashoffset todavía, eso lo mide crucAnimarRecorrido
-           contra el propio path ya en el DOM- para que no se vea ya dorado
-           antes de que empiece su destello. */
+        /* El camino, tramo a tramo, con la misma línea de puntos de siempre:
+           andado (focos blancos) o no (focos grises). El tramo que toca
+           animar se queda con su línea de puntos GRIS de base -para que se
+           vea "apagado" desde ya- y encima, ocultos, unos focos sueltos en
+           las mismas posiciones que crucAnimarRecorrido irá encendiendo uno
+           a uno. */
         const segmentos = recorrido.segmentos.map((d, i) => {
             const nivelDesde = b.primero + i;
             const anchoTrazo = (8.5 * k).toFixed(1);
             const dash = `stroke-dasharray="0.5 ${(21 * k).toFixed(1)}"`;
             if (nivelDesde === crucTransicionDesde) {
+                const focos = crucFocosDeCamino(d, k)
+                    .map(p => `<circle class="cruc-foco" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}"
+                                 r="${(4.3 * k).toFixed(1)}" style="opacity:0"/>`)
+                    .join('');
                 return `<path d="${d}" fill="none" class="cruc-arco-dim"
                           stroke-width="${anchoTrazo}" stroke-linecap="round" ${dash}/>
-                        <path id="cruc-arco-anim" d="${d}" fill="none" class="cruc-arco-lit"
-                          stroke-width="${anchoTrazo}" stroke-linecap="round" style="opacity:0"/>`;
+                        <g id="cruc-focos-anim">${focos}</g>`;
             }
             const andado = crucEstrellas(nivelDesde) > 0;
             return `<path d="${d}" fill="none" class="${andado ? 'cruc-arco-lit' : 'cruc-arco-dim'}"
@@ -1288,44 +1308,28 @@ function crucCentrarNodo(wrap, el, suave) {
     else wrap.scrollTop = Math.max(0, top);
 }
 
-/* El destello que recorre el tramo recién desbloqueado, de `nodoDesde` a
-   `nodoHasta`: viaja por la curva REAL (con getPointAtLength, no en línea
-   recta) mientras el propio mapa hace scroll con él, y a su paso el tramo
-   pasa de apagado a dorado (stroke-dashoffset del `#cruc-arco-anim` que
-   pintó crucPintarMapa). Al llegar, se quita el destello y se llama a `cb`
-   -que es quien pone el halo en el nodo de destino-. Si por lo que sea el
-   tramo no está en el DOM (se repintó el mapa por el camino, o esta
-   celebración no tenía transición que animar), se cae al paneo de siempre. */
+/* Los focos del tramo recién desbloqueado se encienden uno a uno, como un
+   camino de focos, mientras el mapa se desliza hacia `nodoHasta`. Al
+   terminar se llama a `cb` -que es quien pone el halo en el nodo de
+   destino-. Si por lo que sea no hay focos en el DOM (se repintó el mapa
+   por el camino, o esta celebración no tenía transición que animar), se
+   cae directo al paneo de siempre. */
 function crucAnimarRecorrido(wrap, nodoHasta, cb) {
-    const arco = document.getElementById('cruc-arco-anim');
-    if (!arco) { crucCentrarNodo(wrap, nodoHasta, true); cb(); return; }
-    const svg = arco.closest('svg.cruc-lineas');
-    const len = arco.getTotalLength();
-    arco.style.strokeDasharray = String(len);
-    arco.style.strokeDashoffset = String(len);
-    arco.style.opacity = '1';
-    const spark = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    spark.setAttribute('r', '6');
-    spark.setAttribute('class', 'cruc-recorrido-spark');
-    if (svg) svg.appendChild(spark);
-
-    const topDesde = wrap.scrollTop;
-    const topHasta = Math.max(0, nodoHasta.offsetTop + nodoHasta.parentElement.offsetTop - wrap.clientHeight * 0.5);
-    const dur = 900;
-    let inicio = null;
-    function paso(ts) {
-        if (!inicio) inicio = ts;
-        const p = Math.min(1, (ts - inicio) / dur);
-        const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;   // easeInOutQuad
-        arco.style.strokeDashoffset = String(len * (1 - e));
-        const pt = arco.getPointAtLength(len * e);
-        spark.setAttribute('cx', String(pt.x));
-        spark.setAttribute('cy', String(pt.y));
-        wrap.scrollTop = topDesde + (topHasta - topDesde) * e;
-        if (p < 1) requestAnimationFrame(paso);
-        else { spark.remove(); cb(); }
-    }
-    requestAnimationFrame(paso);
+    const focos = [...document.querySelectorAll('#cruc-focos-anim .cruc-foco')];
+    if (!focos.length) { crucCentrarNodo(wrap, nodoHasta, true); cb(); return; }
+    crucCentrarNodo(wrap, nodoHasta, true);
+    const paso = 140;
+    focos.forEach((foco, i) => {
+        setTimeout(() => {
+            if (!foco.isConnected) return;
+            const r = parseFloat(foco.getAttribute('r'));
+            foco.style.opacity = '1';
+            foco.classList.add('cruc-foco-on');
+            foco.setAttribute('r', String(r * 1.55));          // el empujoncito al encenderse
+            setTimeout(() => foco.setAttribute('r', String(r)), 220);
+        }, i * paso);
+    });
+    setTimeout(cb, focos.length * paso + 260);
 }
 
 function crucFestejarEnMapa() {
