@@ -118,3 +118,6 @@ admin/.crucigrama_meta.json
 Tutorial CMD Github.txt
 PLAN-5-de-5-ranked.md
 actualizar_performances_activos.bat
+
+# Material de marketing (panfletos, etc.): no es parte del sitio ni del repo
+marketing/
