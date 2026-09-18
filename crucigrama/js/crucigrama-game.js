@@ -60,12 +60,19 @@ const crucDivCache  = {};     // nº de división -> [niveles]
 let crucCelebrar  = null;
 let crucContando  = false;    // el contador de estrellas está en pleno recuento
 
-/* A qué nivel centrar el próximo pintado del mapa, DISTINTO del nodo
-   "actual" (tu progreso: el primero sin estrellas). Sin esto, salir de un
-   nivel que no es el de tu progreso (repetir uno viejo) te devolvía siempre
-   al mapa centrado en tu progreso, muy lejos de donde acababas de jugar. Se
-   consume igual que crucCelebrar: crucPintarMapa lo lee una vez y lo vacía. */
-let crucCentrarEn = null;
+/* El scroll del mapa justo antes de entrar a un nivel (lo guarda
+   crucAbrirNivel). Al volver SIN pasar de nivel ni destapar una tarjeta se
+   restaura tal cual, en vez de saltar a "Estás aquí" — ese salto directo era
+   justo lo que se notaba y molestaba cada vez que se salía de un crucigrama
+   sin haberlo pasado. Se consume igual que crucCelebrar: crucPintarMapa lo
+   lee una vez y lo vacía. */
+let crucScrollAlSalir = null;
+
+/* El nivel "origen" del tramo que crucFestejarEnMapa tiene que animar en
+   esta pintada (ver crucPintarMapa), o null si no toca animar ninguno. Vive
+   aquí, no como variable local, porque se calcula al pintar el mapa y se lee
+   más tarde, dentro del setTimeout de la celebración. */
+let crucTransicionDesde = null;
 
 /* Un solo sitio para saber si hay que quitar las animaciones. */
 function crucSuave() {
@@ -557,11 +564,17 @@ function crucRecorrido(pts, sal, ancho) {
     }
 
     let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    /* `segmentos[i]` es el mismo tramo i, pero suelto en su propio "M...Q...":
+       hace falta para pintarlo (y animarlo) uno a uno según esté andado o no,
+       cosa que un único `d` combinado no permite. */
+    const segmentos = [];
     arcos.forEach((arco, i) => {
-        const b = pts[i + 1];
+        const a = pts[i], b = pts[i + 1];
         d += ` Q ${arco.c.x.toFixed(1)} ${arco.c.y.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+        segmentos.push(`M ${a.x.toFixed(1)} ${a.y.toFixed(1)} `
+            + `Q ${arco.c.x.toFixed(1)} ${arco.c.y.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`);
     });
-    return { d, muestras: arcos.flatMap(a => a.muestras) };
+    return { d, muestras: arcos.flatMap(a => a.muestras), segmentos };
 }
 
 /* El campo: mucho más ancho que la pantalla, así que solo se ve su franja
@@ -865,10 +878,15 @@ function crucEsperarImagen(img) {
     });
 }
 
-function crucRevelarTarjetas() {
+/* `onDone`, si se pasa, se llama UNA vez que TODAS las tarjetas de esta
+   tanda han terminado de revelarse (o de inmediato si no había ninguna
+   pendiente). Lo usa crucPintarMapa para encadenar la celebración del nivel
+   -recorrido incluido- DESPUÉS del revelado: primero la tarjeta, luego el
+   camino. */
+function crucRevelarTarjetas(onDone) {
     const nuevas = [...document.querySelectorAll('.cruc-tarj-nueva')]
         .filter(el => !el.dataset.revelando);   // se la llama por dos vias, ver abajo
-    if (!nuevas.length) return;
+    if (!nuevas.length) { if (onDone) onDone(); return; }
     nuevas.forEach(el => { el.dataset.revelando = '1'; });
     const suave = window.matchMedia
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -879,6 +897,7 @@ function crucRevelarTarjetas() {
             if (pie) pie.textContent = el.dataset.pie || '';
             el.classList.remove('cruc-tarj-nueva');
         });
+        if (onDone) onDone();
         return;
     }
     /* Antes de arrancar el reloj de la revelacion, se espera a que las
@@ -889,12 +908,14 @@ function crucRevelarTarjetas() {
        golpe sin ninguna transicion — justo lo que no se queria enseñar. */
     Promise.all(nuevas.map(el => crucEsperarImagen(el.querySelector('.cruc-foto-img img'))))
         .then(() => {
+            let quedan = nuevas.length;
+            const unaMenos = () => { quedan--; if (quedan === 0 && onDone) onDone(); };
             nuevas.forEach((el, i) => {
                 const pie = el.querySelector('.cruc-foto-pie');
                 const texto = el.dataset.pie || '';
                 crucTarjApuntar(el.dataset.clave);
                 setTimeout(() => {
-                    if (!el.isConnected) return;
+                    if (!el.isConnected) { unaMenos(); return; }
                     el.classList.add('cruc-tarj-revela');
                     setTimeout(() => crucEscribirPie(pie, texto), 780);
                     /* Las clases se quitan A MANO, no se deja que las sostenga el
@@ -905,6 +926,7 @@ function crucRevelarTarjetas() {
                     setTimeout(() => {
                         el.classList.remove('cruc-tarj-nueva', 'cruc-tarj-revela');
                         if (pie && !pie.textContent) pie.textContent = texto;
+                        unaMenos();
                     }, 1900);
                 }, 180 + i * 300);
             });
@@ -996,6 +1018,12 @@ let crucBloques = [];
 function crucPintarMapa(fundido) {
     const screen = document.getElementById('crucigrama-screen');
     if (!screen) return;
+    /* Si el mapa YA estaba en pantalla (un repintado por redimensionar o por
+       la llegada tardía de las tarjetas), se guarda su scroll para dejarlo
+       tal cual — ver la prioridad de más abajo. Si no estaba (se viene de
+       jugar un nivel o es la primera vez), esto sale null. */
+    const wrapPrevio = document.getElementById('cruc-mapa-wrap');
+    const scrollAntes = wrapPrevio ? wrapPrevio.scrollTop : null;
     crucRelojPara();
     crucPaginaFija(true);
 
@@ -1036,11 +1064,42 @@ function crucPintarMapa(fundido) {
     }
 
     const actual = crucNivelActual();
+    /* El tramo que hay que ANIMAR en esta pintada (un destello que lo recorre
+       y lo deja encendido), si lo hay: solo cuando se viene de superar el
+       nivel justo anterior al actual -un ascenso real, no repetir uno viejo-,
+       los dos caen en la misma división -si no, no hay un arco que los una,
+       y el cartel de "Ascenso" ya hace de transición- y no hay reduzca-el-
+       movimiento -si no va a animarse nunca, mejor pintarlo ya en su estado
+       final que dejarlo oculto esperando una animación que no va a correr-.
+       Se guarda en el módulo porque crucFestejarEnMapa lo necesita más
+       tarde, cuando ya se ha pintado el mapa. */
+    crucTransicionDesde = (!crucSuave() && crucCelebrar && actual === crucCelebrar.nivel + 1
+        && crucDivisionDe(crucCelebrar.nivel).idx === crucDivisionDe(actual).idx)
+        ? crucCelebrar.nivel : null;
     let html = '';
     crucBloques.forEach(b => {
         const pts = crucPosiciones(b.niveles, ancho, b.alto, b.idx + 1);
         const recorrido = crucRecorrido(pts, b.idx + 1, ancho);
         const camino = recorrido.d;
+        /* El camino, tramo a tramo: andado (dorado, macizo) o no (tiza
+           apagada, como siempre). El tramo que toca animar arranca oculto
+           -sin dasharray/dashoffset todavía, eso lo mide crucAnimarRecorrido
+           contra el propio path ya en el DOM- para que no se vea ya dorado
+           antes de que empiece su destello. */
+        const segmentos = recorrido.segmentos.map((d, i) => {
+            const nivelDesde = b.primero + i;
+            const anchoTrazo = (8.5 * k).toFixed(1);
+            const dash = `stroke-dasharray="0.5 ${(21 * k).toFixed(1)}"`;
+            if (nivelDesde === crucTransicionDesde) {
+                return `<path d="${d}" fill="none" class="cruc-arco-dim"
+                          stroke-width="${anchoTrazo}" stroke-linecap="round" ${dash}/>
+                        <path id="cruc-arco-anim" d="${d}" fill="none" class="cruc-arco-lit"
+                          stroke-width="${anchoTrazo}" stroke-linecap="round" style="opacity:0"/>`;
+            }
+            const andado = crucEstrellas(nivelDesde) > 0;
+            return `<path d="${d}" fill="none" class="${andado ? 'cruc-arco-lit' : 'cruc-arco-dim'}"
+                      stroke-width="${anchoTrazo}" stroke-linecap="round" ${andado ? '' : dash}/>`;
+        }).join('');
         let nodos = '';
         pts.forEach((p, i) => {
             const nivel = b.primero + i;
@@ -1062,9 +1121,7 @@ function crucPintarMapa(fundido) {
             <svg class="cruc-lineas" viewBox="0 0 ${ancho} ${b.alto}" aria-hidden="true">
               <path d="${camino}" fill="none" stroke="rgba(0,0,0,.20)"
                     stroke-width="${(12 * k).toFixed(1)}" stroke-linecap="round"/>
-              <path d="${camino}" fill="none" stroke="var(--cruc-cal)"
-                    stroke-width="${(8.5 * k).toFixed(1)}" stroke-linecap="round"
-                    stroke-dasharray="0.5 ${(21 * k).toFixed(1)}"/>
+              ${segmentos}
             </svg>
             ${crucTarjetas(pts, recorrido.muestras, ancho, b.idx, k, b.alto)}
             ${nodos}
@@ -1111,10 +1168,22 @@ function crucPintarMapa(fundido) {
 
     /* Si venimos de superar un nivel, el mapa celebra ese nodo (y no el
        "actual", que ya es el SIGUIENTE). La celebración coloca su propio
-       scroll y consume crucCelebrar. Si no, el scroll de siempre al nodo
-       donde está el jugador. */
+       scroll y consume crucCelebrar. */
     const celebra = crucCelebrar
         && mapa.querySelector(`.cruc-nodo[data-nivel="${crucCelebrar.nivel}"]`);
+    /* Tarjeta pendiente de revelar (curada, no vista todavía). Manda sobre
+       TODO lo demás -incluida la celebración-, porque es lo único de las tres
+       situaciones donde el jugador SÍ quiere que la cámara se mueva sola: se
+       queda a su altura para ver bien el revelado, en vez de saltar al nodo
+       o quedarse donde estaba. */
+    const tarjetaNueva = mapa.querySelector('.cruc-tarj-nueva');
+    const scrollGuardado = crucScrollAlSalir;
+    crucScrollAlSalir = null;
+    /* Si hay tarjeta, la celebración del nivel (estrellas, camino, paneo) se
+       deja para DESPUÉS de revelarla -crucRevelarTarjetas la llama al
+       terminar-, así la cámara no se mueve mientras se está viendo la
+       tarjeta: primero la tarjeta, luego el recorrido. */
+    let tarjetaCallback = null;
     /* SIN requestAnimationFrame: leer offsetTop ya fuerza el layout, así que
        esperar un frame no hacía falta para nada — solo dejaba un frame de
        por medio en el que el mapa ya estaba construido pero SEGUÍA oculto
@@ -1128,13 +1197,28 @@ function crucPintarMapa(fundido) {
     try {
         /* El scroll VA PRIMERO: crucActualizarBarra mira el centro del scroll
            para decir en qué división estás, así que con scrollTop aún a 0
-           mostraría la división de arriba (Leyenda). */
-        if (celebra) {
+           mostraría la división de arriba (Leyenda). Prioridad, de más a
+           menos: (1) tarjeta nueva → a su altura; (2) subiste de nivel → la
+           celebración, que coloca su propio scroll; (3) el mapa ya estaba en
+           pantalla (resize, tarjetas llegando tarde) → tal cual estaba; (4) se
+           vuelve de jugar un nivel → al punto exacto donde se dejó el mapa,
+           SIN saltar a ningún nodo; (5) primera vez que se ve el mapa → al
+           nivel actual, que es la única vez que hace falta ir a buscarlo. */
+        if (tarjetaNueva) {
+            const top = tarjetaNueva.offsetTop + tarjetaNueva.parentElement.offsetTop
+                      - wrap.clientHeight * 0.42;
+            wrap.scrollTop = Math.max(0, top);
+            if (crucCelebrar) tarjetaCallback = () => {
+                if (document.getElementById('cruc-mapa')) crucFestejarEnMapa();
+            };
+        } else if (celebra) {
             crucFestejarEnMapa();
+        } else if (scrollAntes != null) {
+            wrap.scrollTop = scrollAntes;
+        } else if (scrollGuardado != null) {
+            wrap.scrollTop = scrollGuardado;
         } else {
-            const centro = crucCentrarEn || actual;
-            crucCentrarEn = null;
-            const nodo = mapa.querySelector(`.cruc-nodo[data-nivel="${centro}"]`);
+            const nodo = mapa.querySelector(`.cruc-nodo[data-nivel="${actual}"]`);
             if (nodo) wrap.scrollTop = nodo.offsetTop + nodo.parentElement.offsetTop - wrap.clientHeight * 0.58;
         }
         crucActualizarBarra();
@@ -1146,7 +1230,7 @@ function crucPintarMapa(fundido) {
     }
     /* Despues de colocar el scroll: si se lanza antes, la tarjeta se
        revela mientras el mapa todavia se esta situando y te la pierdes. */
-    crucRevelarTarjetas();
+    crucRevelarTarjetas(tarjetaCallback);
     /* Y una segunda via por temporizador, que NO es por si acaso:
        requestAnimationFrame no corre con la pestana oculta, asi que un mapa
        pintado en segundo plano (vuelves de otra app justo despues de pasar un
@@ -1198,6 +1282,52 @@ function crucActualizarBarra() {
    expande y saltan chispas; el contador total cuenta hacia arriba; y luego el
    mapa se desliza suave al siguiente nivel, que te invita con un halo. Si la
    partida abrió una división nueva, sale además el cartel de ascenso. */
+function crucCentrarNodo(wrap, el, suave) {
+    const top = el.offsetTop + el.parentElement.offsetTop - wrap.clientHeight * 0.5;
+    if (suave && wrap.scrollTo) wrap.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    else wrap.scrollTop = Math.max(0, top);
+}
+
+/* El destello que recorre el tramo recién desbloqueado, de `nodoDesde` a
+   `nodoHasta`: viaja por la curva REAL (con getPointAtLength, no en línea
+   recta) mientras el propio mapa hace scroll con él, y a su paso el tramo
+   pasa de apagado a dorado (stroke-dashoffset del `#cruc-arco-anim` que
+   pintó crucPintarMapa). Al llegar, se quita el destello y se llama a `cb`
+   -que es quien pone el halo en el nodo de destino-. Si por lo que sea el
+   tramo no está en el DOM (se repintó el mapa por el camino, o esta
+   celebración no tenía transición que animar), se cae al paneo de siempre. */
+function crucAnimarRecorrido(wrap, nodoHasta, cb) {
+    const arco = document.getElementById('cruc-arco-anim');
+    if (!arco) { crucCentrarNodo(wrap, nodoHasta, true); cb(); return; }
+    const svg = arco.closest('svg.cruc-lineas');
+    const len = arco.getTotalLength();
+    arco.style.strokeDasharray = String(len);
+    arco.style.strokeDashoffset = String(len);
+    arco.style.opacity = '1';
+    const spark = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    spark.setAttribute('r', '6');
+    spark.setAttribute('class', 'cruc-recorrido-spark');
+    if (svg) svg.appendChild(spark);
+
+    const topDesde = wrap.scrollTop;
+    const topHasta = Math.max(0, nodoHasta.offsetTop + nodoHasta.parentElement.offsetTop - wrap.clientHeight * 0.5);
+    const dur = 900;
+    let inicio = null;
+    function paso(ts) {
+        if (!inicio) inicio = ts;
+        const p = Math.min(1, (ts - inicio) / dur);
+        const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;   // easeInOutQuad
+        arco.style.strokeDashoffset = String(len * (1 - e));
+        const pt = arco.getPointAtLength(len * e);
+        spark.setAttribute('cx', String(pt.x));
+        spark.setAttribute('cy', String(pt.y));
+        wrap.scrollTop = topDesde + (topHasta - topDesde) * e;
+        if (p < 1) requestAnimationFrame(paso);
+        else { spark.remove(); cb(); }
+    }
+    requestAnimationFrame(paso);
+}
+
 function crucFestejarEnMapa() {
     const cel = crucCelebrar;
     crucCelebrar = null;                       // se consume: no se repite al repintar
@@ -1208,13 +1338,7 @@ function crucFestejarEnMapa() {
     const nodo = mapa.querySelector(`.cruc-nodo[data-nivel="${cel.nivel}"]`);
     if (!nodo) return;
 
-    const centrar = (el, suave) => {
-        const top = el.offsetTop + el.parentElement.offsetTop - wrap.clientHeight * 0.5;
-        if (suave && wrap.scrollTo) wrap.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-        else wrap.scrollTop = Math.max(0, top);
-    };
-
-    centrar(nodo, false);                      // primero, el nodo que se acaba de ganar
+    crucCentrarNodo(wrap, nodo, false);         // primero, el nodo que se acaba de ganar
     crucCuentaEstrellas(cel.est);
 
     if (crucSuave()) return;
@@ -1234,20 +1358,29 @@ function crucFestejarEnMapa() {
         crucChispas(caja, cel.est >= 3 ? 16 : 10, true);
     }
 
-    /* Tras la fiesta del nodo, pan al siguiente nivel (que ahora es el actual)
-       para dejar claro adónde ir. Solo si es OTRO nodo: al final del juego, o
-       con la puerta cerrada, el actual puede ser este mismo. */
+    /* Tras la fiesta del nodo, un destello recorre el camino hasta el
+       siguiente nivel (que ahora es el actual) y lo deja iluminado -solo si
+       crucPintarMapa marcó una transición de verdad; si no, el paneo de
+       siempre-. Solo si es OTRO nodo: al final del juego, o con la puerta
+       cerrada, el actual puede ser este mismo. */
     const actual = mapa.querySelector('.cruc-nodo.actual');
     if (actual && actual !== nodo) {
         setTimeout(() => {
             if (!document.body.contains(actual)) return;
-            centrar(actual, true);
-            const c2 = actual.querySelector('.cruc-nodo-caja');
-            if (c2) {
-                const halo = document.createElement('span');
-                halo.className = 'cruc-halo';
-                c2.appendChild(halo);
-                setTimeout(() => halo.remove(), 2100);
+            const ponerHalo = () => {
+                const c2 = actual.querySelector('.cruc-nodo-caja');
+                if (c2) {
+                    const halo = document.createElement('span');
+                    halo.className = 'cruc-halo';
+                    c2.appendChild(halo);
+                    setTimeout(() => halo.remove(), 2100);
+                }
+            };
+            if (crucTransicionDesde === cel.nivel) {
+                crucAnimarRecorrido(wrap, actual, ponerHalo);
+            } else {
+                crucCentrarNodo(wrap, actual, true);
+                ponerHalo();
             }
         }, 1500);
     }
@@ -1302,6 +1435,11 @@ function crucPrecargarFotoDeNivel(nivel) {
 // ── Abrir un nivel ───────────────────────────
 async function crucAbrirNivel(nivel) {
     if (!crucNivelAbierto(nivel)) return;
+    /* Se guarda AQUÍ, con el mapa todavía en pantalla, el punto exacto donde
+       está: es lo que permite devolver al jugador ahí mismo al salir, sin
+       saltar a ningún nodo. */
+    const wrapMapa = document.getElementById('cruc-mapa-wrap');
+    if (wrapMapa) crucScrollAlSalir = wrapMapa.scrollTop;
     crucPrecargarFotoDeNivel(nivel);
     const d = crucDivisionDe(nivel);
     crucLoading('CARGANDO NIVEL ' + nivel);
@@ -1367,7 +1505,6 @@ function crucVigilarAnchoMapa() {
 function crucVolverAlMapa() {
     crucRelojPara();
     if (window.FHRuta) FHRuta.borrar('nivel');
-    if (crucNivel) crucCentrarEn = crucNivel;
     crucPintarMapa(true);
 }
 
