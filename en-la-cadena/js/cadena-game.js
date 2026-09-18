@@ -70,7 +70,7 @@ const CadenaGame = (() => {
     },
 
     /** Host: crea sala en Firebase */
-    async createRoom(players, lives, avatars) {
+    async createRoom(players, lives, avatars, turnSecs) {
       const FB = window._FB;
       if (!FB?.configured) { App.showToast('Firebase no configurado', 'error'); return null; }
 
@@ -86,6 +86,7 @@ const CadenaGame = (() => {
       const roomData = {
         status: 'lobby',
         lives,
+        turnSecs: turnSecs || 15,
         hostId: 0,
         players: players.map((name, i) => ({ id: i, name, avatar: (avatars && avatars[i]) || null, lives, eliminated: false, uid: i === 0 ? uid : null })),
         turnIndex: 0,
@@ -442,9 +443,9 @@ const App = (() => {
   async function startOnlineAsHost(names, lives, turnSecs, avatars) {
     showToast('Creando sala…');
     try {
-      const code = await CadenaGame.FBSync.createRoom(names, lives, avatars);
+      const code = await CadenaGame.FBSync.createRoom(names, lives, avatars, turnSecs);
       if (!code) return;
-      _enterLobby(code, 0, names[0], lives, names.map((name, i) => ({ id: i, name, avatar: (avatars && avatars[i]) || null, lives, eliminated: false })));
+      _enterLobby(code, 0, names[0], lives, names.map((name, i) => ({ id: i, name, avatar: (avatars && avatars[i]) || null, lives, eliminated: false })), turnSecs);
     } catch (err) {
       showToast('Error al crear sala: ' + err.message, 'error');
     }
@@ -470,7 +471,7 @@ const App = (() => {
     showToast('Conectando…');
     try {
       const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name, _accAvatar());
-      _enterLobby(code, myId, name, roomData.lives, roomData.players);
+      _enterLobby(code, myId, name, roomData.lives, roomData.players, roomData.turnSecs);
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -574,6 +575,7 @@ const App = (() => {
       if (!snap.exists()) { showToast('La sala ya no existe', 'error'); showMenu(); return; }
       const room = snap.val();
       const roomLives = room.lives || lives;
+      const roomTurnSecs = room.turnSecs || 15;
 
       const myEntry = { id: myOriginalId, name: myName, lives: roomLives, eliminated: false };
 
@@ -585,7 +587,7 @@ const App = (() => {
         await set(ref(db, 'rooms/' + roomCode + '/players/0'), myEntry);
       } else {
         // Joiner: ir al lobby YA con solo mi nombre, y en background esperar al host y escribir mi slot
-        _enterLobby(roomCode, myOriginalId, myName, roomLives, [myEntry]);
+        _enterLobby(roomCode, myOriginalId, myName, roomLives, [myEntry], roomTurnSecs);
         // Esperar en background a que el host resetee y luego escribir mi slot
         (async () => {
           let retries = 0;
@@ -603,7 +605,7 @@ const App = (() => {
       const snapFinal = await get(roomRef);
       const finalPlayers = toPlayersArray(snapFinal.val()?.players);
       _enterLobby(roomCode, myOriginalId, myName, roomLives,
-        finalPlayers.length ? finalPlayers : [myEntry]);
+        finalPlayers.length ? finalPlayers : [myEntry], roomTurnSecs);
     } catch(e) {
       showToast('Error al volver al lobby: ' + e.message, 'error');
       showMenu();
@@ -630,14 +632,14 @@ const App = (() => {
       const players = toPlayersArray(room.players);
       const mio = players.find(p => p && p.id === myId && p.name === myName);
       if (!mio) return false;              // tu sitio ya no está: que se una como uno nuevo
-      _enterLobby(roomCode, myId, myName, room.lives, players);
+      _enterLobby(roomCode, myId, myName, room.lives, players, room.turnSecs);
       return true;
     } catch (e) { return false; }
   }
 
   /* Muestra la pantalla de lobby y registra el listener
      myName: nombre propio (pasado directamente, no derivado del array) */
-  function _enterLobby(roomCode, myId, myName, lives, currentPlayers) {
+  function _enterLobby(roomCode, myId, myName, lives, currentPlayers, turnSecs) {
     // Actualizar URL con el código de sala
     const _shareUrl = window.location.origin + window.location.pathname + '?sala=' + roomCode;
     history.pushState(null, '', window.location.pathname + '?sala=' + roomCode);
@@ -652,9 +654,11 @@ const App = (() => {
     if (_shareEl) _shareEl.textContent = _shareUrl;
     document.getElementById('room-code-display').textContent = roomCode;
     document.getElementById('lobby-mode-display').textContent =
-      lives === 1 ? '💀 Supervivencia' : lives === 2 ? '⚽ Normal' : '🏆 Largo';
+      (lives === 1 ? '💀 Supervivencia' : lives === 2 ? '⚽ Normal' : '🏆 Largo') +
+      ` · ⏱️ ${turnSecs || 15}s por turno`;
     window._pendingRoomCode = roomCode;
     window._pendingLives    = lives;
+    window._pendingTurnSecs = turnSecs || 15;
     window._myLobbyId       = myId;
     window._myLobbyName     = myName;
 
@@ -678,7 +682,7 @@ const App = (() => {
       renderLobbyPlayers(freshPlayers, freshMyId);
       if (remote.status === 'countdown' || remote.status === 'playing') {
         unsub();
-        _startGameUI(freshPlayers.map(p => p.name), remote.lives || lives, 'online', roomCode, freshMyId, 15);
+        _startGameUI(freshPlayers.map(p => p.name), remote.lives || lives, 'online', roomCode, freshMyId, remote.turnSecs || turnSecs || 15);
       }
     });
     window._lobbyUnsub = unsub;
@@ -721,6 +725,7 @@ const App = (() => {
   /* ── Menú principal nuevo ── */
   let _menuLives = 1;
   let _menuLivesLocal = 1;
+  let _menuTurnSecs = 15;
   let _menuMode = 'online';
 
   function menuSetMode(mode) {
@@ -743,6 +748,12 @@ const App = (() => {
     _menuLivesLocal = parseInt(btn.dataset.lives);
   }
 
+  function menuSelectTurnTime(btn) {
+    btn.closest('.menu-lives-row').querySelectorAll('.lives-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _menuTurnSecs = parseInt(btn.dataset.time);
+  }
+
   async function menuCreateRoom() {
     const name = _accName('menu-host-name') || _accName('menu-player-name');
     if (!name) { _menuError('Escribe tu nombre en «Nueva sala»'); return; }
@@ -752,7 +763,7 @@ const App = (() => {
     try {
       await CadenaData.init();
     } catch(e) { _menuError('Error al cargar datos'); return; }
-    await startOnlineAsHost([name], _menuLives, 15, [_accAvatar()]);
+    await startOnlineAsHost([name], _menuLives, _menuTurnSecs, [_accAvatar()]);
   }
 
   async function menuJoinRoom() {
@@ -763,7 +774,7 @@ const App = (() => {
     showToast('Conectando…');
     try {
       const { roomData, myId } = await CadenaGame.FBSync.joinRoom(code, name, _accAvatar());
-      _enterLobby(code, myId, name, roomData.lives, roomData.players);
+      _enterLobby(code, myId, name, roomData.lives, roomData.players, roomData.turnSecs);
     } catch(err) {
       _menuError(err.message);
     }
@@ -829,7 +840,7 @@ const App = (() => {
     startGame, startOnlineGame, joinRoom, leaveLobby,
     copyRoomCode, continueAfterElim, playAgain,
     showToast, init, _startGameUI,
-    menuSetMode, menuSelectLives, menuSelectLivesLocal,
+    menuSetMode, menuSelectLives, menuSelectLivesLocal, menuSelectTurnTime,
     menuCreateRoom, menuJoinRoom, menuStartLocal
   };
 

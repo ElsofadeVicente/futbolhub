@@ -220,6 +220,14 @@
             <button class="lives-opt" data-lives="2" onclick="App.menuSelectLives(this)">⚽ 2 vidas</button>
             <button class="lives-opt" data-lives="3" onclick="App.menuSelectLives(this)">🏆 3 vidas</button>
           </div>
+          <div class="menu-lives-row">
+            <span class="menu-lives-label">Tiempo:</span>
+            <button class="lives-opt" data-time="10" onclick="App.menuSelectTurnTime(this)">10s</button>
+            <button class="lives-opt selected" data-time="15" onclick="App.menuSelectTurnTime(this)">15s</button>
+            <button class="lives-opt" data-time="20" onclick="App.menuSelectTurnTime(this)">20s</button>
+            <button class="lives-opt" data-time="25" onclick="App.menuSelectTurnTime(this)">25s</button>
+            <button class="lives-opt" data-time="30" onclick="App.menuSelectTurnTime(this)">30s</button>
+          </div>
           <button class="btn-primary" onclick="App.menuCreateRoom()">CREAR SALA ▶</button>
         </div>
       </div>
@@ -559,7 +567,7 @@
   // Cargar el resto del juego
   const s1 = document.createElement('script'); s1.src = 'js/cadena-data.js?v=20260918a';  document.body.appendChild(s1);
   s1.onload = () => {
-    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js?v=20260917a'; document.body.appendChild(s2);
+    const s2 = document.createElement('script'); s2.src = 'js/cadena-game.js?v=20260918a'; document.body.appendChild(s2);
   };
 </script>
 
