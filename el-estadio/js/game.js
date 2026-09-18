@@ -8,6 +8,32 @@
 /* ── Firebase config ── */
 const FB_URL = 'https://futbolhub-9d0a4-default-rtdb.europe-west1.firebasedatabase.app';
 
+/* ── Leaflet bajo demanda ──
+   Antes se cargaban leaflet.css/leaflet.js sin condicion en el <head>/<body>,
+   asi que quien solo miraba el menu pagaba igualmente la hoja de estilos
+   (bloqueante) y el parseo de la libreria (147 KB). initGameMap() ya se
+   habia diferido a startGame() el 2026-08-27, pero la propia libreria no.
+   cargarLeaflet() inyecta las dos cosas la primera vez que hace falta y
+   memoiza la promesa: llamadas repetidas no vuelven a pedir nada. */
+let _leafletPromise = null;
+function cargarLeaflet() {
+  if (window.L) return Promise.resolve();
+  if (_leafletPromise) return _leafletPromise;
+  _leafletPromise = new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => resolve();
+    script.onerror = () => { _leafletPromise = null; reject(new Error('leaflet no cargo')); };
+    document.body.appendChild(script);
+  });
+  return _leafletPromise;
+}
+
 /* ── Constantes ── */
 /* 4 y no 5 (decision del usuario, 2026-09-06): con 693 estadios en el
    catalogo, repartir de 4 en 4 alarga la baraja de 138 a 173 dias sin
@@ -286,7 +312,9 @@ function rondasDelDia(fecha) {
   return shuffleSeeded(orden, dateToSeed(fecha)).slice(0, TOTAL_RONDAS);
 }
 
-function startGame() {
+async function startGame() {
+  await cargarLeaflet();
+
   state.rondas      = rondasDelDia(todayStr());
   state.rondaActual = 0;
   state.scores      = [];
