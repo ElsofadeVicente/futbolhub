@@ -1118,7 +1118,7 @@ function crucPintarMapa(fundido) {
             }
             const andado = crucEstrellas(nivelDesde) > 0;
             return `<path d="${d}" fill="none" class="${andado ? 'cruc-arco-lit' : 'cruc-arco-dim'}"
-                      stroke-width="${anchoTrazo}" stroke-linecap="round" ${andado ? '' : dash}/>`;
+                      stroke-width="${anchoTrazo}" stroke-linecap="round" ${dash}/>`;
         }).join('');
         let nodos = '';
         pts.forEach((p, i) => {
