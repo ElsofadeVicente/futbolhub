@@ -159,52 +159,6 @@ a      { text-decoration: none; }
   text-transform: uppercase;
 }
 
-.cruc-daily-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: rgba(var(--np-ink-rgb, 15,18,14), 0.03);
-  border: 1px solid var(--np-ink-soft);
-  border-radius: var(--r-md, 0);
-  padding: 6px 12px;
-}
-
-.cruc-nav-btn {
-  background: var(--np-paper2);
-  border: 1px solid var(--bd-c, var(--np-ink));
-  color: var(--np-ink);
-  padding: 5px 12px;
-  border-radius: var(--r-md, 0);
-  cursor: pointer;
-  font-family: 'DM Mono', monospace;
-  font-weight: 500;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition: background 0.2s, color 0.2s;
-  white-space: nowrap;
-  box-shadow: var(--sh-x,2px) var(--sh-y,2px) var(--sh-b,0) var(--sh-c-soft,var(--np-ink-soft));
-}
-
-.cruc-nav-btn:hover:not(:disabled) { background: var(--np-ink); color: var(--np-paper); }
-.cruc-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-.cruc-edition-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.cruc-edition-num {
-  font-family: 'Anton', sans-serif;
-  font-size: 1.3rem;
-  letter-spacing: 1px;
-  color: var(--np-red);
-  line-height: 1;
-}
-
 /* Cronómetro, en la barra de abajo junto al contador de palabras. */
 .cruc-reloj {
   font-family: 'DM Mono', monospace;
@@ -242,24 +196,6 @@ a      { text-decoration: none; }
   /* Sobre fondo oscuro el rojo puro se apaga: se sube el tono. */
   background: #391b1c !important;
   color: #ff6b66 !important;
-}
-
-.cruc-completion-heading {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.6;
-  margin: 14px 0 6px;
-}
-
-/* Saltos a la primera/última edición. Más estrechos que los de anterior y
-   siguiente para que las cinco piezas quepan en la barra en móvil. */
-.cruc-nav-btn--edge {
-  padding: 5px 8px;
-  font-size: 0.8rem;
-  line-height: 1;
 }
 
 /* ── BODY: GRID + PISTAS ── */
@@ -608,12 +544,6 @@ a      { text-decoration: none; }
   max-width: 70px;
   font-size: 0.72rem;
   flex: 1.6;
-}
-
-.cruc-key--erase {
-  min-width: 48px;
-  max-width: 60px;
-  flex: 1.4;
 }
 
 /* ── BARRA INFERIOR (progreso + acciones) ── */
@@ -1008,13 +938,6 @@ body.cruc-sheet-abierto { overflow: hidden; }
   letter-spacing: -.01em;
   color: var(--np-ink);
 }
-.cruc-intro-sub {
-  margin: 0;
-  max-width: 34rem;
-  font-size: 1rem;
-  line-height: 1.55;
-  color: var(--np-ink-mid);
-}
 .cruc-intro-load {
   margin: 6px 0 0;
   font-family: 'DM Mono', 'Courier New', monospace;
@@ -1023,33 +946,6 @@ body.cruc-sheet-abierto { overflow: hidden; }
   text-transform: uppercase;
   color: var(--np-red);
 }
-.cruc-intro-links {
-  margin: 4px 0 0;
-  font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: .78rem;
-  letter-spacing: .1em;
-  color: var(--np-ink-mid);
-}
-.cruc-intro-links a { color: var(--np-ink); }
-
-/* Aviso de que hoy no tiene edición y se está sirviendo la anterior. Antes el
-   juego caía al último disponible en silencio y podía tirarse meses así sin
-   que se notara en pantalla. */
-.cruc-atrasado {
-  margin: 8px 0 0;
-  padding: 6px 10px;
-  border: 1px solid var(--bd-c, var(--np-ink));
-  border-left: 3px solid #b5221e;
-  border-radius: var(--r-md, 0);
-  background: rgba(181, 34, 30, 0.07);
-  font-family: 'DM Mono', monospace;
-  font-size: 0.7rem;
-  line-height: 1.4;
-  color: var(--np-ink);
-}
-
-:root[data-theme="v2"] .cruc-atrasado { border-left-color: #ff6b66; }
-
 /* Texto propio de la página, debajo del juego. Vive fuera de
    #crucigrama-screen porque el JS reemplaza el innerHTML de ese contenedor al
    montar la rejilla y se llevaba por delante la descripción: la página
